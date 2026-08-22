@@ -1,0 +1,42 @@
+# Servidor estatico de la aplicacion web.
+#
+# En la demo, este mismo Caddy actua ademas como proxy inverso hacia los
+# servicios, de modo que la aplicacion habla siempre con el mismo origen bajo
+# `/api` y nunca conoce la topologia. Esa indireccion es lo que permite que la
+# demo corra en una sola maquina y la arquitectura objetivo detras de un
+# balanceador sin cambiar el frontend.
+#
+# Dentro del contenedor de esta imagen solo se sirven los estaticos: el bloque
+# de proxy vive en el Caddyfile del host, en Nexus-Battle-Infrastructure.
+
+:8080 {
+	root * /srv
+
+	# Sonda del contenedor. No consulta dependencias: el servidor estatico no
+	# tiene ninguna, y declarar lo contrario seria una readiness falsa.
+	handle /health {
+		respond "ok" 200
+	}
+
+	# Los activos con huella en el nombre son inmutables y pueden cachearse
+	# indefinidamente. `index.html` no: es el punto de entrada y debe
+	# revalidarse para que un despliegue nuevo llegue al navegador.
+	@fingerprinted path /assets/*
+	header @fingerprinted Cache-Control "public, max-age=31536000, immutable"
+	header /index.html Cache-Control "no-cache"
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	encode gzip zstd
+
+	# El enrutado ocurre en el cliente: cualquier ruta desconocida devuelve el
+	# index para que React Router la resuelva. Sin esto, recargar en /catalog
+	# produciria un 404.
+	try_files {path} /index.html
+	file_server
+}

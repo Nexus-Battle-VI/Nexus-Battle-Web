@@ -1,0 +1,34 @@
+# Propiedad del código — Nexus-Battle-Web
+#
+# Bounded context: Web (interfaz de los seis contextos)
+# Team propietario: Team Alfa, Team Beta y Team Gama
+#
+# Los Code Owners son obligatorios en la revisión de Pull Requests hacia `main`.
+# Management permanece como fuente única de Issues; aquí solo se gobierna el código.
+
+# La aplicacion web es el unico repositorio compartido por los tres Teams:
+# cada uno mantiene la feature del bounded context que le pertenece.
+*                       @Nexus-Battle-VI/team-alfa @Nexus-Battle-VI/team-beta @Nexus-Battle-VI/team-gama
+
+# Propiedad por feature, alineada con la propiedad de cada servicio
+/src/features/account/            @Nexus-Battle-VI/team-alfa
+/src/features/player-inventory/   @Nexus-Battle-VI/team-alfa
+/src/features/notifications/      @Nexus-Battle-VI/team-alfa
+/src/features/catalog/            @Nexus-Battle-VI/team-gama
+/src/features/community/          @Nexus-Battle-VI/team-gama
+/src/features/commerce/           @Nexus-Battle-VI/team-beta
+
+# Las capas compartidas afectan a los tres Teams
+/src/app/                @Nexus-Battle-VI/team-alfa @Nexus-Battle-VI/team-beta @Nexus-Battle-VI/team-gama
+/src/components/         @Nexus-Battle-VI/team-alfa @Nexus-Battle-VI/team-beta @Nexus-Battle-VI/team-gama
+/src/shared/             @Nexus-Battle-VI/team-alfa @Nexus-Battle-VI/team-beta @Nexus-Battle-VI/team-gama
+/src/lib/                @Nexus-Battle-VI/team-alfa @Nexus-Battle-VI/team-beta @Nexus-Battle-VI/team-gama
+/src/routes/             @Nexus-Battle-VI/team-alfa @Nexus-Battle-VI/team-beta @Nexus-Battle-VI/team-gama
+
+# Gobierno del repositorio y automatización
+/.github/               @Nexus-Battle-VI/scrum-master
+/.github/workflows/     @Nexus-Battle-VI/scrum-master
+/.github/CODEOWNERS     @Nexus-Battle-VI/scrum-master
+
+# Documentación técnica y contratos
+/docs/                  @Nexus-Battle-VI/scrum-master

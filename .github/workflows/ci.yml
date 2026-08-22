@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# El token del workflow solo necesita leer el repositorio. Ninguna etapa
+# publica artefactos ni despliega infraestructura.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24.19.0'
+
+jobs:
+  quality:
+    name: Calidad y pruebas
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Verificar formato
+        run: npm run format:check
+
+      # La verificacion de tipos usa TypeScript 7 mediante el alias `typescript7`.
+      # typescript-eslint usa la API de TypeScript 6. Vease ADR-003.
+      - name: Verificacion de tipos
+        run: npm run typecheck
+
+      - name: Pruebas
+        run: npm test
+
+      - name: Cobertura
+        run: npm run test:coverage
+
+      - name: Publicar reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-web
+          path: coverage/
+          retention-days: 7
+
+      - name: Compilacion de produccion
+        run: npm run build
+
+      - name: Publicar artefacto de la compilacion
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: web-dist
+          path: dist/
+          retention-days: 7
+
+  docker:
+    name: Imagen estatica
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: quality
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # Se construye la imagen para verificar el Dockerfile. No se publica en
+      # ningun registro y no se despliega infraestructura desde CI.
+      - name: Construir imagen
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          push: false
+          load: true
+          tags: nexus-battle-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verificar arranque del contenedor
+        run: |
+          docker run -d --name web-ci -p 8080:8080 nexus-battle-web:ci
+          for attempt in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/health > /dev/null; then
+              echo "el servidor estatico responde en el intento ${attempt}"
+              # Se comprueba que la aplicacion se sirve y que cualquier ruta
+              # desconocida devuelve el index, que es lo que exige una SPA con
+              # enrutado en el cliente.
+              curl -fsS http://127.0.0.1:8080/ | grep -q '<div id="root">'
+              curl -fsS http://127.0.0.1:8080/catalog | grep -q '<div id="root">'
+              docker rm -f web-ci > /dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "El contenedor no llego a responder"
+          docker logs web-ci
+          docker rm -f web-ci > /dev/null
+          exit 1
