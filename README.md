@@ -126,7 +126,9 @@ docker build -t nexus-battle-web:local .
 docker run --rm -p 8080:8080 nexus-battle-web:local
 ```
 
-La aplicación es un conjunto de ficheros estáticos y no necesita Node en ejecución: la imagen final es Caddy sirviendo `dist/`, lo que elimina el runtime de JavaScript y reduce la superficie de ataque. Se ejecuta con el usuario sin privilegios `caddy`.
+La aplicación es un conjunto de ficheros estáticos y no necesita Node en ejecución: la imagen final es Caddy sirviendo `dist/`, lo que elimina el runtime de JavaScript y reduce la superficie de ataque.
+
+La imagen oficial de Caddy corre como **root** y no define un usuario sin privilegios, así que el Dockerfile crea uno (`web`, uid 1000) y cambia a él. Caddy escucha en 8080, un puerto no privilegiado, por lo que no necesita root para enlazarlo.
 
 El `Caddyfile` devuelve `index.html` para cualquier ruta desconocida, que es lo que exige el enrutado en el cliente; sin eso, recargar en `/catalog` produciría un `404`.
 

@@ -25,11 +25,18 @@ RUN npm run build
 # final y reduce tanto su tamano como su superficie de ataque.
 FROM caddy:2-alpine AS runtime
 
-COPY --from=build /app/dist /srv
-COPY Caddyfile /etc/caddy/Caddyfile
+# La imagen oficial de Caddy corre como root y **no** define un usuario sin
+# privilegios: hay que crearlo. Caddy escucha en 8080, que es un puerto no
+# privilegiado, asi que no necesita root para enlazarlo.
+RUN addgroup -g 1000 -S web \
+  && adduser -u 1000 -S -G web -H -s /sbin/nologin web \
+  && mkdir -p /data /config \
+  && chown -R web:web /data /config
 
-# La imagen base de Caddy expone el usuario sin privilegios `caddy`.
-USER caddy
+COPY --from=build --chown=web:web /app/dist /srv
+COPY --chown=web:web Caddyfile /etc/caddy/Caddyfile
+
+USER web
 
 EXPOSE 8080
 
