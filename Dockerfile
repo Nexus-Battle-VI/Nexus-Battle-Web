@@ -12,6 +12,7 @@ RUN npm ci
 
 COPY tsconfig.json vite.config.ts index.html ./
 COPY src ./src
+# `public` contiene los activos estaticos que Vite copia sin procesar.
 COPY public ./public
 
 RUN npm run build

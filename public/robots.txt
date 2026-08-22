@@ -1,0 +1,10 @@
+# Nexus Battles VI
+#
+# Mientras el sistema no tenga control de acceso (ver ADR-004), no debe ser
+# indexado: la aplicacion opera con identidades no verificadas y su contenido
+# no esta destinado a busqueda publica.
+#
+# Esta directiva se revisara cuando el producto salga de esa situacion.
+
+User-agent: *
+Disallow: /
