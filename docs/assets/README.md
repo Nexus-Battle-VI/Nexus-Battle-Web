@@ -4,6 +4,7 @@ Este documento define el proceso, el modelo de datos y las reglas de evidencia p
 activos visuales y multimedia externos utilizados por `Nexus-Battle-Web`.
 
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
+Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 ## Propósito
@@ -17,6 +18,12 @@ conservar evidencia de procedencia, licencia o autorización y atribución cuand
 (`Nexus-Battle-VI/Nexus-Battle-Management#245`) es la Task que deja disponible ese mecanismo en
 `Nexus-Battle-Web`: un inventario versionado en el que cada recurso visual o multimedia externo
 queda registrado antes de considerarse apto para su uso en el producto.
+
+`EN-021.2 — Consolidar los fundamentos visuales aprobados y su evidencia de procedencia`
+(`Nexus-Battle-VI/Nexus-Battle-Management#246`) continúa esa base documental: registra la evidencia
+de aprobación visual de las Foundations del Design System y deja constancia de qué fundamentos
+externos identificados en Figma están, o no, efectivamente incorporados al código de
+`Nexus-Battle-Web`, sin sustituir el procedimiento de registro ya definido por `EN-021.1`.
 
 Este documento también da soporte a `RNF-21`, el requisito no funcional de trazabilidad de
 propiedad intelectual del que `EN-021` se deriva.
@@ -67,6 +74,29 @@ licencia o autorización de un recurso, dicho recurso permanece con `estado_veri
 Una licencia desconocida no se convierte en una licencia inventada. El estado de licenciamiento
 declarado a nivel de repositorio, `Licensing pending project governance`, no autoriza a asignar
 MIT, Apache, GPL, Creative Commons ni ninguna otra licencia por cuenta propia a un activo concreto.
+
+## Evidencia de aprobación visual y evidencia de licencia
+
+Este documento distingue expresamente cuatro tipos de evidencia, que no son intercambiables entre sí:
+
+- **Evidencia de aprobación visual**: registra que una decisión de diseño (paleta, tipografía,
+  spacing, radios, elevaciones u otro fundamento visual) fue revisada y aceptada por el equipo o por
+  el cliente. Por sí sola no autoriza el uso de ningún recurso de terceros.
+- **Evidencia de procedencia**: identifica de dónde proviene realmente un recurso externo (proyecto,
+  repositorio, autor).
+- **Evidencia de licencia o autorización**: documenta bajo qué licencia o autorización concreta puede
+  usarse ese recurso en `Nexus Battles VI`.
+- **Evidencia de atribución**: documenta si la licencia exige incluir un texto de atribución visible
+  y, si corresponde, cuál es ese texto.
+
+La sesión presencial de seguimiento y validación documentada como `Acta de reunión No. 1`
+(18/08/2026) constituye evidencia de aprobación visual de las Foundations del Design System de
+`Nexus Battles VI` (paleta, tipografía, tamaños, jerarquías, spacing, radios, bordes, elevaciones,
+tokens, estilos y componentes representativos). Esa aprobación no constituye evidencia de
+procedencia, de licencia ni de autorización de ningún recurso externo concreto que dichas
+Foundations puedan utilizar: cada recurso externo real requiere su propia evidencia de procedencia y
+de licencia, verificada de forma independiente, antes de registrarse como `verificado` en
+`docs/assets/inventario-activos.md`.
 
 ## Fuente de verdad
 
@@ -277,6 +307,7 @@ Toda modificación de este documento o de `docs/assets/inventario-activos.md` de
 hacia:
 
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
+- Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 - Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 Se utiliza siempre el nombre completo del repositorio al referenciar estos números, porque
@@ -285,10 +316,30 @@ apuntaría a una Issue local inexistente o equivocada.
 
 ## Relación con fuentes externas
 
-El Design System de `Nexus Battles VI` se administra externamente en Figma y ya fue construido y
-congelado para la fase actual. Este documento no incorpora información sobre qué activos utiliza ese
-Design System ni sobre su licenciamiento, porque esa evidencia no está disponible en este
-repositorio.
+El Design System de `Nexus Battles VI` se administra externamente en Figma. `EN-021.2`
+(`Refs Nexus-Battle-VI/Nexus-Battle-Management#246`) amplió la auditoría de este inventario a la
+página `02 — Foundations` de ese archivo, inspeccionada directamente en modo lectura. Esa inspección
+identificó dos fundamentos externos propuestos en Foundations que todavía no están incorporados al
+código de `Nexus-Battle-Web`:
+
+- La familia tipográfica `Inter`, licenciada por su proyecto original bajo la SIL Open Font
+  License 1.1 (fuente oficial: `https://github.com/rsms/inter/blob/master/LICENSE.txt`).
+- La librería de iconos `Lucide`, licenciada por su proyecto original bajo la ISC License, con
+  algunos iconos derivados de Feather bajo licencia MIT (fuente oficial:
+  `https://lucide.dev/license`).
+
+Esta evidencia de procedencia y licencia general del proyecto upstream no equivale a que `Inter` o
+`Lucide` ya formen parte del producto: `Nexus-Battle-Web` continúa utilizando fuentes del sistema
+operativo (`system-ui`) y no tiene ninguna librería de iconos instalada. Por ese motivo, ninguno de
+los dos recursos genera todavía una entrada en `docs/assets/inventario-activos.md`. Si en el futuro
+se decide incorporar `Inter`, `Lucide` u otro fundamento externo definido en Figma al código de
+`Nexus-Battle-Web`, dicha incorporación debe registrarse en el inventario siguiendo el procedimiento
+de este documento, verificando en ese momento el mecanismo concreto de distribución elegido y su
+licencia aplicable.
+
+Los tokens y valores propios del Design System (colores, spacing, radios, tipografía como decisión
+de escala, elevaciones) son decisiones de diseño expresadas como configuración, no activos externos:
+no requieren entrada en el inventario únicamente por estar definidos en Figma.
 
 La evidencia procedente de Figma o de cualquier otra fuente externa al repositorio deberá
 incorporarse al inventario únicamente cuando haya sido obtenida y verificada formalmente, siguiendo
