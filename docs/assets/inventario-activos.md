@@ -5,6 +5,7 @@ Fuente de verdad versionada de los activos visuales y multimedia externos utiliz
 
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
+Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
 Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 El modelo de datos, los valores controlados y el procedimiento de registro están definidos en
@@ -29,6 +30,17 @@ mecanismo de distribución elegido y de su licencia aplicable en ese momento. Lo
 Design System (color, spacing, radios, tipografía como escala, elevaciones) son decisiones de diseño
 expresadas como configuración y no se tratan como activos externos únicamente por estar definidos en
 Figma.
+
+`EN-021.4` (`Refs Nexus-Battle-VI/Nexus-Battle-Management#248`) consolidó la página `05 — Assets`
+del Design System como biblioteca controlada, incluyendo un catálogo de 71 Icon Masters de `Lucide`
+organizados en 7 familias semánticas y la corrección de su estado documental para distinguir
+`Design System: IMPLEMENTED / IN REVIEW` de `Nexus-Battle-Web: NOT IMPLEMENTED`. Esa consolidación
+no incorpora ningún recurso nuevo al código de `Nexus-Battle-Web`: `Inter` y `Lucide` continúan sin
+uso real en el producto, por lo que ninguno de los dos genera todavía una entrada en este
+inventario. El equipo confirmó que todo el frontend de `Nexus Battles VI` se implementa
+exclusivamente en este repositorio; cuando `Inter`, `Lucide` u otro recurso de `05 — Assets` se
+incorpore realmente al código, deberá registrarse en el mismo incremento o Pull Request que realice
+dicha incorporación, mediante una Task separada dentro del Enabler `EN-021`.
 
 ## Inventario
 
