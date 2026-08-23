@@ -6,6 +6,7 @@ activos visuales y multimedia externos utilizados por `Nexus-Battle-Web`.
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
+Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#249`
 Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 ## Propósito
@@ -32,6 +33,14 @@ como biblioteca controlada de Assets reutilizables, distinguiendo expresamente e
 recurso dentro del Design System del estado de ese mismo recurso en el código de
 `Nexus-Battle-Web`. `EN-021.4` no incorpora ningún recurso nuevo al producto ni modifica el
 procedimiento de registro definido por `EN-021.1`.
+
+`EN-021.5 — Auditar los recursos externos utilizados en prototipos y pantallas de las HUs`
+(`Nexus-Battle-VI/Nexus-Battle-Management#249`) audita qué recursos externos consumen realmente las
+pantallas de las Historias de Usuario en prediseño, distinguiendo los Components del Design System de
+los Assets externos que esos Components consumen. El corte versionado de esa auditoría, reauditable a
+medida que avanza el prediseño, se conserva en
+[`docs/assets/auditoria-hus.md`](./auditoria-hus.md); ese documento no sustituye el inventario y no
+declara ningún recurso incorporado al producto por sí mismo.
 
 Este documento también da soporte a `RNF-21`, el requisito no funcional de trazabilidad de
 propiedad intelectual del que `EN-021` se deriva.
@@ -317,6 +326,7 @@ hacia:
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
+- Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#249`
 - Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 Se utiliza siempre el nombre completo del repositorio al referenciar estos números, porque
