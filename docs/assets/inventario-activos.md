@@ -4,6 +4,7 @@ Fuente de verdad versionada de los activos visuales y multimedia externos utiliz
 `Nexus-Battle-Web`.
 
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
+Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 El modelo de datos, los valores controlados y el procedimiento de registro están definidos en
@@ -15,6 +16,19 @@ procedimiento.
 La auditoría técnica realizada para `EN-021.1` no encontró activos externos reales incorporados
 actualmente en `Nexus-Battle-Web` que requieran registro. Por ese motivo, el inventario se deja
 publicado y versionado, listo para recibir entradas, sin filas de datos.
+
+`EN-021.2` (`Refs Nexus-Battle-VI/Nexus-Battle-Management#246`) amplió la auditoría a la página
+`02 — Foundations` del Design System en Figma e identificó dos fundamentos externos propuestos allí:
+la familia tipográfica `Inter` y la librería de iconos `Lucide`. Ninguno de los dos está incorporado
+actualmente al código de `Nexus-Battle-Web`: la tipografía en uso sigue siendo la del sistema
+operativo (`system-ui, -apple-system, 'Segoe UI', sans-serif`) y el proyecto no tiene instalada
+ninguna librería de iconos. Por ese motivo, `Inter` y `Lucide` no generan una entrada en este
+inventario en este momento. Si cualquiera de los dos se incorpora al producto en el futuro, debe
+registrarse siguiendo el procedimiento de `docs/assets/README.md`, con evidencia verificable del
+mecanismo de distribución elegido y de su licencia aplicable en ese momento. Los tokens propios del
+Design System (color, spacing, radios, tipografía como escala, elevaciones) son decisiones de diseño
+expresadas como configuración y no se tratan como activos externos únicamente por estar definidos en
+Figma.
 
 ## Inventario
 
