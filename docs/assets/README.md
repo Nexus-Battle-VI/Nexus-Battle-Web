@@ -5,6 +5,7 @@ activos visuales y multimedia externos utilizados por `Nexus-Battle-Web`.
 
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
+Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
 Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 ## Propósito
@@ -24,6 +25,13 @@ queda registrado antes de considerarse apto para su uso en el producto.
 de aprobación visual de las Foundations del Design System y deja constancia de qué fundamentos
 externos identificados en Figma están, o no, efectivamente incorporados al código de
 `Nexus-Battle-Web`, sin sustituir el procedimiento de registro ya definido por `EN-021.1`.
+
+`EN-021.4 — Organizar y documentar los Assets aprobados del producto`
+(`Nexus-Battle-VI/Nexus-Battle-Management#248`) consolida la página `05 — Assets` del Design System
+como biblioteca controlada de Assets reutilizables, distinguiendo expresamente el estado de un
+recurso dentro del Design System del estado de ese mismo recurso en el código de
+`Nexus-Battle-Web`. `EN-021.4` no incorpora ningún recurso nuevo al producto ni modifica el
+procedimiento de registro definido por `EN-021.1`.
 
 Este documento también da soporte a `RNF-21`, el requisito no funcional de trazabilidad de
 propiedad intelectual del que `EN-021` se deriva.
@@ -308,6 +316,7 @@ hacia:
 
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
+- Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
 - Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 Se utiliza siempre el nombre completo del repositorio al referenciar estos números, porque
@@ -344,6 +353,38 @@ no requieren entrada en el inventario únicamente por estar definidos en Figma.
 La evidencia procedente de Figma o de cualquier otra fuente externa al repositorio deberá
 incorporarse al inventario únicamente cuando haya sido obtenida y verificada formalmente, siguiendo
 el mismo procedimiento y el mismo modelo de datos descritos en este documento.
+
+## Consolidación de 05 — Assets (EN-021.4)
+
+`EN-021.4` (`Refs Nexus-Battle-VI/Nexus-Battle-Management#248`) amplió la auditoría a la página
+`05 — Assets` del Design System. Esa página mantiene una biblioteca controlada de Assets, limitada
+actualmente a dos familias justificadas por Assets reales — `Typography / Licensing Reference` e
+`Iconography` — sin crear categorías vacías de Brand, Logos, Images, Illustrations, Graphic
+Resources ni Multimedia mientras no existan recursos reales de esos tipos.
+
+Los dos fundamentos identificados por `EN-021.2` permanecen documentados en `05 — Assets` como
+recursos `IN REVIEW`, no `APPROVED`:
+
+- `Inter` continúa con licencia identificada (`SIL Open Font License 1.1`) y referencia de
+  inventario `PENDING`.
+- `Lucide` incorpora en Figma un catálogo controlado de 71 Icon Masters organizados en 7 familias
+  semánticas, con la geometría original del plugin oficial preservada y sin ediciones manuales. Su
+  consumo por el componente `Form Fields / Select` fue verificado exclusivamente dentro del Design
+  System de Figma. La card correspondiente distingue explícitamente el estado en Design System
+  (`IMPLEMENTED / IN REVIEW`) del estado en `Nexus-Battle-Web` (`NOT IMPLEMENTED`), para evitar que
+  la existencia del recurso en Figma se interprete como una incorporación real al producto.
+
+El recurso histórico `Unicode Chevron Stand-in`, un workaround temporal basado en glifos de texto,
+permanece `DEPRECATED / REPLACED` en Figma y no constituye un Asset externo independiente.
+
+El equipo confirmó que todo el frontend de `Nexus Battles VI` se implementa únicamente en
+`Nexus-Battle-Web`; ningún otro repositorio o microservicio incorpora frontend ni consume
+directamente el Design System. Por ese motivo, la futura incorporación técnica de `Inter`, `Lucide`
+u otro recurso de `05 — Assets` al código de producto ocurrirá exclusivamente en
+`Nexus-Battle-Web`, mediante una Task separada dentro del Enabler `EN-021`, y deberá registrarse en
+`docs/assets/inventario-activos.md` en el mismo incremento que realice dicha incorporación.
+`EN-021.4` es una Task de organización, gobierno y documentación de Assets: no incorpora ningún
+recurso al frontend ni modifica el procedimiento de registro definido por `EN-021.1`.
 
 ## Estado actual
 
