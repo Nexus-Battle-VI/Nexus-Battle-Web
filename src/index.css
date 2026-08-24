@@ -38,6 +38,7 @@ body {
   background-color: var(--color-surface);
   color: var(--color-ink);
   font-family:
+    'Inter Variable',
     system-ui,
     -apple-system,
     'Segoe UI',

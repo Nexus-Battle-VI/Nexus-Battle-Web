@@ -30,6 +30,14 @@ registrado corresponde exclusivamente a lo que existía en las fuentes de Figma 
 Cuando el prediseño avance, este mismo documento debe actualizarse siguiendo la
 [regla de reauditoría](#regla-de-reauditoría).
 
+**Nota de seguimiento (`EN-021.7`)**: los hallazgos de este corte describen el estado de Inter y
+Lucide/`Icons/Chevron Down` tal como existían en Figma y en Web el `2026-08-23`, incluyendo
+`Estado en Web: NOT IMPLEMENTED` para ambos. Esos hallazgos no se modifican aquí. Posteriormente,
+`EN-021.7` (`Refs Nexus-Battle-VI/Nexus-Battle-Management#264`) incorporó ambos recursos realmente al
+código de `Nexus-Battle-Web`; el estado vigente se documenta en `docs/assets/README.md`, sección
+"Incorporación técnica real (EN-021.7)", y en las dos entradas correspondientes de
+`docs/assets/inventario-activos.md`.
+
 ## Fuentes revisadas
 
 - Design System: `00 — Nexus Battles VI — Design System`, página `05 — Assets`.

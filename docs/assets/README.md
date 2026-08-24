@@ -7,6 +7,7 @@ Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#249`
+Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#264`
 Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 ## Propósito
@@ -41,6 +42,13 @@ los Assets externos que esos Components consumen. El corte versionado de esa aud
 medida que avanza el prediseño, se conserva en
 [`docs/assets/auditoria-hus.md`](./auditoria-hus.md); ese documento no sustituye el inventario y no
 declara ningún recurso incorporado al producto por sí mismo.
+
+`EN-021.7 — Integrar técnicamente el Design System aprobado en Nexus-Battle-Web`
+(`Nexus-Battle-VI/Nexus-Battle-Management#264`) es la Task que incorpora realmente `Inter` y
+`Lucide` al código de `Nexus-Battle-Web`, mediante paquetes npm autohospedados y un punto único y
+controlado de consumo de iconografía. A partir de `EN-021.7`, ambos recursos dejan de estar en
+estado `NOT IMPLEMENTED` en Web y generan su correspondiente entrada en
+`docs/assets/inventario-activos.md`.
 
 Este documento también da soporte a `RNF-21`, el requisito no funcional de trazabilidad de
 propiedad intelectual del que `EN-021` se deriva.
@@ -327,6 +335,7 @@ hacia:
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
 - Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#249`
+- Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#264`
 - Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 Se utiliza siempre el nombre completo del repositorio al referenciar estos números, porque
@@ -355,6 +364,10 @@ se decide incorporar `Inter`, `Lucide` u otro fundamento externo definido en Fig
 `Nexus-Battle-Web`, dicha incorporación debe registrarse en el inventario siguiendo el procedimiento
 de este documento, verificando en ese momento el mecanismo concreto de distribución elegido y su
 licencia aplicable.
+
+Esto describe el estado identificado por `EN-021.2` en ese momento. `EN-021.7` realizó
+posteriormente esa incorporación real; ver
+[Incorporación técnica real (EN-021.7)](#incorporación-técnica-real-en-0217) para el estado vigente.
 
 Los tokens y valores propios del Design System (colores, spacing, radios, tipografía como decisión
 de escala, elevaciones) son decisiones de diseño expresadas como configuración, no activos externos:
@@ -394,24 +407,50 @@ u otro recurso de `05 — Assets` al código de producto ocurrirá exclusivament
 `Nexus-Battle-Web`, mediante una Task separada dentro del Enabler `EN-021`, y deberá registrarse en
 `docs/assets/inventario-activos.md` en el mismo incremento que realice dicha incorporación.
 `EN-021.4` es una Task de organización, gobierno y documentación de Assets: no incorpora ningún
-recurso al frontend ni modifica el procedimiento de registro definido por `EN-021.1`.
+recurso al frontend ni modifica el procedimiento de registro definido por `EN-021.1`. El estado
+`NOT IMPLEMENTED` en Web descrito arriba corresponde al momento de `EN-021.4`; ver
+[Incorporación técnica real (EN-021.7)](#incorporación-técnica-real-en-0217) para el estado vigente.
+
+## Incorporación técnica real (EN-021.7)
+
+`EN-021.7` (`Refs Nexus-Battle-VI/Nexus-Battle-Management#264`) incorporó realmente `Inter` y
+`Lucide` al código de `Nexus-Battle-Web`:
+
+- `Inter` se integra mediante el paquete npm `@fontsource-variable/inter` (autohospedado, sin CDN ni
+  descarga manual de binarios), importando únicamente el eje de peso (`wght.css`) desde
+  `src/main.tsx` y declarando `'Inter Variable'` como `font-family` principal en `src/index.css`,
+  conservando `system-ui` y el resto de la pila anterior como respaldo.
+- `Lucide` se integra mediante el paquete npm `lucide-react`, consumido exclusivamente a través de un
+  punto único y controlado en `src/components/ui/icons.ts`, que hoy solo reexporta `ChevronDown` — el
+  único icono con relación demostrada en `05 — Assets` y en una HU auditada por `EN-021.5`
+  (`HU-56`). Ningún Component ni Pattern importa `lucide-react` directamente.
+
+Ambas incorporaciones quedan registradas en `docs/assets/inventario-activos.md`. Los tokens propios
+del Design System (color, spacing, radios, bordes, elevaciones) permanecen sin cambios: `EN-021.7`
+no rediseñó Foundations ni Components existentes.
 
 ## Estado actual
 
-Según la auditoría técnica realizada para `EN-021.1`, `Nexus-Battle-Web` no contiene actualmente
-activos visuales o multimedia externos identificados que requieran una entrada en el inventario:
+Según la auditoría técnica realizada para `EN-021.1`, en ese momento `Nexus-Battle-Web` no contenía
+activos visuales o multimedia externos identificados que requirieran una entrada en el inventario:
 
-- `public/` contiene únicamente `robots.txt`.
-- No existen imágenes, archivos SVG, logos, audio ni video en el repositorio.
-- No hay tipografías web ni declaraciones `@font-face`; la tipografía actual utiliza fuentes del
-  sistema operativo.
-- No hay librerías de iconos entre las dependencias del proyecto.
-- Los colores declarados en `src/index.css` son valores de código propios del proyecto, no activos
+- `public/` contenía únicamente `robots.txt`.
+- No existían imágenes, archivos SVG, logos, audio ni video en el repositorio.
+- No había tipografías web ni declaraciones `@font-face`; la tipografía utilizaba fuentes del sistema
+  operativo.
+- No había librerías de iconos entre las dependencias del proyecto.
+- Los colores declarados en `src/index.css` eran valores de código propios del proyecto, no activos
   externos.
-- `.gitattributes` declara tipos binarios (`*.png`, `*.jpg`, `*.jpeg`, `*.gif`, `*.ico`, `*.pdf`)
-  para anticipar su incorporación futura, pero esa declaración no implica que dichos activos existan
-  actualmente en el repositorio.
+- `.gitattributes` declaraba tipos binarios (`*.png`, `*.jpg`, `*.jpeg`, `*.gif`, `*.ico`, `*.pdf`)
+  para anticipar su incorporación futura, sin que esa declaración implicara que dichos activos
+  existieran en el repositorio en ese momento.
 
-Esto describe el estado presente del repositorio. No significa que el inventario deba permanecer
-vacío en el futuro: cualquier recurso externo que se incorpore a partir de ahora debe registrarse
-siguiendo este procedimiento antes de considerarse apto para su uso.
+`EN-021.7` cambió dos de esos puntos: `Nexus-Battle-Web` ya tiene una tipografía web (`Inter`, vía
+`@fontsource-variable/inter`) y una librería de iconos entre sus dependencias (`lucide-react`), ambas
+registradas en `docs/assets/inventario-activos.md` — ver
+[Incorporación técnica real (EN-021.7)](#incorporación-técnica-real-en-0217). El resto de los puntos
+de esta lista (imágenes, SVG, logos, audio, video, colores propios) no cambió.
+
+Esto no significa que el inventario deba permanecer estático: cualquier recurso externo que se
+incorpore a partir de ahora debe registrarse siguiendo este procedimiento antes de considerarse apto
+para su uso.
