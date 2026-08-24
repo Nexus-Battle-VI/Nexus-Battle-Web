@@ -6,6 +6,7 @@ Fuente de verdad versionada de los activos visuales y multimedia externos utiliz
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#245`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#246`
 Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#248`
+Task: `Refs Nexus-Battle-VI/Nexus-Battle-Management#264`
 Enabler: `Refs Nexus-Battle-VI/Nexus-Battle-Management#203`
 
 El modelo de datos, los valores controlados y el procedimiento de registro están definidos en
@@ -42,11 +43,18 @@ exclusivamente en este repositorio; cuando `Inter`, `Lucide` u otro recurso de `
 incorpore realmente al código, deberá registrarse en el mismo incremento o Pull Request que realice
 dicha incorporación, mediante una Task separada dentro del Enabler `EN-021`.
 
+`EN-021.7` (`Refs Nexus-Battle-VI/Nexus-Battle-Management#264`) incorporó realmente `Inter` y
+`Lucide` al código de `Nexus-Battle-Web` mediante paquetes npm autohospedados, sin dependencia de
+red en tiempo de ejecución. Por tratarse de la primera incorporación técnica real de un recurso
+externo, este inventario deja de estar vacío a partir de las dos entradas siguientes.
+
 ## Inventario
 
-| id  | nombre | tipo | fuente_origen | autor_proveedor | licencia_o_autorizacion | url_referencia | requiere_atribucion | texto_atribucion | estado_verificacion | evidencia | bounded_context_o_feature | fecha_registro | observaciones |
-| --- | ------ | ---- | ------------- | --------------- | ----------------------- | -------------- | ------------------- | ---------------- | ------------------- | --------- | ------------------------- | -------------- | ------------- |
+| id             | nombre                                          | tipo       | fuente_origen                            | autor_proveedor                              | licencia_o_autorizacion             | url_referencia                                          | requiere_atribucion | texto_atribucion | estado_verificacion | evidencia                                                                                                  | bounded_context_o_feature | fecha_registro | observaciones                                                                                                                                                                                                                                                                              |
+| -------------- | ----------------------------------------------- | ---------- | ---------------------------------------- | -------------------------------------------- | ----------------------------------- | ------------------------------------------------------- | ------------------- | ---------------- | ------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| inter-variable | Inter (tipografía variable, self-hosted)        | tipografia | paquete npm `@fontsource-variable/inter` | The Inter Project Authors (Rasmus Andersson) | SIL Open Font License 1.1 (OFL-1.1) | `https://github.com/rsms/inter/blob/master/LICENSE.txt` | no                  | no aplica        | verificado          | LICENSE del paquete `@fontsource-variable/inter@5.3.0` (OFL-1.1); URL de referencia de la columna anterior | transversal               | 2026-08-23     | Reemplaza `system-ui` como `font-family` principal (`src/index.css`); se importa únicamente el eje de peso (`wght.css`) desde `src/main.tsx`. Mecanismo autohospedado, sin CDN ni descarga manual de binarios.                                                                             |
+| lucide-react   | Lucide (librería de iconos, consumo controlado) | icono      | paquete npm `lucide-react`               | Lucide (comunidad; fork de Feather Icons)    | ISC License                         | `https://lucide.dev/license`                            | no                  | no aplica        | verificado          | LICENSE del paquete `lucide-react@1.33.0` (ISC); URL de referencia de la columna anterior                  | transversal               | 2026-08-23     | Entrada de biblioteca general, no por icono. El consumo actual se limita a `ChevronDown`, reexportado desde el punto controlado `src/components/ui/icons.ts`. Lucide documenta iconos derivados de Feather bajo MIT; no existe evidencia específica de que `ChevronDown` sea uno de ellos. |
 
-Sin registros. Cada nuevo recurso externo incorporado al producto debe añadirse a esta tabla
-siguiendo el modelo de datos y el procedimiento descritos en `docs/assets/README.md`, en el mismo
-Pull Request que incorpora o modifica el recurso.
+Cada nuevo recurso externo incorporado al producto debe añadirse a esta tabla siguiendo el modelo de
+datos y el procedimiento descritos en `docs/assets/README.md`, en el mismo Pull Request que incorpora
+o modifica el recurso.
