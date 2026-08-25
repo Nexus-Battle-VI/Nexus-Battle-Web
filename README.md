@@ -20,6 +20,36 @@ navegador  ->  /api/products   ->  proxy  ->  Catalog
 
 Esa indirección es lo que permite que la demo corra en una sola máquina y que la arquitectura objetivo viva detrás de un balanceador **sin cambiar una línea del frontend**. Ningún componente construye una URL de servicio a mano: todo pasa por `src/lib/http.ts`.
 
+## Inicio de sesión
+
+La aplicación usa **código de autorización con PKCE** contra el hosted UI del user pool de Cognito ([ADR-004](https://github.com/Nexus-Battle-VI/Nexus-Battle-Infrastructure/blob/main/docs/adr/ADR-004-identity-directory.md)).
+
+**El cliente es público: no tiene secreto de cliente.** Y no es una omisión — un secreto embebido en el paquete servido al navegador **es público por definición**. Lo que sustituye al secreto es PKCE: el código de autorización que viaja por la barra de direcciones **no sirve de nada por sí solo**, porque canjearlo exige presentar un verificador que nunca sale de esta pestaña.
+
+No se usa el flujo implícito: devuelve los tokens en el fragmento de la URL, donde quedan en el historial del navegador y en cualquier registro que capture direcciones.
+
+### Los tokens viven en memoria
+
+Ni `localStorage` ni `sessionStorage`. La contrapartida hay que decirla entera: **recargar la página obliga a volver a iniciar sesión**. A cambio, un script inyectado no encuentra ninguna credencial que robar, y el token de refresco —el de vida larga— no llega a tocar disco.
+
+Lo único que se guarda entre redirecciones es el **verificador de PKCE**, en `sessionStorage`, porque la página se descarta al navegar al proveedor. Es aceptable y conviene saber por qué: sirve una sola vez, se borra al leerlo, caduca con la pestaña y no vale de nada sin el código de autorización, que llega por otro camino.
+
+### Lo que el navegador NO decide
+
+`readIdentityClaims` lee el token de identidad **sin verificar la firma**, y eso es correcto, no un atajo: **un navegador no puede decidir si confía en sí mismo**. Esos datos solo alimentan la interfaz.
+
+La verificación que importa la hace **cada servicio** contra el JWKS del pool antes de atender la petición. Si el token estuviera manipulado, el servidor rechazaría la petición igualmente.
+
+### Sin proveedor configurado, la interfaz lo dice
+
+Si `VITE_COGNITO_DOMAIN` o `VITE_COGNITO_CLIENT_ID` están vacíos, no hay sesión posible y la cabecera muestra **«Sin proveedor de identidad: nadie verifica quién realiza las peticiones»**, en lugar de un botón de iniciar sesión que no puede funcionar. Un control que no hace nada es peor que su ausencia: sugiere que hay autenticación donde no la hay.
+
+| Variable                 | Nota                                                    |
+| ------------------------ | ------------------------------------------------------- |
+| `VITE_COGNITO_DOMAIN`    | Dominio del hosted UI, sin barra final                  |
+| `VITE_COGNITO_CLIENT_ID` | Identificador del cliente **público**. No es un secreto |
+| `VITE_APP_ORIGIN`        | Solo para fijar el origen en pruebas                    |
+
 ## Requisitos
 
 | Herramienta | Versión                                       |
@@ -134,7 +164,9 @@ El `Caddyfile` devuelve `index.html` para cualquier ruta desconocida, que es lo 
 
 ## Limitaciones conocidas del alcance actual
 
-- **No hay autenticación.** `useSession` guarda quién dice ser la persona para que la interfaz pueda operar, pero **no verifica nada**: no hay token, no hay firma y el servidor no comprueba identidad. Se mantiene en memoria a propósito, no en `localStorage`: persistir una identidad no verificada daría apariencia de una sesión que no existe. Depende del proveedor de identidad pendiente de aprobación.
+- **Recargar la página cierra la sesión.** Es la contrapartida de mantener los tokens en memoria, y es deliberada.
+- **No existe todavía el user pool.** El código del flujo está completo y probado, pero hasta que Terraform lo aplique la aplicación opera sin proveedor y lo declara en la cabecera.
+- **No se renueva el testimonio automáticamente.** Al caducar, la siguiente petición encontrará `null` y habrá que volver a iniciar sesión. Renovar con el token de refresco exige decidir dónde guardarlo, y esa decisión no se toma de pasada.
 - **Cinco de las seis pantallas no están implementadas.** Ver la tabla anterior.
 - **No hay pruebas de extremo a extremo.** Playwright se incorporará cuando exista un flujo completo que ejercitar; con una sola pantalla implementada aportaría menos que las pruebas de integración actuales.
 - Toda variable con prefijo `VITE_` acaba en el paquete servido al navegador y es **pública**. Aquí no se declara ningún secreto.

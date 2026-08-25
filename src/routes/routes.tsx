@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router'
 
 import { AppLayout } from '@/app/AppLayout'
 import { NotFoundPage } from '@/app/NotFoundPage'
+import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { AccountPage } from '@/features/account/AccountPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
@@ -37,6 +38,9 @@ export const routes: RouteObject[] = [
       { path: 'orders', element: <CommercePage /> },
       { path: 'account', element: <AccountPage /> },
       { path: 'notifications', element: <NotificationsPage /> },
+      // La ruta de retorno del proveedor de identidad. No aparece en la
+      // navegacion: no es una pantalla a la que se entre a proposito.
+      { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

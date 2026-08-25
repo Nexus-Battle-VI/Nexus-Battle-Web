@@ -1,31 +1,116 @@
 import { create } from 'zustand'
 
+import { authConfig } from './auth/config'
+import {
+  buildAuthorizationRequest,
+  buildLogoutUrl,
+  readIdentityClaims,
+  type IdentityClaims,
+  type TokenSet,
+} from './auth/oidc'
+import { rememberPendingAuthorization } from './auth/pkce'
+
 export interface SessionState {
-  /** Identificador de la cuenta activa. `null` cuando no hay sesion. */
-  readonly accountId: string | null
+  /** Sujeto verificado por el proveedor. `null` cuando no hay sesion. */
+  readonly subject: string | null
+  readonly email: string | null
   readonly displayName: string | null
-  signIn: (accountId: string, displayName: string) => void
+  readonly roles: readonly string[]
+  readonly accessToken: string | null
+  readonly expiresAt: number | null
+
+  /** Falso cuando no hay proveedor configurado: no hay sesion posible. */
+  readonly authenticationAvailable: boolean
+
+  /** Inicia el flujo de codigo de autorizacion con PKCE. */
+  signIn: (returnTo?: string) => Promise<void>
+  /** Registra el resultado de un canje completado. */
+  establish: (tokens: TokenSet, claims: IdentityClaims) => void
+  /** Cierra la sesion aqui y en el proveedor. */
   signOut: () => void
 }
 
 /**
  * Estado de sesion de la aplicacion.
  *
- * **Esto no es autenticacion.** Guarda quien dice ser la persona para que la
- * interfaz pueda operar, pero no verifica nada: no hay token, no hay firma y
- * el servidor no comprueba la identidad. La autenticacion real depende del
- * proveedor de identidad pendiente de aprobacion.
+ * **Ahora si es autenticacion.** La identidad procede de un testimonio firmado
+ * por el proveedor, y cada servicio lo verifica contra el JWKS del pool antes
+ * de atender la peticion. La version anterior de este fichero guardaba lo que
+ * la persona decia ser, sin comprobar nada.
  *
- * Se mantiene deliberadamente en memoria y no en `localStorage`: persistir una
- * identidad no verificada daria la apariencia de una sesion que no existe.
+ * Los tokens se mantienen **en memoria y no en `localStorage`**. Es una
+ * decision con contrapartida y conviene decirla entera: recargar la pagina
+ * obliga a volver a iniciar sesion. A cambio, un script inyectado no encuentra
+ * ninguna credencial que robar, y el token de refresco —el de vida larga— no
+ * llega a tocar disco.
  */
-export const useSession = create<SessionState>((set) => ({
-  accountId: null,
+export const useSession = create<SessionState>((set, get) => ({
+  subject: null,
+  email: null,
   displayName: null,
-  signIn: (accountId, displayName) => {
-    set({ accountId, displayName })
+  roles: [],
+  accessToken: null,
+  expiresAt: null,
+  authenticationAvailable: authConfig !== null,
+
+  signIn: async (returnTo = globalThis.location.pathname) => {
+    if (authConfig === null) {
+      return
+    }
+
+    const { url, pending } = await buildAuthorizationRequest(authConfig, returnTo)
+
+    rememberPendingAuthorization(pending)
+    globalThis.location.assign(url)
   },
+
+  establish: (tokens, claims) => {
+    set({
+      subject: claims.subject,
+      email: claims.email,
+      displayName: claims.displayName ?? claims.email,
+      roles: claims.roles,
+      accessToken: tokens.accessToken,
+      expiresAt: tokens.expiresAt,
+    })
+  },
+
   signOut: () => {
-    set({ accountId: null, displayName: null })
+    const hadSession = get().accessToken !== null
+
+    set({
+      subject: null,
+      email: null,
+      displayName: null,
+      roles: [],
+      accessToken: null,
+      expiresAt: null,
+    })
+
+    // Limpiar solo esta pestana dejaria la sesion viva en el proveedor: el
+    // siguiente inicio de sesion no pediria credenciales y pareceria que
+    // "cerrar sesion" no hizo nada.
+    if (hadSession && authConfig !== null) {
+      globalThis.location.assign(buildLogoutUrl(authConfig))
+    }
   },
 }))
+
+/**
+ * Token vigente para las peticiones salientes.
+ *
+ * Devuelve `null` si ha caducado en lugar de enviarlo igualmente: mandar un
+ * token vencido produce un 401 que parece un fallo de permisos cuando en
+ * realidad es una sesion que expiro.
+ */
+export const currentAccessToken = (now: number = Date.now()): string | null => {
+  const { accessToken, expiresAt } = useSession.getState()
+
+  if (accessToken === null) {
+    return null
+  }
+
+  return expiresAt !== null && expiresAt <= now ? null : accessToken
+}
+
+export { readIdentityClaims }

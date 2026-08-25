@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router'
 import clsx from 'clsx'
 
 import { NAVIGATION } from '@/routes/routes'
+import { SessionControl } from './SessionControl'
 
 export const AppLayout = (): React.JSX.Element => (
   <div className="min-h-dvh">
@@ -27,6 +28,8 @@ export const AppLayout = (): React.JSX.Element => (
             ))}
           </ul>
         </nav>
+
+        <SessionControl />
       </div>
     </header>
 
