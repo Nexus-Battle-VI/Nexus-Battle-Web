@@ -1,3 +1,5 @@
+import { currentAccessToken } from '@/shared/session'
+
 /**
  * Cliente HTTP del producto.
  *
@@ -29,11 +31,28 @@ export class HttpError extends Error {
   get isNotFound(): boolean {
     return this.status === 404
   }
+
+  /** Falta el testimonio o ya no es valido: hay que volver a iniciar sesion. */
+  get isUnauthorized(): boolean {
+    return this.status === 401
+  }
+
+  /** El testimonio es valido pero no autoriza esta operacion. */
+  get isForbidden(): boolean {
+    return this.status === 403
+  }
 }
 
 export interface HttpClientOptions {
   readonly baseUrl?: string
   readonly fetchImpl?: typeof fetch
+  /**
+   * Origen del testimonio que acompana a cada peticion.
+   *
+   * Se inyecta en lugar de leerse de un modulo global para que las pruebas
+   * puedan ejercitar la cabecera sin montar una sesion completa.
+   */
+  readonly tokenProvider?: () => string | null
 }
 
 export interface RequestOptions {
@@ -75,10 +94,12 @@ const messageFrom = (body: unknown, fallback: string): string => {
 export class HttpClient {
   private readonly baseUrl: string
   private readonly fetchImpl: typeof fetch | undefined
+  private readonly tokenProvider: () => string | null
 
   constructor(options: HttpClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? '/api'
     this.fetchImpl = options.fetchImpl
+    this.tokenProvider = options.tokenProvider ?? ((): string | null => null)
   }
 
   /**
@@ -100,10 +121,24 @@ export class HttpClient {
     // `exactOptionalPropertyTypes` prohibe asignar `undefined` de forma
     // explicita a una propiedad opcional: el init se compone por partes.
     const init: RequestInit = { method }
+    const headers: Record<string, string> = {}
 
     if (hasBody) {
-      init.headers = { 'content-type': 'application/json' }
+      headers['content-type'] = 'application/json'
       init.body = JSON.stringify(options.body)
+    }
+
+    // El testimonio se resuelve en CADA peticion, no al construir el cliente:
+    // la sesion se establece despues de que exista el cliente, y un token
+    // capturado al arrancar seria siempre `null`.
+    const token = this.tokenProvider()
+
+    if (token !== null) {
+      headers.authorization = `Bearer ${token}`
+    }
+
+    if (Object.keys(headers).length > 0) {
+      init.headers = headers
     }
 
     if (options.signal !== undefined) {
@@ -138,4 +173,4 @@ export class HttpClient {
   }
 }
 
-export const httpClient = new HttpClient()
+export const httpClient = new HttpClient({ tokenProvider: () => currentAccessToken() })

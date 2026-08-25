@@ -125,3 +125,79 @@ describe('HttpClient', () => {
     expect('signal' in ((fetchImpl.mock.calls[0]?.[1] ?? {}) as RequestInit)).toBe(true)
   })
 })
+
+describe('Testimonio de identidad en las peticiones', () => {
+  const headersOf = (call: unknown): Record<string, string> =>
+    ((call as [string, RequestInit])[1].headers ?? {}) as Record<string, string>
+
+  it('adjunta el testimonio cuando hay sesion', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, {}))
+    const client = new HttpClient({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      tokenProvider: () => 'token-de-acceso',
+    })
+
+    await client.get('/products')
+
+    expect(headersOf(fetchImpl.mock.calls[0]).authorization).toBe('Bearer token-de-acceso')
+  })
+
+  it('no adjunta cabecera alguna cuando no hay sesion', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, {}))
+    const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
+
+    await client.get('/products')
+
+    expect((fetchImpl.mock.calls[0] as [string, RequestInit])[1].headers).toBeUndefined()
+  })
+
+  /**
+   * El testimonio se resuelve en CADA peticion, no al construir el cliente. El
+   * cliente es un singleton que existe antes de que haya sesion: capturarlo al
+   * arrancar significaria enviar siempre `null`.
+   */
+  it('resuelve el testimonio en cada peticion, no al construir el cliente', async () => {
+    // Cada llamada devuelve una Response NUEVA: el cuerpo de una respuesta solo
+    // se puede leer una vez, y reutilizar el objeto haria fallar la segunda.
+    const fetchImpl = vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(200, {})))
+    let token: string | null = null
+    const client = new HttpClient({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      tokenProvider: () => token,
+    })
+
+    await client.get('/products')
+    token = 'token-posterior'
+    await client.get('/products')
+
+    expect(headersOf(fetchImpl.mock.calls[0]).authorization).toBeUndefined()
+    expect(headersOf(fetchImpl.mock.calls[1]).authorization).toBe('Bearer token-posterior')
+  })
+
+  it('conserva el tipo de contenido junto al testimonio en un envio con cuerpo', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, {}))
+    const client = new HttpClient({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      tokenProvider: () => 'token',
+    })
+
+    await client.post('/orders', { currency: 'COP' })
+
+    expect(headersOf(fetchImpl.mock.calls[0])).toEqual({
+      'content-type': 'application/json',
+      authorization: 'Bearer token',
+    })
+  })
+
+  it.each([
+    [401, 'isUnauthorized'],
+    [403, 'isForbidden'],
+  ])('clasifica el estado %s', async (status, flag) => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(status, { message: 'no' }))
+    const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
+
+    await expect(client.get('/products')).rejects.toSatisfy(
+      (error: unknown) => error instanceof HttpError && error[flag as 'isUnauthorized'],
+    )
+  })
+})
