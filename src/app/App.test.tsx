@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { QueryState } from '@/components/ui/QueryState'
 import { HttpError } from '@/lib/http'
-import { useSession } from '@/shared/session'
+import { currentAccessToken, useSession } from '@/shared/session'
 import { createQueryClient } from '@/shared/query-client'
 
 describe('AppLayout', () => {
@@ -228,26 +228,69 @@ describe('QueryState', () => {
 })
 
 describe('useSession', () => {
+  const tokens = {
+    accessToken: 'token-de-acceso',
+    idToken: 'token-de-identidad',
+    refreshToken: null,
+    expiresAt: Date.now() + 900_000,
+  }
+
+  const claims = {
+    subject: 'sujeto-ana',
+    email: 'ana@nexus.test',
+    displayName: 'Ana Ramirez',
+    roles: ['PLAYER'],
+  }
+
   afterEach(() => {
-    useSession.getState().signOut()
+    useSession.setState({
+      subject: null,
+      email: null,
+      displayName: null,
+      roles: [],
+      accessToken: null,
+      expiresAt: null,
+    })
   })
 
   it('nace sin sesion', () => {
-    expect(useSession.getState().accountId).toBeNull()
-    expect(useSession.getState().displayName).toBeNull()
+    expect(useSession.getState().subject).toBeNull()
+    expect(useSession.getState().accessToken).toBeNull()
   })
 
-  it('registra y limpia la identidad activa', () => {
-    useSession.getState().signIn('acc-1', 'Ana Ramirez')
+  it('registra la identidad que el proveedor verifico', () => {
+    useSession.getState().establish(tokens, claims)
 
     expect(useSession.getState()).toMatchObject({
-      accountId: 'acc-1',
+      subject: 'sujeto-ana',
+      email: 'ana@nexus.test',
       displayName: 'Ana Ramirez',
+      roles: ['PLAYER'],
     })
+  })
 
-    useSession.getState().signOut()
+  it('entrega el testimonio vigente para las peticiones salientes', () => {
+    useSession.getState().establish(tokens, claims)
 
-    expect(useSession.getState().accountId).toBeNull()
+    expect(currentAccessToken()).toBe('token-de-acceso')
+  })
+
+  /**
+   * Enviar un token vencido produce un 401 que parece un fallo de permisos
+   * cuando en realidad es una sesion que expiro. Es mejor no enviarlo.
+   */
+  it('no entrega un testimonio caducado', () => {
+    useSession.getState().establish({ ...tokens, expiresAt: Date.now() - 1 }, claims)
+
+    expect(currentAccessToken()).toBeNull()
+  })
+
+  /**
+   * Sin proveedor configurado no hay sesion posible, y la interfaz debe poder
+   * decirlo en lugar de ofrecer un boton que no funciona.
+   */
+  it('declara que no hay autenticacion disponible sin proveedor', () => {
+    expect(useSession.getState().authenticationAvailable).toBe(false)
   })
 })
 
