@@ -85,6 +85,31 @@ La cobertura global mínima es del **80 %** y está configurada como umbral en J
 
 Las dos primeras se verifican en CI mediante reglas de ESLint. Un cambio que las incumpla no puede integrarse.
 
+## Responsividad (RNF-07)
+
+Toda interfaz nueva o modificada debe cumplir el contrato técnico definido en
+[`docs/frontend/base-responsive.md`](docs/frontend/base-responsive.md), que es la fuente única de
+verdad de las reglas responsive del repositorio.
+
+La resolución mínima obligatoria de **referencia** para verificar `RNF-07` es `1360 × 768 px`. Esa
+resolución no obliga por sí sola a introducir un breakpoint CSS (`sm:`, `md:`, `lg:`, `xl:`, `@media`
+de ancho); un breakpoint solo se justifica ante una necesidad objetiva de layout.
+
+Una interfaz nueva o modificada debe conservar, en esa referencia:
+
+- contenido principal legible;
+- navegación operable;
+- acciones obligatorias accesibles;
+- ausencia de superposición crítica;
+- ausencia de overflow o recorte que impida completar el flujo.
+
+Debe reutilizar los patrones y componentes compartidos existentes (`src/components/ui`, `AppLayout`)
+en lugar de reimplementarlos de forma aislada, y no puede alterar una regla de negocio para lograr la
+adaptación.
+
+Todo Pull Request que afecte una interfaz debe registrar esta verificación en la plantilla del Pull
+Request; uno sin impacto visual puede declarar "No aplica" con su justificación.
+
 ## Pruebas
 
 - Pruebas de componente con Vitest y React Testing Library, consultando por rol y por texto accesible, no por clases CSS ni por estructura interna.

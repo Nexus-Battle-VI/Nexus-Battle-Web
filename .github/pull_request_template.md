@@ -69,6 +69,22 @@ Se confirma que:
 - no se duplica en la interfaz una regla de negocio que ya vive en el servicio.
 -->
 
+## Responsividad (RNF-07)
+
+<!--
+Se aplica cuando el Pull Request modifica una interfaz. Ver el contrato completo en
+docs/frontend/base-responsive.md.
+-->
+
+- [ ] Se revisó el contrato responsive del proyecto (`docs/frontend/base-responsive.md`)
+- [ ] Se validó la interfaz a `1360 × 768 px` (resolución mínima de referencia de `RNF-07`)
+- [ ] Navegación y acciones obligatorias continúan disponibles
+- [ ] No existe overflow ni recorte crítico que impida completar el flujo
+- [ ] Se reutilizaron patrones o componentes compartidos existentes
+- [ ] No aplica (se justifica a continuación)
+
+<!-- Si "No aplica", se explica por qué el Pull Request no tiene impacto visual. -->
+
 ## Seguridad
 
 <!--
