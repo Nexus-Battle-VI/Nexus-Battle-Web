@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import clsx from 'clsx'
@@ -207,6 +207,7 @@ export const RegistrationPage = ({
   const [logoFailed, setLogoFailed] = useState(false)
 
   const summaryRef = useRef<HTMLDivElement>(null)
+  const [focusSummaryToken, setFocusSummaryToken] = useState(0)
 
   const errors = useMemo(() => validateRegistration(values), [values])
 
@@ -248,8 +249,12 @@ export const RegistrationPage = ({
     if (hasErrors(errors)) {
       // En un formulario largo el error puede quedar fuera de la vista: se le
       // lleva el foco al resumen para que el envio fallido no parezca no haber
-      // hecho nada.
-      summaryRef.current?.focus()
+      // hecho nada. En el primer intento invalido el resumen todavia no existe
+      // en el DOM en este punto (el estado que lo monta aun no se ha
+      // confirmado), asi que enfocarlo aqui directamente no haria nada: se
+      // difiere a un efecto que se dispara despues de que React confirme el
+      // render.
+      setFocusSummaryToken((token) => token + 1)
       return
     }
 
@@ -266,6 +271,15 @@ export const RegistrationPage = ({
   }
 
   const issues = attempted ? Object.entries(errors) : []
+
+  // Se dispara solo cuando `focusSummaryToken` cambia (cada envio invalido),
+  // ya con el resumen confirmado en el DOM: aqui `summaryRef.current` ya
+  // apunta al elemento, a diferencia del momento en que se solicito el foco.
+  useEffect(() => {
+    if (focusSummaryToken > 0) {
+      summaryRef.current?.focus()
+    }
+  }, [focusSummaryToken])
 
   return (
     <div style={THEME_VARIABLES[theme]} className="min-h-dvh bg-surface text-ink">

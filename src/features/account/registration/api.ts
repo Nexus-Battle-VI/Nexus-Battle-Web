@@ -25,6 +25,27 @@ export interface RegisteredAccount {
   readonly roles: readonly string[]
 }
 
+/**
+ * Resuelve el id de catalogo de Account para una pregunta local.
+ *
+ * `ACCOUNT_QUESTION_IDS` y `SECURITY_QUESTIONS` se mantienen a mano en el mismo
+ * modulo, asi que solo pueden desalinearse por una edicion incompleta. Fallar
+ * aqui con un mensaje explicito evita enviar un `questionId` ausente: el
+ * mapeo indefinido desaparece silenciosamente al serializar con
+ * `JSON.stringify`, y esa entrada llegaria al backend sin `questionId`.
+ */
+const accountQuestionIdFor = (localQuestionId: string): string => {
+  const questionId = ACCOUNT_QUESTION_IDS[localQuestionId]
+
+  if (questionId === undefined) {
+    throw new Error(
+      `No existe un identificador de catalogo de Account para la pregunta "${localQuestionId}".`,
+    )
+  }
+
+  return questionId
+}
+
 export const toRegistrationFormData = (values: RegistrationValues): FormData => {
   if (values.avatar === null) {
     throw new Error('El avatar es obligatorio.')
@@ -42,7 +63,7 @@ export const toRegistrationFormData = (values: RegistrationValues): FormData => 
     'securityAnswers',
     JSON.stringify(
       SECURITY_QUESTIONS.map((question) => ({
-        questionId: ACCOUNT_QUESTION_IDS[question.id],
+        questionId: accountQuestionIdFor(question.id),
         answer: values.securityAnswers[question.id] ?? '',
       })),
     ),
