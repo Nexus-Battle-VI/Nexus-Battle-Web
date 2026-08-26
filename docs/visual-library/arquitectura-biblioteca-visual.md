@@ -114,8 +114,9 @@ visual:
 - `category`: una de las seis categorías aprobadas.
 - `heroId`: héroe asociado (igual a `id` cuando `category = 'hero'`).
 - `status`: ver [Estados de recursos](#estados-de-recursos).
-- `resource`: referencia opaca al recurso físico (`kind`, `url`). **Obligatoria cuando
-  `status = 'READY'`, e inexistente por tipo cuando `status = 'NOT_PRODUCED'`** — ver más abajo.
+- `resource`: referencia al recurso físico vigente (ver [`VisualResourceReference`](#referencia-al-recurso-vigente)).
+  **Obligatoria cuando `status = 'READY'`, e inexistente por tipo cuando `status = 'NOT_PRODUCED'`** —
+  ver más abajo.
 - `assetInventoryId` (opcional): enlace a una fila de `docs/assets/inventario-activos.md` cuando el
   recurso incorpore un asset externo licenciado. Ver [Relación con EN-021](#relación-con-en-021).
 
@@ -128,6 +129,23 @@ el sistema de tipos ya lo resuelve por completo en cada punto donde se construye
 
 Deliberadamente **no** incluye daño, defensa, vida, poder, cooldown, rareza, precio ni probabilidades:
 la biblioteca visual no es una base de datos de reglas de juego.
+
+### Referencia al recurso vigente
+
+`VisualResourceReference` es una unión discriminada por `source`, extendida por `EN-026.3`
+(`docs/visual-library/heroes-3d.md`, "Extensión del contrato `VisualResourceReference`"):
+
+```ts
+type VisualResourceReference =
+  | { kind: 'model3d' | 'image'; source: 'url'; url: string }
+  | { kind: 'model3d' | 'image'; source: 'procedural' }
+```
+
+El diseño original de esta Task solo contemplaba `source: 'url'` (un recurso cargado desde una URL
+real). `EN-026.3` produjo los ocho héroes mediante geometrías de Three.js generadas en código, sin
+ningún archivo físico que descargar; forzarlos al contrato original habría exigido inventar una URL
+falsa solo para satisfacer el tipo. `source: 'procedural'` declara esa realidad explícitamente, sin
+`url`. La extensión es retrocompatible: `source: 'url'` conserva exactamente el contrato original.
 
 ## Estados de recursos
 
