@@ -59,14 +59,14 @@ verificado por `hero-ids.test.ts` y `hero-definitions.test.ts`. Coincide con la 
 `PRODUCT_CATALOG` (`src/shared/visual-library/products/product-catalog.ts`), verificado por
 `product-catalog.test.ts`:
 
-| Familia         | Contractual (`inventario-heroes-productos.md`) | Implementado |
-| --------------- | ------------------------------------------------ | ------------ |
-| Armas           | 16                                               | 16           |
-| Armaduras       | 16                                               | 16           |
-| Ítems          | 8                                                | 8            |
-| Acciones        | 24                                               | 24           |
-| Épicas         | 8                                                | 8            |
-| **Total** | **72**                                     | **72** |
+| Familia   | Contractual (`inventario-heroes-productos.md`) | Implementado |
+| --------- | ---------------------------------------------- | ------------ |
+| Armas     | 16                                             | 16           |
+| Armaduras | 16                                             | 16           |
+| Ítems     | 8                                              | 8            |
+| Acciones  | 24                                             | 24           |
+| Épicas    | 8                                              | 8            |
+| **Total** | **72**                                         | **72**       |
 
 Sin producto número 73, sin ids inventados ni omitidos (`product-catalog.test.ts` compara longitud
 exacta y ausencia de `PRODUCT_CATALOG[72]`).
@@ -166,13 +166,13 @@ No se modificó ningún archivo de producción en esta Task (el único archivo n
 del bundle). Medición de referencia con `npm run build` sobre el estado actual de `develop`
 (`75fe9fe...`, que ya incluye `HU-01`):
 
-| Chunk                               | Tamaño                    | Nota                                                           |
-| ----------------------------------- | -------------------------- | -------------------------------------------------------------- |
-| `index-*.js` (bundle inicial)     | 345.53 kB / gzip 108.52 kB | Incluye ahora`HU-01` (registro); no atribuible a `EN-026`. |
-| `mount-hero-view-*.js` (Three.js) | 529.81 kB / gzip 133.29 kB | Sin cambios respecto a`EN-026.4` (`productos-2d.md`).      |
-| `ProductsDevPreview-*.js`         | 12.11 kB / gzip 3.54 kB    | Sin cambios respecto a`EN-026.4`, dev-only, lazy.            |
-| `HeroesDevPreview-*.js`           | 0.78 kB / gzip 0.48 kB     | Dev-only, lazy.                                                |
-| `Hero3D-*.js`                     | 4.01 kB / gzip 1.72 kB     | Cargado junto al harness dev-only, no en el bundle inicial.    |
+| Chunk                             | Tamaño                     | Nota                                                        |
+| --------------------------------- | -------------------------- | ----------------------------------------------------------- |
+| `index-*.js` (bundle inicial)     | 345.53 kB / gzip 108.52 kB | Incluye ahora`HU-01` (registro); no atribuible a `EN-026`.  |
+| `mount-hero-view-*.js` (Three.js) | 529.81 kB / gzip 133.29 kB | Sin cambios respecto a`EN-026.4` (`productos-2d.md`).       |
+| `ProductsDevPreview-*.js`         | 12.11 kB / gzip 3.54 kB    | Sin cambios respecto a`EN-026.4`, dev-only, lazy.           |
+| `HeroesDevPreview-*.js`           | 0.78 kB / gzip 0.48 kB     | Dev-only, lazy.                                             |
+| `Hero3D-*.js`                     | 4.01 kB / gzip 1.72 kB     | Cargado junto al harness dev-only, no en el bundle inicial. |
 
 El crecimiento del bundle inicial desde `EN-026.4` (330.76 kB → 345.53 kB) proviene íntegramente de
 `HU-01` (pantalla de registro fuera del alcance de `EN-026`), no de esta Task ni de la biblioteca
@@ -245,16 +245,16 @@ tocar código ajeno sin necesidad directa de `EN-026.5`.
 
 ## Matriz CA-01 → CA-08
 
-| Criterio                                        | Evidencia                                                                                                                      | Archivos/pruebas                                                                                                                            | Resultado | Observaciones                                                                                                 |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------- |
-| CA-01 — Ocho héroes base representados        | 8/8 ids únicos, cada uno resuelve`READY`, representación 3D real con Three.js, fallback y cleanup verificados              | `hero-ids.ts`, `hero-ids.test.ts`, `Hero3D.tsx`, `Hero3D.test.tsx`, `mount-hero-view.test.ts`                                     | PASS      | Ninguno depende de equipamiento real ni introduce reglas funcionales.                                         |
-| CA-02 — Correspondencia con el producto        | `heroId` de cada producto pertenece a `HERO_IDS`; colores derivados de `HERO_VISUAL_SPECS_BY_ID`                         | `product-catalog.test.ts`, `product-visual-definitions.test.ts`                                                                         | PASS      | Verificado también a nivel visual (color), no solo de dato.                                                  |
-| CA-03 — Productos aprobados con recurso visual | 72/72 productos registrados`READY` con recurso procedural, desglose 16/16/8/24/8 exacto                                      | `product-catalog.test.ts`, `register-product-visual-resources.test.ts`                                                                  | PASS      | Sin producto 73, sin duplicados, sin normalización de nombres de origen.                                     |
-| CA-04 — Reutilización transversal             | Mismo`VisualResourceDescriptor` desde dos consumidores; héroes y productos conviven en el mismo registro sin colisión      | `ProductVisual2D.test.tsx`, `register-product-visual-resources.test.ts`, `visual-library-coexistence.test.tsx`                        | PASS      | Nueva prueba de convivencia agregada en esta Task (único cambio de código).                                 |
-| CA-05 — Extensibilidad                         | Un héroe/producto futuro aprobado se incorpora sin arquitectura ni renderer exclusivo (dispatcher único por familia/dominio) | `productos-2d.md#cómo-agregar-un-producto-futuro-oficialmente-aprobado`, `heroes-3d.md`, `render-product-visual.tsx`, `Hero3D.tsx` | PASS      | No se inventó contenido para demostrarlo; depende de aprobación previa en el inventario.                    |
-| CA-06 — Licenciamiento                         | 100% procedural/interno, sin assets externos;`docs/assets/inventario-activos.md` correctamente sin entrada nueva             | `docs/assets/README.md`, `docs/assets/inventario-activos.md`, `heroes-3d.md`, `productos-2d.md`                                     | PASS      | `three` es dependencia de software, no asset visual.                                                        |
-| CA-07 — Consistencia con HU-37                 | Frontera explícita documentada:`EN-026` no implementa editor, personalización ni persistencia de diseño                   | `arquitectura-biblioteca-visual.md#frontera-con-hu-37`, `productos-2d.md`                                                               | PASS      | Releída y confirmada vigente en esta Task.                                                                   |
-| CA-08 — No invención de contenido             | Nombres/ids/categorías/heroId transcritos exactamente desde`inventario-heroes-productos.md`, incluidas erratas de origen    | `product-catalog.ts`, `product-catalog.test.ts`, `hero-ids.ts`                                                                        | PASS      | Ninguna forma literal inventada a partir de nombres ambiguos (ver`productos-2d.md#no-inventar-semántica`). |
+| Criterio                                       | Evidencia                                                                                                                    | Archivos/pruebas                                                                                                                   | Resultado | Observaciones                                                                                              |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------- |
+| CA-01 — Ocho héroes base representados         | 8/8 ids únicos, cada uno resuelve`READY`, representación 3D real con Three.js, fallback y cleanup verificados                | `hero-ids.ts`, `hero-ids.test.ts`, `Hero3D.tsx`, `Hero3D.test.tsx`, `mount-hero-view.test.ts`                                      | PASS      | Ninguno depende de equipamiento real ni introduce reglas funcionales.                                      |
+| CA-02 — Correspondencia con el producto        | `heroId` de cada producto pertenece a `HERO_IDS`; colores derivados de `HERO_VISUAL_SPECS_BY_ID`                             | `product-catalog.test.ts`, `product-visual-definitions.test.ts`                                                                    | PASS      | Verificado también a nivel visual (color), no solo de dato.                                                |
+| CA-03 — Productos aprobados con recurso visual | 72/72 productos registrados`READY` con recurso procedural, desglose 16/16/8/24/8 exacto                                      | `product-catalog.test.ts`, `register-product-visual-resources.test.ts`                                                             | PASS      | Sin producto 73, sin duplicados, sin normalización de nombres de origen.                                   |
+| CA-04 — Reutilización transversal              | Mismo`VisualResourceDescriptor` desde dos consumidores; héroes y productos conviven en el mismo registro sin colisión        | `ProductVisual2D.test.tsx`, `register-product-visual-resources.test.ts`, `visual-library-coexistence.test.tsx`                     | PASS      | Nueva prueba de convivencia agregada en esta Task (único cambio de código).                                |
+| CA-05 — Extensibilidad                         | Un héroe/producto futuro aprobado se incorpora sin arquitectura ni renderer exclusivo (dispatcher único por familia/dominio) | `productos-2d.md#cómo-agregar-un-producto-futuro-oficialmente-aprobado`, `heroes-3d.md`, `render-product-visual.tsx`, `Hero3D.tsx` | PASS      | No se inventó contenido para demostrarlo; depende de aprobación previa en el inventario.                   |
+| CA-06 — Licenciamiento                         | 100% procedural/interno, sin assets externos;`docs/assets/inventario-activos.md` correctamente sin entrada nueva             | `docs/assets/README.md`, `docs/assets/inventario-activos.md`, `heroes-3d.md`, `productos-2d.md`                                    | PASS      | `three` es dependencia de software, no asset visual.                                                       |
+| CA-07 — Consistencia con HU-37                 | Frontera explícita documentada:`EN-026` no implementa editor, personalización ni persistencia de diseño                      | `arquitectura-biblioteca-visual.md#frontera-con-hu-37`, `productos-2d.md`                                                          | PASS      | Releída y confirmada vigente en esta Task.                                                                 |
+| CA-08 — No invención de contenido              | Nombres/ids/categorías/heroId transcritos exactamente desde`inventario-heroes-productos.md`, incluidas erratas de origen     | `product-catalog.ts`, `product-catalog.test.ts`, `hero-ids.ts`                                                                     | PASS      | Ninguna forma literal inventada a partir de nombres ambiguos (ver`productos-2d.md#no-inventar-semántica`). |
 
 ## Hallazgo y corrección únicos
 
