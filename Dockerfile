@@ -15,6 +15,23 @@ COPY src ./src
 # `public` contiene los activos estaticos que Vite copia sin procesar.
 COPY public ./public
 
+# Las variables `VITE_` se resuelven al COMPILAR, no al arrancar: acaban dentro
+# del paquete servido al navegador. Por eso llegan como argumentos de
+# construccion y no como `environment` del contenedor, donde no harian nada.
+#
+# Ninguna es un secreto. El cliente de Cognito se registra SIN secreto de
+# cliente, porque uno embebido en el paquete servido al navegador es publico
+# por definicion, y por eso el flujo es codigo de autorizacion con PKCE.
+#
+# Vacias por defecto, que es el estado de hoy: la aplicacion opera sin
+# autenticacion y LO DICE en la cabecera, en lugar de simular una sesion.
+ARG VITE_API_BASE_URL=""
+ARG VITE_COGNITO_DOMAIN=""
+ARG VITE_COGNITO_CLIENT_ID=""
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
+    VITE_COGNITO_DOMAIN=$VITE_COGNITO_DOMAIN \
+    VITE_COGNITO_CLIENT_ID=$VITE_COGNITO_CLIENT_ID
+
 RUN npm run build
 
 # ---------------------------------------------------------------------------
