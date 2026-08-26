@@ -109,9 +109,17 @@ export class HttpClient {
    * instante, lo que rompe cualquier sustitucion posterior: un polyfill
    * cargado mas tarde, o el doble que instala una prueba sobre un cliente que
    * ya existia como singleton.
+   *
+   * El Fetch Standard define `fetch` como metodo del Window / Worker. Llamarlo
+   * desligado (`const f = globalThis.fetch; f(...)`) lanza Illegal invocation
+   * en el navegador. El impl inyectado en pruebas no tiene esa restriccion.
    */
   private get fetcher(): typeof fetch {
-    return this.fetchImpl ?? globalThis.fetch
+    if (this.fetchImpl !== undefined) {
+      return this.fetchImpl
+    }
+
+    return (input, init) => globalThis.fetch(input, init)
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -124,8 +132,14 @@ export class HttpClient {
     const headers: Record<string, string> = {}
 
     if (hasBody) {
-      headers['content-type'] = 'application/json'
-      init.body = JSON.stringify(options.body)
+      if (options.body instanceof FormData) {
+        // El navegador pone el boundary. Forzar application/json romperia el
+        // multipart del registro (avatar).
+        init.body = options.body
+      } else {
+        headers['content-type'] = 'application/json'
+        init.body = JSON.stringify(options.body)
+      }
     }
 
     // El testimonio se resuelve en CADA peticion, no al construir el cliente:

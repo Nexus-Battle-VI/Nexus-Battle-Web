@@ -4,6 +4,7 @@ import { AppLayout } from '@/app/AppLayout'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { AccountPage } from '@/features/account/AccountPage'
+import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
@@ -36,8 +37,8 @@ export const routes: RouteObject[] = [
   // Es tambien la puerta de entrada: la raiz de la aplicacion sirve la misma
   // pantalla. Quien abre la aplicacion sin sesion arranca en el registro, no
   // en el catalogo, que pertenece al area autenticada.
-  { path: '/', element: <RegistrationPage /> },
-  { path: '/register', element: <RegistrationPage /> },
+  { path: '/', element: <RegistrationPage onSubmit={registerAccount} /> },
+  { path: '/register', element: <RegistrationPage onSubmit={registerAccount} /> },
   {
     // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi
     // que sus hijos siguen resolviendo a las mismas rutas absolutas

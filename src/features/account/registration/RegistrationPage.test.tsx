@@ -321,18 +321,37 @@ describe('RegistrationPage', () => {
     release()
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Completar registro' })).toBeEnabled()
+      expect(screen.getByRole('status')).toHaveTextContent(/Cuenta creada/u)
     })
+    expect(screen.getByRole('button', { name: 'Completar registro' })).toBeDisabled()
   })
 
-  it('declara que falta el contrato del servicio en lugar de simular una cuenta creada', async () => {
+  it('muestra confirmacion cuando el servicio acepta el registro', async () => {
     const user = setup()
+    const onSubmit = vi.fn<(values: RegistrationValues) => Promise<void>>().mockResolvedValue()
 
-    renderPage()
+    renderPage(onSubmit)
     await fillValidForm(user)
     await user.click(screen.getByRole('button', { name: 'Completar registro' }))
 
-    expect(await screen.findByText(/aún no publica el contrato/u)).toBeInTheDocument()
+    expect(await screen.findByRole('status')).toHaveTextContent(/Cuenta creada/u)
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+  })
+
+  it('muestra el mensaje del servicio cuando el registro falla', async () => {
+    const user = setup()
+    const onSubmit = vi
+      .fn<(values: RegistrationValues) => Promise<void>>()
+      .mockRejectedValue(
+        new Error('Ya existe una cuenta registrada con el correo "ana@nexus.test".'),
+      )
+
+    renderPage(onSubmit)
+    await fillValidForm(user)
+    await user.click(screen.getByRole('button', { name: 'Completar registro' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Ya existe una cuenta/u)
+    expect(screen.queryByText(/Cuenta creada/u)).not.toBeInTheDocument()
   })
 
   it('ofrece los documentos legales como acciones y declara que faltan', async () => {

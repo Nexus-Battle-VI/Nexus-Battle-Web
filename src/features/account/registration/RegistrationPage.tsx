@@ -11,6 +11,7 @@ import {
   THEME_VARIABLES,
   type Theme,
 } from './constants'
+import { registerAccount } from './api'
 import {
   EMPTY_VALUES,
   FIELD,
@@ -58,17 +59,7 @@ const storeTheme = (theme: Theme): void => {
   }
 }
 
-const CONTRACT_PENDING =
-  'El registro todavía no puede completarse: el servicio de cuenta aún no publica el contrato de creación. Tus datos no se han enviado a ningún servicio.'
-
-/**
- * Punto de integracion pendiente.
- *
- * No hay endpoint, ni payload, ni codigos de respuesta definidos en el
- * repositorio. Inventarlos produciria una pantalla que parece terminada y falla
- * el dia que exista el servicio. Mientras tanto, esto no finge exito.
- */
-const submitPending = (): Promise<void> => Promise.reject(new Error(CONTRACT_PENDING))
+const REGISTER_FAILED = 'No se pudo completar el registro.'
 
 const CONTROL_CLASS =
   'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
@@ -201,7 +192,7 @@ export interface RegistrationPageProps {
  * que aun no se ha tocado no esta mal, esta sin empezar.
  */
 export const RegistrationPage = ({
-  onSubmit = submitPending,
+  onSubmit = registerAccount,
 }: RegistrationPageProps = {}): React.JSX.Element => {
   const navigate = useNavigate()
 
@@ -211,6 +202,7 @@ export const RegistrationPage = ({
   const [attempted, setAttempted] = useState(false)
   const [sending, setSending] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const [unavailableDocument, setUnavailableDocument] = useState<string | null>(null)
   const [logoFailed, setLogoFailed] = useState(false)
 
@@ -251,6 +243,7 @@ export const RegistrationPage = ({
 
     setAttempted(true)
     setFailure(null)
+    setSuccess(false)
 
     if (hasErrors(errors)) {
       // En un formulario largo el error puede quedar fuera de la vista: se le
@@ -264,8 +257,9 @@ export const RegistrationPage = ({
 
     try {
       await onSubmit(values)
+      setSuccess(true)
     } catch (error: unknown) {
-      setFailure(error instanceof Error ? error.message : CONTRACT_PENDING)
+      setFailure(error instanceof Error ? error.message : REGISTER_FAILED)
     } finally {
       setSending(false)
     }
@@ -383,6 +377,15 @@ export const RegistrationPage = ({
                 className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
               >
                 {failure}
+              </p>
+            )}
+
+            {success && (
+              <p
+                role="status"
+                className="rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
+              >
+                Cuenta creada. Queda pendiente de verificación. Ya puedes cerrar esta pantalla.
               </p>
             )}
 
@@ -675,7 +678,7 @@ export const RegistrationPage = ({
               >
                 Cancelar
               </Button>
-              <Button type="submit" loading={sending}>
+              <Button type="submit" loading={sending} disabled={success}>
                 Completar registro
               </Button>
             </div>
