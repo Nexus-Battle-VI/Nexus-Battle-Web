@@ -26,11 +26,22 @@ export type VisualCategory = 'hero' | 'action' | 'weapon' | 'armor' | 'item' | '
  */
 export type VisualResourceStatus = 'NOT_PRODUCED' | 'READY'
 
-/** Referencia opaca al recurso fisico. Ausente mientras el estado es `NOT_PRODUCED`. */
-export interface VisualResourceReference {
-  readonly kind: 'model3d' | 'image'
-  readonly url: string
-}
+/**
+ * Referencia al recurso fisico vigente. Ausente mientras el estado es
+ * `NOT_PRODUCED`.
+ *
+ * Union discriminada por `source`, extendida por `EN-026.3`: el diseno
+ * original de `EN-026.2` solo contemplaba `kind` + `url`, que representa
+ * unicamente un recurso cargado desde una URL real. Los ocho heroes de
+ * `EN-026.3` se producen mediante geometrias y materiales de Three.js
+ * generados en codigo, sin ningun archivo fisico que descargar — forzarlos a
+ * `url` habria exigido inventar una URL falsa para satisfacer el tipo, lo
+ * cual el tipo debe impedir en vez de tolerar. `source: 'procedural'` declara
+ * esa realidad explicitamente, sin `url`.
+ */
+export type VisualResourceReference =
+  | { readonly kind: 'model3d' | 'image'; readonly source: 'url'; readonly url: string }
+  | { readonly kind: 'model3d' | 'image'; readonly source: 'procedural' }
 
 /** Metadatos comunes a cualquier estado de un recurso visual. */
 interface VisualResourceDescriptorBase {

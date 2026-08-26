@@ -9,6 +9,7 @@ import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
+import { devRoutes } from './dev-routes'
 
 /**
  * Rutas de la aplicacion.
@@ -41,6 +42,9 @@ export const routes: RouteObject[] = [
       // La ruta de retorno del proveedor de identidad. No aparece en la
       // navegacion: no es una pantalla a la que se entre a proposito.
       { path: 'auth/callback', element: <AuthCallbackPage /> },
+      // Harness de EN-026.3, solo en desarrollo (ver `./dev-routes.tsx`). No
+      // aparece en NAVIGATION ni en produccion.
+      ...devRoutes,
       { path: '*', element: <NotFoundPage /> },
     ],
   },

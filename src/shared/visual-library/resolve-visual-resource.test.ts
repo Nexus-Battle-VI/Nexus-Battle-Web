@@ -52,7 +52,11 @@ describe('resolveVisualResource', () => {
       category: 'hero',
       heroId: 'guerrero-tanque',
       status: 'READY',
-      resource: { kind: 'model3d', url: 'https://example.invalid/guerrero-tanque.glb' },
+      resource: {
+        kind: 'model3d',
+        source: 'url',
+        url: 'https://example.invalid/guerrero-tanque.glb',
+      },
     }
     registry.register(readyDescriptor)
 
@@ -71,7 +75,11 @@ describe('resolveVisualResource', () => {
       category: 'hero',
       heroId: 'guerrero-tanque',
       status: 'READY',
-      resource: { kind: 'model3d', url: 'https://example.invalid/guerrero-tanque.glb' },
+      resource: {
+        kind: 'model3d',
+        source: 'url',
+        url: 'https://example.invalid/guerrero-tanque.glb',
+      },
     }
     registry.register(readyDescriptor)
 
@@ -88,7 +96,11 @@ describe('resolveVisualResource', () => {
       category: 'hero',
       heroId: 'guerrero-tanque',
       status: 'READY',
-      resource: { kind: 'model3d', url: 'https://example.invalid/guerrero-tanque.glb' },
+      resource: {
+        kind: 'model3d',
+        source: 'url',
+        url: 'https://example.invalid/guerrero-tanque.glb',
+      },
     })
 
     const resolution = resolveVisualResource(registry, 'guerrero-tanque', 'weapon')
@@ -109,7 +121,11 @@ describe('resolveVisualResource', () => {
       category: 'hero',
       heroId: 'guerrero-tanque',
       status: 'READY',
-      resource: { kind: 'model3d', url: 'https://example.invalid/guerrero-tanque.glb' },
+      resource: {
+        kind: 'model3d',
+        source: 'url',
+        url: 'https://example.invalid/guerrero-tanque.glb',
+      },
     })
 
     registry.register({
@@ -126,6 +142,25 @@ describe('resolveVisualResource', () => {
     expect(future.descriptor.status).toBe('NOT_PRODUCED')
     expect(future.isFallback).toBe(false)
   })
+
+  it('resuelve un recurso procedural (sin url) registrado por EN-026.3, sin fallback', () => {
+    const registry = createVisualResourceRegistry()
+    const readyDescriptor: VisualResourceDescriptor = {
+      id: 'guerrero-tanque',
+      category: 'hero',
+      heroId: 'guerrero-tanque',
+      status: 'READY',
+      resource: { kind: 'model3d', source: 'procedural' },
+    }
+    registry.register(readyDescriptor)
+
+    const resolution = resolveVisualResource(registry, 'guerrero-tanque', 'hero')
+
+    expect(resolution).toEqual<typeof resolution>({
+      descriptor: readyDescriptor,
+      isFallback: false,
+    })
+  })
 })
 
 describe('createVisualResourceRegistry', () => {
@@ -138,7 +173,11 @@ describe('createVisualResourceRegistry', () => {
       category: 'hero',
       heroId: 'guerrero-tanque',
       status: 'READY',
-      resource: { kind: 'model3d', url: 'https://example.invalid/guerrero-tanque.glb' },
+      resource: {
+        kind: 'model3d',
+        source: 'url',
+        url: 'https://example.invalid/guerrero-tanque.glb',
+      },
     })
 
     expect(second.get('guerrero-tanque')).toBeUndefined()
