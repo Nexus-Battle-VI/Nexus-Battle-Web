@@ -4,6 +4,7 @@ import { AppLayout } from '@/app/AppLayout'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { AccountPage } from '@/features/account/AccountPage'
+import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
@@ -27,11 +28,23 @@ export const NAVIGATION: readonly { path: string; label: string }[] = [
 ]
 
 export const routes: RouteObject[] = [
+  // HU-01 vive FUERA del layout de la aplicacion. Quien todavia no tiene
+  // cuenta no puede tener catalogo, inventario ni pedidos: mostrarle esa
+  // navegacion seria ofrecerle destinos que no le corresponden. Por eso no
+  // aparece tampoco en `NAVIGATION`.
+  //
+  // Es tambien la puerta de entrada: la raiz de la aplicacion sirve la misma
+  // pantalla. Quien abre la aplicacion sin sesion arranca en el registro, no
+  // en el catalogo, que pertenece al area autenticada.
+  { path: '/', element: <RegistrationPage /> },
+  { path: '/register', element: <RegistrationPage /> },
   {
-    path: '/',
+    // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi
+    // que sus hijos siguen resolviendo a las mismas rutas absolutas
+    // (`/catalog`, `/inventory`, ...) que tenian cuando el layout ocupaba
+    // `/`. Solo cambia el mapeo de la raiz, no el resto del arbol.
     element: <AppLayout />,
     children: [
-      { index: true, element: <CatalogPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       { path: 'community', element: <CommunityPage /> },
