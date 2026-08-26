@@ -557,7 +557,12 @@ export const RegistrationPage = ({
               title="Preguntas de seguridad"
               description="Se usarán para recuperar el acceso a tu cuenta. Responde las cuatro."
             >
-              <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+              {/*
+                Una columna: con dos columnas, una pregunta que envuelve a dos
+                lineas (la de los padres) empuja su input mas abajo que el de
+                la columna vecina y el formulario se ve descuadrado.
+              */}
+              <div className="space-y-5">
                 {SECURITY_QUESTIONS.map((question) => {
                   const id = securityFieldId(question.id)
 
