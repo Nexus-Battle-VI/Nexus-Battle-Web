@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { RouterProvider, createMemoryRouter } from 'react-router'
 
-import { renderWithProviders } from '@/test/render'
-import { NAVIGATION } from './routes'
+import { createTestQueryClient, renderWithProviders } from '@/test/render'
+import { ECOMMERCE_PATH, NAVIGATION, routes } from './routes'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useSession } from '@/shared/session'
 import { AccountPage } from '@/features/account/AccountPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
@@ -12,18 +15,115 @@ import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 
 describe('NAVIGATION', () => {
-  it('declara una entrada por bounded context, sin duplicados', () => {
+  /**
+   * HU-02 fija esta lista: son los accesos de producto que el cliente
+   * confirmo (Task #91, seccion 6), no los nombres tecnicos de los bounded
+   * contexts que la navegacion mostraba antes.
+   */
+  it('declara los accesos de producto confirmados por HU-02, sin duplicados', () => {
     const paths = NAVIGATION.map((item) => item.path)
 
     expect(paths).toEqual([
-      '/catalog',
+      '/ecommerce',
+      '/play',
+      '/missions',
+      '/tournament',
       '/inventory',
-      '/community',
-      '/orders',
+      '/auction',
       '/account',
-      '/notifications',
     ])
     expect(new Set(paths).size).toBe(paths.length)
+  })
+
+  it('no nombra bounded contexts como acceso de navegacion', () => {
+    const labels = NAVIGATION.map((item) => item.label)
+
+    for (const technicalName of ['Catalog', 'Community', 'Commerce', 'Notifications', 'Catalogo']) {
+      expect(labels).not.toContain(technicalName)
+    }
+  })
+})
+
+const renderRoute = (path: string) => {
+  const router = createMemoryRouter(routes, { initialEntries: [path] })
+
+  return {
+    router,
+    ...render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    ),
+  }
+}
+
+const AUTHENTICATED_STATE = {
+  subject: 'sujeto-ana',
+  email: 'ana@nexus.test',
+  displayName: 'Ana',
+  roles: ['PLAYER'],
+  accessToken: 'token',
+  expiresAt: Date.now() + 900_000,
+  viaProvider: false,
+}
+
+const ANONYMOUS_STATE = {
+  subject: null,
+  email: null,
+  displayName: null,
+  roles: [],
+  accessToken: null,
+  expiresAt: null,
+  viaProvider: false,
+}
+
+describe('Proteccion visual de rutas (HU-02)', () => {
+  afterEach(() => {
+    useSession.setState(ANONYMOUS_STATE)
+  })
+
+  it('sin sesion, la raiz redirige a /login', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    renderRoute('/')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Iniciar sesión' }),
+    ).toBeInTheDocument()
+  })
+
+  it('sin sesion, una ruta autenticada tambien redirige a /login', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    renderRoute('/ecommerce')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Iniciar sesión' }),
+    ).toBeInTheDocument()
+  })
+
+  it('con sesion, la raiz lleva a E-commerce y no a una pantalla distinta', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    const { router } = renderRoute('/')
+
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(ECOMMERCE_PATH)
+  })
+
+  it('con sesion, /login redirige a E-commerce en lugar de mostrar el formulario', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/login')
+
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Iniciar sesión' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('los modulos aun no implementados se muestran deshabilitados, no simulados', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/tournament')
+
+    expect(await screen.findByRole('heading', { name: 'Torneo' })).toBeInTheDocument()
+    expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
   })
 })
 
