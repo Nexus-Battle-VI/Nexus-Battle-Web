@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryRouter } from 'react-router'
 
@@ -65,6 +66,7 @@ const AUTHENTICATED_STATE = {
   accessToken: 'token',
   expiresAt: Date.now() + 900_000,
   viaProvider: false,
+  authenticationAvailable: true,
 }
 
 const ANONYMOUS_STATE = {
@@ -75,6 +77,7 @@ const ANONYMOUS_STATE = {
   accessToken: null,
   expiresAt: null,
   viaProvider: false,
+  authenticationAvailable: false,
 }
 
 describe('Proteccion visual de rutas (HU-02)', () => {
@@ -82,22 +85,39 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     useSession.setState(ANONYMOUS_STATE)
   })
 
-  it('sin sesion, la raiz redirige a /login', async () => {
+  it('sin sesion, la raiz muestra el menu publico, no el formulario de login', async () => {
     useSession.setState(ANONYMOUS_STATE)
     renderRoute('/')
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Iniciar sesión' }),
+      await screen.findByRole('heading', { level: 1, name: 'Bienvenido al universo Nexus' }),
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Iniciar sesión' }),
+    ).not.toBeInTheDocument()
   })
 
-  it('sin sesion, una ruta autenticada tambien redirige a /login', async () => {
+  it('desde el menu publico se puede ir a iniciar sesion o a crear cuenta', async () => {
     useSession.setState(ANONYMOUS_STATE)
-    renderRoute('/ecommerce')
+    renderRoute('/')
+
+    await screen.findByRole('heading', { level: 1, name: 'Bienvenido al universo Nexus' })
+
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register')
+  })
+
+  it('sin sesion, una ruta autenticada muestra el aviso "Para continuar" en el mismo sitio, sin redirigir a /login', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    const { router } = renderRoute('/ecommerce')
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Iniciar sesión' }),
+      await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
     ).toBeInTheDocument()
+    // No hubo redireccion: la URL sigue siendo la que la persona pidio.
+    expect(router.state.location.pathname).toBe('/ecommerce')
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
+    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register')
   })
 
   it('con sesion, la raiz lleva a E-commerce y no a una pantalla distinta', async () => {
@@ -124,6 +144,73 @@ describe('Proteccion visual de rutas (HU-02)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Torneo' })).toBeInTheDocument()
     expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
+  })
+
+  it('un visitante que intenta Mi Inventario sin sesion recibe el gate, no el inventario', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    const { router } = renderRoute('/inventory')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/inventory')
+    expect(screen.queryByRole('heading', { name: 'Inventario' })).not.toBeInTheDocument()
+  })
+
+  it('un visitante que intenta Misiones sin sesion recibe el gate, no el aviso de modulo no disponible', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    renderRoute('/missions')
+
+    // El gate de sesion tiene prioridad: sin sesion no hay forma de saber si
+    // el modulo estaria disponible, asi que no se llega a mostrar ese estado.
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
+
+  it('con sesion, E-commerce se renderiza dentro del shell autenticado (misma nav, sesion visible)', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/ecommerce')
+
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+
+    const nav = screen.getByRole('navigation', { name: 'Principal' })
+
+    for (const label of [
+      'E-commerce',
+      'Jugar Online',
+      'Misiones',
+      'Torneo',
+      'Mi Inventario',
+      'Subasta',
+      'Mi Cuenta',
+    ]) {
+      expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
+    }
+
+    expect(nav).toBeInTheDocument()
+    expect(screen.getByText('Ana')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cerrar sesion/iu })).toBeInTheDocument()
+  })
+
+  it('cerrar sesion elimina la sesion y vuelve al estado publico esperado', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    const user = userEvent.setup()
+    const { router } = renderRoute('/ecommerce')
+
+    await screen.findByRole('heading', { name: 'E-commerce' })
+    await user.click(screen.getByRole('button', { name: /cerrar sesion/iu }))
+
+    expect(useSession.getState().subject).toBeNull()
+
+    // La sesion de esta prueba es de credenciales (`viaProvider: false`), asi
+    // que cerrarla no redirige al proveedor: se queda en la misma app y la
+    // ruta protegida pasa a mostrar el gate publico esperado.
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'Para continuar' })).toBeInTheDocument()
+    })
+    expect(router.state.location.pathname).toBe('/ecommerce')
   })
 })
 

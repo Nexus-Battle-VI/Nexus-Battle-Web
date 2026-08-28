@@ -16,6 +16,7 @@ export interface EstablishedSession {
   readonly displayName: string | null
   readonly roles: readonly string[]
   readonly accessToken: string
+  /** Epoch ms. Ambos origenes (OIDC y login de credenciales) siempre informan vigencia. */
   readonly expiresAt: number
 }
 
@@ -114,6 +115,12 @@ export const useSession = create<SessionState>((set, get) => ({
       roles: session.roles,
       accessToken: session.accessToken,
       expiresAt: session.expiresAt,
+      // `authenticationAvailable` se calculo al arrancar la tienda a partir
+      // de `authConfig` (el proveedor OIDC). El login de credenciales de
+      // HU-02 es una via de autenticacion independiente: si acaba de
+      // autenticar a alguien, claramente SI hay quien verifique identidad,
+      // sin importar si el proveedor OIDC esta configurado.
+      authenticationAvailable: true,
       viaProvider: false,
     })
   },

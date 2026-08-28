@@ -106,9 +106,10 @@ describe('RegistrationPage', () => {
     }
   })
 
-  it('la raiz de la aplicacion sirve tambien el registro, sin navegacion principal', async () => {
-    // La raiz es la puerta de entrada publica: quien abre la aplicacion sin
-    // sesion arranca aqui, no en el catalogo autenticado.
+  it('la raiz publica ya no sirve el formulario de registro directamente', async () => {
+    // Hasta esta correccion, `/` renderizaba `RegistrationPage`. Ahora `/` es
+    // el menu publico de Nexus (`LandingPage`) y HU-01 real vive unicamente
+    // en `/register`; ver `routes.test.tsx` para el contenido esperado de `/`.
     const router = createMemoryRouter(routes, { initialEntries: ['/'] })
 
     render(
@@ -117,10 +118,12 @@ describe('RegistrationPage', () => {
       </QueryClientProvider>,
     )
 
+    await screen.findByRole('link', { name: 'Crear cuenta' })
+
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Crear cuenta' }),
-    ).toBeInTheDocument()
-    expect(screen.queryByRole('navigation', { name: 'Principal' })).not.toBeInTheDocument()
+      screen.queryByRole('heading', { level: 1, name: 'Crear cuenta' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Nombres')).not.toBeInTheDocument()
   })
 
   it('renderiza todos los campos obligatorios con su etiqueta asociada', () => {

@@ -1,11 +1,15 @@
 import type { ReactNode } from 'react'
-import { Navigate, useLocation } from 'react-router'
+import { Link } from 'react-router'
 
 import { useSession } from '@/shared/session'
+import { NEXUS_DARK_THEME } from '@/shared/publicAuthTheme'
 
 export interface RequireSessionProps {
   readonly children: ReactNode
 }
+
+const CTA_CLASS =
+  'inline-flex w-full items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
 
 /**
  * Puerta visual de las rutas que solo tienen sentido con sesion.
@@ -15,13 +19,44 @@ export interface RequireSessionProps {
  * validando contra el testimonio. Lo que evita esta puerta es la experiencia
  * contraria y confusa de mostrar el shell autenticado —navegacion, avatar,
  * "Mi Cuenta"— a quien no ha iniciado sesion.
+ *
+ * No redirige a `/login`: se queda en la misma ruta que la persona intento
+ * visitar y muestra ahi mismo la invitacion a identificarse. Redirigir
+ * obligaria a que el primer contacto de cualquier visitante con un enlace
+ * protegido fuera un formulario de credenciales; esta version deja claro por
+ * que no puede continuar sin sacarla de donde estaba.
  */
 export const RequireSession = ({ children }: RequireSessionProps): React.JSX.Element => {
   const subject = useSession((state) => state.subject)
-  const location = useLocation()
 
   if (subject === null) {
-    return <Navigate to="/login" replace state={{ returnTo: location.pathname }} />
+    return (
+      <div
+        style={NEXUS_DARK_THEME}
+        className="flex min-h-dvh items-center justify-center bg-surface px-4 py-10 text-ink"
+      >
+        <div className="w-full max-w-sm text-center">
+          <h1 className="text-xl font-semibold text-ink">Para continuar</h1>
+          <p className="mt-2 text-sm text-muted">Necesitas iniciar sesión o crear una cuenta.</p>
+
+          <div className="mt-6 flex flex-col gap-3">
+            <Link to="/login" className={`${CTA_CLASS} bg-brand text-brand-ink`}>
+              Iniciar sesión
+            </Link>
+            <Link
+              to="/register"
+              className={`${CTA_CLASS} border border-border bg-surface-raised text-ink`}
+            >
+              Crear cuenta
+            </Link>
+          </div>
+
+          <Link to="/" className="mt-4 inline-block text-sm text-muted underline">
+            Cancelar
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return <>{children}</>

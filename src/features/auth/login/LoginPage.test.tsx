@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes } from 'react-router'
 
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
+import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 import { LoginPage } from './LoginPage'
 import { MESSAGES } from './validation'
@@ -32,18 +33,22 @@ const PLAYER_SESSION: LoginOutcome = {
     displayName: 'Ana',
     roles: ['PLAYER'],
     accessToken: 'token-de-sesion',
-    expiresAt: Date.now() + 900_000,
+    expiresAt: Date.now() + 3_600_000,
   },
 }
 
+const unauthorized = (message: string): HttpError => new HttpError(401, message, { message })
+const serviceUnavailable = (): HttpError =>
+  new HttpError(503, 'El proveedor de identidad no esta disponible.', null)
+
 const renderLogin = (
   loginFn?: () => Promise<LoginOutcome>,
-  verifyMfaCodeFn?: () => Promise<LoginOutcome>,
+  completeSecondFactorFn?: () => Promise<LoginOutcome>,
 ) =>
   renderWithProviders(
     <LoginPage
       {...(loginFn === undefined ? {} : { loginFn })}
-      {...(verifyMfaCodeFn === undefined ? {} : { verifyMfaCodeFn })}
+      {...(completeSecondFactorFn === undefined ? {} : { completeSecondFactorFn })}
     />,
     { route: '/login' },
   )
@@ -51,7 +56,7 @@ const renderLogin = (
 /** Para las pruebas que necesitan observar una navegacion real hacia /ecommerce. */
 const renderLoginWithRouter = (
   loginFn?: () => Promise<LoginOutcome>,
-  verifyMfaCodeFn?: () => Promise<LoginOutcome>,
+  completeSecondFactorFn?: () => Promise<LoginOutcome>,
 ) =>
   render(
     <QueryClientProvider client={createTestQueryClient()}>
@@ -62,7 +67,7 @@ const renderLoginWithRouter = (
             element={
               <LoginPage
                 {...(loginFn === undefined ? {} : { loginFn })}
-                {...(verifyMfaCodeFn === undefined ? {} : { verifyMfaCodeFn })}
+                {...(completeSecondFactorFn === undefined ? {} : { completeSecondFactorFn })}
               />
             }
           />
@@ -106,6 +111,12 @@ describe('LoginPage', () => {
     )
   })
 
+  it('ofrece "Volver al menú" hacia la raiz publica', () => {
+    renderLogin()
+
+    expect(screen.getByRole('link', { name: '← Volver al menú' })).toHaveAttribute('href', '/')
+  })
+
   it('no incluye ningun selector de rol', () => {
     renderLogin()
 
@@ -135,6 +146,23 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText('Correo o apodo')).toHaveAttribute('aria-invalid', 'true')
     expect(screen.getByLabelText('Contraseña')).toHaveAttribute('aria-invalid', 'true')
     expect(loginFn).not.toHaveBeenCalled()
+  })
+
+  it('envia identifier y password tal cual los escribio la persona', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue(PLAYER_SESSION)
+
+    renderLogin(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'ana@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    await waitFor(() => {
+      expect(loginFn).toHaveBeenCalledWith({
+        identifier: 'ana@nexus.test',
+        password: 'Nexus#2026',
+      })
+    })
   })
 
   it('durante el envio deshabilita el boton y lo comunica a tecnologias de apoyo', async () => {
@@ -168,11 +196,11 @@ describe('LoginPage', () => {
     })
   })
 
-  it('credenciales invalidas muestran un mensaje generico sin detalles internos', async () => {
+  it('credenciales invalidas (401) muestran un mensaje generico sin detalles internos', async () => {
     const user = userEvent.setup()
-    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
-      status: 'INVALID_CREDENTIALS',
-    })
+    const loginFn = vi
+      .fn<() => Promise<LoginOutcome>>()
+      .mockRejectedValue(unauthorized('Las credenciales no son validas.'))
 
     renderLogin(loginFn)
     await user.type(screen.getByLabelText('Correo o apodo'), 'ana@nexus.test')
@@ -182,12 +210,47 @@ describe('LoginPage', () => {
     const alert = await screen.findByRole('alert')
 
     expect(alert).toHaveTextContent('No fue posible iniciar sesión. Revisa tus credenciales.')
-    expect(alert.textContent).not.toMatch(/cognito|jwt|stack|sql|excepcion/iu)
+    expect(alert.textContent).not.toMatch(/cognito|jwt|stack|sql|excepcion|validas/iu)
   })
 
-  it('un fallo de transporte se presenta como error temporal, no como credenciales invalidas', async () => {
+  it('no distingue visualmente correo inexistente de contrasena incorrecta (ambos son 401)', async () => {
     const user = userEvent.setup()
-    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockRejectedValue(new Error())
+    const loginFn = vi
+      .fn<() => Promise<LoginOutcome>>()
+      .mockRejectedValue(unauthorized('Las credenciales no son validas.'))
+
+    renderLogin(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'no-existe@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'cualquiera')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    // El mismo texto generico que para una contrasena incorrecta: no hay
+    // forma de distinguir "no existe" de "clave mala" desde la UI.
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No fue posible iniciar sesión. Revisa tus credenciales.',
+    )
+  })
+
+  it('un fallo de proveedor (503) se presenta como error temporal, no como credenciales invalidas', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockRejectedValue(serviceUnavailable())
+
+    renderLogin(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'ana@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    const alert = await screen.findByRole('alert')
+
+    expect(alert).toHaveTextContent('No pudimos completar el inicio de sesión en este momento.')
+    expect(alert.textContent).not.toMatch(/credenciales/iu)
+  })
+
+  it('un fallo de red generico tambien se presenta como error temporal', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi
+      .fn<() => Promise<LoginOutcome>>()
+      .mockRejectedValue(new TypeError('Failed to fetch'))
 
     renderLogin(loginFn)
     await user.type(screen.getByLabelText('Correo o apodo'), 'ana@nexus.test')
@@ -225,9 +288,10 @@ describe('LoginPage', () => {
   })
 
   it.each(['PLAYER', 'MODERATOR'])(
-    'credenciales validas de %s completan el login sin pasar por 2FA',
+    'credenciales validas de %s completan el login sin pasar por segundo factor',
     async (role) => {
       const user = userEvent.setup()
+      const expiresAt = Date.now() + 3_600_000
       const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
         status: 'AUTHENTICATED',
         session: {
@@ -236,7 +300,7 @@ describe('LoginPage', () => {
           displayName: 'Persona',
           roles: [role],
           accessToken: 'token',
-          expiresAt: Date.now() + 900_000,
+          expiresAt,
         },
       })
 
@@ -248,6 +312,12 @@ describe('LoginPage', () => {
       expect(await screen.findByText('Landing de E-commerce')).toBeInTheDocument()
       expect(useSession.getState().subject).toBe('sujeto-1')
       expect(useSession.getState().roles).toEqual([role])
+      expect(useSession.getState().expiresAt).toBe(expiresAt)
+      // El shell autenticado depende de esta bandera para no mostrar "Sin
+      // proveedor de identidad" pese a haber una sesion real: el login de
+      // credenciales de HU-02 es un medio de autenticacion independiente del
+      // proveedor OIDC.
+      expect(useSession.getState().authenticationAvailable).toBe(true)
     },
   )
 
@@ -256,8 +326,8 @@ describe('LoginPage', () => {
     async (role) => {
       const user = userEvent.setup()
       const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
-        status: 'MFA_REQUIRED',
-        challenge: { challengeId: `reto-${role}` },
+        status: 'SECOND_FACTOR_REQUIRED',
+        challengeToken: `reto-${role}`,
       })
 
       renderLoginWithRouter(loginFn)
@@ -274,17 +344,17 @@ describe('LoginPage', () => {
     },
   )
 
-  it('un codigo de segundo factor rechazado no habilita el acceso', async () => {
+  it('un codigo de segundo factor rechazado (401) no habilita el acceso', async () => {
     const user = userEvent.setup()
     const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
-      status: 'MFA_REQUIRED',
-      challenge: { challengeId: 'reto-1' },
+      status: 'SECOND_FACTOR_REQUIRED',
+      challengeToken: 'reto-1',
     })
-    const verifyMfaCodeFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
-      status: 'INVALID_CREDENTIALS',
-    })
+    const completeSecondFactorFn = vi
+      .fn<() => Promise<LoginOutcome>>()
+      .mockRejectedValue(unauthorized('El segundo factor no es valido o ha expirado.'))
 
-    renderLoginWithRouter(loginFn, verifyMfaCodeFn)
+    renderLoginWithRouter(loginFn, completeSecondFactorFn)
     await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
     await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
@@ -300,13 +370,13 @@ describe('LoginPage', () => {
     expect(useSession.getState().subject).toBeNull()
   })
 
-  it('un codigo de segundo factor valido completa el acceso y redirige a E-commerce', async () => {
+  it('envia identifier, challengeToken y code al completar el segundo factor', async () => {
     const user = userEvent.setup()
     const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
-      status: 'MFA_REQUIRED',
-      challenge: { challengeId: 'reto-1' },
+      status: 'SECOND_FACTOR_REQUIRED',
+      challengeToken: 'reto-1',
     })
-    const verifyMfaCodeFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+    const completeSecondFactorFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
       status: 'AUTHENTICATED',
       session: {
         subject: 'sujeto-admin',
@@ -314,11 +384,44 @@ describe('LoginPage', () => {
         displayName: 'Admin',
         roles: ['ADMINISTRATOR'],
         accessToken: 'token',
-        expiresAt: Date.now() + 900_000,
+        expiresAt: Date.now() + 3_600_000,
       },
     })
 
-    renderLoginWithRouter(loginFn, verifyMfaCodeFn)
+    renderLoginWithRouter(loginFn, completeSecondFactorFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    await screen.findByRole('heading', { level: 1, name: 'Verificación adicional' })
+
+    await user.type(screen.getByLabelText('Código de verificación'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Verificar código' }))
+
+    await waitFor(() => {
+      expect(completeSecondFactorFn).toHaveBeenCalledWith('admin@nexus.test', 'reto-1', '123456')
+    })
+  })
+
+  it('un codigo de segundo factor valido completa el acceso y redirige a E-commerce', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+      status: 'SECOND_FACTOR_REQUIRED',
+      challengeToken: 'reto-1',
+    })
+    const completeSecondFactorFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+      status: 'AUTHENTICATED',
+      session: {
+        subject: 'sujeto-admin',
+        email: 'admin@nexus.test',
+        displayName: 'Admin',
+        roles: ['ADMINISTRATOR'],
+        accessToken: 'token',
+        expiresAt: Date.now() + 3_600_000,
+      },
+    })
+
+    renderLoginWithRouter(loginFn, completeSecondFactorFn)
     await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
     await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
@@ -336,12 +439,12 @@ describe('LoginPage', () => {
   it('un segundo factor vacio se valida localmente antes de llamar al servicio', async () => {
     const user = userEvent.setup()
     const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
-      status: 'MFA_REQUIRED',
-      challenge: { challengeId: 'reto-1' },
+      status: 'SECOND_FACTOR_REQUIRED',
+      challengeToken: 'reto-1',
     })
-    const verifyMfaCodeFn = vi.fn()
+    const completeSecondFactorFn = vi.fn()
 
-    renderLogin(loginFn, verifyMfaCodeFn)
+    renderLogin(loginFn, completeSecondFactorFn)
     await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
     await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
@@ -350,6 +453,6 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: 'Verificar código' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(MESSAGES.summaryBody)
-    expect(verifyMfaCodeFn).not.toHaveBeenCalled()
+    expect(completeSecondFactorFn).not.toHaveBeenCalled()
   })
 })

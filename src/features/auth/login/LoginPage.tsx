@@ -5,17 +5,12 @@ import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
 import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
+import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 import { roleLabel } from '@/shared/rbac'
 import { NEXUS_DARK_THEME } from '@/shared/publicAuthTheme'
 import { ECOMMERCE_PATH } from '@/routes/routes'
-import {
-  MissingContractError,
-  login,
-  verifyMfaCode,
-  type LoginOutcome,
-  type MfaChallenge,
-} from './api'
+import { login, completeSecondFactor, type LoginOutcome } from './api'
 import {
   EMPTY_LOGIN_VALUES,
   FIELD,
@@ -25,27 +20,27 @@ import {
   type LoginFormValues,
 } from './validation'
 
-type Stage = 'credentials' | 'mfa' | 'success'
+type Stage = 'credentials' | 'secondFactor' | 'success'
 
 const GENERIC_INVALID_CREDENTIALS = 'No fue posible iniciar sesión. Revisa tus credenciales.'
 
 const GENERIC_SERVICE_ERROR =
   'No pudimos completar el inicio de sesión en este momento. Inténtalo de nuevo más tarde.'
 
-const GENERIC_MFA_REJECTED = 'El código no es válido o ya expiró. Inténtalo nuevamente.'
+const GENERIC_SECOND_FACTOR_REJECTED = 'El código no es válido o ya expiró. Inténtalo nuevamente.'
 
 /**
  * Traduce un fallo de transporte a un mensaje seguro para mostrar.
  *
- * Solo se confia en el mensaje de `MissingContractError`: es un mensaje
- * propio, en espanol, redactado para mostrarse (ver `api.ts`). Cualquier otro
- * `Error` -un fallo de red, una excepcion del navegador, lo que sea- podria
- * traer texto tecnico en `.message`, y HU-02 exige explicitamente que un
- * fallo temporal de servicio no revele nada de eso: se muestra siempre el
- * mismo mensaje generico.
+ * Account distingue "credenciales/codigo invalido" de "proveedor no
+ * disponible" por el status HTTP (401 frente a 503 u otro fallo), no dentro
+ * del cuerpo de una respuesta 200 -ver `api.ts`-. Por eso la clasificacion
+ * ocurre aqui, sobre `HttpError.status`, y no leyendo `.message`: el texto que
+ * mande el servicio no se muestra tal cual, para no acoplar la pantalla a su
+ * redaccion exacta ni arriesgar filtrar detalle tecnico si algun dia cambia.
  */
-const describeFailure = (error: unknown, fallback: string): string =>
-  error instanceof MissingContractError ? error.message : fallback
+const describeFailure = (error: unknown, unauthorizedMessage: string): string =>
+  error instanceof HttpError && error.isUnauthorized ? unauthorizedMessage : GENERIC_SERVICE_ERROR
 
 const CONTROL_CLASS =
   'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
@@ -88,9 +83,9 @@ const Field = ({ id, label, error, children }: FieldProps): React.JSX.Element =>
 )
 
 export interface LoginPageProps {
-  /** Se inyectan para poder probar todos los estados sin depender de un contrato real. */
+  /** Se inyectan para poder probar todos los estados sin depender de red real. */
   readonly loginFn?: typeof login
-  readonly verifyMfaCodeFn?: typeof verifyMfaCode
+  readonly completeSecondFactorFn?: typeof completeSecondFactor
 }
 
 /**
@@ -107,7 +102,7 @@ export interface LoginPageProps {
  */
 export const LoginPage = ({
   loginFn = login,
-  verifyMfaCodeFn = verifyMfaCode,
+  completeSecondFactorFn = completeSecondFactor,
 }: LoginPageProps = {}): React.JSX.Element => {
   const navigate = useNavigate()
   const establishSession = useSession((state) => state.establishSession)
@@ -118,10 +113,10 @@ export const LoginPage = ({
   const [attempted, setAttempted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [authMessage, setAuthMessage] = useState<string | null>(null)
-  const [challenge, setChallenge] = useState<MfaChallenge | null>(null)
-  const [mfaCode, setMfaCode] = useState('')
-  const [mfaAttempted, setMfaAttempted] = useState(false)
-  const [mfaMessage, setMfaMessage] = useState<string | null>(null)
+  const [challengeToken, setChallengeToken] = useState<string | null>(null)
+  const [secondFactorCode, setSecondFactorCode] = useState('')
+  const [secondFactorAttempted, setSecondFactorAttempted] = useState(false)
+  const [secondFactorMessage, setSecondFactorMessage] = useState<string | null>(null)
   const [sessionRole, setSessionRole] = useState<string | null>(null)
   const [forgotPasswordNotice, setForgotPasswordNotice] = useState(false)
 
@@ -143,18 +138,14 @@ export const LoginPage = ({
   }, [stage, navigate])
 
   /**
-   * Traduce un `LoginOutcome` a estado de pantalla.
+   * Traduce un `LoginOutcome` resuelto (200) a estado de pantalla.
    *
-   * `onInvalid` recibe el mensaje de rechazo en lugar de asumir un unico
-   * destino: el mismo estado `INVALID_CREDENTIALS` significa "credenciales
-   * incorrectas" durante el login y "codigo incorrecto" durante el segundo
-   * factor, y cada etapa muestra su mensaje en su propia tarjeta.
+   * Solo cubre `AUTHENTICATED` y `SECOND_FACTOR_REQUIRED`: credenciales o
+   * codigo invalidos no llegan aqui, llegan como promesa rechazada (401), y
+   * cada llamador los traduce por separado porque el mensaje es distinto en
+   * cada etapa (ver `handleCredentialsSubmit`/`handleSecondFactorSubmit`).
    */
-  const applyOutcome = (
-    outcome: LoginOutcome,
-    invalidMessage: string,
-    onInvalid: (message: string) => void,
-  ): void => {
+  const applyOutcome = (outcome: LoginOutcome): void => {
     if (outcome.status === 'AUTHENTICATED') {
       establishSession(outcome.session)
       setSessionRole(outcome.session.roles[0] ?? null)
@@ -163,14 +154,8 @@ export const LoginPage = ({
       return
     }
 
-    if (outcome.status === 'MFA_REQUIRED') {
-      setChallenge(outcome.challenge)
-      setStage('mfa')
-
-      return
-    }
-
-    onInvalid(invalidMessage)
+    setChallengeToken(outcome.challengeToken)
+    setStage('secondFactor')
   }
 
   const handleCredentialsSubmit = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
@@ -192,36 +177,45 @@ export const LoginPage = ({
     try {
       const outcome = await loginFn(values)
 
-      applyOutcome(outcome, GENERIC_INVALID_CREDENTIALS, setAuthMessage)
+      applyOutcome(outcome)
     } catch (error: unknown) {
-      setAuthMessage(describeFailure(error, GENERIC_SERVICE_ERROR))
+      // Account devuelve 401 tanto si el correo/apodo no existe como si la
+      // contrasena es incorrecta: el mismo mensaje generico cubre ambos casos
+      // sin permitir enumerar cuentas.
+      setAuthMessage(describeFailure(error, GENERIC_INVALID_CREDENTIALS))
     } finally {
       setSubmitting(false)
     }
   }
 
-  const handleMfaSubmit = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
+  const handleSecondFactorSubmit = async (
+    event: SyntheticEvent<HTMLFormElement>,
+  ): Promise<void> => {
     event.preventDefault()
 
     if (submitting) {
       return
     }
 
-    setMfaAttempted(true)
-    setMfaMessage(null)
+    setSecondFactorAttempted(true)
+    setSecondFactorMessage(null)
 
-    if (mfaCode.trim() === '' || challenge === null) {
+    if (secondFactorCode.trim() === '' || challengeToken === null) {
       return
     }
 
     setSubmitting(true)
 
     try {
-      const outcome = await verifyMfaCodeFn(challenge.challengeId, mfaCode.trim())
+      const outcome = await completeSecondFactorFn(
+        values.identifier,
+        challengeToken,
+        secondFactorCode.trim(),
+      )
 
-      applyOutcome(outcome, GENERIC_MFA_REJECTED, setMfaMessage)
+      applyOutcome(outcome)
     } catch (error: unknown) {
-      setMfaMessage(describeFailure(error, GENERIC_SERVICE_ERROR))
+      setSecondFactorMessage(describeFailure(error, GENERIC_SECOND_FACTOR_REJECTED))
     } finally {
       setSubmitting(false)
     }
@@ -235,7 +229,13 @@ export const LoginPage = ({
       className="flex min-h-dvh flex-col bg-surface px-4 py-10 text-ink"
     >
       <div className="mx-auto w-full max-w-md">
-        <NexusBrandHeader />
+        <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
+          ← Volver al menú
+        </Link>
+
+        <div className="mt-4">
+          <NexusBrandHeader />
+        </div>
 
         <main className="mt-10">
           {stage === 'success' && (
@@ -354,7 +354,7 @@ export const LoginPage = ({
             </div>
           )}
 
-          {stage === 'mfa' && (
+          {stage === 'secondFactor' && (
             <div>
               <h1 className="text-2xl font-semibold text-ink">Verificación adicional</h1>
               <p className="mt-2 text-sm text-muted">
@@ -364,26 +364,26 @@ export const LoginPage = ({
 
               <form
                 noValidate
-                onSubmit={(event) => void handleMfaSubmit(event)}
+                onSubmit={(event) => void handleSecondFactorSubmit(event)}
                 className="mt-6 space-y-5"
               >
-                {mfaAttempted && mfaCode.trim() === '' && (
+                {secondFactorAttempted && secondFactorCode.trim() === '' && (
                   <div role="alert" className="border-l-2 border-danger pl-3">
                     <p className="text-sm font-semibold text-ink">{MESSAGES.summaryTitle}</p>
                     <p className="mt-0.5 text-sm text-muted">{MESSAGES.summaryBody}</p>
                   </div>
                 )}
 
-                {mfaMessage !== null && (
+                {secondFactorMessage !== null && (
                   <p role="alert" className="border-l-2 border-danger pl-3 text-sm text-danger">
-                    {mfaMessage}
+                    {secondFactorMessage}
                   </p>
                 )}
 
                 <Field
-                  id="mfa-code"
+                  id="second-factor-code"
                   label="Código de verificación"
-                  {...(mfaAttempted && mfaCode.trim() === ''
+                  {...(secondFactorAttempted && secondFactorCode.trim() === ''
                     ? { error: 'Ingresa el código que recibiste por correo.' }
                     : {})}
                 >
@@ -393,9 +393,9 @@ export const LoginPage = ({
                       type="text"
                       inputMode="numeric"
                       autoComplete="one-time-code"
-                      value={mfaCode}
+                      value={secondFactorCode}
                       onChange={(event) => {
-                        setMfaCode(event.target.value)
+                        setSecondFactorCode(event.target.value)
                       }}
                     />
                   )}
