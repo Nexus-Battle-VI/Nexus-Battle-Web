@@ -1,21 +1,23 @@
 import type { RouteObject } from 'react-router'
-import { Navigate } from 'react-router'
 
 import { AppLayout } from '@/app/AppLayout'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
-import { RegistrationPendingPage } from '@/app/RegistrationPendingPage'
 import { AccountPage } from '@/features/account/AccountPage'
+import { registerAccount } from '@/features/account/registration/api'
+import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 import { EcommercePage } from '@/features/ecommerce/EcommercePage'
+import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
+import { devRoutes } from './dev-routes'
 
 /**
  * Destino canonico posterior a un login exitoso (HU-02).
@@ -36,6 +38,10 @@ export const ECOMMERCE_PATH = '/ecommerce'
  * microservicios. `/catalog`, `/community`, `/orders` y `/notifications`
  * siguen montadas mas abajo -no se elimino ninguna pantalla ya implementada-,
  * simplemente ya no aparecen en esta lista.
+ *
+ * Tambien la reutiliza `LandingPage`: son los mismos destinos, solo que quien
+ * los ve sin sesion recibe el aviso "Para continuar" de `RequireSession` en
+ * lugar del contenido real.
  */
 export const NAVIGATION: readonly { path: string; label: string }[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
@@ -48,8 +54,18 @@ export const NAVIGATION: readonly { path: string; label: string }[] = [
 ]
 
 export const routes: RouteObject[] = [
-  // Publicas: alcanzables sin sesion. `/login` se protege al reves (si ya hay
-  // sesion, no tiene sentido volver a pedir credenciales).
+  // Publicas: alcanzables sin sesion. `/` y `/login` se protegen al reves (si
+  // ya hay sesion, no tiene sentido volver a mostrarlas). `/register` no se
+  // protege: HU-01 no exige cerrar sesion antes de registrar una cuenta
+  // nueva, y esta rama no inventa esa regla.
+  {
+    path: '/',
+    element: (
+      <PublicOnlyRoute>
+        <LandingPage />
+      </PublicOnlyRoute>
+    ),
+  },
   {
     path: '/login',
     element: (
@@ -58,22 +74,25 @@ export const routes: RouteObject[] = [
       </PublicOnlyRoute>
     ),
   },
-  { path: '/register', element: <RegistrationPendingPage /> },
+  // HU-01 real: la misma pantalla que ya valida nombres, apellidos, correo,
+  // apodo (incluida la lista negra), contrasena, avatar, preguntas de
+  // seguridad y terminos, y que envia el registro a Account.
+  { path: '/register', element: <RegistrationPage onSubmit={registerAccount} /> },
   // La ruta de retorno del proveedor de identidad OIDC. No aparece en la
   // navegacion: no es una pantalla a la que se entre a proposito.
   { path: '/auth/callback', element: <AuthCallbackPage /> },
 
+  // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi que
+  // sus hijos siguen resolviendo a las mismas rutas absolutas (`/ecommerce`,
+  // `/inventory`, ...). Es el shell autenticado; `RequireSession` decide si
+  // se muestra o si en su lugar aparece el aviso "Para continuar".
   {
-    path: '/',
     element: (
       <RequireSession>
         <AppLayout />
       </RequireSession>
     ),
     children: [
-      // El indice no muestra contenido propio: HU-02 fija que, tras
-      // autenticarse, el destino siempre es E-commerce.
-      { index: true, element: <Navigate to={ECOMMERCE_PATH} replace /> },
       { path: 'ecommerce', element: <EcommercePage /> },
       { path: 'play', element: <ModuleUnavailable title="Jugar Online" /> },
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
@@ -88,6 +107,9 @@ export const routes: RouteObject[] = [
       { path: 'community', element: <CommunityPage /> },
       { path: 'orders', element: <CommercePage /> },
       { path: 'notifications', element: <NotificationsPage /> },
+      // Harness de EN-026.3, solo en desarrollo (ver `./dev-routes.tsx`). No
+      // aparece en NAVIGATION ni en produccion.
+      ...devRoutes,
       { path: '*', element: <NotFoundPage /> },
     ],
   },
