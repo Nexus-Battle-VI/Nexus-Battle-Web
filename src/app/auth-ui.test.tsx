@@ -19,13 +19,18 @@ const resetSession = (): void => {
 }
 
 const signUpOriginal = useSession.getState().signUp
+const signInOriginal = useSession.getState().signIn
 const signOutOriginal = useSession.getState().signOut
 
 afterEach(() => {
   resetSession()
   // Varias pruebas sustituyen acciones del almacen. Sin devolverlas a su sitio,
   // el doble sobrevive a la prueba que lo instalo.
-  useSession.setState({ signUp: signUpOriginal, signOut: signOutOriginal })
+  useSession.setState({
+    signUp: signUpOriginal,
+    signIn: signInOriginal,
+    signOut: signOutOriginal,
+  })
   globalThis.sessionStorage.clear()
   vi.restoreAllMocks()
 })
@@ -64,6 +69,44 @@ describe('SessionControl', () => {
     await userEvent.click(screen.getByRole('button', { name: /crear cuenta/i }))
 
     expect(signUp).toHaveBeenCalledOnce()
+  })
+
+  /**
+   * Comprobado contra el sistema desplegado antes de escribirlo: con el
+   * `returnTo` por defecto se volvia al catalogo, y desde ahi no hay forma de
+   * alcanzar el formulario de HU-01 con la sesion viva. No hay enlace hacia el,
+   * y escribir la direccion recarga la pagina, que borra el testimonio porque
+   * `session.ts` lo guarda en memoria. La persona quedaba registrada en Cognito,
+   * sin cuenta, y el formulario respondia "Falta el testimonio de identidad".
+   *
+   * Por eso se afirma la RUTA y no solo que se llamo: `toHaveBeenCalledOnce`
+   * seguia pasando con el destino equivocado, que es el fallo que hubo.
+   */
+  it('devuelve al formulario de alta, no a donde se pulso el boton', async () => {
+    const signUp = vi.fn()
+    useSession.setState({ authenticationAvailable: true, signUp })
+
+    renderWithProviders(<SessionControl />)
+
+    await userEvent.click(screen.getByRole('button', { name: /crear cuenta/i }))
+
+    expect(signUp).toHaveBeenCalledWith('/register')
+  })
+
+  /**
+   * El control del caso anterior. Iniciar sesion NO debe redirigir al alta:
+   * quien ya tiene cuenta tiene que volver a donde estaba. Si ambos fueran a
+   * `/register`, la prueba de arriba pasaria sin distinguir nada.
+   */
+  it('iniciar sesion no desvia al alta: devuelve a donde se estaba', async () => {
+    const signIn = vi.fn()
+    useSession.setState({ authenticationAvailable: true, signIn })
+
+    renderWithProviders(<SessionControl />)
+
+    await userEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }))
+
+    expect(signIn).toHaveBeenCalledWith()
   })
 
   it('quien ya tiene sesion no ve la entrada de alta', () => {
