@@ -9,6 +9,31 @@ const jsonResponse = (status: number, body: unknown): Response =>
   })
 
 describe('HttpClient', () => {
+  it('invoca fetch del entorno como metodo del Window, no suelto', async () => {
+    const bound = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }))
+    const windowFetch = function windowFetch(
+      this: unknown,
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> {
+      if (this !== globalThis) {
+        throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation")
+      }
+
+      return bound(input, init) as Promise<Response>
+    }
+
+    vi.stubGlobal('fetch', windowFetch)
+
+    try {
+      await new HttpClient().get('/products')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+
+    expect(bound).toHaveBeenCalledWith('/api/products', expect.objectContaining({ method: 'GET' }))
+  })
+
   it('construye la URL bajo el prefijo del proxy inverso', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }))
     const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
@@ -31,6 +56,24 @@ describe('HttpClient', () => {
     await client.get('/products')
 
     expect(fetchImpl).toHaveBeenCalledWith('https://demo.local/api/products', expect.anything())
+  })
+
+  it('envia FormData sin forzar application/json', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(201, { id: 'acc-1' }))
+    const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
+    const form = new FormData()
+    form.set('email', 'ana@nexus.test')
+
+    await client.post('/accounts', form)
+
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/api/accounts',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(init.body).toBe(form)
+    expect(init.headers).toBeUndefined()
   })
 
   it('envia el cuerpo como JSON con la cabecera correspondiente', async () => {
