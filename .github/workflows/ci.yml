@@ -21,8 +21,10 @@ env:
   # Configuracion publica del cliente OIDC de la demo. Vite la incorpora al
   # bundle durante la compilacion; declararla solo al arrancar el contenedor no
   # tendria efecto. El cliente de Cognito no tiene secreto y usa PKCE.
-  VITE_COGNITO_DOMAIN: https://nexus-battles-vi.auth.us-east-1.amazoncognito.com
-  VITE_COGNITO_CLIENT_ID: vqtjlpsemjr5kjtsb97fnr1qp
+  # No se llaman VITE_* aqui: esas variables harian que las pruebas que cubren
+  # el modo local sin proveedor dejaran de ejercitar ese estado.
+  DEMO_COGNITO_DOMAIN: https://nexus-battles-vi.auth.us-east-1.amazoncognito.com
+  DEMO_COGNITO_CLIENT_ID: vqtjlpsemjr5kjtsb97fnr1qp
 
 jobs:
   quality:
@@ -71,6 +73,9 @@ jobs:
           retention-days: 7
 
       - name: Compilacion de produccion
+        env:
+          VITE_COGNITO_DOMAIN: ${{ env.DEMO_COGNITO_DOMAIN }}
+          VITE_COGNITO_CLIENT_ID: ${{ env.DEMO_COGNITO_CLIENT_ID }}
         run: npm run build
 
       - name: Publicar artefacto de la compilacion
@@ -106,8 +111,8 @@ jobs:
           load: true
           tags: nexus-battle-web:ci
           build-args: |
-            VITE_COGNITO_DOMAIN=${{ env.VITE_COGNITO_DOMAIN }}
-            VITE_COGNITO_CLIENT_ID=${{ env.VITE_COGNITO_CLIENT_ID }}
+            VITE_COGNITO_DOMAIN=${{ env.DEMO_COGNITO_DOMAIN }}
+            VITE_COGNITO_CLIENT_ID=${{ env.DEMO_COGNITO_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -125,8 +130,8 @@ jobs:
               # La salud de Caddy no demuestra que Vite haya recibido la
               # configuracion. Se inspecciona el bundle para impedir que la
               # imagen vuelva a salir sin proveedor de identidad.
-              docker exec web-ci grep -R -F -- "${VITE_COGNITO_DOMAIN}" /srv > /dev/null
-              docker exec web-ci grep -R -F -- "${VITE_COGNITO_CLIENT_ID}" /srv > /dev/null
+              docker exec web-ci grep -R -F -- "${DEMO_COGNITO_DOMAIN}" /srv > /dev/null
+              docker exec web-ci grep -R -F -- "${DEMO_COGNITO_CLIENT_ID}" /srv > /dev/null
               docker rm -f web-ci > /dev/null
               exit 0
             fi
@@ -210,7 +215,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.etiquetas.outputs.lista }}
           build-args: |
-            VITE_COGNITO_DOMAIN=${{ env.VITE_COGNITO_DOMAIN }}
-            VITE_COGNITO_CLIENT_ID=${{ env.VITE_COGNITO_CLIENT_ID }}
+            VITE_COGNITO_DOMAIN=${{ env.DEMO_COGNITO_DOMAIN }}
+            VITE_COGNITO_CLIENT_ID=${{ env.DEMO_COGNITO_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
