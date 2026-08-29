@@ -18,6 +18,11 @@ concurrency:
 
 env:
   NODE_VERSION: '24.19.0'
+  # Configuracion publica del cliente OIDC de la demo. Vite la incorpora al
+  # bundle durante la compilacion; declararla solo al arrancar el contenedor no
+  # tendria efecto. El cliente de Cognito no tiene secreto y usa PKCE.
+  VITE_COGNITO_DOMAIN: https://nexus-battles-vi.auth.us-east-1.amazoncognito.com
+  VITE_COGNITO_CLIENT_ID: vqtjlpsemjr5kjtsb97fnr1qp
 
 jobs:
   quality:
@@ -100,6 +105,9 @@ jobs:
           push: false
           load: true
           tags: nexus-battle-web:ci
+          build-args: |
+            VITE_COGNITO_DOMAIN=${{ env.VITE_COGNITO_DOMAIN }}
+            VITE_COGNITO_CLIENT_ID=${{ env.VITE_COGNITO_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -114,6 +122,11 @@ jobs:
               # enrutado en el cliente.
               curl -fsS http://127.0.0.1:8080/ | grep -q '<div id="root">'
               curl -fsS http://127.0.0.1:8080/catalog | grep -q '<div id="root">'
+              # La salud de Caddy no demuestra que Vite haya recibido la
+              # configuracion. Se inspecciona el bundle para impedir que la
+              # imagen vuelva a salir sin proveedor de identidad.
+              docker exec web-ci grep -R -F -- "${VITE_COGNITO_DOMAIN}" /srv > /dev/null
+              docker exec web-ci grep -R -F -- "${VITE_COGNITO_CLIENT_ID}" /srv > /dev/null
               docker rm -f web-ci > /dev/null
               exit 0
             fi
@@ -196,5 +209,8 @@ jobs:
           # composicion de referencia tiene que seguir levantando en ellos.
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.etiquetas.outputs.lista }}
+          build-args: |
+            VITE_COGNITO_DOMAIN=${{ env.VITE_COGNITO_DOMAIN }}
+            VITE_COGNITO_CLIENT_ID=${{ env.VITE_COGNITO_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

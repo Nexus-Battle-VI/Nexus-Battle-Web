@@ -23,8 +23,9 @@ COPY public ./public
 # cliente, porque uno embebido en el paquete servido al navegador es publico
 # por definicion, y por eso el flujo es codigo de autorizacion con PKCE.
 #
-# Vacias por defecto, que es el estado de hoy: la aplicacion opera sin
-# autenticacion y LO DICE en la cabecera, en lugar de simular una sesion.
+# Vacias por defecto para que una compilacion local sin configuracion no finja
+# autenticacion. El workflow de publicacion pasa los valores publicos del
+# entorno de demo y comprueba que queden incorporados en el bundle.
 ARG VITE_API_BASE_URL=""
 ARG VITE_COGNITO_DOMAIN=""
 ARG VITE_COGNITO_CLIENT_ID=""
