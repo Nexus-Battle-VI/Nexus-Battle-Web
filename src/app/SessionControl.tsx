@@ -12,6 +12,7 @@ export const SessionControl = (): React.JSX.Element => {
   const subject = useSession((state) => state.subject)
   const displayName = useSession((state) => state.displayName)
   const signIn = useSession((state) => state.signIn)
+  const signUp = useSession((state) => state.signUp)
   const signOut = useSession((state) => state.signOut)
 
   if (!available) {
@@ -24,15 +25,28 @@ export const SessionControl = (): React.JSX.Element => {
 
   if (subject === null) {
     return (
-      <button
-        type="button"
-        className="ml-auto rounded-md bg-brand px-3 py-1.5 text-sm text-brand-ink"
-        onClick={() => {
-          void signIn()
-        }}
-      >
-        Iniciar sesion
-      </button>
+      <div className="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          className="rounded-md border border-border px-3 py-1.5 text-sm text-ink"
+          data-testid="sign-up"
+          onClick={() => {
+            void signUp()
+          }}
+        >
+          Crear cuenta
+        </button>
+        <button
+          type="button"
+          className="rounded-md bg-brand px-3 py-1.5 text-sm text-brand-ink"
+          data-testid="sign-in"
+          onClick={() => {
+            void signIn()
+          }}
+        >
+          Iniciar sesion
+        </button>
+      </div>
     )
   }
 

@@ -174,6 +174,54 @@ describe('buildAuthorizationRequest', () => {
 
     expect(new URL(url).searchParams.get('state')).toBe(pending.state)
   })
+
+  it('sin intencion explicita lleva a iniciar sesion', async () => {
+    const { url } = await buildAuthorizationRequest(CONFIG, '/')
+
+    expect(new URL(url).pathname).toBe('/oauth2/authorize')
+  })
+
+  it('el alta lleva a la pantalla de registro del proveedor', async () => {
+    const { url } = await buildAuthorizationRequest(CONFIG, '/', 'sign-up')
+
+    expect(new URL(url).pathname).toBe('/signup')
+  })
+
+  /**
+   * Lo que se comprueba aqui no es la ruta, es que cambiarla no degrada nada.
+   * Un endpoint distinto es la clase de cambio en la que se pierde en silencio
+   * el reto de PKCE y el flujo sigue pareciendo que funciona.
+   */
+  it('el alta conserva PKCE, el estado y el destino de retorno', async () => {
+    const { url, pending } = await buildAuthorizationRequest(CONFIG, '/orders', 'sign-up')
+    const params = new URL(url).searchParams
+
+    expect(params.get('response_type')).toBe('code')
+    expect(params.get('code_challenge_method')).toBe('S256')
+    expect(params.get('state')).toBe(pending.state)
+    expect(params.get('redirect_uri')).toBe('https://app.test/auth/callback')
+    expect(pending.returnTo).toBe('/orders')
+    await expect(deriveCodeChallenge(pending.verifier)).resolves.toBe(params.get('code_challenge'))
+  })
+
+  it('entrar y darse de alta piden lo mismo salvo la pantalla', async () => {
+    const entrar = new URL((await buildAuthorizationRequest(CONFIG, '/', 'sign-in')).url)
+    const alta = new URL((await buildAuthorizationRequest(CONFIG, '/', 'sign-up')).url)
+
+    const salvoLoIrrepetible = (u: URL): Record<string, string> => {
+      const p = Object.fromEntries(u.searchParams)
+      // `state` y el reto se derivan de material aleatorio nuevo en cada
+      // llamada: compararlos probaria que el generador funciona, no que las
+      // dos pantallas reciben la misma peticion.
+      delete p.state
+      delete p.code_challenge
+      return p
+    }
+
+    expect(salvoLoIrrepetible(alta)).toEqual(salvoLoIrrepetible(entrar))
+    expect(alta.origin).toBe(entrar.origin)
+    expect(alta.pathname).not.toBe(entrar.pathname)
+  })
 })
 
 describe('exchangeCodeForTokens', () => {

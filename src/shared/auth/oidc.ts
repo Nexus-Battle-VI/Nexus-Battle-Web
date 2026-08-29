@@ -28,10 +28,29 @@ export interface AuthorizationRequest {
   readonly pending: PendingAuthorization
 }
 
+/**
+ * Que pantalla del proveedor abrir. **No cambia el flujo**: `/signup` admite
+ * exactamente los mismos parametros que `/oauth2/authorize`, devuelve al mismo
+ * `redirect_uri` y se canjea con el mismo verificador de PKCE.
+ *
+ * Existe porque la identidad se crea EN EL PROVEEDOR, no aqui. Account dejo de
+ * crear identidades: exige un sujeto ya verificado y responde 401 sin el. Sin
+ * una entrada de alta, la unica via para llegar a esa pantalla seria el enlace
+ * "Sign up" que el proveedor pinta dentro de la de inicio de sesion, y quien
+ * todavia no tiene cuenta no tiene por que adivinar que esta ahi dentro.
+ */
+export type AuthIntent = 'sign-in' | 'sign-up'
+
+const AUTH_PATHS: Readonly<Record<AuthIntent, string>> = {
+  'sign-in': '/oauth2/authorize',
+  'sign-up': '/signup',
+}
+
 /** Prepara la redireccion al proveedor y el material que hay que conservar. */
 export const buildAuthorizationRequest = async (
   config: AuthConfig,
   returnTo: string,
+  intent: AuthIntent = 'sign-in',
   source: Crypto = globalThis.crypto,
 ): Promise<AuthorizationRequest> => {
   const verifier = randomUrlSafeString(32, source)
@@ -51,7 +70,7 @@ export const buildAuthorizationRequest = async (
   })
 
   return {
-    url: `${config.domain}/oauth2/authorize?${params.toString()}`,
+    url: `${config.domain}${AUTH_PATHS[intent]}?${params.toString()}`,
     pending: { verifier, state, returnTo },
   }
 }

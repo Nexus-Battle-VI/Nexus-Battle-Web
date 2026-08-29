@@ -40,6 +40,22 @@ Lo único que se guarda entre redirecciones es el **verificador de PKCE**, en `s
 
 La verificación que importa la hace **cada servicio** contra el JWKS del pool antes de atender la petición. Si el token estuviera manipulado, el servidor rechazaría la petición igualmente.
 
+### Entrar y darse de alta son la misma mecánica
+
+La cabecera ofrece **Crear cuenta** junto a **Iniciar sesión**. Las dos llevan al
+proveedor con el mismo flujo —código de autorización con PKCE, mismo
+`redirect_uri`, mismo canje—; lo único que cambia es en qué pantalla aterriza la
+persona: `/signup` o `/oauth2/authorize`.
+
+No es una comodidad. **Account dejó de crear identidades**: exige un sujeto ya
+verificado y responde 401 sin él, así que la única forma de tener cuenta es
+pasar por la pantalla de alta del proveedor. El enlace «Sign up» que Cognito
+pinta dentro de la pantalla de entrar ya existía, pero quien todavía no tiene
+cuenta no tiene por qué adivinar que la forma de crearla está ahí dentro.
+
+Ambas rutas comparten `comenzarAutorizacion` a propósito: separarlas obligaría a
+corregir el flujo dos veces, y una de las dos se quedaría atrás.
+
 ### Sin proveedor configurado, la interfaz lo dice
 
 Si `VITE_COGNITO_DOMAIN` o `VITE_COGNITO_CLIENT_ID` están vacíos, no hay sesión posible y la cabecera muestra **«Sin proveedor de identidad: nadie verifica quién realiza las peticiones»**, en lugar de un botón de iniciar sesión que no puede funcionar. Un control que no hace nada es peor que su ausencia: sugiere que hay autenticación donde no la hay.
@@ -165,7 +181,8 @@ El `Caddyfile` devuelve `index.html` para cualquier ruta desconocida, que es lo 
 ## Limitaciones conocidas del alcance actual
 
 - **Recargar la página cierra la sesión.** Es la contrapartida de mantener los tokens en memoria, y es deliberada.
-- **No existe todavía el user pool.** El código del flujo está completo y probado, pero hasta que Terraform lo aplique la aplicación opera sin proveedor y lo declara en la cabecera.
+- ~~**No existe todavía el user pool.**~~ **Superado.** El pool `us-east-1_HrEiSzzKW` está aprovisionado y en uso por los cinco servicios. La cabecera sigue declarando la ausencia cuando la compilación no lleva configuración de proveedor, que es lo correcto para desarrollo local.
+- **La única URL de retorno registrada es `http://localhost:5173/auth/callback`.** El flujo funciona de extremo a extremo **solo desde desarrollo local**: la compilación desplegada no podría completarlo aunque se expusiera, porque Cognito respondería `redirect_mismatch`. Hoy no da síntoma porque nada está expuesto a internet, pero exponer el sistema obliga a añadir el origen desplegado a `callback_urls` **en el mismo cambio**.
 - **No se renueva el testimonio automáticamente.** Al caducar, la siguiente petición encontrará `null` y habrá que volver a iniciar sesión. Renovar con el token de refresco exige decidir dónde guardarlo, y esa decisión no se toma de pasada.
 - **Cinco de las seis pantallas no están implementadas.** Ver la tabla anterior.
 - **No hay pruebas de extremo a extremo.** Playwright se incorporará cuando exista un flujo completo que ejercitar; con una sola pantalla implementada aportaría menos que las pruebas de integración actuales.

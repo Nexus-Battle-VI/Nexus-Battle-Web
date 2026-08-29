@@ -4,6 +4,7 @@ import { authConfig } from './auth/config'
 import {
   buildAuthorizationRequest,
   buildLogoutUrl,
+  type AuthIntent,
   readIdentityClaims,
   type IdentityClaims,
   type TokenSet,
@@ -24,10 +25,33 @@ export interface SessionState {
 
   /** Inicia el flujo de codigo de autorizacion con PKCE. */
   signIn: (returnTo?: string) => Promise<void>
+  /**
+   * Lleva a la pantalla de alta del proveedor. Mismo flujo que `signIn`: lo
+   * unico distinto es en que pantalla del proveedor aterriza la persona.
+   */
+  signUp: (returnTo?: string) => Promise<void>
   /** Registra el resultado de un canje completado. */
   establish: (tokens: TokenSet, claims: IdentityClaims) => void
   /** Cierra la sesion aqui y en el proveedor. */
   signOut: () => void
+}
+
+/**
+ * Un unico camino hacia el proveedor para las dos intenciones.
+ *
+ * Entrar y darse de alta comparten verificador, estado y destino de retorno: si
+ * fueran dos funciones separadas, cualquier correccion al flujo tendria que
+ * aplicarse dos veces y una de las dos se quedaria atras.
+ */
+const comenzarAutorizacion = async (intent: AuthIntent, returnTo: string): Promise<void> => {
+  if (authConfig === null) {
+    return
+  }
+
+  const { url, pending } = await buildAuthorizationRequest(authConfig, returnTo, intent)
+
+  rememberPendingAuthorization(pending)
+  globalThis.location.assign(url)
 }
 
 /**
@@ -54,14 +78,11 @@ export const useSession = create<SessionState>((set, get) => ({
   authenticationAvailable: authConfig !== null,
 
   signIn: async (returnTo = globalThis.location.pathname) => {
-    if (authConfig === null) {
-      return
-    }
+    await comenzarAutorizacion('sign-in', returnTo)
+  },
 
-    const { url, pending } = await buildAuthorizationRequest(authConfig, returnTo)
-
-    rememberPendingAuthorization(pending)
-    globalThis.location.assign(url)
+  signUp: async (returnTo = globalThis.location.pathname) => {
+    await comenzarAutorizacion('sign-up', returnTo)
   },
 
   establish: (tokens, claims) => {
