@@ -31,7 +31,20 @@ export const SessionControl = (): React.JSX.Element => {
           className="rounded-md border border-border px-3 py-1.5 text-sm text-ink"
           data-testid="sign-up"
           onClick={() => {
-            void signUp()
+            // Vuelve al formulario de HU-01, NO a donde se pulso el boton.
+            //
+            // Darse de alta en el proveedor crea la identidad, no la cuenta:
+            // `POST /api/accounts` exige un testimonio y responde 401 sin el.
+            // Con el `returnTo` por defecto -la ruta actual- se regresaba al
+            // catalogo con la sesion viva y sin manera de llegar al formulario:
+            // no hay enlace hacia el desde el layout, y escribir la direccion
+            // recarga la pagina, que es justo lo que borra el testimonio
+            // (`session.ts` lo guarda en memoria a proposito).
+            //
+            // El resultado era un callejon sin salida: la persona quedaba
+            // registrada en Cognito y sin cuenta, viendo "Falta el testimonio
+            // de identidad" al enviar el formulario.
+            void signUp('/register')
           }}
         >
           Crear cuenta
