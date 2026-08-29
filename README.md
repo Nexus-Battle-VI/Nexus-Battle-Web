@@ -182,7 +182,7 @@ El `Caddyfile` devuelve `index.html` para cualquier ruta desconocida, que es lo 
 
 - **Recargar la página cierra la sesión.** Es la contrapartida de mantener los tokens en memoria, y es deliberada.
 - ~~**No existe todavía el user pool.**~~ **Superado.** El pool `us-east-1_HrEiSzzKW` está aprovisionado y en uso por los cinco servicios. La cabecera sigue declarando la ausencia cuando la compilación no lleva configuración de proveedor, que es lo correcto para desarrollo local.
-- **La única URL de retorno registrada es `http://localhost:5173/auth/callback`.** El flujo funciona de extremo a extremo **solo desde desarrollo local**: la compilación desplegada no podría completarlo aunque se expusiera, porque Cognito respondería `redirect_mismatch`. Hoy no da síntoma porque nada está expuesto a internet, pero exponer el sistema obliga a añadir el origen desplegado a `callback_urls` **en el mismo cambio**.
+- Las URL de retorno registradas son `http://localhost:5173/auth/callback` y `https://nexus.simuladorupbbga.app/auth/callback`. El workflow incorpora el dominio y el identificador público de Cognito al bundle de la demo y comprueba su presencia antes de publicar la imagen.
 - **No se renueva el testimonio automáticamente.** Al caducar, la siguiente petición encontrará `null` y habrá que volver a iniciar sesión. Renovar con el token de refresco exige decidir dónde guardarlo, y esa decisión no se toma de pasada.
 - **Cinco de las seis pantallas no están implementadas.** Ver la tabla anterior.
 - **No hay pruebas de extremo a extremo.** Playwright se incorporará cuando exista un flujo completo que ejercitar; con una sola pantalla implementada aportaría menos que las pruebas de integración actuales.
