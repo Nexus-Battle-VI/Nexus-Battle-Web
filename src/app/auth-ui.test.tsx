@@ -15,6 +15,7 @@ const resetSession = (): void => {
     roles: [],
     accessToken: null,
     expiresAt: null,
+    viaProvider: false,
   })
 }
 
@@ -153,6 +154,39 @@ describe('SessionControl', () => {
     renderWithProviders(<SessionControl />)
 
     expect(screen.getByText('sujeto-ana')).toBeInTheDocument()
+  })
+
+  /**
+   * HU-02: la interfaz debe representar el rol de la sesion vigente. Esto es
+   * presentacion, no autorizacion: el rol nunca lo elige quien usa la
+   * aplicacion, viene de `useSession().roles`.
+   */
+  it('representa el rol vigente de la sesion (RBAC visual)', () => {
+    useSession.setState({
+      authenticationAvailable: true,
+      subject: 'sujeto-admin',
+      displayName: 'Admin',
+      accessToken: 'token',
+      roles: ['ADMINISTRATOR'],
+    })
+
+    renderWithProviders(<SessionControl />)
+
+    expect(screen.getByText('Administrador')).toBeInTheDocument()
+  })
+
+  it('no muestra ninguna etiqueta de rol cuando la sesion no trae ninguno', () => {
+    useSession.setState({
+      authenticationAvailable: true,
+      subject: 'sujeto-ana',
+      displayName: 'Ana',
+      accessToken: 'token',
+      roles: [],
+    })
+
+    renderWithProviders(<SessionControl />)
+
+    expect(screen.queryByText('Jugador')).not.toBeInTheDocument()
   })
 })
 

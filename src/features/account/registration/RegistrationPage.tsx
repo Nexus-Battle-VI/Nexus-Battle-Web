@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
@@ -284,7 +284,11 @@ export const RegistrationPage = ({
   return (
     <div style={THEME_VARIABLES[theme]} className="min-h-dvh bg-surface text-ink">
       <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6">
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
+            ← Volver al menú
+          </Link>
+
           <div
             role="group"
             aria-label="Tema de la interfaz"
