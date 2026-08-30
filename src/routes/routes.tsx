@@ -4,6 +4,7 @@ import { AppLayout } from '@/app/AppLayout'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
+import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
 import { registerAccount } from '@/features/account/registration/api'
@@ -16,6 +17,7 @@ import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 import { EcommercePage } from '@/features/ecommerce/EcommercePage'
 import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
+import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 import { devRoutes } from './dev-routes'
 
@@ -43,7 +45,13 @@ export const ECOMMERCE_PATH = '/ecommerce'
  * los ve sin sesion recibe el aviso "Para continuar" de `RequireSession` en
  * lugar del contenido real.
  */
-export const NAVIGATION: readonly { path: string; label: string }[] = [
+export interface NavigationItem {
+  readonly path: string
+  readonly label: string
+  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR'
+}
+
+export const NAVIGATION: readonly NavigationItem[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
   { path: '/play', label: 'Jugar Online' },
   { path: '/missions', label: 'Misiones' },
@@ -51,7 +59,17 @@ export const NAVIGATION: readonly { path: string; label: string }[] = [
   { path: '/inventory', label: 'Mi Inventario' },
   { path: '/auction', label: 'Subasta' },
   { path: '/account', label: 'Mi Cuenta' },
+  {
+    path: '/admin/roles',
+    label: 'Gestionar roles',
+    requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
+  },
 ]
+
+export const navigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
+  NAVIGATION.filter(
+    (item) => item.requiredPrimaryRole === undefined || item.requiredPrimaryRole === role,
+  )
 
 export const routes: RouteObject[] = [
   // Publicas: alcanzables sin sesion. `/` y `/login` se protegen al reves (si
@@ -111,6 +129,14 @@ export const routes: RouteObject[] = [
       { path: 'inventory', element: <PlayerInventoryPage /> },
       { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
       { path: 'account', element: <AccountPage /> },
+      {
+        path: 'admin/roles',
+        element: (
+          <RequireSuperAdministrator>
+            <RoleManagementPage />
+          </RequireSuperAdministrator>
+        ),
+      },
       // Pantallas de HUs anteriores. Se mantienen montadas y accesibles por
       // URL directa; solo se retiraron de `NAVIGATION` porque HU-02 exige que
       // la navegacion principal no nombre bounded contexts.

@@ -6,7 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryRouter } from 'react-router'
 
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
-import { ECOMMERCE_PATH, NAVIGATION, routes } from './routes'
+import { ECOMMERCE_PATH, NAVIGATION, navigationForPrimaryRole, routes } from './routes'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useSession } from '@/shared/session'
 import { AccountPage } from '@/features/account/AccountPage'
@@ -32,6 +32,7 @@ describe('NAVIGATION', () => {
       '/inventory',
       '/auction',
       '/account',
+      '/admin/roles',
     ])
     expect(new Set(paths).size).toBe(paths.length)
   })
@@ -42,6 +43,15 @@ describe('NAVIGATION', () => {
     for (const technicalName of ['Catalog', 'Community', 'Commerce', 'Notifications', 'Catalogo']) {
       expect(labels).not.toContain(technicalName)
     }
+  })
+
+  it('filtra la gestion de roles para el rol primario SUPER_ADMINISTRATOR', () => {
+    expect(navigationForPrimaryRole('PLAYER').some((item) => item.path === '/admin/roles')).toBe(
+      false,
+    )
+    expect(
+      navigationForPrimaryRole('SUPER_ADMINISTRATOR').some((item) => item.path === '/admin/roles'),
+    ).toBe(true)
   })
 })
 
@@ -209,6 +219,26 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(nav).toBeInTheDocument()
     expect(screen.getByText('Ana')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /cerrar sesion/iu })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Gestionar roles' })).not.toBeInTheDocument()
+  })
+
+  it('una URL manual de roles muestra 403 visual a quien no es Super Administrador', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/admin/roles')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(/403/)
+  })
+
+  it('el Super Administrador ve el acceso y abre la pantalla de roles', async () => {
+    useSession.setState({
+      ...AUTHENTICATED_STATE,
+      roles: ['PLAYER', 'SUPER_ADMINISTRATOR'],
+    })
+    renderRoute('/admin/roles')
+
+    expect(await screen.findByRole('heading', { name: 'Gestion de roles' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Gestionar roles' })).toBeInTheDocument()
   })
 
   it('cerrar sesion elimina la sesion y vuelve al estado publico esperado', async () => {
