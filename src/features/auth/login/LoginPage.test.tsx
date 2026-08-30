@@ -344,6 +344,74 @@ describe('LoginPage', () => {
     },
   )
 
+  /**
+   * La pantalla anunciaba SIEMPRE "te enviamos un codigo por correo
+   * electronico". El pool reta con la aplicacion autenticadora y no envia
+   * ningun correo, asi que mandaba a revisar un buzon vacio. Se detecto
+   * entrando de verdad, no con una prueba.
+   *
+   * Se afirma el texto que corresponde Y que el equivocado NO aparece: sin lo
+   * segundo, una frase que mencionara los dos canales pasaria igual.
+   */
+  it('anuncia la aplicacion autenticadora cuando el reto es TOTP', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+      status: 'SECOND_FACTOR_REQUIRED',
+      challengeToken: 'reto-totp',
+      secondFactorMethod: 'AUTHENTICATOR_APP',
+    })
+
+    renderLoginWithRouter(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    expect(await screen.findByText(/aplicación autenticadora/i)).toBeInTheDocument()
+    expect(screen.queryByText(/por correo electrónico/i)).not.toBeInTheDocument()
+  })
+
+  /**
+   * El control del caso anterior: con el correo como canal, el mensaje debe
+   * cambiar. Si no cambiara, la prueba de arriba pasaria por una frase fija.
+   */
+  it('anuncia el correo cuando el reto SI es por correo', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+      status: 'SECOND_FACTOR_REQUIRED',
+      challengeToken: 'reto-correo',
+      secondFactorMethod: 'EMAIL',
+    })
+
+    renderLoginWithRouter(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    expect(await screen.findByText(/por correo electrónico/i)).toBeInTheDocument()
+    expect(screen.queryByText(/aplicación autenticadora/i)).not.toBeInTheDocument()
+  })
+
+  /**
+   * Un Account anterior a este contrato no envia el canal. La pantalla no debe
+   * inventarlo: pide el codigo sin nombrar de donde sale.
+   */
+  it('no nombra ningun canal cuando Account no lo declara', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+      status: 'SECOND_FACTOR_REQUIRED',
+      challengeToken: 'reto-sin-canal',
+    })
+
+    renderLoginWithRouter(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    expect(await screen.findByText(/Ingresa el código de verificación/i)).toBeInTheDocument()
+    expect(screen.queryByText(/por correo electrónico/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/aplicación autenticadora/i)).not.toBeInTheDocument()
+  })
+
   it('un codigo de segundo factor rechazado (401) no habilita el acceso', async () => {
     const user = userEvent.setup()
     const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({

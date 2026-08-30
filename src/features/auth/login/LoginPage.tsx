@@ -10,7 +10,7 @@ import { useSession } from '@/shared/session'
 import { roleLabel } from '@/shared/rbac'
 import { NEXUS_DARK_THEME } from '@/shared/publicAuthTheme'
 import { ECOMMERCE_PATH } from '@/routes/routes'
-import { login, completeSecondFactor, type LoginOutcome } from './api'
+import { login, completeSecondFactor, type LoginOutcome, type SecondFactorMethod } from './api'
 import {
   EMPTY_LOGIN_VALUES,
   FIELD,
@@ -100,6 +100,33 @@ export interface LoginPageProps {
  * `AppLayout`/`routes.tsx`) se construye a partir de `useSession().roles`, que
  * esta pantalla escribe pero no elige.
  */
+/**
+ * Que se le dice a quien tiene que responder el reto.
+ *
+ * Antes esto era una frase fija: "te enviamos un codigo por correo
+ * electronico". El pool reta con la aplicacion autenticadora y NO envia ningun
+ * correo, asi que la pantalla mandaba a revisar un buzon vacio. Un mensaje que
+ * dirige a alguien al sitio equivocado es peor que uno impreciso.
+ *
+ * Cuando Account no declara el canal, se dice que hace falta un codigo y no se
+ * nombra ninguno. Callar lo que no se sabe es preferible a rellenarlo.
+ */
+const secondFactorPrompt = (method: SecondFactorMethod | null): string => {
+  if (method === 'AUTHENTICATOR_APP') {
+    return 'Tu cuenta requiere un segundo factor. Abre tu aplicación autenticadora e ingresa el código que muestra.'
+  }
+
+  if (method === 'EMAIL') {
+    return 'Tu cuenta requiere un segundo factor. Te enviamos un código por correo electrónico.'
+  }
+
+  if (method === 'SMS') {
+    return 'Tu cuenta requiere un segundo factor. Te enviamos un código por mensaje de texto.'
+  }
+
+  return 'Tu cuenta requiere un segundo factor. Ingresa el código de verificación.'
+}
+
 export const LoginPage = ({
   loginFn = login,
   completeSecondFactorFn = completeSecondFactor,
@@ -114,6 +141,7 @@ export const LoginPage = ({
   const [submitting, setSubmitting] = useState(false)
   const [authMessage, setAuthMessage] = useState<string | null>(null)
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
+  const [secondFactorMethod, setSecondFactorMethod] = useState<SecondFactorMethod | null>(null)
   const [secondFactorCode, setSecondFactorCode] = useState('')
   const [secondFactorAttempted, setSecondFactorAttempted] = useState(false)
   const [secondFactorMessage, setSecondFactorMessage] = useState<string | null>(null)
@@ -155,6 +183,7 @@ export const LoginPage = ({
     }
 
     setChallengeToken(outcome.challengeToken)
+    setSecondFactorMethod(outcome.secondFactorMethod ?? null)
     setStage('secondFactor')
   }
 
@@ -358,8 +387,8 @@ export const LoginPage = ({
             <div>
               <h1 className="text-2xl font-semibold text-ink">Verificación adicional</h1>
               <p className="mt-2 text-sm text-muted">
-                Tu cuenta requiere un segundo factor. Te enviamos un código por correo electrónico;
-                las operaciones administrativas quedan deshabilitadas hasta verificarlo.
+                {secondFactorPrompt(secondFactorMethod)} Las operaciones administrativas quedan
+                deshabilitadas hasta verificarlo.
               </p>
 
               <form

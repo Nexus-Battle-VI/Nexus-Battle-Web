@@ -24,6 +24,9 @@ import { httpClient } from '@/lib/http'
 
 export type Role = string
 
+/** Canales de segundo factor que Account sabe anunciar. */
+export type SecondFactorMethod = 'AUTHENTICATOR_APP' | 'EMAIL' | 'SMS'
+
 export interface AuthenticatedSession {
   readonly subject: string
   readonly email: string
@@ -35,7 +38,19 @@ export interface AuthenticatedSession {
 
 export type LoginOutcome =
   | { readonly status: 'AUTHENTICATED'; readonly session: AuthenticatedSession }
-  | { readonly status: 'SECOND_FACTOR_REQUIRED'; readonly challengeToken: string }
+  | {
+      readonly status: 'SECOND_FACTOR_REQUIRED'
+      readonly challengeToken: string
+      /**
+       * Donde hay que mirar. Lo declara Account; NO se deduce del
+       * `challengeToken`, que es opaco a proposito.
+       *
+       * Opcional porque un Account anterior a este contrato no lo envia. En ese
+       * caso la interfaz no inventa un canal: dice lo que sabe y calla lo que
+       * no.
+       */
+      readonly secondFactorMethod?: SecondFactorMethod
+    }
 
 export interface LoginCredentials {
   readonly identifier: string
@@ -64,6 +79,7 @@ interface SessionResponse {
   readonly expiresIn?: number
   readonly account?: AccountSummaryResponse
   readonly challengeToken?: string
+  readonly secondFactorMethod?: SecondFactorMethod
 }
 
 /**
@@ -106,7 +122,16 @@ const toLoginOutcome = (response: SessionResponse): LoginOutcome => {
     throw new Error('La respuesta de segundo factor no trae el challengeToken esperado.')
   }
 
-  return { status: 'SECOND_FACTOR_REQUIRED', challengeToken: response.challengeToken }
+  return {
+    status: 'SECOND_FACTOR_REQUIRED',
+    challengeToken: response.challengeToken,
+    // Se propaga sin normalizar ni suponer: si Account no lo envia, la pantalla
+    // dira que hay un segundo factor sin nombrar un canal. Antes nombraba el
+    // correo siempre, y el correo no se enviaba nunca.
+    ...(response.secondFactorMethod === undefined
+      ? {}
+      : { secondFactorMethod: response.secondFactorMethod }),
+  }
 }
 
 /** Autentica con correo/apodo y contrasena. */
