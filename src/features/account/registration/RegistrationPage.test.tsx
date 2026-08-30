@@ -49,7 +49,6 @@ const fillValidForm = async (user: ReturnType<typeof setup>): Promise<void> => {
   await user.type(screen.getByLabelText('Nombres'), 'Ana')
   await user.type(screen.getByLabelText('Apellidos'), 'Restrepo')
   await user.type(screen.getByLabelText('Correo electrónico'), 'ana@nexus.test')
-  await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
   await user.type(screen.getByLabelText('Apodo'), 'ana-guerrera')
   await user.upload(screen.getByLabelText('Sube tu avatar (obligatorio)'), imageOfSize(4096))
 
@@ -151,7 +150,6 @@ describe('RegistrationPage', () => {
       'Nombres',
       'Apellidos',
       'Correo electrónico',
-      'Contraseña',
       'Apodo',
       'Sube tu avatar (obligatorio)',
     ]) {
@@ -159,11 +157,17 @@ describe('RegistrationPage', () => {
     }
 
     expect(screen.getByLabelText('Correo electrónico')).toHaveAttribute('type', 'email')
-    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'password')
-    expect(screen.getByLabelText('Contraseña')).toHaveAttribute(
-      'placeholder',
-      'Mínimo 9 caracteres',
-    )
+
+    /**
+     * NO se pide contrasena, y esto es lo que hay que defender.
+     *
+     * La custodia el proveedor de identidad, no Account (ADR-004, decision 2).
+     * El campo existia, Account validaba lo que llegaba y lo TIRABA: quien se
+     * registraba creia estar fijando su contrasena y no fijaba nada. Al
+     * intentar entrar con ella recibia "revisa tus credenciales", que apunta al
+     * sitio equivocado. Le paso a la primera persona ajena al equipo.
+     */
+    expect(screen.queryByLabelText('Contraseña')).not.toBeInTheDocument()
     expect(screen.getByRole('checkbox')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Completar registro' })).toBeInTheDocument()
@@ -220,35 +224,6 @@ describe('RegistrationPage', () => {
     expect(email).toHaveAttribute('aria-invalid', 'true')
     expect(email.getAttribute('aria-describedby') ?? '').toContain('email-error')
     expect(fieldError('email')).toContain(MESSAGES.email)
-  })
-
-  it('rechaza una contrasena de 8 caracteres y acepta la de 9 con la composicion exigida', async () => {
-    const user = setup()
-
-    renderPage(vi.fn())
-
-    const password = screen.getByLabelText('Contraseña')
-
-    await user.type(password, 'Nexus#12')
-    await user.tab()
-
-    expect(fieldError('password')).toContain(MESSAGES.password)
-
-    await user.type(password, '3')
-
-    await waitFor(() => {
-      expect(fieldError('password')).toBe('')
-    })
-  })
-
-  it('rechaza una contrasena larga sin la composicion exigida', async () => {
-    const user = setup()
-
-    renderPage(vi.fn())
-    await user.type(screen.getByLabelText('Contraseña'), 'nexusbattles')
-    await user.tab()
-
-    expect(fieldError('password')).toContain(MESSAGES.password)
   })
 
   it('impide escribir mas de 32 caracteres en el apodo y muestra el contador', async () => {
