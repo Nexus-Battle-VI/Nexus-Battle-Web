@@ -4,8 +4,8 @@ import { AppLayout } from '@/app/AppLayout'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
+import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
-import { RequireIdentity } from '@/app/RequireIdentity'
 import { AccountPage } from '@/features/account/AccountPage'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
@@ -17,6 +17,7 @@ import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 import { EcommercePage } from '@/features/ecommerce/EcommercePage'
 import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
+import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 import { devRoutes } from './dev-routes'
 
@@ -44,7 +45,13 @@ export const ECOMMERCE_PATH = '/ecommerce'
  * los ve sin sesion recibe el aviso "Para continuar" de `RequireSession` en
  * lugar del contenido real.
  */
-export const NAVIGATION: readonly { path: string; label: string }[] = [
+export interface NavigationItem {
+  readonly path: string
+  readonly label: string
+  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR'
+}
+
+export const NAVIGATION: readonly NavigationItem[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
   { path: '/play', label: 'Jugar Online' },
   { path: '/missions', label: 'Misiones' },
@@ -52,7 +59,17 @@ export const NAVIGATION: readonly { path: string; label: string }[] = [
   { path: '/inventory', label: 'Mi Inventario' },
   { path: '/auction', label: 'Subasta' },
   { path: '/account', label: 'Mi Cuenta' },
+  {
+    path: '/admin/roles',
+    label: 'Gestionar roles',
+    requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
+  },
 ]
+
+export const navigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
+  NAVIGATION.filter(
+    (item) => item.requiredPrimaryRole === undefined || item.requiredPrimaryRole === role,
+  )
 
 export const routes: RouteObject[] = [
   // Publicas: alcanzables sin sesion. `/` y `/login` se protegen al reves (si
@@ -75,23 +92,23 @@ export const routes: RouteObject[] = [
       </PublicOnlyRoute>
     ),
   },
-  // HU-01 real: la misma pantalla que ya valida nombres, apellidos, correo,
-  // apodo (incluida la lista negra), contrasena, avatar, preguntas de
-  // seguridad y terminos, y que envia el registro a Account.
-  // Envuelto en `RequireIdentity` y NO en `PublicOnlyRoute`: al volver del
-  // proveedor YA hay sesion, y una ruta "solo publica" rechazaria justo el paso
-  // que falta. La guarda existe porque `POST /api/accounts` exige testimonio:
-  // sin el, el formulario se rellena entero para responder 401.
+  // HU-01 real: valida nombres, apellidos, correo, contrasena, apodo (incluida
+  // la lista negra), avatar, preguntas de seguridad y terminos, y envia el
+  // registro a Account.
+  //
+  // Es PUBLICA y no se envuelve en ninguna guarda de identidad: con el alta
+  // server-side (ADR-004) `POST /api/accounts` ya NO exige testimonio -es
+  // Account quien crea la identidad en el proveedor a partir del formulario-, y
+  // exigir sesion antes rechazaria justo a quien todavia no tiene cuenta. La
+  // antigua puerta al hosted UI desaparecio con ese cambio.
   {
     path: '/register',
-    element: (
-      <RequireIdentity>
-        <RegistrationPage onSubmit={registerAccount} />
-      </RequireIdentity>
-    ),
+    element: <RegistrationPage onSubmit={registerAccount} />,
   },
   // La ruta de retorno del proveedor de identidad OIDC. No aparece en la
-  // navegacion: no es una pantalla a la que se entre a proposito.
+  // navegacion ni la enlaza ningun control: se conserva por si una compilacion
+  // futura reactiva el flujo de codigo, pero el alta y el login del producto
+  // ocurren enteros en la UI propia.
   { path: '/auth/callback', element: <AuthCallbackPage /> },
 
   // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi que
@@ -112,6 +129,14 @@ export const routes: RouteObject[] = [
       { path: 'inventory', element: <PlayerInventoryPage /> },
       { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
       { path: 'account', element: <AccountPage /> },
+      {
+        path: 'admin/roles',
+        element: (
+          <RequireSuperAdministrator>
+            <RoleManagementPage />
+          </RequireSuperAdministrator>
+        ),
+      },
       // Pantallas de HUs anteriores. Se mantienen montadas y accesibles por
       // URL directa; solo se retiraron de `NAVIGATION` porque HU-02 exige que
       // la navegacion principal no nombre bounded contexts.
