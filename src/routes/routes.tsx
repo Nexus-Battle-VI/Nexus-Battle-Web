@@ -5,6 +5,7 @@ import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
+import { RequireIdentity } from '@/app/RequireIdentity'
 import { AccountPage } from '@/features/account/AccountPage'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
@@ -77,7 +78,18 @@ export const routes: RouteObject[] = [
   // HU-01 real: la misma pantalla que ya valida nombres, apellidos, correo,
   // apodo (incluida la lista negra), contrasena, avatar, preguntas de
   // seguridad y terminos, y que envia el registro a Account.
-  { path: '/register', element: <RegistrationPage onSubmit={registerAccount} /> },
+  // Envuelto en `RequireIdentity` y NO en `PublicOnlyRoute`: al volver del
+  // proveedor YA hay sesion, y una ruta "solo publica" rechazaria justo el paso
+  // que falta. La guarda existe porque `POST /api/accounts` exige testimonio:
+  // sin el, el formulario se rellena entero para responder 401.
+  {
+    path: '/register',
+    element: (
+      <RequireIdentity>
+        <RegistrationPage onSubmit={registerAccount} />
+      </RequireIdentity>
+    ),
+  },
   // La ruta de retorno del proveedor de identidad OIDC. No aparece en la
   // navegacion: no es una pantalla a la que se entre a proposito.
   { path: '/auth/callback', element: <AuthCallbackPage /> },
