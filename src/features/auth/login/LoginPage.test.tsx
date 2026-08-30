@@ -371,6 +371,63 @@ describe('LoginPage', () => {
   })
 
   /**
+   * Sin esta etapa, activar un segundo factor adicional rompia el inicio de
+   * sesion: Cognito emite `SELECT_MFA_TYPE` cuando hay mas de un factor
+   * inscrito, y Account lo trataba -bien- como fallo del proveedor.
+   *
+   * Se afirma que aparece UNA opcion POR factor ofrecido, no que exista la
+   * pantalla: un selector con un solo boton fijo pasaria una prueba de
+   * "aparece el titulo" sin servir para nada.
+   */
+  it('ofrece una opcion por cada factor que el proveedor admite', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+      status: 'SECOND_FACTOR_SELECTION_REQUIRED',
+      challengeToken: 'seleccion',
+      availableSecondFactors: ['AUTHENTICATOR_APP', 'EMAIL'],
+    })
+
+    renderLoginWithRouter(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Elige cómo verificarte' }),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('choose-factor-AUTHENTICATOR_APP')).toBeInTheDocument()
+    expect(screen.getByTestId('choose-factor-EMAIL')).toBeInTheDocument()
+    // El que NO se ofrecio no debe aparecer: la pantalla muestra lo que el
+    // proveedor admite, no el catalogo completo de factores.
+    expect(screen.queryByTestId('choose-factor-SMS')).not.toBeInTheDocument()
+  })
+
+  /**
+   * Elegir NO autentica. Lo que devuelve es el reto del factor elegido, y la
+   * pantalla debe pasar a pedir el codigo, no a dar acceso. Es la misma
+   * propiedad que protege CA-06 en Account, comprobada de este lado.
+   */
+  it('elegir un factor lleva a pedir el codigo, no a la sesion', async () => {
+    const user = userEvent.setup()
+    const loginFn = vi.fn<() => Promise<LoginOutcome>>().mockResolvedValue({
+      status: 'SECOND_FACTOR_SELECTION_REQUIRED',
+      challengeToken: 'seleccion',
+      availableSecondFactors: ['AUTHENTICATOR_APP', 'EMAIL'],
+    })
+
+    renderLoginWithRouter(loginFn)
+    await user.type(screen.getByLabelText('Correo o apodo'), 'admin@nexus.test')
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+
+    await screen.findByTestId('choose-factor-EMAIL')
+
+    // No hay sesion todavia, que es lo que de verdad importa.
+    expect(useSession.getState().subject).toBeNull()
+    expect(screen.queryByText('Landing de E-commerce')).not.toBeInTheDocument()
+  })
+
+  /**
    * El control del caso anterior: con el correo como canal, el mensaje debe
    * cambiar. Si no cambiara, la prueba de arriba pasaria por una frase fija.
    */

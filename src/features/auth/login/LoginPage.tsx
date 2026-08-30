@@ -10,7 +10,13 @@ import { useSession } from '@/shared/session'
 import { roleLabel } from '@/shared/rbac'
 import { NEXUS_DARK_THEME } from '@/shared/publicAuthTheme'
 import { ECOMMERCE_PATH } from '@/routes/routes'
-import { login, completeSecondFactor, type LoginOutcome, type SecondFactorMethod } from './api'
+import {
+  login,
+  completeSecondFactor,
+  chooseSecondFactor,
+  type LoginOutcome,
+  type SecondFactorMethod,
+} from './api'
 import {
   EMPTY_LOGIN_VALUES,
   FIELD,
@@ -20,7 +26,7 @@ import {
   type LoginFormValues,
 } from './validation'
 
-type Stage = 'credentials' | 'secondFactor' | 'success'
+type Stage = 'credentials' | 'selection' | 'secondFactor' | 'success'
 
 const GENERIC_INVALID_CREDENTIALS = 'No fue posible iniciar sesión. Revisa tus credenciales.'
 
@@ -111,6 +117,25 @@ export interface LoginPageProps {
  * Cuando Account no declara el canal, se dice que hace falta un codigo y no se
  * nombra ninguno. Callar lo que no se sabe es preferible a rellenarlo.
  */
+/**
+ * Como se llama cada factor en la pantalla de eleccion.
+ *
+ * Deliberadamente NO dice nada sobre disponibilidad ni limites de entrega: la
+ * pantalla ofrece lo que el proveedor ofrece, y describir aqui condiciones del
+ * entorno mezclaria configuracion con interfaz.
+ */
+const FACTOR_LABEL: Readonly<Record<SecondFactorMethod, string>> = {
+  AUTHENTICATOR_APP: 'Aplicación autenticadora',
+  EMAIL: 'Correo electrónico',
+  SMS: 'Mensaje de texto',
+}
+
+const FACTOR_HINT: Readonly<Record<SecondFactorMethod, string>> = {
+  AUTHENTICATOR_APP: 'Usa el código que muestra tu aplicación.',
+  EMAIL: 'Te enviaremos un código a tu correo.',
+  SMS: 'Te enviaremos un código por mensaje de texto.',
+}
+
 const secondFactorPrompt = (method: SecondFactorMethod | null): string => {
   if (method === 'AUTHENTICATOR_APP') {
     return 'Tu cuenta requiere un segundo factor. Abre tu aplicación autenticadora e ingresa el código que muestra.'
@@ -142,6 +167,7 @@ export const LoginPage = ({
   const [authMessage, setAuthMessage] = useState<string | null>(null)
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
   const [secondFactorMethod, setSecondFactorMethod] = useState<SecondFactorMethod | null>(null)
+  const [availableFactors, setAvailableFactors] = useState<readonly SecondFactorMethod[]>([])
   const [secondFactorCode, setSecondFactorCode] = useState('')
   const [secondFactorAttempted, setSecondFactorAttempted] = useState(false)
   const [secondFactorMessage, setSecondFactorMessage] = useState<string | null>(null)
@@ -183,8 +209,41 @@ export const LoginPage = ({
     }
 
     setChallengeToken(outcome.challengeToken)
+
+    if (outcome.status === 'SECOND_FACTOR_SELECTION_REQUIRED') {
+      setAvailableFactors(outcome.availableSecondFactors)
+      setStage('selection')
+
+      return
+    }
+
     setSecondFactorMethod(outcome.secondFactorMethod ?? null)
     setStage('secondFactor')
+  }
+
+  /**
+   * Elegir factor. NO autentica: lo que devuelve es el reto del factor
+   * elegido, y por eso vuelve a pasar por `applyOutcome` como cualquier otra
+   * etapa en lugar de establecer sesion aqui.
+   */
+  const handleFactorChoice = async (method: SecondFactorMethod): Promise<void> => {
+    if (submitting || challengeToken === null) {
+      return
+    }
+
+    setSubmitting(true)
+    setAuthMessage(null)
+
+    try {
+      applyOutcome(await chooseSecondFactor(values.identifier, challengeToken, method))
+    } catch (error: unknown) {
+      // Mismo ayudante que las otras etapas: distingue 503 de 401 sin que esta
+      // pantalla invente su propia clasificacion.
+      setAuthMessage(describeFailure(error, GENERIC_INVALID_CREDENTIALS))
+      setStage('credentials')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleCredentialsSubmit = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
@@ -380,6 +439,35 @@ export const LoginPage = ({
                   Iniciar sesión
                 </Button>
               </form>
+            </div>
+          )}
+
+          {stage === 'selection' && (
+            <div>
+              <h1 className="text-2xl font-semibold text-ink">Elige cómo verificarte</h1>
+              <p className="mt-2 text-sm text-muted">
+                Tu cuenta tiene más de un método de verificación. Elige uno para recibir el código.
+              </p>
+
+              <div className="mt-6 flex flex-col gap-3">
+                {availableFactors.map((factor) => (
+                  <button
+                    key={factor}
+                    type="button"
+                    disabled={submitting}
+                    data-testid={`choose-factor-${factor}`}
+                    className="rounded-md border border-border bg-surface-raised px-4 py-3 text-left transition-opacity hover:opacity-90 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    onClick={() => {
+                      void handleFactorChoice(factor)
+                    }}
+                  >
+                    <span className="block text-sm font-medium text-ink">
+                      {FACTOR_LABEL[factor]}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted">{FACTOR_HINT[factor]}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
