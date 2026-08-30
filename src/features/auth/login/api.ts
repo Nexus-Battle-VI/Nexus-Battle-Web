@@ -51,6 +51,17 @@ export type LoginOutcome =
        */
       readonly secondFactorMethod?: SecondFactorMethod
     }
+  /**
+   * El proveedor ofrece VARIOS factores y pide elegir antes de retar.
+   *
+   * No es un reto de codigo: todavia no hay codigo. Se modela aparte porque
+   * tratarlo igual obligaria a mostrar un campo que nadie puede rellenar aun.
+   */
+  | {
+      readonly status: 'SECOND_FACTOR_SELECTION_REQUIRED'
+      readonly challengeToken: string
+      readonly availableSecondFactors: readonly SecondFactorMethod[]
+    }
 
 export interface LoginCredentials {
   readonly identifier: string
@@ -73,13 +84,14 @@ interface AccountSummaryResponse {
 
 /** Forma exacta de `SessionResponse` (`sessions.dto.ts`). */
 interface SessionResponse {
-  readonly status: 'AUTHENTICATED' | 'SECOND_FACTOR_REQUIRED'
+  readonly status: 'AUTHENTICATED' | 'SECOND_FACTOR_REQUIRED' | 'SECOND_FACTOR_SELECTION_REQUIRED'
   readonly accessToken?: string
   /** Vigencia del `accessToken`, en segundos, desde Cognito. Solo presente junto a `AUTHENTICATED`. */
   readonly expiresIn?: number
   readonly account?: AccountSummaryResponse
   readonly challengeToken?: string
   readonly secondFactorMethod?: SecondFactorMethod
+  readonly availableSecondFactors?: readonly SecondFactorMethod[]
 }
 
 /**
@@ -122,6 +134,24 @@ const toLoginOutcome = (response: SessionResponse): LoginOutcome => {
     throw new Error('La respuesta de segundo factor no trae el challengeToken esperado.')
   }
 
+  if (response.status === 'SECOND_FACTOR_SELECTION_REQUIRED') {
+    // Una lista vacia no es "elige entre nada": es una respuesta que esta
+    // pantalla no puede representar, y mostrar un selector sin opciones seria
+    // peor que fallar.
+    if (
+      response.availableSecondFactors === undefined ||
+      response.availableSecondFactors.length === 0
+    ) {
+      throw new Error('La respuesta de selección de factor no trae opciones entre las que elegir.')
+    }
+
+    return {
+      status: 'SECOND_FACTOR_SELECTION_REQUIRED',
+      challengeToken: response.challengeToken,
+      availableSecondFactors: response.availableSecondFactors,
+    }
+  }
+
   return {
     status: 'SECOND_FACTOR_REQUIRED',
     challengeToken: response.challengeToken,
@@ -151,6 +181,27 @@ export const completeSecondFactor = async (
     identifier,
     challengeToken,
     code,
+  })
+
+  return toLoginOutcome(response)
+}
+
+/**
+ * Elige el factor cuando el proveedor ofrecio varios.
+ *
+ * Devuelve un `LoginOutcome` como las otras dos: lo que sale de elegir ES el
+ * reto del factor elegido, con la misma forma que si el proveedor lo hubiera
+ * emitido directamente. Elegir NO autentica.
+ */
+export const chooseSecondFactor = async (
+  identifier: string,
+  challengeToken: string,
+  method: SecondFactorMethod,
+): Promise<LoginOutcome> => {
+  const response = await httpClient.post<SessionResponse>('/sessions/second-factor/method', {
+    identifier,
+    challengeToken,
+    method,
   })
 
   return toLoginOutcome(response)
