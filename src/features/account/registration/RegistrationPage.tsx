@@ -510,31 +510,6 @@ export const RegistrationPage = ({
                     )}
                   </Field>
                 </FieldRow>
-
-                <Field
-                  id={FIELD.password}
-                  label="Contraseña"
-                  hint="Debe incluir mayúscula, minúscula, número y símbolo."
-                  {...(visible[FIELD.password] === undefined
-                    ? {}
-                    : { error: visible[FIELD.password] })}
-                >
-                  {(field) => (
-                    <input
-                      {...field}
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="Mínimo 9 caracteres"
-                      value={values.password}
-                      onBlur={() => {
-                        markTouched(FIELD.password)
-                      }}
-                      onChange={(event) => {
-                        setValue('password', event.target.value)
-                      }}
-                    />
-                  )}
-                </Field>
               </div>
             </Section>
 

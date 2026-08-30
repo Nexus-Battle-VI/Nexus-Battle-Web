@@ -27,7 +27,11 @@ describe('toRegistrationFormData', () => {
     expect(form.get('firstNames')).toBe('Ana')
     expect(form.get('lastNames')).toBe('Ramirez')
     expect(form.get('email')).toBe('ana@nexus.test')
-    expect(form.get('password')).toBe('Abcdefg1!')
+    // NO se envia. La custodia el proveedor de identidad, no Account.
+    // Enviarla daba una garantia falsa: Account la validaba y la tiraba, asi
+    // que quien se registraba creia estar fijando su contrasena y no fijaba
+    // nada. Se afirma la AUSENCIA, no se omite la comprobacion.
+    expect(form.get('password')).toBeNull()
     expect(form.get('nickname')).toBe('Ana Ramirez')
     expect(form.get('termsAccepted')).toBe('true')
 

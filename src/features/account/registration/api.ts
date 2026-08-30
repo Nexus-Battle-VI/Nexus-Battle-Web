@@ -56,7 +56,11 @@ export const toRegistrationFormData = (values: RegistrationValues): FormData => 
   form.set('firstNames', values.firstName)
   form.set('lastNames', values.lastName)
   form.set('email', values.email)
-  form.set('password', values.password)
+  // La contrasena NO se envia: la custodia el proveedor de identidad, no
+  // Account (ADR-004, decision 2). Se enviaba, Account la validaba y la tiraba,
+  // asi que quien se registraba creia estar fijando su contrasena y no fijaba
+  // nada. Al intentar entrar con ella recibia "revisa tus credenciales", que
+  // apunta al sitio equivocado.
   form.set('nickname', values.nickname)
   form.set('termsAccepted', values.acceptedTerms ? 'true' : 'false')
   form.set(

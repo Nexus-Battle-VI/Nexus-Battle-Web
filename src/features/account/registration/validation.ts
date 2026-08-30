@@ -103,12 +103,6 @@ export const validateRegistration = (values: RegistrationValues): RegistrationEr
     errors[FIELD.email] = MESSAGES.email
   }
 
-  if (values.password === '') {
-    errors[FIELD.password] = MESSAGES.required
-  } else if (!isValidPassword(values.password)) {
-    errors[FIELD.password] = MESSAGES.password
-  }
-
   if (values.nickname.trim() === '') {
     errors[FIELD.nickname] = MESSAGES.required
   } else if (values.nickname.length > NICKNAME_MAX_LENGTH) {
