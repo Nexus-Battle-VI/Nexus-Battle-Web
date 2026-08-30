@@ -54,60 +54,33 @@ describe('SessionControl', () => {
     useSession.setState({ authenticationAvailable: true })
     renderWithProviders(<SessionControl />)
 
-    expect(screen.getByRole('button', { name: /iniciar sesion/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /iniciar sesion/i })).toBeInTheDocument()
   })
 
   /**
-   * Account dejo de crear identidades: exige un sujeto ya verificado. Sin una
-   * entrada de alta, quien no tiene cuenta no tiene por donde empezar.
+   * Sin una entrada de alta, quien no tiene cuenta no tiene por donde empezar.
+   * Ahora es un enlace a la pantalla PROPIA de registro, no una redireccion al
+   * hosted UI del proveedor.
    */
-  it('ofrece crear cuenta, que es la unica via para tener una', async () => {
-    const signUp = vi.fn()
-    useSession.setState({ authenticationAvailable: true, signUp })
+  it('ofrece crear cuenta, que lleva a la pantalla propia de registro', () => {
+    useSession.setState({ authenticationAvailable: true })
 
     renderWithProviders(<SessionControl />)
 
-    await userEvent.click(screen.getByRole('button', { name: /crear cuenta/i }))
-
-    expect(signUp).toHaveBeenCalledOnce()
+    expect(screen.getByRole('link', { name: /crear cuenta/i })).toHaveAttribute('href', '/register')
   })
 
   /**
-   * Comprobado contra el sistema desplegado antes de escribirlo: con el
-   * `returnTo` por defecto se volvia al catalogo, y desde ahi no hay forma de
-   * alcanzar el formulario de HU-01 con la sesion viva. No hay enlace hacia el,
-   * y escribir la direccion recarga la pagina, que borra el testimonio porque
-   * `session.ts` lo guarda en memoria. La persona quedaba registrada en Cognito,
-   * sin cuenta, y el formulario respondia "Falta el testimonio de identidad".
-   *
-   * Por eso se afirma la RUTA y no solo que se llamo: `toHaveBeenCalledOnce`
-   * seguia pasando con el destino equivocado, que es el fallo que hubo.
+   * El control del caso anterior. Iniciar sesion NO debe llevar al alta: son dos
+   * destinos distintos. Si ambos enlazaran a `/register`, la prueba de arriba
+   * pasaria sin distinguir nada. Ambos van a pantallas propias, no al hosted UI.
    */
-  it('devuelve al formulario de alta, no a donde se pulso el boton', async () => {
-    const signUp = vi.fn()
-    useSession.setState({ authenticationAvailable: true, signUp })
+  it('iniciar sesion lleva al login propio, no al alta', () => {
+    useSession.setState({ authenticationAvailable: true })
 
     renderWithProviders(<SessionControl />)
 
-    await userEvent.click(screen.getByRole('button', { name: /crear cuenta/i }))
-
-    expect(signUp).toHaveBeenCalledWith('/register')
-  })
-
-  /**
-   * El control del caso anterior. Iniciar sesion NO debe redirigir al alta:
-   * quien ya tiene cuenta tiene que volver a donde estaba. Si ambos fueran a
-   * `/register`, la prueba de arriba pasaria sin distinguir nada.
-   */
-  it('iniciar sesion no desvia al alta: devuelve a donde se estaba', async () => {
-    const signIn = vi.fn()
-    useSession.setState({ authenticationAvailable: true, signIn })
-
-    renderWithProviders(<SessionControl />)
-
-    await userEvent.click(screen.getByRole('button', { name: /iniciar sesion/i }))
-
-    expect(signIn).toHaveBeenCalledWith()
+    expect(screen.getByRole('link', { name: /iniciar sesion/i })).toHaveAttribute('href', '/login')
   })
 
   it('quien ya tiene sesion no ve la entrada de alta', () => {

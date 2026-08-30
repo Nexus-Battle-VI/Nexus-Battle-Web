@@ -5,7 +5,6 @@ import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
-import { RequireIdentity } from '@/app/RequireIdentity'
 import { AccountPage } from '@/features/account/AccountPage'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
@@ -75,23 +74,23 @@ export const routes: RouteObject[] = [
       </PublicOnlyRoute>
     ),
   },
-  // HU-01 real: la misma pantalla que ya valida nombres, apellidos, correo,
-  // apodo (incluida la lista negra), contrasena, avatar, preguntas de
-  // seguridad y terminos, y que envia el registro a Account.
-  // Envuelto en `RequireIdentity` y NO en `PublicOnlyRoute`: al volver del
-  // proveedor YA hay sesion, y una ruta "solo publica" rechazaria justo el paso
-  // que falta. La guarda existe porque `POST /api/accounts` exige testimonio:
-  // sin el, el formulario se rellena entero para responder 401.
+  // HU-01 real: valida nombres, apellidos, correo, contrasena, apodo (incluida
+  // la lista negra), avatar, preguntas de seguridad y terminos, y envia el
+  // registro a Account.
+  //
+  // Es PUBLICA y no se envuelve en ninguna guarda de identidad: con el alta
+  // server-side (ADR-004) `POST /api/accounts` ya NO exige testimonio -es
+  // Account quien crea la identidad en el proveedor a partir del formulario-, y
+  // exigir sesion antes rechazaria justo a quien todavia no tiene cuenta. La
+  // antigua puerta al hosted UI desaparecio con ese cambio.
   {
     path: '/register',
-    element: (
-      <RequireIdentity>
-        <RegistrationPage onSubmit={registerAccount} />
-      </RequireIdentity>
-    ),
+    element: <RegistrationPage onSubmit={registerAccount} />,
   },
   // La ruta de retorno del proveedor de identidad OIDC. No aparece en la
-  // navegacion: no es una pantalla a la que se entre a proposito.
+  // navegacion ni la enlaza ningun control: se conserva por si una compilacion
+  // futura reactiva el flujo de codigo, pero el alta y el login del producto
+  // ocurren enteros en la UI propia.
   { path: '/auth/callback', element: <AuthCallbackPage /> },
 
   // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi que

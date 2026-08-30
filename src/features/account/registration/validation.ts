@@ -103,6 +103,16 @@ export const validateRegistration = (values: RegistrationValues): RegistrationEr
     errors[FIELD.email] = MESSAGES.email
   }
 
+  // La contrasena vuelve a viajar en el alta, y esta vez SI llega a su custodio:
+  // Account la entrega a Cognito por `signUp` (ADR-004, "Alta server-side") y no
+  // la persiste. El navegador comprueba la forma; la POLITICA la aplica el
+  // proveedor, que puede rechazarla con su propio mensaje al enviar.
+  if (values.password === '') {
+    errors[FIELD.password] = MESSAGES.required
+  } else if (!isValidPassword(values.password)) {
+    errors[FIELD.password] = MESSAGES.password
+  }
+
   if (values.nickname.trim() === '') {
     errors[FIELD.nickname] = MESSAGES.required
   } else if (values.nickname.length > NICKNAME_MAX_LENGTH) {

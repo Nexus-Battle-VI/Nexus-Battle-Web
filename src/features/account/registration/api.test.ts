@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { ACCOUNT_QUESTION_IDS, registerAccount, toRegistrationFormData } from './api'
+import {
+  ACCOUNT_QUESTION_IDS,
+  confirmRegistration,
+  registerAccount,
+  toRegistrationFormData,
+} from './api'
 import { SECURITY_QUESTIONS } from './constants'
 import type { RegistrationValues } from './validation'
 
@@ -27,11 +32,10 @@ describe('toRegistrationFormData', () => {
     expect(form.get('firstNames')).toBe('Ana')
     expect(form.get('lastNames')).toBe('Ramirez')
     expect(form.get('email')).toBe('ana@nexus.test')
-    // NO se envia. La custodia el proveedor de identidad, no Account.
-    // Enviarla daba una garantia falsa: Account la validaba y la tiraba, asi
-    // que quien se registraba creia estar fijando su contrasena y no fijaba
-    // nada. Se afirma la AUSENCIA, no se omite la comprobacion.
-    expect(form.get('password')).toBeNull()
+    // SI se envia: con el alta server-side (ADR-004) Account la entrega a
+    // Cognito por `signUp` y no la persiste. Se afirma su PRESENCIA con el valor
+    // exacto, no solo que la clave exista.
+    expect(form.get('password')).toBe('Abcdefg1!')
     expect(form.get('nickname')).toBe('Ana Ramirez')
     expect(form.get('termsAccepted')).toBe('true')
 
@@ -95,5 +99,39 @@ describe('registerAccount', () => {
 
     expect(init.body).toBeInstanceOf(FormData)
     expect((init.headers as Record<string, string> | undefined)?.['content-type']).toBeUndefined()
+  })
+})
+
+describe('confirmRegistration', () => {
+  it('envia identifier y codigo como JSON a POST /accounts/confirmation', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'acc-1', status: 'ACTIVE' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    vi.stubGlobal('fetch', fetchImpl)
+
+    try {
+      await confirmRegistration('ana@nexus.test', '123456')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/api/accounts/confirmation',
+      expect.objectContaining({ method: 'POST' }),
+    )
+
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit
+
+    expect((init.headers as Record<string, string> | undefined)?.['content-type']).toBe(
+      'application/json',
+    )
+    expect(JSON.parse(init.body as string)).toEqual({
+      identifier: 'ana@nexus.test',
+      code: '123456',
+    })
   })
 })

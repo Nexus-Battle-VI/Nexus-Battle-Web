@@ -108,36 +108,20 @@ describe('Proteccion visual de rutas (HU-02)', () => {
   })
 
   /**
-   * El fallo estuvo en el CABLEADO, no en ninguna guarda: `/register` quedo
-   * montado sin proteccion y la landing enlazaba directo ahi. Alguien sin
-   * identidad rellenaba nombres, apellidos, apodo, contrasena, avatar y cuatro
-   * preguntas de seguridad para recibir al final "Falta el testimonio de
-   * identidad", porque `POST /api/accounts` responde 401 sin testimonio.
-   *
-   * Por eso la prueba es de ruta y no del componente: la guarda por si sola ya
-   * pasaba sus propias pruebas mientras la ruta seguia desprotegida.
+   * Con el alta server-side (ADR-004) `POST /api/accounts` ya NO exige
+   * testimonio: es Account quien crea la identidad a partir del formulario. Por
+   * eso `/register` es PUBLICA y muestra el formulario aunque no haya sesion;
+   * exigir identidad antes rechazaria justo a quien todavia no tiene cuenta, que
+   * es el fallo que introdujo la puerta al hosted UI ya retirada.
    */
-  it('sin identidad, /register no muestra el formulario que no podria enviarse', async () => {
-    // Con proveedor DISPONIBLE: lo que se comprueba es la falta de identidad,
-    // no la falta de configuracion, que tiene su propia pantalla.
-    useSession.setState({ ...ANONYMOUS_STATE, authenticationAvailable: true })
+  it('sin sesion, /register muestra el formulario directamente', async () => {
+    useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/register')
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Primero, tu identidad' }),
-    ).toBeInTheDocument()
-    expect(screen.queryByLabelText('Apodo')).not.toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/register')
-  })
-
-  it('con identidad, /register SI muestra el formulario', async () => {
-    useSession.setState(AUTHENTICATED_STATE)
-    renderRoute('/register')
-
     expect(await screen.findByLabelText('Apodo')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', { level: 1, name: 'Primero, tu identidad' }),
-    ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Contraseña')).toBeInTheDocument()
+    // No hay puerta previa ni redireccion: la URL sigue siendo /register.
+    expect(router.state.location.pathname).toBe('/register')
   })
 
   it('sin sesion, una ruta autenticada muestra el aviso "Para continuar" en el mismo sitio, sin redirigir a /login', async () => {
