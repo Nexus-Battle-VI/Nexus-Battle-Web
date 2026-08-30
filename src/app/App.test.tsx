@@ -42,12 +42,13 @@ describe('AppLayout', () => {
     const nav = screen.getByRole('navigation', { name: 'Principal' })
 
     for (const label of [
-      'Catalogo',
-      'Inventario',
-      'Comunidad',
-      'Pedidos',
-      'Cuenta',
-      'Notificaciones',
+      'E-commerce',
+      'Jugar Online',
+      'Misiones',
+      'Torneo',
+      'Mi Inventario',
+      'Subasta',
+      'Mi Cuenta',
     ]) {
       expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
     }
@@ -250,6 +251,7 @@ describe('useSession', () => {
       roles: [],
       accessToken: null,
       expiresAt: null,
+      viaProvider: false,
     })
   })
 
@@ -291,6 +293,58 @@ describe('useSession', () => {
    */
   it('declara que no hay autenticacion disponible sin proveedor', () => {
     expect(useSession.getState().authenticationAvailable).toBe(false)
+  })
+
+  /**
+   * HU-02: el login de credenciales (correo/apodo + contrasena) resuelve la
+   * sesion sin pasar por un canje OIDC, asi que necesita su propia via de
+   * entrada al mismo estado compartido.
+   */
+  it('registra una sesion resuelta por el login de credenciales', () => {
+    useSession.getState().establishSession({
+      subject: 'sujeto-ana',
+      email: 'ana@nexus.test',
+      displayName: 'Ana',
+      roles: ['PLAYER'],
+      accessToken: 'token-de-sesion',
+      expiresAt: Date.now() + 900_000,
+    })
+
+    expect(useSession.getState()).toMatchObject({
+      subject: 'sujeto-ana',
+      displayName: 'Ana',
+      roles: ['PLAYER'],
+      viaProvider: false,
+    })
+  })
+
+  /**
+   * Cerrar una sesion de credenciales no debe redirigir al logout del hosted
+   * UI: esa sesion nunca paso por el proveedor, y redirigir alli cerraria una
+   * sesion de Cognito que no existe.
+   */
+  it('cerrar sesion de credenciales no redirige al proveedor', () => {
+    const assign = vi.fn()
+
+    // Solo se necesita `assign`: es lo unico que `signOut` invoca sobre
+    // `location`. Un objeto plano evita esparcir una instancia de `Location`.
+    vi.stubGlobal('location', { assign })
+
+    useSession.getState().establishSession({
+      subject: 'sujeto-ana',
+      email: null,
+      displayName: null,
+      roles: ['PLAYER'],
+      accessToken: 'token-de-sesion',
+      expiresAt: Date.now() + 900_000,
+    })
+
+    useSession.getState().signOut()
+
+    expect(useSession.getState().subject).toBeNull()
+    expect(assign).not.toHaveBeenCalled()
+
+    vi.unstubAllGlobals()
   })
 })
 

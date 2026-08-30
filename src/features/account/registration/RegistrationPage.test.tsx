@@ -7,6 +7,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router'
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
 import { routes } from '@/routes/routes'
 import { RegistrationPage } from './RegistrationPage'
+import { useSession } from '@/shared/session'
 import { SECURITY_QUESTIONS, THEME_STORAGE_KEY } from './constants'
 import { MESSAGES, NICKNAME_MAX_LENGTH } from './validation'
 import type { RegistrationValues } from './validation'
@@ -66,6 +67,18 @@ describe('RegistrationPage', () => {
 
   afterEach(() => {
     globalThis.localStorage.clear()
+    // Sin esto, la sesion que instala una prueba sobrevive a la siguiente y
+    // `PublicOnlyRoute` desvia la raiz a /ecommerce. Se detecto asi: dos
+    // pruebas que no tocan la sesion empezaron a fallar por una que si.
+    useSession.setState({
+      subject: null,
+      email: null,
+      displayName: null,
+      roles: [],
+      accessToken: null,
+      expiresAt: null,
+      authenticationAvailable: false,
+    })
   })
 
   it('muestra la identidad del producto y el titulo de la pantalla', () => {
@@ -86,6 +99,11 @@ describe('RegistrationPage', () => {
   })
 
   it('/register se sirve sin la navegacion principal de la aplicacion', async () => {
+    // Con identidad: `/register` esta detras de `RequireIdentity` porque el
+    // formulario no puede enviarse sin testimonio. Sin sesion la ruta muestra
+    // la puerta, y eso tiene su propia prueba en routes.test.tsx.
+    useSession.setState({ authenticationAvailable: true, subject: 'sujeto-de-prueba' })
+
     // Se monta el enrutador real, no el componente suelto: lo que se verifica
     // es que la ruta NO cuelga de `AppLayout`.
     const router = createMemoryRouter(routes, { initialEntries: ['/register'] })
@@ -106,9 +124,10 @@ describe('RegistrationPage', () => {
     }
   })
 
-  it('la raiz de la aplicacion sirve tambien el registro, sin navegacion principal', async () => {
-    // La raiz es la puerta de entrada publica: quien abre la aplicacion sin
-    // sesion arranca aqui, no en el catalogo autenticado.
+  it('la raiz publica ya no sirve el formulario de registro directamente', async () => {
+    // Hasta esta correccion, `/` renderizaba `RegistrationPage`. Ahora `/` es
+    // el menu publico de Nexus (`LandingPage`) y HU-01 real vive unicamente
+    // en `/register`; ver `routes.test.tsx` para el contenido esperado de `/`.
     const router = createMemoryRouter(routes, { initialEntries: ['/'] })
 
     render(
@@ -117,10 +136,12 @@ describe('RegistrationPage', () => {
       </QueryClientProvider>,
     )
 
+    await screen.findByRole('link', { name: 'Crear cuenta' })
+
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Crear cuenta' }),
-    ).toBeInTheDocument()
-    expect(screen.queryByRole('navigation', { name: 'Principal' })).not.toBeInTheDocument()
+      screen.queryByRole('heading', { level: 1, name: 'Crear cuenta' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Nombres')).not.toBeInTheDocument()
   })
 
   it('renderiza todos los campos obligatorios con su etiqueta asociada', () => {
@@ -364,11 +385,20 @@ describe('RegistrationPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(/todavía no está publicado/u)
   })
 
-  it('Cancelar navega a la raiz publica de la aplicacion', async () => {
-    // La raiz es hoy la unica pantalla publica de entrada, y tambien sirve el
-    // registro: navegar ahi desde /register vuelve, en efecto, a un
-    // formulario limpio. Lo que importa es que el boton navega de verdad
-    // (cambia la URL) y no que sea un enlace roto.
+  it('Cancelar saca del registro y no deja la URL donde estaba', async () => {
+    // Esta prueba esperaba `/`. Dejo de ser cierto cuando aparecio la landing:
+    // `/` esta detras de `PublicOnlyRoute`, asi que quien YA tiene identidad
+    // -precondicion para ver este formulario- acaba en /ecommerce.
+    //
+    // Es el comportamiento correcto: cancelar el registro teniendo sesion lleva
+    // a la aplicacion, no a una pantalla de bienvenida que invita a entrar. Lo
+    // que la prueba defiende es que el boton NAVEGA de verdad y no se queda en
+    // /register, que es el fallo que tendria sentido detectar.
+    // Con identidad: `/register` esta detras de `RequireIdentity` porque el
+    // formulario no puede enviarse sin testimonio. Sin sesion la ruta muestra
+    // la puerta, y eso tiene su propia prueba en routes.test.tsx.
+    useSession.setState({ authenticationAvailable: true, subject: 'sujeto-de-prueba' })
+
     const user = setup()
     const router = createMemoryRouter(routes, { initialEntries: ['/register'] })
 
@@ -383,8 +413,9 @@ describe('RegistrationPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Cancelar' }))
 
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe('/')
+      expect(router.state.location.pathname).not.toBe('/register')
     })
+    expect(router.state.location.pathname).toBe('/ecommerce')
   })
 
   it('cambia el tema desde la propia pantalla y persiste solo esa preferencia', async () => {

@@ -1,4 +1,5 @@
 import { useSession } from '@/shared/session'
+import { primaryRole, roleLabel } from '@/shared/rbac'
 
 /**
  * Control de sesion de la cabecera.
@@ -11,9 +12,11 @@ export const SessionControl = (): React.JSX.Element => {
   const available = useSession((state) => state.authenticationAvailable)
   const subject = useSession((state) => state.subject)
   const displayName = useSession((state) => state.displayName)
+  const roles = useSession((state) => state.roles)
   const signIn = useSession((state) => state.signIn)
   const signUp = useSession((state) => state.signUp)
   const signOut = useSession((state) => state.signOut)
+  const role = primaryRole(roles)
 
   if (!available) {
     return (
@@ -31,7 +34,20 @@ export const SessionControl = (): React.JSX.Element => {
           className="rounded-md border border-border px-3 py-1.5 text-sm text-ink"
           data-testid="sign-up"
           onClick={() => {
-            void signUp()
+            // Vuelve al formulario de HU-01, NO a donde se pulso el boton.
+            //
+            // Darse de alta en el proveedor crea la identidad, no la cuenta:
+            // `POST /api/accounts` exige un testimonio y responde 401 sin el.
+            // Con el `returnTo` por defecto -la ruta actual- se regresaba al
+            // catalogo con la sesion viva y sin manera de llegar al formulario:
+            // no hay enlace hacia el desde el layout, y escribir la direccion
+            // recarga la pagina, que es justo lo que borra el testimonio
+            // (`session.ts` lo guarda en memoria a proposito).
+            //
+            // El resultado era un callejon sin salida: la persona quedaba
+            // registrada en Cognito y sin cuenta, viendo "Falta el testimonio
+            // de identidad" al enviar el formulario.
+            void signUp('/register')
           }}
         >
           Crear cuenta
@@ -52,7 +68,20 @@ export const SessionControl = (): React.JSX.Element => {
 
   return (
     <div className="ml-auto flex items-center gap-3">
-      <span className="text-sm text-muted">{displayName ?? subject}</span>
+      <span className="text-sm text-muted">
+        {displayName ?? subject}
+        {/*
+          El rol se representa aqui porque es informacion de la sesion, no una
+          eleccion: HU-02 exige que la interfaz muestre el rol vigente sin que
+          nadie pueda seleccionarlo. Ocultar este dato no seria mas seguro,
+          asi que no hay razon para no mostrarlo.
+        */}
+        {role !== null && (
+          <span className="ml-1.5 rounded-full bg-brand/15 px-2 py-0.5 text-xs font-medium text-brand">
+            {roleLabel(role)}
+          </span>
+        )}
+      </span>
       <button
         type="button"
         className="rounded-md border border-border px-3 py-1.5 text-sm text-ink"
