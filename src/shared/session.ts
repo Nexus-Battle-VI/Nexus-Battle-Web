@@ -11,6 +11,16 @@ import {
 } from './auth/oidc'
 import { rememberPendingAuthorization } from './auth/pkce'
 
+export interface EstablishedSession {
+  readonly subject: string
+  readonly email: string | null
+  readonly displayName: string | null
+  readonly roles: readonly string[]
+  readonly accessToken: string
+  /** Epoch ms. Ambos origenes (OIDC y login de credenciales) siempre informan vigencia. */
+  readonly expiresAt: number
+}
+
 export interface SessionState {
   /** Sujeto verificado por el proveedor. `null` cuando no hay sesion. */
   readonly subject: string | null
@@ -23,6 +33,17 @@ export interface SessionState {
   /** Falso cuando no hay proveedor configurado: no hay sesion posible. */
   readonly authenticationAvailable: boolean
 
+  /**
+   * Si la sesion vigente se establecio mediante la redireccion al proveedor
+   * (HU-02 (OIDC)) o mediante el formulario de credenciales (HU-02, login
+   * directo).
+   *
+   * `signOut` lo necesita: cerrar sesion de una sesion de credenciales
+   * redirigiendo al `/logout` del hosted UI cerraria una sesion de Cognito que
+   * nunca se abrio.
+   */
+  readonly viaProvider: boolean
+
   /** Inicia el flujo de codigo de autorizacion con PKCE. */
   signIn: (returnTo?: string) => Promise<void>
   /**
@@ -30,9 +51,18 @@ export interface SessionState {
    * unico distinto es en que pantalla del proveedor aterriza la persona.
    */
   signUp: (returnTo?: string) => Promise<void>
-  /** Registra el resultado de un canje completado. */
+  /** Registra el resultado de un canje completado contra el proveedor. */
   establish: (tokens: TokenSet, claims: IdentityClaims) => void
-  /** Cierra la sesion aqui y en el proveedor. */
+  /**
+   * Registra una sesion resuelta por el formulario de login de credenciales
+   * (correo/apodo + contrasena), una vez el servicio de cuenta la autentica.
+   *
+   * No pasa por `establish` porque esa funcion espera la forma concreta de un
+   * canje OIDC (`TokenSet` + `IdentityClaims` leidos de un `id_token`); esta
+   * via no tiene ese testimonio, tiene la sesion ya resuelta por el backend.
+   */
+  establishSession: (session: EstablishedSession) => void
+  /** Cierra la sesion aqui y, si corresponde, en el proveedor. */
   signOut: () => void
 }
 
@@ -76,6 +106,7 @@ export const useSession = create<SessionState>((set, get) => ({
   accessToken: null,
   expiresAt: null,
   authenticationAvailable: authConfig !== null,
+  viaProvider: false,
 
   signIn: async (returnTo = globalThis.location.pathname) => {
     await comenzarAutorizacion('sign-in', returnTo)
@@ -93,11 +124,31 @@ export const useSession = create<SessionState>((set, get) => ({
       roles: claims.roles,
       accessToken: tokens.accessToken,
       expiresAt: tokens.expiresAt,
+      viaProvider: true,
+    })
+  },
+
+  establishSession: (session) => {
+    set({
+      subject: session.subject,
+      email: session.email,
+      displayName: session.displayName ?? session.email,
+      roles: session.roles,
+      accessToken: session.accessToken,
+      expiresAt: session.expiresAt,
+      // `authenticationAvailable` se calculo al arrancar la tienda a partir
+      // de `authConfig` (el proveedor OIDC). El login de credenciales de
+      // HU-02 es una via de autenticacion independiente: si acaba de
+      // autenticar a alguien, claramente SI hay quien verifique identidad,
+      // sin importar si el proveedor OIDC esta configurado.
+      authenticationAvailable: true,
+      viaProvider: false,
     })
   },
 
   signOut: () => {
-    const hadSession = get().accessToken !== null
+    const { accessToken, viaProvider } = get()
+    const hadSession = accessToken !== null
 
     set({
       subject: null,
@@ -106,12 +157,16 @@ export const useSession = create<SessionState>((set, get) => ({
       roles: [],
       accessToken: null,
       expiresAt: null,
+      viaProvider: false,
     })
 
     // Limpiar solo esta pestana dejaria la sesion viva en el proveedor: el
     // siguiente inicio de sesion no pediria credenciales y pareceria que
-    // "cerrar sesion" no hizo nada.
-    if (hadSession && authConfig !== null) {
+    // "cerrar sesion" no hizo nada. Pero eso solo aplica a una sesion que
+    // realmente paso por el proveedor: redirigir al logout del hosted UI para
+    // una sesion de credenciales cerraria una sesion de Cognito que nunca se
+    // abrio.
+    if (hadSession && viaProvider && authConfig !== null) {
       globalThis.location.assign(buildLogoutUrl(authConfig))
     }
   },
