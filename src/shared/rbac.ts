@@ -22,11 +22,15 @@ const ROLE_LABELS: Readonly<Record<string, string>> = {
 /** Etiqueta legible de un rol. Devuelve el valor original si no se reconoce. */
 export const roleLabel = (role: string): string => ROLE_LABELS[role] ?? role
 
-/**
- * El primer rol de la lista recibida, para mostrarlo en la interfaz.
- *
- * HU-02 no define que una cuenta tenga mas de un rol simultaneo; si el
- * contrato futuro lo permite, esta funcion seguira mostrando uno solo, que es
- * lo unico que la cabecera necesita representar hoy.
- */
-export const primaryRole = (roles: readonly string[]): string | null => roles[0] ?? null
+const ROLE_PRECEDENCE = ['SUPER_ADMINISTRATOR', 'ADMINISTRATOR', 'MODERATOR', 'PLAYER'] as const
+
+/** Rol vigente hacia fuera: el de mayor precedencia del conjunto acumulado. */
+export const primaryRole = (roles: readonly string[]): string | null => {
+  for (const role of ROLE_PRECEDENCE) {
+    if (roles.includes(role)) {
+      return role
+    }
+  }
+
+  return roles[0] ?? null
+}
