@@ -3,7 +3,7 @@ import { screen } from '@testing-library/react'
 
 import { renderWithProviders } from '@/test/render'
 import { LandingPage } from './LandingPage'
-import { NAVIGATION } from '@/routes/routes'
+import { navigationForPrimaryRole } from '@/routes/routes'
 
 describe('LandingPage', () => {
   it('presenta la identidad del producto y las dos acciones principales', () => {
@@ -39,8 +39,9 @@ describe('LandingPage', () => {
 
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
 
-    for (const item of NAVIGATION) {
+    for (const item of navigationForPrimaryRole(null)) {
       expect(screen.getByRole('link', { name: item.label })).toHaveAttribute('href', item.path)
     }
+    expect(screen.queryByRole('link', { name: 'Gestionar roles' })).not.toBeInTheDocument()
   })
 })

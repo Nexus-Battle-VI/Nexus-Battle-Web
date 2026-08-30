@@ -6,7 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryRouter } from 'react-router'
 
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
-import { ECOMMERCE_PATH, NAVIGATION, routes } from './routes'
+import { ECOMMERCE_PATH, NAVIGATION, navigationForPrimaryRole, routes } from './routes'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useSession } from '@/shared/session'
 import { AccountPage } from '@/features/account/AccountPage'
@@ -32,6 +32,7 @@ describe('NAVIGATION', () => {
       '/inventory',
       '/auction',
       '/account',
+      '/admin/roles',
     ])
     expect(new Set(paths).size).toBe(paths.length)
   })
@@ -42,6 +43,15 @@ describe('NAVIGATION', () => {
     for (const technicalName of ['Catalog', 'Community', 'Commerce', 'Notifications', 'Catalogo']) {
       expect(labels).not.toContain(technicalName)
     }
+  })
+
+  it('filtra la gestion de roles para el rol primario SUPER_ADMINISTRATOR', () => {
+    expect(navigationForPrimaryRole('PLAYER').some((item) => item.path === '/admin/roles')).toBe(
+      false,
+    )
+    expect(
+      navigationForPrimaryRole('SUPER_ADMINISTRATOR').some((item) => item.path === '/admin/roles'),
+    ).toBe(true)
   })
 })
 
@@ -108,36 +118,20 @@ describe('Proteccion visual de rutas (HU-02)', () => {
   })
 
   /**
-   * El fallo estuvo en el CABLEADO, no en ninguna guarda: `/register` quedo
-   * montado sin proteccion y la landing enlazaba directo ahi. Alguien sin
-   * identidad rellenaba nombres, apellidos, apodo, contrasena, avatar y cuatro
-   * preguntas de seguridad para recibir al final "Falta el testimonio de
-   * identidad", porque `POST /api/accounts` responde 401 sin testimonio.
-   *
-   * Por eso la prueba es de ruta y no del componente: la guarda por si sola ya
-   * pasaba sus propias pruebas mientras la ruta seguia desprotegida.
+   * Con el alta server-side (ADR-004) `POST /api/accounts` ya NO exige
+   * testimonio: es Account quien crea la identidad a partir del formulario. Por
+   * eso `/register` es PUBLICA y muestra el formulario aunque no haya sesion;
+   * exigir identidad antes rechazaria justo a quien todavia no tiene cuenta, que
+   * es el fallo que introdujo la puerta al hosted UI ya retirada.
    */
-  it('sin identidad, /register no muestra el formulario que no podria enviarse', async () => {
-    // Con proveedor DISPONIBLE: lo que se comprueba es la falta de identidad,
-    // no la falta de configuracion, que tiene su propia pantalla.
-    useSession.setState({ ...ANONYMOUS_STATE, authenticationAvailable: true })
+  it('sin sesion, /register muestra el formulario directamente', async () => {
+    useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/register')
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Primero, tu identidad' }),
-    ).toBeInTheDocument()
-    expect(screen.queryByLabelText('Apodo')).not.toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/register')
-  })
-
-  it('con identidad, /register SI muestra el formulario', async () => {
-    useSession.setState(AUTHENTICATED_STATE)
-    renderRoute('/register')
-
     expect(await screen.findByLabelText('Apodo')).toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', { level: 1, name: 'Primero, tu identidad' }),
-    ).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Contraseña')).toBeInTheDocument()
+    // No hay puerta previa ni redireccion: la URL sigue siendo /register.
+    expect(router.state.location.pathname).toBe('/register')
   })
 
   it('sin sesion, una ruta autenticada muestra el aviso "Para continuar" en el mismo sitio, sin redirigir a /login', async () => {
@@ -225,6 +219,26 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(nav).toBeInTheDocument()
     expect(screen.getByText('Ana')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /cerrar sesion/iu })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Gestionar roles' })).not.toBeInTheDocument()
+  })
+
+  it('una URL manual de roles muestra 403 visual a quien no es Super Administrador', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/admin/roles')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(/403/)
+  })
+
+  it('el Super Administrador ve el acceso y abre la pantalla de roles', async () => {
+    useSession.setState({
+      ...AUTHENTICATED_STATE,
+      roles: ['PLAYER', 'SUPER_ADMINISTRATOR'],
+    })
+    renderRoute('/admin/roles')
+
+    expect(await screen.findByRole('heading', { name: 'Gestion de roles' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Gestionar roles' })).toBeInTheDocument()
   })
 
   it('cerrar sesion elimina la sesion y vuelve al estado publico esperado', async () => {
