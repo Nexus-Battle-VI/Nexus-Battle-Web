@@ -56,11 +56,12 @@ export const toRegistrationFormData = (values: RegistrationValues): FormData => 
   form.set('firstNames', values.firstName)
   form.set('lastNames', values.lastName)
   form.set('email', values.email)
-  // La contrasena NO se envia: la custodia el proveedor de identidad, no
-  // Account (ADR-004, decision 2). Se enviaba, Account la validaba y la tiraba,
-  // asi que quien se registraba creia estar fijando su contrasena y no fijaba
-  // nada. Al intentar entrar con ella recibia "revisa tus credenciales", que
-  // apunta al sitio equivocado.
+  // La contrasena SI se envia, y esta vez llega a su custodio: Account la pasa a
+  // Cognito por `signUp` (ADR-004, "Alta server-side") sin persistirla. Hubo un
+  // periodo en que el campo se enviaba y Account lo tiraba, y quien se
+  // registraba creia fijar su contrasena sin fijar nada; ahora la ruta del alta
+  // es server-side y la contrasena queda registrada en el proveedor.
+  form.set('password', values.password)
   form.set('nickname', values.nickname)
   form.set('termsAccepted', values.acceptedTerms ? 'true' : 'false')
   form.set(
@@ -79,4 +80,16 @@ export const toRegistrationFormData = (values: RegistrationValues): FormData => 
 
 export const registerAccount = async (values: RegistrationValues): Promise<void> => {
   await httpClient.post<RegisteredAccount>('/accounts', toRegistrationFormData(values))
+}
+
+/**
+ * Segundo paso del alta server-side: confirma el correo con el codigo que el
+ * proveedor envio al buzon y ACTIVA la cuenta (`POST /accounts/confirmation`).
+ *
+ * `identifier` es el correo con el que se registro. Account responde 400 si el
+ * codigo no es valido o expiro, y 503 si el proveedor no esta disponible; ambos
+ * llegan como `HttpError` y los distingue quien llama.
+ */
+export const confirmRegistration = async (identifier: string, code: string): Promise<void> => {
+  await httpClient.post<RegisteredAccount>('/accounts/confirmation', { identifier, code })
 }

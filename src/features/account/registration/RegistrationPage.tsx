@@ -11,7 +11,7 @@ import {
   THEME_VARIABLES,
   type Theme,
 } from './constants'
-import { registerAccount } from './api'
+import { confirmRegistration, registerAccount } from './api'
 import {
   EMPTY_VALUES,
   FIELD,
@@ -60,6 +60,7 @@ const storeTheme = (theme: Theme): void => {
 }
 
 const REGISTER_FAILED = 'No se pudo completar el registro.'
+const CONFIRM_FAILED = 'No se pudo confirmar la cuenta.'
 
 const CONTROL_CLASS =
   'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
@@ -176,9 +177,113 @@ const Field = ({ id, label, hint, counter, error, children }: FieldProps): React
   )
 }
 
+interface ConfirmationStepProps {
+  readonly email: string
+  readonly code: string
+  readonly onCodeChange: (value: string) => void
+  readonly onConfirm: () => void
+  readonly confirming: boolean
+  readonly confirmed: boolean
+  readonly failure: string | null
+  readonly onGoToLogin: () => void
+}
+
+/**
+ * Segundo paso del alta: confirmar el correo con el codigo que el proveedor
+ * envio al buzon.
+ *
+ * Es una pantalla distinta, no un aviso al pie del formulario: el registro ya se
+ * acepto y lo unico que queda es el codigo. Mostrar de nuevo el formulario
+ * entero invitaria a reenviarlo, que crearia un segundo intento con el mismo
+ * correo -y ese choca contra la identidad ya creada-.
+ */
+const ConfirmationStep = ({
+  email,
+  code,
+  onCodeChange,
+  onConfirm,
+  confirming,
+  confirmed,
+  failure,
+  onGoToLogin,
+}: ConfirmationStepProps): React.JSX.Element => (
+  <div className="mx-auto max-w-md">
+    {confirmed ? (
+      <div className="space-y-5 text-center">
+        <h1 className="text-xl font-semibold text-ink">Cuenta activada</h1>
+        <p
+          role="status"
+          className="rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
+        >
+          Tu cuenta quedó activada. Ya puedes iniciar sesión con tu correo y tu contraseña.
+        </p>
+        <div className="flex justify-center">
+          <Button onClick={onGoToLogin}>Ir a iniciar sesión</Button>
+        </div>
+      </div>
+    ) : (
+      <>
+        <h1 className="text-center text-xl font-semibold text-ink">Confirma tu correo</h1>
+        <p className="mx-auto mt-1.5 max-w-sm text-center text-sm text-muted">
+          Enviamos un código de confirmación a <span className="font-medium text-ink">{email}</span>
+          . Escríbelo para activar tu cuenta.
+        </p>
+
+        <form
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault()
+            onConfirm()
+          }}
+          className="mt-6 space-y-4"
+        >
+          {failure !== null && (
+            <p
+              role="alert"
+              className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
+            >
+              {failure}
+            </p>
+          )}
+
+          <Field
+            id="confirmation-code"
+            label="Código de confirmación"
+            hint="Revisa tu bandeja de entrada y la carpeta de spam."
+          >
+            {(field) => (
+              <input
+                {...field}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={code}
+                onChange={(event) => {
+                  onCodeChange(event.target.value)
+                }}
+              />
+            )}
+          </Field>
+
+          <div className="flex justify-end">
+            <Button type="submit" loading={confirming}>
+              Confirmar cuenta
+            </Button>
+          </div>
+        </form>
+      </>
+    )}
+  </div>
+)
+
 export interface RegistrationPageProps {
   /** Transporte del registro. Se inyecta para poder ejercitar el envio sin red. */
   readonly onSubmit?: (values: RegistrationValues) => Promise<void>
+  /**
+   * Transporte de la confirmacion por codigo (segundo paso del alta). Se inyecta
+   * igual que `onSubmit` para ejercitar la pantalla sin red.
+   */
+  readonly onConfirm?: (identifier: string, code: string) => Promise<void>
 }
 
 /**
@@ -193,6 +298,7 @@ export interface RegistrationPageProps {
  */
 export const RegistrationPage = ({
   onSubmit = registerAccount,
+  onConfirm = confirmRegistration,
 }: RegistrationPageProps = {}): React.JSX.Element => {
   const navigate = useNavigate()
 
@@ -202,9 +308,17 @@ export const RegistrationPage = ({
   const [attempted, setAttempted] = useState(false)
   const [sending, setSending] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   const [unavailableDocument, setUnavailableDocument] = useState<string | null>(null)
   const [logoFailed, setLogoFailed] = useState(false)
+
+  // Segundo paso del alta. `pendingEmail` distinto de null significa que el
+  // registro fue aceptado y la cuenta espera el codigo que el proveedor envio al
+  // correo; `confirmed` significa que ya se activo.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [code, setCode] = useState('')
+  const [confirming, setConfirming] = useState(false)
+  const [confirmFailure, setConfirmFailure] = useState<string | null>(null)
+  const [confirmed, setConfirmed] = useState(false)
 
   const summaryRef = useRef<HTMLDivElement>(null)
   const [focusSummaryToken, setFocusSummaryToken] = useState(0)
@@ -244,7 +358,6 @@ export const RegistrationPage = ({
 
     setAttempted(true)
     setFailure(null)
-    setSuccess(false)
 
     if (hasErrors(errors)) {
       // En un formulario largo el error puede quedar fuera de la vista: se le
@@ -262,11 +375,38 @@ export const RegistrationPage = ({
 
     try {
       await onSubmit(values)
-      setSuccess(true)
+      // El alta quedo aceptada pero PENDIENTE: el proveedor envio un codigo al
+      // correo y la cuenta no se activa hasta confirmarlo. La pantalla pasa al
+      // segundo paso en lugar de anunciar un exito que aun no lo es.
+      setPendingEmail(values.email)
     } catch (error: unknown) {
       setFailure(error instanceof Error ? error.message : REGISTER_FAILED)
     } finally {
       setSending(false)
+    }
+  }
+
+  const handleConfirm = async (): Promise<void> => {
+    if (confirming || pendingEmail === null) {
+      return
+    }
+
+    setConfirmFailure(null)
+
+    if (code.trim() === '') {
+      setConfirmFailure('Escribe el código que enviamos a tu correo.')
+      return
+    }
+
+    setConfirming(true)
+
+    try {
+      await onConfirm(pendingEmail, code.trim())
+      setConfirmed(true)
+    } catch (error: unknown) {
+      setConfirmFailure(error instanceof Error ? error.message : CONFIRM_FAILED)
+    } finally {
+      setConfirming(false)
     }
   }
 
@@ -354,333 +494,373 @@ export const RegistrationPage = ({
         </header>
 
         <main className="mt-6 pb-10">
-          <h1 className="text-center text-xl font-semibold text-ink">Crear cuenta</h1>
-          <p className="mx-auto mt-1.5 max-w-lg text-center text-sm text-muted">
-            Completa tus datos para unirte a Nexus Battles VI. Todos los campos son obligatorios.
-          </p>
-
-          <form
-            noValidate
-            onSubmit={(event) => {
-              event.preventDefault()
-              void handleSubmit()
-            }}
-            className="mt-6 space-y-5"
-          >
-            {issues.length > 0 && (
-              <div
-                ref={summaryRef}
-                role="alert"
-                tabIndex={-1}
-                className="rounded-lg border border-danger bg-danger/10 p-4"
-              >
-                <p className="text-sm font-semibold text-danger">
-                  Revisa los siguientes campos antes de completar el registro:
-                </p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-danger">
-                  {issues.map(([field, message]) => (
-                    <li key={field}>
-                      <a href={`#${field}`} className="underline">
-                        {message}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {failure !== null && (
-              <p
-                role="alert"
-                className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
-              >
-                {failure}
+          {pendingEmail !== null ? (
+            <ConfirmationStep
+              email={pendingEmail}
+              code={code}
+              onCodeChange={setCode}
+              onConfirm={() => {
+                void handleConfirm()
+              }}
+              confirming={confirming}
+              confirmed={confirmed}
+              failure={confirmFailure}
+              onGoToLogin={() => {
+                void navigate('/login')
+              }}
+            />
+          ) : (
+            <>
+              <h1 className="text-center text-xl font-semibold text-ink">Crear cuenta</h1>
+              <p className="mx-auto mt-1.5 max-w-lg text-center text-sm text-muted">
+                Completa tus datos para unirte a Nexus Battles VI. Todos los campos son
+                obligatorios.
               </p>
-            )}
 
-            {success && (
-              <p
-                role="status"
-                className="rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
+              <form
+                noValidate
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void handleSubmit()
+                }}
+                className="mt-6 space-y-5"
               >
-                Cuenta creada. Queda pendiente de verificación. Ya puedes cerrar esta pantalla.
-              </p>
-            )}
-
-            <Section title="Datos personales">
-              <div className="space-y-4">
-                <FieldRow>
-                  <Field
-                    id={FIELD.firstName}
-                    label="Nombres"
-                    hint="Campo obligatorio."
-                    {...(visible[FIELD.firstName] === undefined
-                      ? {}
-                      : { error: visible[FIELD.firstName] })}
+                {issues.length > 0 && (
+                  <div
+                    ref={summaryRef}
+                    role="alert"
+                    tabIndex={-1}
+                    className="rounded-lg border border-danger bg-danger/10 p-4"
                   >
-                    {(field) => (
-                      <input
-                        {...field}
-                        type="text"
-                        autoComplete="given-name"
-                        value={values.firstName}
-                        onBlur={() => {
-                          markTouched(FIELD.firstName)
-                        }}
-                        onChange={(event) => {
-                          setValue('firstName', event.target.value)
-                        }}
-                      />
-                    )}
-                  </Field>
-
-                  <Field
-                    id={FIELD.lastName}
-                    label="Apellidos"
-                    hint="Campo obligatorio."
-                    {...(visible[FIELD.lastName] === undefined
-                      ? {}
-                      : { error: visible[FIELD.lastName] })}
-                  >
-                    {(field) => (
-                      <input
-                        {...field}
-                        type="text"
-                        autoComplete="family-name"
-                        value={values.lastName}
-                        onBlur={() => {
-                          markTouched(FIELD.lastName)
-                        }}
-                        onChange={(event) => {
-                          setValue('lastName', event.target.value)
-                        }}
-                      />
-                    )}
-                  </Field>
-                </FieldRow>
-
-                <FieldRow>
-                  <Field
-                    id={FIELD.email}
-                    label="Correo electrónico"
-                    hint="Usaremos este correo para confirmar tu cuenta."
-                    {...(visible[FIELD.email] === undefined ? {} : { error: visible[FIELD.email] })}
-                  >
-                    {(field) => (
-                      <input
-                        {...field}
-                        type="email"
-                        autoComplete="email"
-                        value={values.email}
-                        onBlur={() => {
-                          markTouched(FIELD.email)
-                        }}
-                        onChange={(event) => {
-                          setValue('email', event.target.value)
-                        }}
-                      />
-                    )}
-                  </Field>
-
-                  <Field
-                    id={FIELD.nickname}
-                    label="Apodo"
-                    hint="No se permiten palabras ofensivas ni nombres reservados."
-                    counter={`${String(values.nickname.length)} / ${String(NICKNAME_MAX_LENGTH)} caracteres`}
-                    {...(visible[FIELD.nickname] === undefined
-                      ? {}
-                      : { error: visible[FIELD.nickname] })}
-                  >
-                    {(field) => (
-                      <input
-                        {...field}
-                        type="text"
-                        autoComplete="nickname"
-                        // Se impide al escribir y ademas se valida: `maxLength`
-                        // no cubre un valor pegado por script.
-                        maxLength={NICKNAME_MAX_LENGTH}
-                        value={values.nickname}
-                        onBlur={() => {
-                          markTouched(FIELD.nickname)
-                        }}
-                        onChange={(event) => {
-                          setValue('nickname', event.target.value)
-                        }}
-                      />
-                    )}
-                  </Field>
-                </FieldRow>
-              </div>
-            </Section>
-
-            <Section title="Avatar">
-              <Field
-                id={FIELD.avatar}
-                label="Sube tu avatar (obligatorio)"
-                hint="Formato imagen · Tamaño máximo 500 MB"
-                {...(visible[FIELD.avatar] === undefined ? {} : { error: visible[FIELD.avatar] })}
-              >
-                {(field) => (
-                  <input
-                    {...field}
-                    type="file"
-                    // `accept` filtra el dialogo del sistema pero NO valida:
-                    // el tipo se comprueba igualmente.
-                    accept="image/*"
-                    className={clsx(
-                      field.className,
-                      'file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-ink',
-                    )}
-                    onChange={(event) => {
-                      markTouched(FIELD.avatar)
-                      setValue('avatar', event.target.files?.[0] ?? null)
-                    }}
-                  />
+                    <p className="text-sm font-semibold text-danger">
+                      Revisa los siguientes campos antes de completar el registro:
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-danger">
+                      {issues.map(([field, message]) => (
+                        <li key={field}>
+                          <a href={`#${field}`} className="underline">
+                            {message}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
-              </Field>
 
-              {values.avatar !== null && (
-                <p className="mt-1.5 truncate text-xs text-muted">
-                  Seleccionado: {values.avatar.name}
-                </p>
-              )}
-            </Section>
+                {failure !== null && (
+                  <p
+                    role="alert"
+                    className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
+                  >
+                    {failure}
+                  </p>
+                )}
 
-            <Section
-              title="Preguntas de seguridad"
-              description="Se usarán para recuperar el acceso a tu cuenta. Responde las cuatro."
-            >
-              {/*
-                Una columna: con dos columnas, una pregunta que envuelve a dos
-                lineas (la de los padres) empuja su input mas abajo que el de
-                la columna vecina y el formulario se ve descuadrado.
-              */}
-              <div className="space-y-5">
-                {SECURITY_QUESTIONS.map((question) => {
-                  const id = securityFieldId(question.id)
+                <Section title="Datos personales">
+                  <div className="space-y-4">
+                    <FieldRow>
+                      <Field
+                        id={FIELD.firstName}
+                        label="Nombres"
+                        hint="Campo obligatorio."
+                        {...(visible[FIELD.firstName] === undefined
+                          ? {}
+                          : { error: visible[FIELD.firstName] })}
+                      >
+                        {(field) => (
+                          <input
+                            {...field}
+                            type="text"
+                            autoComplete="given-name"
+                            value={values.firstName}
+                            onBlur={() => {
+                              markTouched(FIELD.firstName)
+                            }}
+                            onChange={(event) => {
+                              setValue('firstName', event.target.value)
+                            }}
+                          />
+                        )}
+                      </Field>
 
-                  return (
+                      <Field
+                        id={FIELD.lastName}
+                        label="Apellidos"
+                        hint="Campo obligatorio."
+                        {...(visible[FIELD.lastName] === undefined
+                          ? {}
+                          : { error: visible[FIELD.lastName] })}
+                      >
+                        {(field) => (
+                          <input
+                            {...field}
+                            type="text"
+                            autoComplete="family-name"
+                            value={values.lastName}
+                            onBlur={() => {
+                              markTouched(FIELD.lastName)
+                            }}
+                            onChange={(event) => {
+                              setValue('lastName', event.target.value)
+                            }}
+                          />
+                        )}
+                      </Field>
+                    </FieldRow>
+
+                    <FieldRow>
+                      <Field
+                        id={FIELD.email}
+                        label="Correo electrónico"
+                        hint="Usaremos este correo para confirmar tu cuenta."
+                        {...(visible[FIELD.email] === undefined
+                          ? {}
+                          : { error: visible[FIELD.email] })}
+                      >
+                        {(field) => (
+                          <input
+                            {...field}
+                            type="email"
+                            autoComplete="email"
+                            value={values.email}
+                            onBlur={() => {
+                              markTouched(FIELD.email)
+                            }}
+                            onChange={(event) => {
+                              setValue('email', event.target.value)
+                            }}
+                          />
+                        )}
+                      </Field>
+
+                      <Field
+                        id={FIELD.nickname}
+                        label="Apodo"
+                        hint="No se permiten palabras ofensivas ni nombres reservados."
+                        counter={`${String(values.nickname.length)} / ${String(NICKNAME_MAX_LENGTH)} caracteres`}
+                        {...(visible[FIELD.nickname] === undefined
+                          ? {}
+                          : { error: visible[FIELD.nickname] })}
+                      >
+                        {(field) => (
+                          <input
+                            {...field}
+                            type="text"
+                            autoComplete="nickname"
+                            // Se impide al escribir y ademas se valida: `maxLength`
+                            // no cubre un valor pegado por script.
+                            maxLength={NICKNAME_MAX_LENGTH}
+                            value={values.nickname}
+                            onBlur={() => {
+                              markTouched(FIELD.nickname)
+                            }}
+                            onChange={(event) => {
+                              setValue('nickname', event.target.value)
+                            }}
+                          />
+                        )}
+                      </Field>
+                    </FieldRow>
+
                     <Field
-                      key={question.id}
-                      id={id}
-                      label={question.label}
-                      {...(visible[id] === undefined ? {} : { error: visible[id] })}
+                      id={FIELD.password}
+                      label="Contraseña"
+                      hint="Más de 8 caracteres, con mayúscula, minúscula, número y símbolo."
+                      {...(visible[FIELD.password] === undefined
+                        ? {}
+                        : { error: visible[FIELD.password] })}
                     >
                       {(field) => (
                         <input
                           {...field}
-                          type="text"
-                          autoComplete="off"
-                          value={values.securityAnswers[question.id] ?? ''}
+                          type="password"
+                          autoComplete="new-password"
+                          value={values.password}
                           onBlur={() => {
-                            markTouched(id)
+                            markTouched(FIELD.password)
                           }}
                           onChange={(event) => {
-                            setValues((previous) => ({
-                              ...previous,
-                              securityAnswers: {
-                                ...previous.securityAnswers,
-                                [question.id]: event.target.value,
-                              },
-                            }))
+                            setValue('password', event.target.value)
                           }}
                         />
                       )}
                     </Field>
-                  )
-                })}
-              </div>
-            </Section>
+                  </div>
+                </Section>
 
-            <div>
-              <div className="flex items-start gap-3">
-                <input
-                  id={FIELD.terms}
-                  type="checkbox"
-                  checked={values.acceptedTerms}
-                  aria-required
-                  aria-invalid={visible[FIELD.terms] !== undefined}
-                  aria-describedby={
-                    visible[FIELD.terms] === undefined ? undefined : `${FIELD.terms}-error`
-                  }
-                  onChange={(event) => {
-                    markTouched(FIELD.terms)
-                    setValue('acceptedTerms', event.target.checked)
-                  }}
-                  className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                />
-                <label htmlFor={FIELD.terms} className="text-sm text-ink">
-                  He leído y acepto los Términos y Condiciones y la Política de Privacidad de Nexus
-                  Battles VI.
-                </label>
-              </div>
+                <Section title="Avatar">
+                  <Field
+                    id={FIELD.avatar}
+                    label="Sube tu avatar (obligatorio)"
+                    hint="Formato imagen · Tamaño máximo 500 MB"
+                    {...(visible[FIELD.avatar] === undefined
+                      ? {}
+                      : { error: visible[FIELD.avatar] })}
+                  >
+                    {(field) => (
+                      <input
+                        {...field}
+                        type="file"
+                        // `accept` filtra el dialogo del sistema pero NO valida:
+                        // el tipo se comprueba igualmente.
+                        accept="image/*"
+                        className={clsx(
+                          field.className,
+                          'file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-ink',
+                        )}
+                        onChange={(event) => {
+                          markTouched(FIELD.avatar)
+                          setValue('avatar', event.target.files?.[0] ?? null)
+                        }}
+                      />
+                    )}
+                  </Field>
 
-              {/*
+                  {values.avatar !== null && (
+                    <p className="mt-1.5 truncate text-xs text-muted">
+                      Seleccionado: {values.avatar.name}
+                    </p>
+                  )}
+                </Section>
+
+                <Section
+                  title="Preguntas de seguridad"
+                  description="Se usarán para recuperar el acceso a tu cuenta. Responde las cuatro."
+                >
+                  {/*
+                Una columna: con dos columnas, una pregunta que envuelve a dos
+                lineas (la de los padres) empuja su input mas abajo que el de
+                la columna vecina y el formulario se ve descuadrado.
+              */}
+                  <div className="space-y-5">
+                    {SECURITY_QUESTIONS.map((question) => {
+                      const id = securityFieldId(question.id)
+
+                      return (
+                        <Field
+                          key={question.id}
+                          id={id}
+                          label={question.label}
+                          {...(visible[id] === undefined ? {} : { error: visible[id] })}
+                        >
+                          {(field) => (
+                            <input
+                              {...field}
+                              type="text"
+                              autoComplete="off"
+                              value={values.securityAnswers[question.id] ?? ''}
+                              onBlur={() => {
+                                markTouched(id)
+                              }}
+                              onChange={(event) => {
+                                setValues((previous) => ({
+                                  ...previous,
+                                  securityAnswers: {
+                                    ...previous.securityAnswers,
+                                    [question.id]: event.target.value,
+                                  },
+                                }))
+                              }}
+                            />
+                          )}
+                        </Field>
+                      )
+                    })}
+                  </div>
+                </Section>
+
+                <div>
+                  <div className="flex items-start gap-3">
+                    <input
+                      id={FIELD.terms}
+                      type="checkbox"
+                      checked={values.acceptedTerms}
+                      aria-required
+                      aria-invalid={visible[FIELD.terms] !== undefined}
+                      aria-describedby={
+                        visible[FIELD.terms] === undefined ? undefined : `${FIELD.terms}-error`
+                      }
+                      onChange={(event) => {
+                        markTouched(FIELD.terms)
+                        setValue('acceptedTerms', event.target.checked)
+                      }}
+                      className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    />
+                    <label htmlFor={FIELD.terms} className="text-sm text-ink">
+                      He leído y acepto los Términos y Condiciones y la Política de Privacidad de
+                      Nexus Battles VI.
+                    </label>
+                  </div>
+
+                  {/*
                 Los documentos van fuera de la etiqueta: una `label` no puede
                 contener otro control sin dejar ambiguo que activa cada clic.
                 Mientras un documento no exista, su control lo dice en lugar de
                 abrir un destino inventado.
               */}
-              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-7 text-sm">
-                {LEGAL_DOCUMENTS.map((document) =>
-                  document.href === null ? (
-                    <button
-                      key={document.id}
-                      type="button"
-                      className="font-medium text-brand underline"
-                      onClick={() => {
-                        setUnavailableDocument(document.label)
-                      }}
+                  <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-7 text-sm">
+                    {LEGAL_DOCUMENTS.map((document) =>
+                      document.href === null ? (
+                        <button
+                          key={document.id}
+                          type="button"
+                          className="font-medium text-brand underline"
+                          onClick={() => {
+                            setUnavailableDocument(document.label)
+                          }}
+                        >
+                          {document.label}
+                        </button>
+                      ) : (
+                        <a
+                          key={document.id}
+                          href={document.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-brand underline"
+                        >
+                          {document.label}
+                        </a>
+                      ),
+                    )}
+                  </p>
+
+                  {unavailableDocument !== null && (
+                    <p role="status" className="mt-2 pl-7 text-xs text-muted">
+                      {unavailableDocument}: el documento todavía no está publicado en la
+                      aplicación.
+                    </p>
+                  )}
+
+                  {visible[FIELD.terms] !== undefined && (
+                    <p
+                      id={`${FIELD.terms}-error`}
+                      className="mt-2 flex items-start gap-1.5 pl-7 text-sm text-danger"
                     >
-                      {document.label}
-                    </button>
-                  ) : (
-                    <a
-                      key={document.id}
-                      href={document.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-medium text-brand underline"
-                    >
-                      {document.label}
-                    </a>
-                  ),
-                )}
-              </p>
+                      <span aria-hidden="true" className="font-bold leading-5">
+                        !
+                      </span>
+                      <span>{MESSAGES.terms}</span>
+                    </p>
+                  )}
+                </div>
 
-              {unavailableDocument !== null && (
-                <p role="status" className="mt-2 pl-7 text-xs text-muted">
-                  {unavailableDocument}: el documento todavía no está publicado en la aplicación.
-                </p>
-              )}
-
-              {visible[FIELD.terms] !== undefined && (
-                <p
-                  id={`${FIELD.terms}-error`}
-                  className="mt-2 flex items-start gap-1.5 pl-7 text-sm text-danger"
-                >
-                  <span aria-hidden="true" className="font-bold leading-5">
-                    !
-                  </span>
-                  <span>{MESSAGES.terms}</span>
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  void navigate('/')
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" loading={sending} disabled={success}>
-                Completar registro
-              </Button>
-            </div>
-          </form>
+                <div className="flex flex-wrap justify-end gap-3">
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      void navigate('/')
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" loading={sending}>
+                    Completar registro
+                  </Button>
+                </div>
+              </form>
+            </>
+          )}
         </main>
       </div>
     </div>

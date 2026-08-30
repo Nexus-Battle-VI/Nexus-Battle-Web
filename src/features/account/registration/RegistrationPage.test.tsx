@@ -49,6 +49,7 @@ const fillValidForm = async (user: ReturnType<typeof setup>): Promise<void> => {
   await user.type(screen.getByLabelText('Nombres'), 'Ana')
   await user.type(screen.getByLabelText('Apellidos'), 'Restrepo')
   await user.type(screen.getByLabelText('Correo electrónico'), 'ana@nexus.test')
+  await user.type(screen.getByLabelText('Contraseña'), 'Abcdefg1!')
   await user.type(screen.getByLabelText('Apodo'), 'ana-guerrera')
   await user.upload(screen.getByLabelText('Sube tu avatar (obligatorio)'), imageOfSize(4096))
 
@@ -98,10 +99,10 @@ describe('RegistrationPage', () => {
   })
 
   it('/register se sirve sin la navegacion principal de la aplicacion', async () => {
-    // Con identidad: `/register` esta detras de `RequireIdentity` porque el
-    // formulario no puede enviarse sin testimonio. Sin sesion la ruta muestra
-    // la puerta, y eso tiene su propia prueba en routes.test.tsx.
-    useSession.setState({ authenticationAvailable: true, subject: 'sujeto-de-prueba' })
+    // `/register` es publica (alta server-side): se sirve con o sin sesion. Lo
+    // que aqui se verifica es que la ruta NO cuelga de `AppLayout` y por tanto
+    // no arrastra la navegacion principal.
+    useSession.setState({ subject: null, accessToken: null, authenticationAvailable: false })
 
     // Se monta el enrutador real, no el componente suelto: lo que se verifica
     // es que la ruta NO cuelga de `AppLayout`.
@@ -159,15 +160,15 @@ describe('RegistrationPage', () => {
     expect(screen.getByLabelText('Correo electrónico')).toHaveAttribute('type', 'email')
 
     /**
-     * NO se pide contrasena, y esto es lo que hay que defender.
+     * SI se pide contrasena, y como campo enmascarado.
      *
-     * La custodia el proveedor de identidad, no Account (ADR-004, decision 2).
-     * El campo existia, Account validaba lo que llegaba y lo TIRABA: quien se
-     * registraba creia estar fijando su contrasena y no fijaba nada. Al
-     * intentar entrar con ella recibia "revisa tus credenciales", que apunta al
-     * sitio equivocado. Le paso a la primera persona ajena al equipo.
+     * Con el alta server-side (ADR-004) la contrasena vuelve al formulario
+     * porque ahora SI llega a su custodio -Account la entrega a Cognito y no la
+     * persiste-. Se exige `type="password"` para que no quede a la vista.
      */
-    expect(screen.queryByLabelText('Contraseña')).not.toBeInTheDocument()
+    const passwordInput = screen.getByLabelText('Contraseña')
+    expect(passwordInput).toBeInTheDocument()
+    expect(passwordInput).toHaveAttribute('type', 'password')
     expect(screen.getByRole('checkbox')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Completar registro' })).toBeInTheDocument()
@@ -316,13 +317,17 @@ describe('RegistrationPage', () => {
 
     release()
 
+    // El alta aceptada NO anuncia exito: lleva al segundo paso, la
+    // confirmacion por codigo. El formulario deja de estar en pantalla.
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(/Cuenta creada/u)
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'Confirma tu correo' }),
+      ).toBeInTheDocument()
     })
-    expect(screen.getByRole('button', { name: 'Completar registro' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Completar registro' })).not.toBeInTheDocument()
   })
 
-  it('muestra confirmacion cuando el servicio acepta el registro', async () => {
+  it('tras aceptar el registro pide el codigo de confirmacion, no anuncia exito aun', async () => {
     const user = setup()
     const onSubmit = vi.fn<(values: RegistrationValues) => Promise<void>>().mockResolvedValue()
 
@@ -330,8 +335,57 @@ describe('RegistrationPage', () => {
     await fillValidForm(user)
     await user.click(screen.getByRole('button', { name: 'Completar registro' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/Cuenta creada/u)
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Confirma tu correo' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Código de confirmación')).toBeInTheDocument()
     expect(onSubmit).toHaveBeenCalledTimes(1)
+  })
+
+  it('confirma con el codigo y activa la cuenta, ofreciendo iniciar sesion', async () => {
+    const user = setup()
+    const onSubmit = vi.fn<(values: RegistrationValues) => Promise<void>>().mockResolvedValue()
+    const onConfirm = vi
+      .fn<(identifier: string, code: string) => Promise<void>>()
+      .mockResolvedValue()
+
+    renderWithProviders(<RegistrationPage onSubmit={onSubmit} onConfirm={onConfirm} />, {
+      route: '/register',
+    })
+
+    await fillValidForm(user)
+    await user.click(screen.getByRole('button', { name: 'Completar registro' }))
+
+    await user.type(await screen.findByLabelText('Código de confirmación'), '000000')
+    await user.click(screen.getByRole('button', { name: 'Confirmar cuenta' }))
+
+    // El identificador es el correo con el que se registro; el codigo, el que se
+    // escribio. Se afirman AMBOS: llamar con el correo equivocado activaria otra
+    // cuenta.
+    expect(onConfirm).toHaveBeenCalledWith('ana@nexus.test', '000000')
+    expect(await screen.findByRole('status')).toHaveTextContent(/Ya puedes iniciar sesión/u)
+    expect(screen.getByRole('button', { name: 'Ir a iniciar sesión' })).toBeInTheDocument()
+  })
+
+  it('un codigo rechazado no activa la cuenta y muestra el motivo', async () => {
+    const user = setup()
+    const onSubmit = vi.fn<(values: RegistrationValues) => Promise<void>>().mockResolvedValue()
+    const onConfirm = vi
+      .fn<(identifier: string, code: string) => Promise<void>>()
+      .mockRejectedValue(new Error('El codigo no es valido o ha expirado.'))
+
+    renderWithProviders(<RegistrationPage onSubmit={onSubmit} onConfirm={onConfirm} />, {
+      route: '/register',
+    })
+
+    await fillValidForm(user)
+    await user.click(screen.getByRole('button', { name: 'Completar registro' }))
+
+    await user.type(await screen.findByLabelText('Código de confirmación'), '999999')
+    await user.click(screen.getByRole('button', { name: 'Confirmar cuenta' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/no es valido o ha expirado/u)
+    expect(screen.queryByText(/Ya puedes iniciar sesión/u)).not.toBeInTheDocument()
   })
 
   it('muestra el mensaje del servicio cuando el registro falla', async () => {
@@ -347,7 +401,10 @@ describe('RegistrationPage', () => {
     await user.click(screen.getByRole('button', { name: 'Completar registro' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/Ya existe una cuenta/u)
-    expect(screen.queryByText(/Cuenta creada/u)).not.toBeInTheDocument()
+    // No paso al segundo paso: el registro no llego a aceptarse.
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Confirma tu correo' }),
+    ).not.toBeInTheDocument()
   })
 
   it('ofrece los documentos legales como acciones y declara que faltan', async () => {
@@ -368,10 +425,8 @@ describe('RegistrationPage', () => {
     // Es el comportamiento correcto: cancelar el registro teniendo sesion lleva
     // a la aplicacion, no a una pantalla de bienvenida que invita a entrar. Lo
     // que la prueba defiende es que el boton NAVEGA de verdad y no se queda en
-    // /register, que es el fallo que tendria sentido detectar.
-    // Con identidad: `/register` esta detras de `RequireIdentity` porque el
-    // formulario no puede enviarse sin testimonio. Sin sesion la ruta muestra
-    // la puerta, y eso tiene su propia prueba en routes.test.tsx.
+    // /register, que es el fallo que tendria sentido detectar. Se fija una sesion
+    // a proposito para ejercitar ese destino; `/register` en si ya es publica.
     useSession.setState({ authenticationAvailable: true, subject: 'sujeto-de-prueba' })
 
     const user = setup()
