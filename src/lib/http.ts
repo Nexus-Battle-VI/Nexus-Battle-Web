@@ -183,6 +183,15 @@ export class HttpClient {
     return this.request<T>(path, { method: 'POST', body })
   }
 
+  /**
+   * Actualizacion parcial. La usa la edicion self-service de la cuenta propia
+   * (`PATCH /api/accounts/me`, HU-05.4): Account declara ese verbo -no PUT- y su
+   * contrato solo admite los campos editables.
+   */
+  patch<T>(path: string, body?: unknown): Promise<T> {
+    return this.request<T>(path, { method: 'PATCH', body })
+  }
+
   delete<T>(path: string): Promise<T> {
     return this.request<T>(path, { method: 'DELETE' })
   }

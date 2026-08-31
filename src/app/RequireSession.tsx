@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useSession } from '@/shared/session'
-import { NEXUS_DARK_THEME } from '@/shared/publicAuthTheme'
 
 export interface RequireSessionProps {
   readonly children: ReactNode
@@ -31,10 +30,7 @@ export const RequireSession = ({ children }: RequireSessionProps): React.JSX.Ele
 
   if (subject === null) {
     return (
-      <div
-        style={NEXUS_DARK_THEME}
-        className="flex min-h-dvh items-center justify-center bg-surface px-4 py-10 text-ink"
-      >
+      <div className="flex min-h-dvh items-center justify-center px-4 py-10 text-ink">
         <div className="w-full max-w-sm text-center">
           <h1 className="text-xl font-semibold text-ink">Para continuar</h1>
           <p className="mt-2 text-sm text-muted">Necesitas iniciar sesión o crear una cuenta.</p>

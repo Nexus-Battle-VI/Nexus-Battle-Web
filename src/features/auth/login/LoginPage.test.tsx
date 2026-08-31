@@ -101,6 +101,24 @@ describe('LoginPage', () => {
     expect(password).toHaveAttribute('placeholder', 'Tu contraseña')
   })
 
+  it('la contraseña usa PasswordField con control accesible mostrar/ocultar', async () => {
+    const user = userEvent.setup()
+    renderLogin()
+
+    await user.type(screen.getByLabelText('Contraseña'), 'Nexus#2026')
+    await user.click(screen.getByRole('button', { name: 'Mostrar contraseña' }))
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'text')
+
+    await user.click(screen.getByRole('button', { name: 'Ocultar contraseña' }))
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'password')
+  })
+
+  it('ofrece el conmutador de tema global', () => {
+    renderLogin()
+
+    expect(screen.getByRole('group', { name: 'Tema de la interfaz' })).toBeInTheDocument()
+  })
+
   it('ofrece los enlaces de recuperar contraseña y crear cuenta', () => {
     renderLogin()
 

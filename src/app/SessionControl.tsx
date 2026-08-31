@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import { useSession } from '@/shared/session'
@@ -6,16 +6,22 @@ import { primaryRole, roleLabel } from '@/shared/rbac'
 import { ChevronDown, LogOut, Package, User } from '@/components/ui/icons'
 
 /**
- * Control de sesion de la cabecera (HU-02, HU-03).
+ * Control de sesion de la cabecera (HU-02, HU-03, HU-05.4).
  *
  * Implementa el diseno de navegacion autenticada de Figma (Node 628:14151):
  * - Usuario no autenticado: accesos a "Crear cuenta" e "Iniciar sesion".
  * - Usuario autenticado: menu desplegable "Mi cuenta" con avatar, informacion
  *   de usuario, accesos de navegacion y la accion destacada "Cerrar sesion".
+ *
+ * HU-05.4: los colores hex embebidos se sustituyen por tokens del Design System
+ * para que el menu funcione en claro y oscuro; se conserva profundidad y
+ * desenfoque. La etiqueta "Mi perfil" pasa a "Mi cuenta" (misma ruta `/account`).
+ * Al cerrar con Escape, el foco vuelve al disparador.
  */
 export const SessionControl = (): React.JSX.Element => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const navigate = useNavigate()
 
   const available = useSession((state) => state.authenticationAvailable)
@@ -36,6 +42,9 @@ export const SessionControl = (): React.JSX.Element => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setIsOpen(false)
+        // Devolver el foco al disparador: cerrar con teclado no debe dejar el
+        // foco perdido en el `body`.
+        triggerRef.current?.focus()
       }
     }
 
@@ -94,6 +103,7 @@ export const SessionControl = (): React.JSX.Element => {
   return (
     <div className="relative ml-auto" ref={menuRef}>
       <button
+        ref={triggerRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={isOpen}
@@ -105,12 +115,12 @@ export const SessionControl = (): React.JSX.Element => {
         data-testid="user-menu-trigger"
       >
         <span
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-semibold text-white"
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-ink"
           aria-hidden="true"
         >
           {initial}
         </span>
-        <span className="text-sm font-medium text-[#F1F5F9]">Mi cuenta</span>
+        <span className="text-sm font-medium text-ink">Mi cuenta</span>
         <ChevronDown
           className={`h-4 w-4 text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden="true"
@@ -121,22 +131,22 @@ export const SessionControl = (): React.JSX.Element => {
         <div
           role="menu"
           aria-label="Opciones de cuenta"
-          className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-white/10 bg-[#0D1424] py-1 shadow-[0px_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-md"
+          className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-surface-raised py-1 shadow-2xl backdrop-blur-md"
           data-testid="user-menu-dropdown"
         >
           {/* Cabecera del usuario */}
-          <div className="flex items-center gap-3 border-b border-white/10 p-3">
+          <div className="flex items-center gap-3 border-b border-border p-3">
             <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F46E5] text-sm font-bold text-white shadow-inner"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand/70 text-sm font-bold text-brand-ink shadow-inner"
               aria-hidden="true"
             >
               {initial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-[#F1F5F9]">
+              <p className="truncate text-sm font-semibold text-ink">
                 {displayName ?? 'Jugador Nexus'}
               </p>
-              <p className="truncate text-xs text-[#64748B]">{userHandle}</p>
+              <p className="truncate text-xs text-muted">{userHandle}</p>
               {role !== null && (
                 <span className="mt-0.5 inline-block rounded-full bg-brand/20 px-1.5 py-0.2 text-[10px] font-medium text-brand">
                   {roleLabel(role)}
@@ -153,10 +163,10 @@ export const SessionControl = (): React.JSX.Element => {
               onClick={() => {
                 setIsOpen(false)
               }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#CBD5E1] transition-colors hover:bg-white/5 hover:text-white"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-brand/10"
             >
               <User className="h-5 w-5 text-muted" aria-hidden="true" />
-              <span>Mi perfil</span>
+              <span>Mi cuenta</span>
             </Link>
             <Link
               to="/inventory"
@@ -164,7 +174,7 @@ export const SessionControl = (): React.JSX.Element => {
               onClick={() => {
                 setIsOpen(false)
               }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#CBD5E1] transition-colors hover:bg-white/5 hover:text-white"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-brand/10"
             >
               <Package className="h-5 w-5 text-muted" aria-hidden="true" />
               <span>Mi inventario</span>
@@ -172,7 +182,7 @@ export const SessionControl = (): React.JSX.Element => {
           </div>
 
           {/* Divisor */}
-          <div className="mx-3 my-1 h-px bg-white/10" aria-hidden="true" />
+          <div className="mx-3 my-1 h-px bg-border" aria-hidden="true" />
 
           {/* Accion de cierre de sesion (HU-03 / Figma) */}
           <button
@@ -181,10 +191,10 @@ export const SessionControl = (): React.JSX.Element => {
             onClick={() => {
               void handleLogout()
             }}
-            className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#F87171] transition-colors hover:bg-red-500/10"
+            className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
             data-testid="logout-button"
           >
-            <LogOut className="h-5 w-5 text-[#F87171]" aria-hidden="true" />
+            <LogOut className="h-5 w-5 text-danger" aria-hidden="true" />
             <span>Cerrar sesión</span>
           </button>
         </div>
