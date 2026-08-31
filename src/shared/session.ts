@@ -62,8 +62,8 @@ export interface SessionState {
    * via no tiene ese testimonio, tiene la sesion ya resuelta por el backend.
    */
   establishSession: (session: EstablishedSession) => void
-  /** Cierra la sesion aqui y, si corresponde, en el proveedor. */
-  signOut: () => void
+  /** Cierra la sesion aqui y en el backend (HU-03). */
+  signOut: () => Promise<void>
 }
 
 /**
@@ -146,9 +146,23 @@ export const useSession = create<SessionState>((set, get) => ({
     })
   },
 
-  signOut: () => {
+  signOut: async () => {
     const { accessToken, viaProvider } = get()
     const hadSession = accessToken !== null
+
+    if (hadSession && accessToken.length > 0) {
+      try {
+        await globalThis.fetch('/api/sessions', {
+          method: 'DELETE',
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+          },
+        })
+      } catch {
+        // Si la red o el servicio fallan, se purga igualmente el estado local
+        // para garantizar que la persona no quede atrapada en una sesion fallida.
+      }
+    }
 
     set({
       subject: null,

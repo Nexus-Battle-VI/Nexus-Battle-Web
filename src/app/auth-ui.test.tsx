@@ -96,7 +96,7 @@ describe('SessionControl', () => {
     expect(screen.queryByRole('button', { name: /crear cuenta/i })).not.toBeInTheDocument()
   })
 
-  it('muestra a quien esta identificado y permite cerrar sesion', async () => {
+  it('muestra el menu de cuenta de Figma con avatar y permite abrir y cerrar sesion (HU-03)', async () => {
     useSession.setState({
       authenticationAvailable: true,
       subject: 'sujeto-ana',
@@ -104,19 +104,57 @@ describe('SessionControl', () => {
       accessToken: 'token',
     })
 
-    const signOut = vi.fn()
+    const signOut = vi.fn().mockResolvedValue(undefined)
     useSession.setState({ signOut })
 
     renderWithProviders(<SessionControl />)
 
-    expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
+    // Trigger visible con inicial y etiqueta
+    const trigger = screen.getByRole('button', { name: /menú de cuenta/i })
+    expect(trigger).toBeInTheDocument()
+    expect(screen.getByText('Mi cuenta')).toBeInTheDocument()
+    expect(screen.getByText('A')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: /cerrar sesion/i }))
+    // El dropdown inicia cerrado
+    expect(screen.queryByTestId('user-menu-dropdown')).not.toBeInTheDocument()
+
+    // Abrir menu
+    await userEvent.click(trigger)
+    expect(screen.getByTestId('user-menu-dropdown')).toBeInTheDocument()
+    expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
+    expect(screen.getByText('@ana_ramirez')).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: /mi perfil/i })).toHaveAttribute('href', '/account')
+    expect(screen.getByRole('menuitem', { name: /mi inventario/i })).toHaveAttribute(
+      'href',
+      '/inventory',
+    )
+
+    // Ejecutar logout
+    const logoutBtn = screen.getByRole('menuitem', { name: /cerrar sesión/i })
+    await userEvent.click(logoutBtn)
 
     expect(signOut).toHaveBeenCalledOnce()
   })
 
-  it('recurre al sujeto cuando el proveedor no aporta nombre visible', () => {
+  it('cierra el menu de cuenta al presionar Escape (accesibilidad)', async () => {
+    useSession.setState({
+      authenticationAvailable: true,
+      subject: 'sujeto-ana',
+      displayName: 'Ana',
+      accessToken: 'token',
+    })
+
+    renderWithProviders(<SessionControl />)
+
+    const trigger = screen.getByRole('button', { name: /menú de cuenta/i })
+    await userEvent.click(trigger)
+    expect(screen.getByTestId('user-menu-dropdown')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByTestId('user-menu-dropdown')).not.toBeInTheDocument()
+  })
+
+  it('recurre al sujeto cuando el proveedor no aporta nombre visible', async () => {
     useSession.setState({
       authenticationAvailable: true,
       subject: 'sujeto-ana',
@@ -126,7 +164,10 @@ describe('SessionControl', () => {
 
     renderWithProviders(<SessionControl />)
 
-    expect(screen.getByText('sujeto-ana')).toBeInTheDocument()
+    const trigger = screen.getByRole('button', { name: /menú de cuenta/i })
+    await userEvent.click(trigger)
+
+    expect(screen.getByText('Jugador Nexus')).toBeInTheDocument()
   })
 
   /**
@@ -134,7 +175,7 @@ describe('SessionControl', () => {
    * presentacion, no autorizacion: el rol nunca lo elige quien usa la
    * aplicacion, viene de `useSession().roles`.
    */
-  it('representa el rol vigente de la sesion (RBAC visual)', () => {
+  it('representa el rol vigente de la sesion dentro del menu (RBAC visual)', async () => {
     useSession.setState({
       authenticationAvailable: true,
       subject: 'sujeto-admin',
@@ -145,10 +186,13 @@ describe('SessionControl', () => {
 
     renderWithProviders(<SessionControl />)
 
+    const trigger = screen.getByRole('button', { name: /menú de cuenta/i })
+    await userEvent.click(trigger)
+
     expect(screen.getByText('Administrador')).toBeInTheDocument()
   })
 
-  it('no muestra ninguna etiqueta de rol cuando la sesion no trae ninguno', () => {
+  it('no muestra ninguna etiqueta de rol cuando la sesion no trae ninguno', async () => {
     useSession.setState({
       authenticationAvailable: true,
       subject: 'sujeto-ana',
@@ -158,6 +202,9 @@ describe('SessionControl', () => {
     })
 
     renderWithProviders(<SessionControl />)
+
+    const trigger = screen.getByRole('button', { name: /menú de cuenta/i })
+    await userEvent.click(trigger)
 
     expect(screen.queryByText('Jugador')).not.toBeInTheDocument()
   })
