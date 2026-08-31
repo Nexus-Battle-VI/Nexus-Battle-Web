@@ -124,7 +124,10 @@ describe('SessionControl', () => {
     expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
     expect(screen.getByText('@ana_ramirez')).toBeInTheDocument()
     expect(screen.getByRole('menuitem', { name: /mi perfil/i })).toHaveAttribute('href', '/account')
-    expect(screen.getByRole('menuitem', { name: /mi inventario/i })).toHaveAttribute('href', '/inventory')
+    expect(screen.getByRole('menuitem', { name: /mi inventario/i })).toHaveAttribute(
+      'href',
+      '/inventory',
+    )
 
     // Ejecutar logout
     const logoutBtn = screen.getByRole('menuitem', { name: /cerrar sesión/i })
