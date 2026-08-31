@@ -124,6 +124,14 @@ describe('Proteccion visual de rutas (HU-02)', () => {
    * exigir identidad antes rechazaria justo a quien todavia no tiene cuenta, que
    * es el fallo que introdujo la puerta al hosted UI ya retirada.
    */
+  it('sin sesion, /recover muestra el primer paso de recuperacion', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    renderRoute('/recover')
+
+    expect(await screen.findByRole('heading', { name: 'Recuperar contraseña' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Correo electrónico')).toBeInTheDocument()
+  })
+
   it('sin sesion, /register muestra el formulario directamente', async () => {
     useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/register')

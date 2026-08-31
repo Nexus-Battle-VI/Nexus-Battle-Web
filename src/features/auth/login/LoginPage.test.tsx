@@ -104,7 +104,10 @@ describe('LoginPage', () => {
   it('ofrece los enlaces de recuperar contraseña y crear cuenta', () => {
     renderLogin()
 
-    expect(screen.getByRole('button', { name: '¿Olvidaste tu contraseña?' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '¿Olvidaste tu contraseña?' })).toHaveAttribute(
+      'href',
+      '/recover',
+    )
     expect(screen.getByRole('link', { name: '¿No tienes cuenta? Crear cuenta' })).toHaveAttribute(
       'href',
       '/register',
