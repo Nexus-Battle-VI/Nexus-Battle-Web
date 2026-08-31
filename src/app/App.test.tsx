@@ -48,10 +48,12 @@ describe('AppLayout', () => {
       'Torneo',
       'Mi Inventario',
       'Subasta',
-      'Mi Cuenta',
     ]) {
       expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
     }
+
+    // HU-05.4: "Mi Cuenta" ya no vive en la navegacion central.
+    expect(screen.queryByRole('link', { name: 'Mi Cuenta' })).not.toBeInTheDocument()
 
     expect(nav).toBeInTheDocument()
   })

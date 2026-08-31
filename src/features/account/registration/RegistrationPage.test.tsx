@@ -8,7 +8,8 @@ import { createTestQueryClient, renderWithProviders } from '@/test/render'
 import { routes } from '@/routes/routes'
 import { RegistrationPage } from './RegistrationPage'
 import { useSession } from '@/shared/session'
-import { SECURITY_QUESTIONS, THEME_STORAGE_KEY } from './constants'
+import { THEME_STORAGE_KEY, initTheme, useTheme } from '@/shared/theme'
+import { SECURITY_QUESTIONS } from './constants'
 import { MESSAGES, NICKNAME_MAX_LENGTH } from './validation'
 import type { RegistrationValues } from './validation'
 
@@ -63,10 +64,12 @@ const fillValidForm = async (user: ReturnType<typeof setup>): Promise<void> => {
 describe('RegistrationPage', () => {
   beforeEach(() => {
     globalThis.localStorage.clear()
+    initTheme()
   })
 
   afterEach(() => {
     globalThis.localStorage.clear()
+    initTheme()
     // Sin esto, la sesion que instala una prueba sobrevive a la siguiente y
     // `PublicOnlyRoute` desvia la raiz a /ecommerce. Se detecto asi: dos
     // pruebas que no tocan la sesion empezaron a fallar por una que si.
@@ -190,6 +193,21 @@ describe('RegistrationPage', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Nombres')).toHaveAttribute('aria-invalid', 'false')
     expect(fieldError('first-name')).toBe('')
+  })
+
+  it('el campo de contraseña usa PasswordField con control mostrar/ocultar', async () => {
+    const user = setup()
+    renderPage(vi.fn())
+
+    const password = screen.getByLabelText('Contraseña')
+    expect(password).toHaveAttribute('type', 'password')
+
+    await user.type(password, 'Abcdefg1!')
+    await user.click(screen.getByRole('button', { name: 'Mostrar contraseña' }))
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'text')
+
+    await user.click(screen.getByRole('button', { name: 'Ocultar contraseña' }))
+    expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'password')
   })
 
   it('al enviar vacio exige nombres, apellidos, avatar, las cuatro respuestas y los terminos', async () => {
@@ -448,7 +466,7 @@ describe('RegistrationPage', () => {
     expect(router.state.location.pathname).toBe('/ecommerce')
   })
 
-  it('cambia el tema desde la propia pantalla y persiste solo esa preferencia', async () => {
+  it('cambia el tema desde el conmutador global y persiste solo esa preferencia', async () => {
     const user = setup()
 
     renderPage(vi.fn())
@@ -460,14 +478,18 @@ describe('RegistrationPage', () => {
     expect(screen.getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'false')
     expect(globalThis.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark')
+    // No hay estado de tema propio de Registration: escribe la fuente unica.
+    expect(useTheme.getState().theme).toBe('dark')
 
     await user.click(screen.getByRole('button', { name: 'Light' }))
 
     expect(globalThis.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light')
+    expect(useTheme.getState().theme).toBe('light')
   })
 
-  it('recupera el tema elegido al volver a abrir la pantalla', () => {
+  it('recupera el tema elegido al volver a abrir la aplicacion', () => {
     globalThis.localStorage.setItem(THEME_STORAGE_KEY, 'dark')
+    initTheme()
 
     renderPage()
 

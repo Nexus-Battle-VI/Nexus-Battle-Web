@@ -5,10 +5,11 @@ import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
 import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
+import { PasswordField } from '@/components/ui/PasswordField'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 import { roleLabel } from '@/shared/rbac'
-import { NEXUS_DARK_THEME } from '@/shared/publicAuthTheme'
 import { ECOMMERCE_PATH } from '@/routes/routes'
 import {
   login,
@@ -311,14 +312,14 @@ export const LoginPage = ({
   const showInfoSummary = attempted && hasErrors(errors)
 
   return (
-    <div
-      style={NEXUS_DARK_THEME}
-      className="flex min-h-dvh flex-col bg-surface px-4 py-10 text-ink"
-    >
+    <div className="flex min-h-dvh flex-col px-4 py-10 text-ink">
       <div className="mx-auto w-full max-w-md">
-        <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
-          ← Volver al menú
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
+            ← Volver al menú
+          </Link>
+          <ThemeToggle />
+        </div>
 
         <div className="mt-4">
           <NexusBrandHeader />
@@ -391,9 +392,8 @@ export const LoginPage = ({
                     : { error: visible[FIELD.password] })}
                 >
                   {(field) => (
-                    <input
+                    <PasswordField
                       {...field}
-                      type="password"
                       autoComplete="current-password"
                       placeholder="Tu contraseña"
                       value={values.password}
