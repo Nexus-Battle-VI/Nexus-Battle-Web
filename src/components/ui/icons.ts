@@ -8,4 +8,4 @@
  * auditada (EN-021.5, HU-56). Añadir un icono nuevo aquí exige la misma
  * evidencia.
  */
-export { ChevronDown } from 'lucide-react'
+export { ChevronDown, LogOut, User, Package, Settings } from 'lucide-react'

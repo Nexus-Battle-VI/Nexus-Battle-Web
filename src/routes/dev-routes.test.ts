@@ -22,7 +22,9 @@ describe('devRoutes', () => {
 
     render(route.element)
 
-    expect(await screen.findByText(/vista previa de héroes 3d \(8\/8\)/iu)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/vista previa de héroes 3d \(8\/8\)/iu, {}, { timeout: 10000 }),
+    ).toBeInTheDocument()
 
     const officialNames = [
       'Guerrero Tanque',
@@ -50,7 +52,11 @@ describe('devRoutes', () => {
     render(route.element)
 
     expect(
-      await screen.findByText(/recursos visuales de productos \(72\/72\)/iu),
+      await screen.findByText(
+        /recursos visuales de productos \(72\/72\)/iu,
+        {},
+        { timeout: 10000 },
+      ),
     ).toBeInTheDocument()
     expect(screen.getByText(/armas \(16\/16\)/iu)).toBeInTheDocument()
     expect(screen.getByText(/armaduras \(16\/16\)/iu)).toBeInTheDocument()

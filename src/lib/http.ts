@@ -1,4 +1,5 @@
 import { currentAccessToken } from '@/shared/session'
+import { API_BASE_URL } from './apiBase'
 
 /**
  * Cliente HTTP del producto.
@@ -97,7 +98,7 @@ export class HttpClient {
   private readonly tokenProvider: () => string | null
 
   constructor(options: HttpClientOptions = {}) {
-    this.baseUrl = options.baseUrl ?? '/api'
+    this.baseUrl = options.baseUrl ?? API_BASE_URL
     this.fetchImpl = options.fetchImpl
     this.tokenProvider = options.tokenProvider ?? ((): string | null => null)
   }
