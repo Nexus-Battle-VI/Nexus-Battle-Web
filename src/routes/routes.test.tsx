@@ -217,8 +217,7 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     }
 
     expect(nav).toBeInTheDocument()
-    expect(screen.getByText('Ana')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /cerrar sesion/iu })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /menú de cuenta/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Gestionar roles' })).not.toBeInTheDocument()
   })
 
@@ -247,17 +246,16 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     const { router } = renderRoute('/ecommerce')
 
     await screen.findByRole('heading', { name: 'E-commerce' })
-    await user.click(screen.getByRole('button', { name: /cerrar sesion/iu }))
+    await user.click(screen.getByRole('button', { name: /menú de cuenta/i }))
+    await user.click(screen.getByRole('menuitem', { name: /cerrar sesión/i }))
 
     expect(useSession.getState().subject).toBeNull()
 
-    // La sesion de esta prueba es de credenciales (`viaProvider: false`), asi
-    // que cerrarla no redirige al proveedor: se queda en la misma app y la
-    // ruta protegida pasa a mostrar el gate publico esperado.
+    // HU-03 (CA-04): Cierre de sesion redirige a la pantalla de inicio de sesion (/login)
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1, name: 'Para continuar' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 1, name: 'Iniciar sesión' })).toBeInTheDocument()
     })
-    expect(router.state.location.pathname).toBe('/ecommerce')
+    expect(router.state.location.pathname).toBe('/login')
   })
 })
 

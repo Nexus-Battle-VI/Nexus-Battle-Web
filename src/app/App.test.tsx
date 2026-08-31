@@ -323,7 +323,7 @@ describe('useSession', () => {
    * UI: esa sesion nunca paso por el proveedor, y redirigir alli cerraria una
    * sesion de Cognito que no existe.
    */
-  it('cerrar sesion de credenciales no redirige al proveedor', () => {
+  it('cerrar sesion de credenciales no redirige al proveedor', async () => {
     const assign = vi.fn()
 
     // Solo se necesita `assign`: es lo unico que `signOut` invoca sobre
@@ -339,7 +339,7 @@ describe('useSession', () => {
       expiresAt: Date.now() + 900_000,
     })
 
-    useSession.getState().signOut()
+    await useSession.getState().signOut()
 
     expect(useSession.getState().subject).toBeNull()
     expect(assign).not.toHaveBeenCalled()

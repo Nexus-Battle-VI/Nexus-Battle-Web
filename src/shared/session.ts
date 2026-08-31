@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
 import { authConfig } from './auth/config'
+import { API_BASE_URL } from '@/lib/apiBase'
 import {
   buildAuthorizationRequest,
   buildLogoutUrl,
@@ -62,8 +63,8 @@ export interface SessionState {
    * via no tiene ese testimonio, tiene la sesion ya resuelta por el backend.
    */
   establishSession: (session: EstablishedSession) => void
-  /** Cierra la sesion aqui y, si corresponde, en el proveedor. */
-  signOut: () => void
+  /** Cierra la sesion aqui y en el backend (HU-03). */
+  signOut: () => Promise<void>
 }
 
 /**
@@ -146,9 +147,33 @@ export const useSession = create<SessionState>((set, get) => ({
     })
   },
 
-  signOut: () => {
+  signOut: async () => {
     const { accessToken, viaProvider } = get()
     const hadSession = accessToken !== null
+
+    /**
+     * Se usa `fetch` directamente y NO `httpClient`, a proposito: `http.ts`
+     * importa `currentAccessToken` de este mismo modulo, asi que depender de el
+     * aqui cerraria un ciclo de importacion. El prefijo se toma de
+     * `API_BASE_URL` -no escrito a mano- para que no pueda divergir del que usa
+     * el resto de la aplicacion.
+     *
+     * El fallo se traga a proposito: el estado local se purga IGUALMENTE. Si la
+     * red o el proveedor fallan, quien pulsa "cerrar sesion" debe quedar fuera
+     * de todos modos; dejarlo dentro por un 503 seria lo contrario de cerrar.
+     */
+    if (hadSession && accessToken.length > 0) {
+      try {
+        await globalThis.fetch(`${API_BASE_URL}/sessions`, {
+          method: 'DELETE',
+          headers: {
+            authorization: `Bearer ${accessToken}`,
+          },
+        })
+      } catch {
+        // Intencionadamente vacio: vease el comentario de arriba.
+      }
+    }
 
     set({
       subject: null,
