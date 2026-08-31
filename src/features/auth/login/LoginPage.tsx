@@ -172,7 +172,6 @@ export const LoginPage = ({
   const [secondFactorAttempted, setSecondFactorAttempted] = useState(false)
   const [secondFactorMessage, setSecondFactorMessage] = useState<string | null>(null)
   const [sessionRole, setSessionRole] = useState<string | null>(null)
-  const [forgotPasswordNotice, setForgotPasswordNotice] = useState(false)
 
   const errors = validateLoginForm(values)
   const visible = attempted
@@ -414,26 +413,13 @@ export const LoginPage = ({
                   barra de acciones secundarias horizontal.
                 */}
                 <div className="flex flex-col items-start gap-2 text-sm">
-                  <button
-                    type="button"
-                    className="font-medium text-brand underline"
-                    onClick={() => {
-                      setForgotPasswordNotice(true)
-                    }}
-                  >
+                  <Link to="/recover" className="font-medium text-brand underline">
                     ¿Olvidaste tu contraseña?
-                  </button>
+                  </Link>
                   <Link to="/register" className="font-medium text-brand underline">
                     ¿No tienes cuenta? Crear cuenta
                   </Link>
                 </div>
-
-                {forgotPasswordNotice && (
-                  <p role="status" className="text-xs text-muted">
-                    Esta función pertenece a HU-04 — Recuperación de contraseña y aún no está
-                    disponible en este incremento.
-                  </p>
-                )}
 
                 <Button type="submit" loading={submitting} className="w-full">
                   Iniciar sesión

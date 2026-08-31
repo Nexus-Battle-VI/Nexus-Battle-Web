@@ -17,6 +17,7 @@ import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 import { EcommercePage } from '@/features/ecommerce/EcommercePage'
 import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
+import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 import { devRoutes } from './dev-routes'
@@ -89,6 +90,14 @@ export const routes: RouteObject[] = [
     element: (
       <PublicOnlyRoute>
         <LoginPage />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: '/recover',
+    element: (
+      <PublicOnlyRoute>
+        <RecoveryPage />
       </PublicOnlyRoute>
     ),
   },
