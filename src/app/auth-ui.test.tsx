@@ -109,10 +109,10 @@ describe('SessionControl', () => {
 
     renderWithProviders(<SessionControl />)
 
-    // Trigger visible con inicial y etiqueta
+    // Trigger visible con inicial y etiqueta (el texto del disparador, no el menuitem)
     const trigger = screen.getByRole('button', { name: /menú de cuenta/i })
     expect(trigger).toBeInTheDocument()
-    expect(screen.getByText('Mi cuenta')).toBeInTheDocument()
+    expect(trigger).toHaveTextContent('Mi cuenta')
     expect(screen.getByText('A')).toBeInTheDocument()
 
     // El dropdown inicia cerrado
@@ -123,7 +123,8 @@ describe('SessionControl', () => {
     expect(screen.getByTestId('user-menu-dropdown')).toBeInTheDocument()
     expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
     expect(screen.getByText('@ana_ramirez')).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', { name: /mi perfil/i })).toHaveAttribute('href', '/account')
+    // HU-05.4: "Mi perfil" pasa a "Mi cuenta"; misma ruta.
+    expect(screen.getByRole('menuitem', { name: /mi cuenta/i })).toHaveAttribute('href', '/account')
     expect(screen.getByRole('menuitem', { name: /mi inventario/i })).toHaveAttribute(
       'href',
       '/inventory',
@@ -136,7 +137,7 @@ describe('SessionControl', () => {
     expect(signOut).toHaveBeenCalledOnce()
   })
 
-  it('cierra el menu de cuenta al presionar Escape (accesibilidad)', async () => {
+  it('cierra el menu de cuenta al presionar Escape y devuelve el foco al disparador', async () => {
     useSession.setState({
       authenticationAvailable: true,
       subject: 'sujeto-ana',
@@ -152,6 +153,8 @@ describe('SessionControl', () => {
 
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByTestId('user-menu-dropdown')).not.toBeInTheDocument()
+    // HU-05.4: cerrar con teclado no debe dejar el foco perdido.
+    expect(trigger).toHaveFocus()
   })
 
   it('recurre al sujeto cuando el proveedor no aporta nombre visible', async () => {

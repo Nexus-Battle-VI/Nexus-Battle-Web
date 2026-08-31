@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { NAVIGATION } from './routes'
-import { devRoutes } from './dev-routes'
+import { devRoutes, publicDevRoutes } from './dev-routes'
 
 describe('devRoutes', () => {
   it('declara unicamente los harnesses de heroes (EN-026.3) y productos (EN-026.4), fuera de NAVIGATION', () => {
@@ -12,6 +12,16 @@ describe('devRoutes', () => {
       '__dev/visual-library/products',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
+  })
+
+  it('la vista previa de "Mi cuenta" (HU-05.4) es una ruta publica de solo desarrollo, fuera de NAVIGATION', () => {
+    // En modo test `import.meta.env.DEV` es verdadero: la ruta existe aqui.
+    expect(publicDevRoutes.map((route) => route.path)).toEqual(['__dev/account'])
+    expect(NAVIGATION.some((item) => item.path.includes('__dev/account'))).toBe(false)
+
+    // La unica forma de que exista es la guarda `import.meta.env.DEV`: en una
+    // compilacion de produccion (`DEV === false`) el arreglo queda vacio.
+    expect(import.meta.env.DEV).toBe(true)
   })
 
   it('el harness perezoso de heroes resuelve y muestra los 8/8 heroes con nombre visible', async () => {

@@ -3,7 +3,8 @@
 /*
  * Tokens del producto. Se declaran como variables de tema de Tailwind 4, de
  * modo que las utilidades (bg-surface, text-muted) quedan disponibles sin
- * configuracion adicional.
+ * configuracion adicional. Los valores de `@theme` son la paleta CLARA por
+ * defecto.
  */
 @theme {
   --color-surface: oklch(0.98 0.005 260);
@@ -11,6 +12,7 @@
   --color-ink: oklch(0.22 0.02 260);
   --color-muted: oklch(0.52 0.02 260);
   --color-border: oklch(0.9 0.01 260);
+  /* Identidad de marca. Light: azul limpio y tecnologico. */
   --color-brand: oklch(0.55 0.19 265);
   --color-brand-ink: oklch(0.98 0.01 265);
   --color-danger: oklch(0.55 0.2 25);
@@ -18,24 +20,177 @@
 }
 
 /*
- * El tema oscuro responde a la preferencia del sistema. No hay conmutador
- * manual en este alcance: anadirlo requiere persistir la eleccion, y esa
- * decision pertenece al producto.
+ * Fuente unica de tema (HU-05.4).
+ *
+ * `src/shared/theme.ts` fija `data-theme="light" | "dark"` en
+ * `document.documentElement`. La preferencia del sistema solo decide cuando no
+ * hay eleccion explicita, y por eso el bloque `@media` se acota a
+ * `:root:not([data-theme])`. Las tres paletas oscuras que antes vivian en
+ * TypeScript (THEME_VARIABLES, NEXUS_DARK_THEME y los hex de SessionControl)
+ * se sustituyen por esta unica definicion.
+ *
+ * Correccion visual: `--color-brand` cambia de HUE por tema. En Light es azul
+ * (~265); en Dark es el violeta electrico de Nexus Battles VI (~300), tomado del
+ * resplandor del logotipo (`public/assets/logo.png`). Los componentes consumen
+ * `--color-brand` / `--color-brand-ink`, nunca un hex propio, asi que CTA,
+ * navegacion activa y ThemeToggle siguen la identidad del tema automaticamente.
  */
+:root {
+  /* Superficie de un campo dentro de un panel y acento suave. Se promueven al
+     Design System para que los controles funcionen fuera de las pantallas que
+     antes los declaraban inline. */
+  --nb-field: oklch(0.96 0.008 260);
+  --nb-accent-soft: oklch(0.94 0.04 292);
+
+  /*
+   * Grano del fondo mineral. En Light se hace algo mas perceptible (mas octavas,
+   * mas opacidad) para que la superficie no parezca un blanco plano; en Dark se
+   * conserva el valor ya aprobado (se re-declara en los bloques oscuros).
+   */
+  --nb-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.34'/%3E%3C/svg%3E");
+
+  /*
+   * Fondo mineral de Nexus Battles VI: diseno propio y 100% procedural
+   * (gradientes en capas + un grano SVG minusculo embebido). Sin imagenes
+   * pesadas, sin peticiones de red, sin `background-attachment: fixed`. La
+   * receta vive UNA sola vez, aqui; `body` la consume.
+   *
+   * Light: piedra blanca / mineral claro DOMINANTE, mas un HALO AZUL Nexus
+   * perceptible -equivalente perceptual a la "lampara" violeta de Dark-. El
+   * azul es iluminacion, no superficie: sale de `color-mix(var(--color-brand))`
+   * sobre `--color-surface` (~0.98 de luz), asi que sube el matiz sin volver el
+   * fondo celeste. Si se quita este halo mentalmente, queda la superficie Light
+   * de siempre. Un foco azul amplio arriba-izquierda + un rebote secundario
+   * arriba-derecha dan la profundidad; el halo gris-perla inferior conserva la
+   * lectura mineral. Mismo numero de capas que Dark (3 radiales + lineal +
+   * grano) para que `body { background-size/repeat }` valga en los dos temas.
+   */
+  --nb-surface-image:
+    radial-gradient(
+      1360px 900px at 6% -14%,
+      color-mix(in oklab, var(--color-brand) 26%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      1120px 780px at 114% 2%,
+      color-mix(in oklab, var(--color-brand) 17%, transparent),
+      transparent 56%
+    ),
+    radial-gradient(
+      900px 620px at 50% 118%,
+      color-mix(in oklab, oklch(0.7 0.03 250) 22%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(180deg, color-mix(in oklab, var(--color-ink) 7%, transparent), transparent 46%),
+    var(--nb-noise);
+
+  /*
+   * Red de raices Nexus para la navegacion (HU-05.4). Un unico vector organico
+   * embebido, disenado para un cubiculo ANCHO y BAJO: dos runners que entran por
+   * los bordes laterales y corren pegados al borde, con bifurcaciones curvas y
+   * nodos que "buscan" hacia el centro pero se detienen antes del texto (hueco
+   * limpio en x 52-108 del viewBox). Se reutiliza como `mask` en `::before`
+   * (borde superior, crece desde la izquierda) y `::after` (borde inferior,
+   * girado 180deg, crece desde la derecha), asi la actividad rodea las cuatro
+   * zonas del perimetro sin quedar simetrica. Cero DOM, cero peticiones, cero
+   * dependencias. El color lo pone el segmento con `currentColor`
+   * (= `var(--color-brand)`): azul en Light, violeta en Dark, sin hex por
+   * componente.
+   */
+  --nb-root-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 42'%3E%3Cg fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke-width='2.2' d='M0 16C11 15 19 13 26 10 34 6 43 6 52 9'/%3E%3Cpath stroke-width='1.3' d='M8 0C9 4 11 8 15 11 18 13 21 14 23 14'/%3E%3Cpath stroke-width='1.4' d='M21 13C21 19 22 25 25 30 27 33 28 37 27 40'/%3E%3Cpath stroke-width='1.2' d='M28 11C32 14 37 18 40 24 42 27 43 31 43 35'/%3E%3Cpath stroke-width='1' d='M26 10C29 8 33 7 37 8'/%3E%3Cpath stroke-width='2' d='M160 18C149 17 141 15 134 12 126 8 117 8 108 11'/%3E%3Cpath stroke-width='1.3' d='M130 11C130 17 129 24 126 29 124 33 123 37 124 40'/%3E%3Cpath stroke-width='1' d='M134 12C137 10 141 9 145 10'/%3E%3C/g%3E%3Cg fill='%23000'%3E%3Ccircle cx='26' cy='10' r='1.6'/%3E%3Ccircle cx='21' cy='13' r='1.2'/%3E%3Ccircle cx='23' cy='14' r='1.1'/%3E%3Ccircle cx='28' cy='11' r='1.2'/%3E%3Ccircle cx='134' cy='12' r='1.4'/%3E%3Ccircle cx='130' cy='11' r='1.1'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Preferencia del sistema: solo aplica sin eleccion explicita. */
 @media (prefers-color-scheme: dark) {
-  @theme {
+  :root:not([data-theme]) {
     --color-surface: oklch(0.19 0.015 260);
     --color-surface-raised: oklch(0.24 0.018 260);
     --color-ink: oklch(0.95 0.01 260);
     --color-muted: oklch(0.68 0.02 260);
     --color-border: oklch(0.34 0.02 260);
-    --color-brand: oklch(0.7 0.16 265);
-    --color-brand-ink: oklch(0.18 0.02 265);
+    /* Violeta electrico Nexus (hue ~300), no azul, no rosado, no neon. */
+    --color-brand: oklch(0.58 0.21 300);
+    --color-brand-ink: oklch(0.99 0.005 300);
+    --color-danger: oklch(0.7 0.17 25);
+    --nb-field: oklch(0.26 0.02 260);
+    --nb-accent-soft: oklch(0.33 0.08 300);
+    --nb-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
+    --nb-surface-image:
+      radial-gradient(
+        1100px 720px at 12% -8%,
+        color-mix(in oklab, var(--color-brand) 20%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        950px 640px at 110% 6%,
+        color-mix(in oklab, oklch(0.5 0.13 262) 26%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        900px 620px at 50% 118%,
+        color-mix(in oklab, var(--color-brand) 12%, transparent),
+        transparent 60%
+      ),
+      linear-gradient(180deg, color-mix(in oklab, oklch(0 0 0) 34%, transparent), transparent 46%),
+      var(--nb-noise);
   }
 }
 
+/* Eleccion explicita: gana siempre sobre el sistema. */
+:root[data-theme='dark'] {
+  --color-surface: oklch(0.19 0.015 260);
+  --color-surface-raised: oklch(0.24 0.018 260);
+  --color-ink: oklch(0.95 0.01 260);
+  --color-muted: oklch(0.68 0.02 260);
+  --color-border: oklch(0.34 0.02 260);
+  --color-brand: oklch(0.58 0.21 300);
+  --color-brand-ink: oklch(0.99 0.005 300);
+  --color-danger: oklch(0.7 0.17 25);
+  --nb-field: oklch(0.26 0.02 260);
+  --nb-accent-soft: oklch(0.33 0.08 300);
+  --nb-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
+  --nb-surface-image:
+    radial-gradient(
+      1100px 720px at 12% -8%,
+      color-mix(in oklab, var(--color-brand) 20%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      950px 640px at 110% 6%,
+      color-mix(in oklab, oklch(0.5 0.13 262) 26%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 620px at 50% 118%,
+      color-mix(in oklab, var(--color-brand) 12%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(180deg, color-mix(in oklab, oklch(0 0 0) 34%, transparent), transparent 46%),
+    var(--nb-noise);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 body {
+  min-height: 100dvh;
   background-color: var(--color-surface);
+  /* El fondo mineral global: cubre todas las pantallas sin repetir la receta en
+     AppLayout, LandingPage, LoginPage, RegistrationPage ni RequireSession. */
+  background-image: var(--nb-surface-image);
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-size:
+    auto,
+    auto,
+    auto,
+    auto,
+    160px 160px;
+  background-position: center top;
   color: var(--color-ink);
   font-family:
     'Inter Variable',
@@ -43,4 +198,189 @@ body {
     -apple-system,
     'Segoe UI',
     sans-serif;
+}
+
+/*
+ * Barra de navegacion segmentada de Nexus Battles VI (HU-05.4).
+ *
+ * `nb-nav-rail` es el carril: una sola superficie ligeramente elevada, con
+ * borde y realce interior sutiles, para que los modulos se lean como UN
+ * componente y no como enlaces sueltos. Los segmentos se reparten con
+ * `grid` (`repeat`/`1fr`) desde `PrimaryNav`, sin anchos en pixeles.
+ */
+.nb-nav-rail {
+  border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  border-radius: 0.75rem;
+  background-color: color-mix(in oklab, var(--color-ink) 4%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-surface-raised) 55%, transparent);
+}
+
+/* Separadores muy sutiles entre segmentos (no estilo tabla). */
+.nb-nav-rail > li + li {
+  box-shadow: inset 1px 0 0 color-mix(in oklab, var(--color-ink) 7%, transparent);
+}
+
+/*
+ * Segmento (cubiculo) de la navegacion — identidad "raices / energia Nexus"
+ * (HU-05.4).
+ *
+ * La superficie inactiva lleva un lavado de marca MUY tenue para que cada modulo
+ * se distinga sin hover (azul en Light, violeta en Dark, siempre desde
+ * `--color-brand`). Al interactuar crecen unos filamentos finos desde las
+ * esquinas. Todo es CSS puro: pseudo-elementos + gradientes + `mask`. Cero DOM
+ * adicional, cero dependencias, cero peticiones. Solo se animan `transform` y
+ * `opacity` (y `color`/`background-color` en cambios de estado); nada que
+ * provoque layout, ningun desplazamiento de los modulos vecinos.
+ */
+.nb-nav-seg {
+  position: relative;
+  overflow: hidden;
+  /*
+   * Solo se transiciona `color` (interpola entre dos colores planos). El tinte
+   * de fondo NO se transiciona: es `color-mix(var(--color-brand) ...)` y, al
+   * cambiar de tema, el valor de `--color-brand` cambia; algunos motores
+   * interpolan mal ese `color-mix` y dejan el fondo un tema atras. Cambiar el
+   * tinte al instante en hover es imperceptible y ademas mantiene el cambio de
+   * tema correcto.
+   */
+  transition: color 150ms ease-out;
+}
+
+.nb-nav-seg:not([aria-current='page']) {
+  background-color: color-mix(in oklab, var(--color-brand) 8%, transparent);
+}
+
+.nb-nav-seg:not([aria-current='page']):hover,
+.nb-nav-seg:not([aria-current='page']):focus-visible {
+  background-color: color-mix(in oklab, var(--color-brand) 16%, transparent);
+  color: var(--color-ink);
+}
+
+/*
+ * Red de raices Nexus. `::before` recorre el borde SUPERIOR (crece desde la
+ * izquierda); `::after` es el MISMO vector girado 180deg y recorre el borde
+ * INFERIOR (crece desde la derecha). Juntos sugieren actividad en las cuatro
+ * zonas del perimetro, sin quedar simetrica. El vector deja un hueco central
+ * limpio, asi que el texto -centrado- nunca se cubre.
+ *
+ * En reposo: `opacity: 0` y `scaleX(0.5)` desde el borde de entrada. Al
+ * interactuar (hover, focus-visible o modulo activo) se estira a `scaleX(1)` y
+ * se revela (~220 ms): la red parece extenderse pegada al borde. Solo se animan
+ * `transform` y `opacity`; el segmento no cambia de tamano y los vecinos no se
+ * mueven. El color es `currentColor` del segmento (= `var(--color-brand)`):
+ * azul en Light, violeta en Dark, sin hex por componente.
+ */
+.nb-nav-seg::before,
+.nb-nav-seg::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 78%;
+  opacity: 0;
+  color: color-mix(in oklab, var(--color-brand) 80%, transparent);
+  background-color: currentColor;
+  -webkit-mask-image: var(--nb-root-mask);
+  mask-image: var(--nb-root-mask);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  pointer-events: none;
+  transition:
+    opacity 220ms ease-out,
+    transform 220ms ease-out;
+}
+
+.nb-nav-seg::before {
+  top: -12%;
+  transform-origin: left center;
+  transform: scaleX(0.5);
+}
+
+.nb-nav-seg::after {
+  bottom: -12%;
+  transform-origin: right center;
+  transform: rotate(180deg) scaleX(0.5);
+}
+
+.nb-nav-seg:hover::before,
+.nb-nav-seg:focus-visible::before,
+.nb-nav-seg[aria-current='page']::before {
+  opacity: 0.5;
+  transform: scaleX(1);
+}
+
+.nb-nav-seg:hover::after,
+.nb-nav-seg:focus-visible::after,
+.nb-nav-seg[aria-current='page']::after {
+  opacity: 0.5;
+  transform: rotate(180deg) scaleX(1);
+}
+
+/*
+ * En el modulo activo el fondo de marca ya domina: la red queda permanente pero
+ * MUY tenue y en tono claro, para leerse sobre el pill sin ensuciarlo y sin
+ * necesidad de hover.
+ */
+.nb-nav-seg[aria-current='page']::before,
+.nb-nav-seg[aria-current='page']::after {
+  opacity: 0.28;
+  color: color-mix(in oklab, var(--color-brand-ink) 55%, transparent);
+}
+
+/* Movil: el detalle se mantiene, todavia mas discreto. */
+@media (max-width: 639px) {
+  .nb-nav-seg:hover::before,
+  .nb-nav-seg:focus-visible::before,
+  .nb-nav-seg[aria-current='page']::before,
+  .nb-nav-seg:hover::after,
+  .nb-nav-seg:focus-visible::after,
+  .nb-nav-seg[aria-current='page']::after {
+    opacity: 0.3;
+  }
+}
+
+/*
+ * Indicador activo deslizante. El componente solo fija `transform`/`width`
+ * inline; el aspecto y la transicion viven aqui, de modo que
+ * `prefers-reduced-motion` la neutraliza sin logica en JS.
+ *
+ * Light: azul con profundidad ligera. Dark: violeta Nexus con glow controlado.
+ * Ambos salen de `--color-brand`, nunca de un hex.
+ */
+.nb-nav-pill {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-brand) 88%, white 12%),
+    var(--color-brand)
+  );
+  border: 1px solid color-mix(in oklab, var(--color-brand) 55%, var(--color-border));
+  box-shadow:
+    0 1px 3px color-mix(in oklab, var(--color-brand) 38%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 22%, transparent);
+  transition:
+    transform 200ms ease-out,
+    width 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-nav-pill {
+    transition-duration: 0.01ms;
+  }
+
+  /*
+   * Sin crecimiento perceptible: la red ya nace en su forma final y solo cambia
+   * de opacidad, al instante. La navegacion sigue siendo legible por color,
+   * contraste y estado; la red es pura decoracion.
+   */
+  .nb-nav-seg::before {
+    transform: scaleX(1);
+    transition: none;
+  }
+
+  .nb-nav-seg::after {
+    transform: rotate(180deg) scaleX(1);
+    transition: none;
+  }
 }

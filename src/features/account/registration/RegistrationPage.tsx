@@ -4,13 +4,9 @@ import { Link, useNavigate } from 'react-router'
 import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
-import {
-  LEGAL_DOCUMENTS,
-  SECURITY_QUESTIONS,
-  THEME_STORAGE_KEY,
-  THEME_VARIABLES,
-  type Theme,
-} from './constants'
+import { PasswordField } from '@/components/ui/PasswordField'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { LEGAL_DOCUMENTS, SECURITY_QUESTIONS } from './constants'
 import { confirmRegistration, registerAccount } from './api'
 import {
   EMPTY_VALUES,
@@ -25,40 +21,11 @@ import {
 } from './validation'
 
 /**
- * Tema de esta pantalla.
- *
- * Solo se persiste la preferencia visual. Ni la contrasena, ni el avatar, ni
- * las respuestas de seguridad tocan el almacenamiento del navegador: son
- * credenciales, y una credencial guardada ahi es una credencial que cualquier
- * script inyectado puede leer.
+ * El tema lo gobierna la fuente unica global (`@/shared/theme`) a traves de
+ * `ThemeToggle`. Aqui no se persiste nada del formulario: ni la contrasena, ni
+ * el avatar, ni las respuestas de seguridad tocan el almacenamiento del
+ * navegador.
  */
-const readStoredTheme = (): Theme | null => {
-  try {
-    const stored = globalThis.localStorage.getItem(THEME_STORAGE_KEY)
-
-    return stored === 'light' || stored === 'dark' ? stored : null
-  } catch {
-    return null
-  }
-}
-
-const systemTheme = (): Theme => {
-  if (typeof globalThis.matchMedia !== 'function') {
-    return 'light'
-  }
-
-  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-}
-
-const storeTheme = (theme: Theme): void => {
-  try {
-    globalThis.localStorage.setItem(THEME_STORAGE_KEY, theme)
-  } catch {
-    // Sin almacenamiento la eleccion vive solo en esta pestana. Es una
-    // degradacion aceptable y no debe romper el render.
-  }
-}
-
 const REGISTER_FAILED = 'No se pudo completar el registro.'
 const CONFIRM_FAILED = 'No se pudo confirmar la cuenta.'
 
@@ -302,7 +269,6 @@ export const RegistrationPage = ({
 }: RegistrationPageProps = {}): React.JSX.Element => {
   const navigate = useNavigate()
 
-  const [theme, setTheme] = useState<Theme>(() => readStoredTheme() ?? systemTheme())
   const [values, setValues] = useState<RegistrationValues>(EMPTY_VALUES)
   const [touched, setTouched] = useState<Readonly<Record<string, boolean>>>({})
   const [attempted, setAttempted] = useState(false)
@@ -332,11 +298,6 @@ export const RegistrationPage = ({
         : Object.fromEntries(Object.entries(errors).filter(([field]) => touched[field] === true)),
     [errors, touched, attempted],
   )
-
-  const chooseTheme = (next: Theme): void => {
-    storeTheme(next)
-    setTheme(next)
-  }
 
   const markTouched = (field: string): void => {
     setTouched((previous) => ({ ...previous, [field]: true }))
@@ -422,36 +383,14 @@ export const RegistrationPage = ({
   }, [focusSummaryToken])
 
   return (
-    <div style={THEME_VARIABLES[theme]} className="min-h-dvh bg-surface text-ink">
+    <div className="min-h-dvh text-ink">
       <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
             ← Volver al menú
           </Link>
 
-          <div
-            role="group"
-            aria-label="Tema de la interfaz"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-raised p-1"
-          >
-            {(['light', 'dark'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={theme === option}
-                onClick={() => {
-                  chooseTheme(option)
-                }}
-                className={clsx(
-                  'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                  theme === option ? 'bg-brand text-brand-ink' : 'text-muted hover:text-ink',
-                )}
-              >
-                {option === 'light' ? 'Light' : 'Dark'}
-              </button>
-            ))}
-          </div>
+          <ThemeToggle />
         </div>
 
         <header className="mt-2 text-center">
@@ -671,9 +610,8 @@ export const RegistrationPage = ({
                         : { error: visible[FIELD.password] })}
                     >
                       {(field) => (
-                        <input
+                        <PasswordField
                           {...field}
-                          type="password"
                           autoComplete="new-password"
                           value={values.password}
                           onBlur={() => {
