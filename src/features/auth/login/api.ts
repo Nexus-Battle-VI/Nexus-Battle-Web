@@ -206,12 +206,3 @@ export const chooseSecondFactor = async (
 
   return toLoginOutcome(response)
 }
-
-/**
- * Cierra la sesion en el backend revocando los tokens activos (HU-03).
- *
- * Envia `DELETE /sessions` con la cabecera `Authorization: Bearer <token>`.
- */
-export const logoutSession = async (): Promise<void> => {
-  await httpClient.delete('/sessions')
-}

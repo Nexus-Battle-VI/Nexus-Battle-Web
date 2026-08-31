@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpError } from '@/lib/http'
-import { login, completeSecondFactor, logoutSession } from './api'
+import { login, completeSecondFactor } from './api'
 
 const jsonResponse = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -300,28 +300,5 @@ describe('completeSecondFactor', () => {
 
     expect(outcome.session.subject).toBe('sub-cognito-admin')
     expect(outcome.session.expiresAt).toBe(2_000_000 + 3_600_000)
-  })
-})
-
-describe('logoutSession (HU-03)', () => {
-  it('llama a DELETE /api/sessions con el metodo DELETE', async () => {
-    const fetchImpl = stubFetch(new Response(null, { status: 204 }))
-
-    await logoutSession()
-
-    expect(fetchImpl).toHaveBeenCalledOnce()
-    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
-
-    expect(url).toBe('/api/sessions')
-    expect(init.method).toBe('DELETE')
-  })
-
-  it('rechaza con HttpError si el backend responde con error', async () => {
-    stubFetch(new Response(JSON.stringify({ message: 'Error en IdP' }), { status: 503 }))
-
-    const error: unknown = await logoutSession().catch((err: unknown) => err)
-
-    expect(error).toBeInstanceOf(HttpError)
-    expect((error as HttpError).status).toBe(503)
   })
 })

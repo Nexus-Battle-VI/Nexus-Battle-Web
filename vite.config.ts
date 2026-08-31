@@ -44,6 +44,15 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    /**
+     * 15 s, no los 5 s por defecto. Bajo la instrumentacion de cobertura (v8)
+     * y en el runner de CI, las pruebas que recorren formularios con
+     * `userEvent` y los harnesses 3D de carga perezosa superaban el limite de
+     * forma intermitente: fallaban por lentitud, no por un defecto.
+     *
+     * Contrapartida que se acepta a proposito: una prueba genuinamente colgada
+     * tarda ahora 15 s en delatarse en lugar de 5.
+     */
     testTimeout: 15000,
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {
