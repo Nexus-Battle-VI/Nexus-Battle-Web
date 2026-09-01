@@ -1,7 +1,9 @@
-import { Outlet } from 'react-router'
+import { Link, Outlet } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
+import { ChevronLeft } from '@/components/ui/icons'
 import { HttpError } from '@/lib/http'
+import { ECOMMERCE_PATH } from '@/routes/routes'
 import { AccountSummary } from './AccountSummary'
 import { AccountSectionNav } from './AccountSectionNav'
 import type { AccountOutletContext } from './outletContext'
@@ -19,6 +21,13 @@ import { useOwnAccount } from './useOwnAccount'
  * No trae un segundo encabezado global ni repite el logo: eso vive en
  * `AppHeader`, que ademas oculta el conmutador de tema global mientras se esta
  * en `/account` (el control de tema vive en "Preferencias").
+ *
+ * El control "Volver" vive UNA sola vez aqui, en la cabecera compartida, y por
+ * tanto acompana a todas las secciones hijas (Perfil, Seguridad, Preferencias,
+ * Estadisticas y logros, Suscripciones, Metodos de pago). Sale de `/account` y
+ * regresa a la pantalla principal autenticada (`ECOMMERCE_PATH`), el mismo
+ * destino canonico posterior al login. Es un enlace de React Router -no un
+ * boton-: navega. No reconstruye `AppHeader` ni toca `PrimaryNav`.
  */
 export const AccountPage = (): React.JSX.Element => {
   const query = useOwnAccount()
@@ -28,6 +37,13 @@ export const AccountPage = (): React.JSX.Element => {
   return (
     <div className="space-y-6">
       <header>
+        <Link
+          to={ECOMMERCE_PATH}
+          className="mb-3 inline-flex items-center gap-1 rounded-md text-sm text-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        >
+          <ChevronLeft aria-hidden className="h-4 w-4" />
+          Volver
+        </Link>
         <h1 className="text-2xl font-semibold text-ink">Mi cuenta</h1>
         <p className="mt-1 text-sm text-muted">
           Administra tu perfil, seguridad y preferencias de Nexus Battles VI.
