@@ -85,10 +85,7 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
        * pixeles. Si el contenido no cabe (movil), cada columna se queda en su
        * `max-content` y el carril hace scroll horizontal INTERNO.
        */}
-      <ul
-        ref={listRef}
-        className="nb-nav-rail relative grid auto-cols-[minmax(max-content,1fr)] grid-flow-col overflow-x-auto p-1"
-      >
+      <div className="relative">
         {activePath !== null && (
           <span
             ref={pillRef}
@@ -98,33 +95,38 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
           />
         )}
 
-        {navigation.map((item) => (
-          <li
-            key={item.path}
-            ref={(element) => {
-              if (element === null) {
-                itemRefs.current.delete(item.path)
-              } else {
-                itemRefs.current.set(item.path, element)
-              }
-            }}
-            className="relative z-10"
-          >
-            <NavLink
-              to={item.path}
-              className={({ isActive }) =>
-                clsx(
-                  'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                  isActive ? 'font-medium text-brand-ink' : 'text-muted',
-                )
-              }
+        <ul
+          ref={listRef}
+          className="nb-nav-rail grid auto-cols-[minmax(max-content,1fr)] grid-flow-col overflow-x-auto p-1"
+        >
+          {navigation.map((item) => (
+            <li
+              key={item.path}
+              ref={(element) => {
+                if (element === null) {
+                  itemRefs.current.delete(item.path)
+                } else {
+                  itemRefs.current.set(item.path, element)
+                }
+              }}
+              className="relative z-10"
             >
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  clsx(
+                    'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',
+                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+                    isActive ? 'font-medium text-brand-ink' : 'text-muted',
+                  )
+                }
+              >
+                {item.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </div>
     </nav>
   )
 }

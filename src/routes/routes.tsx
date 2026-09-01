@@ -21,7 +21,10 @@ import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
-import { devRoutes, publicDevRoutes } from './dev-routes'
+
+const { devRoutes, publicDevRoutes } = import.meta.env.DEV
+  ? await import('./dev-routes')
+  : { devRoutes: [], publicDevRoutes: [] }
 
 /**
  * Destino canonico posterior a un login exitoso (HU-02).

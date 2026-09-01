@@ -61,6 +61,19 @@ describe('PrimaryNav', () => {
     expect(indicator).toHaveAttribute('aria-hidden', 'true')
   })
 
+  it('mantiene li como unicos hijos directos de la lista y deja el indicador fuera del ul', () => {
+    renderNav('/ecommerce')
+
+    const navigation = screen.getByRole('navigation', { name: 'Principal' })
+    const list = navigation.querySelector('ul')
+    const indicator = screen.getByTestId('primary-nav-indicator')
+
+    expect(list).not.toBeNull()
+    expect(Array.from(list?.children ?? []).every((child) => child.tagName === 'LI')).toBe(true)
+    expect(list).not.toContainElement(indicator)
+    expect(navigation).toContainElement(indicator)
+  })
+
   it('reparte los modulos en un carril tipo rejilla (segmentos equivalentes, sin anchos en px)', () => {
     renderNav('/ecommerce')
 
