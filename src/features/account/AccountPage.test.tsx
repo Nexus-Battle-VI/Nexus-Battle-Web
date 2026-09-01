@@ -7,6 +7,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router'
 import { AccountPage } from './AccountPage'
 import { accountSectionRoutes } from './routes'
 import { createTestQueryClient } from '@/test/render'
+import { ECOMMERCE_PATH } from '@/routes/routes'
 
 const ACCOUNT = {
   id: 'acc-1',
@@ -64,6 +65,7 @@ describe('AccountPage', () => {
       'Perfil',
       'Seguridad',
       'Preferencias',
+      'Estadísticas y logros',
       'Suscripciones',
       'Metodos de pago',
     ]) {
@@ -92,6 +94,27 @@ describe('AccountPage', () => {
     renderAt()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Fallo del servicio de cuenta.')
+  })
+
+  it('la cabecera compartida ofrece un unico "Volver" (enlace) hacia la pantalla principal autenticada', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, ACCOUNT)))
+    renderAt('/account')
+
+    const back = await screen.findByRole('link', { name: 'Volver' })
+    expect(back).toHaveAttribute('href', ECOMMERCE_PATH)
+    // Navegacion = enlace, no boton.
+    expect(screen.queryByRole('button', { name: /volver/iu })).not.toBeInTheDocument()
+    // Una sola vez en el shell.
+    expect(screen.getAllByRole('link', { name: 'Volver' })).toHaveLength(1)
+  })
+
+  it('el "Volver" del shell acompana a cualquier seccion hija (p. ej. Metodos de pago)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, ACCOUNT)))
+    renderAt('/account/payment-methods')
+
+    // La seccion hija ya montada confirma que estamos fuera del estado de carga.
+    expect(await screen.findByRole('heading', { name: 'Metodos de pago' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Volver' })).toHaveAttribute('href', ECOMMERCE_PATH)
   })
 
   it('navega a otra seccion por teclado y actualiza aria-current', async () => {

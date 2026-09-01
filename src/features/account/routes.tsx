@@ -3,6 +3,7 @@ import type { RouteObject } from 'react-router'
 import { ProfileSection } from './ProfileSection'
 import { SecuritySection } from './SecuritySection'
 import { PreferencesSection } from './PreferencesSection'
+import { StatisticsSection } from './statistics/StatisticsSection'
 import { SubscriptionsSection } from './SubscriptionsSection'
 import { PaymentMethodsSection } from './PaymentMethodsSection'
 
@@ -17,6 +18,7 @@ export const accountSectionRoutes: RouteObject[] = [
   { index: true, element: <ProfileSection /> },
   { path: 'security', element: <SecuritySection /> },
   { path: 'preferences', element: <PreferencesSection /> },
+  { path: 'statistics', element: <StatisticsSection /> },
   { path: 'subscriptions', element: <SubscriptionsSection /> },
   { path: 'payment-methods', element: <PaymentMethodsSection /> },
 ]

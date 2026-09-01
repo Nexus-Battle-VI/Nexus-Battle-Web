@@ -6,14 +6,17 @@ import { SecuritySection } from '../SecuritySection'
 import { PreferencesSection } from '../PreferencesSection'
 import { SubscriptionsSection } from '../SubscriptionsSection'
 import { PaymentMethodsSection } from '../PaymentMethodsSection'
+import { StatisticsDevPreview } from '@/features/account/statistics/StatisticsDevPreview'
 
 /**
- * Rutas hijas de la VISTA PREVIA de desarrollo de "Mi cuenta" (HU-05.4).
+ * Rutas hijas de la VISTA PREVIA de desarrollo de "Mi cuenta" (HU-05.4 / HU-06.4).
  *
  * Son los mismos componentes de produccion; lo unico que cambia es que sus
  * transportes (`save`, `changePassword`) se inyectan resueltos para que los
- * formularios completen sin red -el entorno local no tiene sesion real-. Esto
- * SOLO se usa desde `publicDevRoutes` cuando `import.meta.env.DEV`.
+ * formularios completen sin red -el entorno local no tiene sesion real-, y que
+ * "Estadísticas y logros" recibe un estado de ejemplo por props
+ * (`StatisticsDevPreview`) en lugar de un backend. Esto SOLO se usa desde
+ * `publicDevRoutes` cuando `import.meta.env.DEV`.
  */
 
 export const PREVIEW_ACCOUNT: OwnAccount = {
@@ -38,6 +41,7 @@ export const accountPreviewChildren: RouteObject[] = [
     element: <SecuritySection changePassword={fixtureChangePassword} showLocalAuthNote />,
   },
   { path: 'preferences', element: <PreferencesSection /> },
+  { path: 'statistics', element: <StatisticsDevPreview /> },
   { path: 'subscriptions', element: <SubscriptionsSection /> },
   { path: 'payment-methods', element: <PaymentMethodsSection /> },
 ]

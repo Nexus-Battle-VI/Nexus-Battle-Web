@@ -22,6 +22,7 @@ export const ACCOUNT_SECTIONS: readonly AccountSection[] = [
   { to: '.', label: 'Perfil', end: true },
   { to: 'security', label: 'Seguridad', end: false },
   { to: 'preferences', label: 'Preferencias', end: false },
+  { to: 'statistics', label: 'Estadísticas y logros', end: false },
   { to: 'subscriptions', label: 'Suscripciones', end: false },
   { to: 'payment-methods', label: 'Metodos de pago', end: false },
 ]
