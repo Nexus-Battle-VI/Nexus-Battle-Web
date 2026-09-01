@@ -74,6 +74,22 @@ describe('PrimaryNav', () => {
     expect(navigation).toContainElement(indicator)
   })
 
+  it('desplaza lista e indicador dentro del mismo contenedor responsive', () => {
+    renderNav('/ecommerce')
+
+    const navigation = screen.getByRole('navigation', { name: 'Principal' })
+    const list = navigation.querySelector('ul')
+    const indicator = screen.getByTestId('primary-nav-indicator')
+    const scrollContainer = list?.parentElement
+
+    expect(scrollContainer).not.toBeNull()
+    expect(scrollContainer).toHaveClass('relative')
+    expect(scrollContainer).toHaveClass('overflow-x-auto')
+    expect(scrollContainer).toContainElement(list)
+    expect(scrollContainer).toContainElement(indicator)
+    expect(list).not.toHaveClass('overflow-x-auto')
+  })
+
   it('reparte los modulos en un carril tipo rejilla (segmentos equivalentes, sin anchos en px)', () => {
     renderNav('/ecommerce')
 
@@ -82,8 +98,6 @@ describe('PrimaryNav', () => {
     // grid-flow-col reparte los seis modulos por todo el ancho disponible.
     expect(list?.className).toContain('grid')
     expect(list?.className).toContain('grid-flow-col')
-    // Fallback responsive: el carril hace scroll horizontal interno si no cabe.
-    expect(list?.className).toContain('overflow-x-auto')
   })
 
   it('la identidad "raices Nexus" es pura decoracion CSS: no anade nodos ni semantica', () => {

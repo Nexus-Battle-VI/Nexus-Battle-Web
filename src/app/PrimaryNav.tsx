@@ -85,7 +85,7 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
        * pixeles. Si el contenido no cabe (movil), cada columna se queda en su
        * `max-content` y el carril hace scroll horizontal INTERNO.
        */}
-      <div className="relative">
+      <div className="relative overflow-x-auto">
         {activePath !== null && (
           <span
             ref={pillRef}
@@ -97,7 +97,7 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
 
         <ul
           ref={listRef}
-          className="nb-nav-rail grid auto-cols-[minmax(max-content,1fr)] grid-flow-col overflow-x-auto p-1"
+          className="nb-nav-rail grid auto-cols-[minmax(max-content,1fr)] grid-flow-col p-1"
         >
           {navigation.map((item) => (
             <li
