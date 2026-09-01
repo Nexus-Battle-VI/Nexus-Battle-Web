@@ -1,15 +1,25 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
 import { HttpError } from '@/lib/http'
+import { initTheme, useTheme } from '@/shared/theme'
 import { RecoveryPage } from './RecoveryPage'
 
 const QUESTIONS = [
   { id: 'sq-01', statement: '¿Cuál era el nombre de tu primera mascota?' },
   { id: 'sq-02', statement: '¿Cuál es el nombre de la ciudad donde naciste?' },
 ] as const
+
+const resetTheme = (): void => {
+  globalThis.localStorage.clear()
+  delete globalThis.document.documentElement.dataset.theme
+  initTheme()
+}
+
+beforeEach(resetTheme)
+afterEach(resetTheme)
 
 const renderRecovery = (
   overrides: {
@@ -37,6 +47,19 @@ const renderRecovery = (
   )
 
 describe('RecoveryPage', () => {
+  it('usa el control global de tema y aplica la seleccion oscura al documento', async () => {
+    const user = userEvent.setup()
+    useTheme.getState().setTheme('light')
+    renderRecovery()
+
+    expect(screen.getByRole('group', { name: 'Tema de la interfaz' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Dark' }))
+
+    expect(useTheme.getState().theme).toBe('dark')
+    expect(globalThis.document.documentElement.dataset.theme).toBe('dark')
+  })
+
   it('muestra el paso de identificacion y el enlace a login', () => {
     renderRecovery()
 

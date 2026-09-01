@@ -89,6 +89,19 @@ describe('HttpClient', () => {
     })
   })
 
+  it('PATCH envia el cuerpo como JSON al verbo correcto', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, { id: 'acc-1' }))
+    const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
+
+    await client.patch('/accounts/me', { displayName: 'Ana Nueva' })
+
+    expect(fetchImpl).toHaveBeenCalledWith('/api/accounts/me', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ displayName: 'Ana Nueva' }),
+    })
+  })
+
   it('no envia cabecera de contenido cuando no hay cuerpo', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, {}))
     const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })

@@ -30,7 +30,7 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
       parserOptions: {
-        projectService: { allowDefaultProject: ['*.js'] },
+        projectService: { allowDefaultProject: ['*.js', 'scripts/*.mjs'] },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -95,7 +95,7 @@ export default defineConfig([
   },
 
   {
-    files: ['vite.config.ts', 'eslint.config.js'],
+    files: ['vite.config.ts', 'eslint.config.js', 'scripts/*.mjs'],
     languageOptions: { globals: globals.node },
   },
 ])

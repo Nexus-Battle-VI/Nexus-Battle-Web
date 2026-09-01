@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
-import { ChevronDown, LogOut, Package, Settings, User } from './icons'
+import { ChevronDown, Eye, EyeOff, LogOut, Package, Settings, User } from './icons'
 
 describe('icons', () => {
   it('renderiza ChevronDown como un icono SVG accesible desde el punto controlado', () => {
@@ -32,5 +32,21 @@ describe('icons', () => {
     expect(screen.getByRole('img', { name: 'Mi perfil' }).tagName.toLowerCase()).toBe('svg')
     expect(screen.getByRole('img', { name: 'Mi inventario' }).tagName.toLowerCase()).toBe('svg')
     expect(screen.getByRole('img', { name: 'Configuracion' }).tagName.toLowerCase()).toBe('svg')
+  })
+
+  it('renderiza Eye y EyeOff como iconos SVG para mostrar/ocultar contraseña (HU-05.4)', () => {
+    render(
+      <>
+        <Eye role="img" aria-label="Mostrar contraseña" />
+        <EyeOff role="img" aria-label="Ocultar contraseña" />
+      </>,
+    )
+
+    expect(screen.getByRole('img', { name: 'Mostrar contraseña' }).tagName.toLowerCase()).toBe(
+      'svg',
+    )
+    expect(screen.getByRole('img', { name: 'Ocultar contraseña' }).tagName.toLowerCase()).toBe(
+      'svg',
+    )
   })
 })

@@ -5,12 +5,8 @@ import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
 import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { HttpError } from '@/lib/http'
-import {
-  THEME_STORAGE_KEY,
-  THEME_VARIABLES,
-  type Theme,
-} from '@/features/account/registration/constants'
 import {
   resetRecoveryPassword,
   startRecovery,
@@ -40,16 +36,6 @@ const STEPS: readonly { readonly id: Exclude<Step, 'done'>; readonly label: stri
 
 const CONTROL_CLASS =
   'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
-
-const readStoredTheme = (): Theme | null => {
-  try {
-    const stored = globalThis.localStorage.getItem(THEME_STORAGE_KEY)
-
-    return stored === 'light' || stored === 'dark' ? stored : null
-  } catch {
-    return null
-  }
-}
 
 const Field = ({
   id,
@@ -121,7 +107,6 @@ export const RecoveryPage = ({
   verifyCodeFn = verifyRecoveryCode,
   resetPasswordFn = resetRecoveryPassword,
 }: RecoveryPageProps = {}): React.JSX.Element => {
-  const [theme, setTheme] = useState<Theme>(() => readStoredTheme() ?? 'dark')
   const [step, setStep] = useState<Step>('identify')
   const [email, setEmail] = useState('')
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
@@ -142,15 +127,6 @@ export const RecoveryPage = ({
   const emailError = attempted ? validateEmailStep(email) : undefined
   const codeError = attempted ? validateCodeStep(code) : undefined
   const passwordErrors = attempted ? validatePasswordStep(password, confirm) : {}
-
-  const chooseTheme = (next: Theme): void => {
-    setTheme(next)
-    try {
-      globalThis.localStorage.setItem(THEME_STORAGE_KEY, next)
-    } catch {
-      // La preferencia vive solo en esta pestana si no hay storage.
-    }
-  }
 
   const handleIdentify = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
@@ -256,31 +232,10 @@ export const RecoveryPage = ({
   }
 
   return (
-    <div className="min-h-dvh bg-surface px-4 py-8 text-ink sm:px-6" style={THEME_VARIABLES[theme]}>
+    <div className="min-h-dvh bg-surface px-4 py-8 text-ink sm:px-6">
       <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
         <div className="flex justify-end">
-          <div
-            role="group"
-            aria-label="Tema de la interfaz"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-raised p-1"
-          >
-            {(['light', 'dark'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={theme === option}
-                onClick={() => {
-                  chooseTheme(option)
-                }}
-                className={clsx(
-                  'rounded-full px-3 py-1 text-xs font-medium',
-                  theme === option ? 'bg-brand text-brand-ink' : 'text-muted',
-                )}
-              >
-                {option === 'light' ? 'Light' : 'Dark'}
-              </button>
-            ))}
-          </div>
+          <ThemeToggle />
         </div>
 
         <NexusBrandHeader />

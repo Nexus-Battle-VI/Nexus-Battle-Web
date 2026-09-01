@@ -7,6 +7,7 @@ import { RequireSession } from '@/app/RequireSession'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
+import { accountSectionRoutes } from '@/features/account/routes'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
@@ -20,7 +21,10 @@ import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
-import { devRoutes } from './dev-routes'
+
+const { devRoutes, publicDevRoutes } = import.meta.env.DEV
+  ? await import('./dev-routes')
+  : { devRoutes: [], publicDevRoutes: [] }
 
 /**
  * Destino canonico posterior a un login exitoso (HU-02).
@@ -31,6 +35,18 @@ import { devRoutes } from './dev-routes'
  * necesita redirigir alli.
  */
 export const ECOMMERCE_PATH = '/ecommerce'
+
+/**
+ * Raiz del area "Mi cuenta" (HU-05.4).
+ *
+ * Vive como constante nombrada -igual que `ECOMMERCE_PATH`- porque mas de un
+ * punto necesita reconocer esta jerarquia: hoy, `AppHeader` oculta el conmutador
+ * de tema global en `/account` y en cualquier descendiente (`/account/preferences`,
+ * `/account/security`, ...), porque ese control vivira dentro de "Preferencias" y
+ * mostrar los dos seria redundante. Solo se oculta el CONTROL; el sistema de tema
+ * (`@/shared/theme`) sigue intacto.
+ */
+export const ACCOUNT_PATH = '/account'
 
 /**
  * Navegacion posterior a la autenticacion.
@@ -59,7 +75,8 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
   { path: '/auction', label: 'Subasta' },
-  { path: '/account', label: 'Mi Cuenta' },
+  // "Mi Cuenta" ya no vive en la navegacion central (HU-05.4): el acceso a la
+  // cuenta es `SessionControl`. La ruta `/account` sigue montada mas abajo.
   {
     path: '/admin/roles',
     label: 'Gestionar roles',
@@ -120,6 +137,10 @@ export const routes: RouteObject[] = [
   // ocurren enteros en la UI propia.
   { path: '/auth/callback', element: <AuthCallbackPage /> },
 
+  // Vista previa de desarrollo, fuera de `RequireSession` y solo con
+  // `import.meta.env.DEV` (ver `./dev-routes`). Vacio en produccion.
+  ...publicDevRoutes,
+
   // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi que
   // sus hijos siguen resolviendo a las mismas rutas absolutas (`/ecommerce`,
   // `/inventory`, ...). Es el shell autenticado; `RequireSession` decide si
@@ -137,7 +158,10 @@ export const routes: RouteObject[] = [
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
-      { path: 'account', element: <AccountPage /> },
+      // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
+      // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
+      // `@/features/account/routes`.
+      { path: 'account', element: <AccountPage />, children: accountSectionRoutes },
       {
         path: 'admin/roles',
         element: (

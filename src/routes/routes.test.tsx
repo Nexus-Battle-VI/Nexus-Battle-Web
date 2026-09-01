@@ -9,7 +9,6 @@ import { createTestQueryClient, renderWithProviders } from '@/test/render'
 import { ECOMMERCE_PATH, NAVIGATION, navigationForPrimaryRole, routes } from './routes'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useSession } from '@/shared/session'
-import { AccountPage } from '@/features/account/AccountPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
@@ -21,9 +20,11 @@ describe('NAVIGATION', () => {
    * confirmo (Task #91, seccion 6), no los nombres tecnicos de los bounded
    * contexts que la navegacion mostraba antes.
    */
-  it('declara los accesos de producto confirmados por HU-02, sin duplicados', () => {
+  it('declara los accesos de producto confirmados (HU-02, HU-05.4), sin "Mi Cuenta" y sin duplicados', () => {
     const paths = NAVIGATION.map((item) => item.path)
 
+    // HU-05.4: "Mi Cuenta" deja de vivir en la navegacion central (el acceso a
+    // la cuenta es SessionControl). La ruta /account sigue existiendo.
     expect(paths).toEqual([
       '/ecommerce',
       '/play',
@@ -31,9 +32,9 @@ describe('NAVIGATION', () => {
       '/tournament',
       '/inventory',
       '/auction',
-      '/account',
       '/admin/roles',
     ])
+    expect(paths).not.toContain('/account')
     expect(new Set(paths).size).toBe(paths.length)
   })
 
@@ -219,14 +220,24 @@ describe('Proteccion visual de rutas (HU-02)', () => {
       'Torneo',
       'Mi Inventario',
       'Subasta',
-      'Mi Cuenta',
     ]) {
       expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
     }
 
+    // HU-05.4: "Mi Cuenta" ya no esta en la navegacion central.
+    expect(screen.queryByRole('link', { name: 'Mi Cuenta' })).not.toBeInTheDocument()
+
     expect(nav).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /menú de cuenta/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Gestionar roles' })).not.toBeInTheDocument()
+  })
+
+  it('/account monta "Mi cuenta" (HU-05.4) dentro del shell autenticado', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    const { router } = renderRoute('/account')
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/account')
   })
 
   it('una URL manual de roles muestra 403 visual a quien no es Super Administrador', async () => {
@@ -275,7 +286,6 @@ describe('Pantallas todavia no implementadas', () => {
    * indistinguibles de una pantalla terminada.
    */
   it.each([
-    ['Cuenta', 'Nexus-Battle-Account', <AccountPage key="account" />],
     ['Inventario', 'Nexus-Battle-Player-Inventory', <PlayerInventoryPage key="inventory" />],
     ['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />],
     ['Pedidos', 'Nexus-Battle-Commerce', <CommercePage key="commerce" />],
