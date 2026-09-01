@@ -10,5 +10,24 @@
  *
  * `Eye` / `EyeOff` se añaden para el control accesible mostrar/ocultar
  * contraseña de `PasswordField` (HU-05.4), reutilizado por Registro y Login.
+ *
+ * `ChevronLeft`, `Gamepad2`, `Swords`, `Trophy` y `TrendingUp` se añaden para el
+ * panel de estadísticas y logros (HU-06.4, RF-06): son la iconografía de la
+ * navegación de retorno y de las tres métricas y del bloque de logros que la
+ * referencia UX de HU-06.2 aprobó. Todos son decorativos (`aria-hidden`): la
+ * información nunca depende del icono.
  */
-export { ChevronDown, LogOut, User, Package, Settings, Eye, EyeOff } from 'lucide-react'
+export {
+  ChevronDown,
+  ChevronLeft,
+  LogOut,
+  User,
+  Package,
+  Settings,
+  Eye,
+  EyeOff,
+  Gamepad2,
+  Swords,
+  Trophy,
+  TrendingUp,
+} from 'lucide-react'
