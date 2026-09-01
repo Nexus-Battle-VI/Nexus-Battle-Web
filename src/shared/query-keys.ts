@@ -21,6 +21,12 @@ export const queryKeys = {
   commerce: {
     byCustomer: (customerId: string) => ['commerce', 'orders', customerId] as const,
     detail: (orderId: string) => ['commerce', 'order', orderId] as const,
+    /**
+     * El carrito vigente no lleva el cliente en la clave: el servicio lo
+     * deduce del testimonio, asi que la peticion ya es «mi carrito». Ponerlo
+     * aqui obligaria a conocerlo antes de poder consultarlo.
+     */
+    cart: ['commerce', 'cart'] as const,
   },
   account: {
     detail: (accountId: string) => ['account', accountId] as const,
