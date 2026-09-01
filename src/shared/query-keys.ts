@@ -30,5 +30,7 @@ export const queryKeys = {
   },
   account: {
     detail: (accountId: string) => ['account', accountId] as const,
+    /** La cuenta propia resuelta por el testimonio (`GET /api/accounts/me`). */
+    me: ['account', 'me'] as const,
   },
 } as const
