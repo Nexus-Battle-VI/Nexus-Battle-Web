@@ -3,7 +3,16 @@ import path from 'node:path'
 import process from 'node:process'
 
 const DIST_DIRECTORY = path.resolve('dist')
-const FORBIDDEN_MARKERS = ['AccountDevPreview', '/__dev/account', 'jugador.demo@nexus.test']
+const FORBIDDEN_MARKERS = [
+  'AccountDevPreview',
+  '/__dev/account',
+  'jugador.demo@nexus.test',
+  // Artefactos exclusivamente DEV de "Estadísticas y logros" (HU-06.4). El bundle
+  // productivo nunca debe contener contenido de ejemplo de estadísticas/logros.
+  'DEV_STATISTICS_FIXTURE',
+  'dev-fixture-achievement',
+  'StatisticsDevPreview',
+]
 
 /**
  * @param {string} directory

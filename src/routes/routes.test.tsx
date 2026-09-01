@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -288,7 +288,6 @@ describe('Pantallas todavia no implementadas', () => {
   it.each([
     ['Inventario', 'Nexus-Battle-Player-Inventory', <PlayerInventoryPage key="inventory" />],
     ['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />],
-    ['Pedidos', 'Nexus-Battle-Commerce', <CommercePage key="commerce" />],
     ['Notificaciones', 'Nexus-Battle-Notifications', <NotificationsPage key="notifications" />],
   ])('%s declara su estado y nombra el servicio %s', (title, service, element) => {
     renderWithProviders(element)
@@ -296,6 +295,39 @@ describe('Pantallas todavia no implementadas', () => {
     expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     expect(screen.getByText(/todavia no esta implementada/u)).toBeInTheDocument()
     expect(screen.getByText(service)).toBeInTheDocument()
+  })
+
+  /**
+   * Commerce salio de esta lista con HU-58: ya presenta el carrito. Lo que
+   * sigue declarandose pendiente es la vitrina, que es HU-57.
+   */
+  it('Commerce ya presenta el carrito y solo declara pendiente la vitrina', async () => {
+    // El servicio responde «todavia no hay carrito», que es lo que ve quien
+    // entra por primera vez. Sin este doble la consulta fallaria y la pantalla
+    // mostraria un error, que no es lo que esta prueba examina.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ message: 'No hay carrito.' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+
+    try {
+      renderWithProviders(<CommercePage />)
+
+      // Lo que sigue pendiente se declara, y se nombra la historia responsable.
+      expect(screen.getByRole('heading', { name: 'Vitrina' })).toBeInTheDocument()
+      expect(screen.getByText(/La vitrina todavia no esta implementada/u)).toBeInTheDocument()
+
+      // El carrito llega tras consultar el servicio, asi que se espera por el.
+      expect(await screen.findByRole('heading', { name: /Carrito/u })).toBeInTheDocument()
+      expect(screen.getByText('Tu carrito esta vacio.')).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })
 
