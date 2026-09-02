@@ -5,6 +5,7 @@ import { httpClient } from '@/lib/http'
  *
  * Endpoints REALES (Nexus-Battle-Account, `accounts.controller.ts`):
  * - `GET   /api/accounts/me`  -> la cuenta asociada al testimonio.
+ * - `GET   /api/accounts/me/privacy` -> proyeccion de datos personales HU-45.
  * - `PATCH /api/accounts/me`  -> actualiza la informacion personal editable.
  *
  * El testimonio viaja solo: `httpClient` lo adjunta como Bearer. Estas funciones
@@ -33,6 +34,25 @@ export interface OwnAccount {
 
 export const fetchOwnAccount = async (signal?: AbortSignal): Promise<OwnAccount> =>
   httpClient.get<OwnAccount>('/accounts/me', signal)
+
+/**
+ * Proyeccion autorizada para el portal de privacidad (HU-45.4).
+ *
+ * No es `AccountResponse`: excluye identificadores tecnicos, estado, avatar y
+ * cualquier dato de autenticacion. La identidad del titular la resuelve Account
+ * desde el testimonio que adjunta `httpClient`.
+ */
+export interface OwnPersonalData {
+  readonly email: string
+  readonly displayName: string
+  readonly firstNames: string
+  readonly lastNames: string
+  readonly roles: readonly string[]
+  readonly termsAccepted: boolean
+}
+
+export const fetchOwnPersonalData = async (signal?: AbortSignal): Promise<OwnPersonalData> =>
+  httpClient.get<OwnPersonalData>('/accounts/me/privacy', signal)
 
 /**
  * Campos editables por el contrato `UpdateOwnAccountRequest`. Hoy es solo el

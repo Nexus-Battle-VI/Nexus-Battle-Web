@@ -6,6 +6,7 @@ import { SecuritySection } from '../SecuritySection'
 import { PreferencesSection } from '../PreferencesSection'
 import { SubscriptionsSection } from '../SubscriptionsSection'
 import { PaymentMethodsSection } from '../PaymentMethodsSection'
+import { PrivacySection } from '../PrivacySection'
 import { StatisticsDevPreview } from '@/features/account/statistics/StatisticsDevPreview'
 
 /**
@@ -44,4 +45,5 @@ export const accountPreviewChildren: RouteObject[] = [
   { path: 'statistics', element: <StatisticsDevPreview /> },
   { path: 'subscriptions', element: <SubscriptionsSection /> },
   { path: 'payment-methods', element: <PaymentMethodsSection /> },
+  { path: 'privacy', element: <PrivacySection /> },
 ]

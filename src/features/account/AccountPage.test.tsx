@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryRouter } from 'react-router'
@@ -8,8 +8,9 @@ import { AccountPage } from './AccountPage'
 import { accountSectionRoutes } from './routes'
 import { createTestQueryClient } from '@/test/render'
 import { ECOMMERCE_PATH } from '@/routes/routes'
+import type { OwnAccount, OwnPersonalData } from './api'
 
-const ACCOUNT = {
+const ACCOUNT: OwnAccount = {
   id: 'acc-1',
   email: 'ana@nexus.test',
   displayName: 'Ana Ramirez',
@@ -19,8 +20,33 @@ const ACCOUNT = {
   roles: ['PLAYER'],
 }
 
+const PERSONAL_DATA: OwnPersonalData = {
+  email: 'ana.privacidad@nexus.test',
+  displayName: 'Ana Privacidad',
+  firstNames: 'Ana',
+  lastNames: 'Privacidad',
+  roles: ['PLAYER'],
+  termsAccepted: true,
+}
+
 const json = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+
+const mockAccountBackend = (
+  account: OwnAccount = ACCOUNT,
+  personalData: OwnPersonalData = PERSONAL_DATA,
+) => {
+  const fetchImpl = vi.fn((input: RequestInfo | URL) => {
+    const url =
+      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+    const body = url.endsWith('/accounts/me/privacy') ? personalData : account
+
+    return Promise.resolve(json(200, body))
+  })
+  vi.stubGlobal('fetch', fetchImpl)
+
+  return fetchImpl
+}
 
 const renderAt = (entry = '/account') => {
   const router = createMemoryRouter(
@@ -28,11 +54,14 @@ const renderAt = (entry = '/account') => {
     { initialEntries: [entry] },
   )
 
-  return render(
-    <QueryClientProvider client={createTestQueryClient()}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
-  )
+  return {
+    router,
+    ...render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    ),
+  }
 }
 
 afterEach(() => {
@@ -53,7 +82,7 @@ describe('AccountPage', () => {
   })
 
   it('con la cuenta cargada muestra el resumen y la navegacion interna', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, ACCOUNT)))
+    mockAccountBackend()
     renderAt()
 
     expect(await screen.findByText('Ana Ramirez')).toBeInTheDocument()
@@ -68,6 +97,7 @@ describe('AccountPage', () => {
       'Estadísticas y logros',
       'Suscripciones',
       'Metodos de pago',
+      'Datos personales y exportación',
     ]) {
       expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
     }
@@ -131,5 +161,69 @@ describe('AccountPage', () => {
       'aria-current',
       'page',
     )
+  })
+
+  it('muestra privacidad solo para PLAYER y justo debajo de Metodos de pago', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, ACCOUNT)))
+    renderAt()
+
+    const nav = await screen.findByRole('navigation', { name: 'Secciones de Mi cuenta' })
+    const labels = within(nav)
+      .getAllByRole('link')
+      .map((link) => link.textContent)
+
+    expect(labels).toEqual([
+      'Perfil',
+      'Seguridad',
+      'Preferencias',
+      'Estadísticas y logros',
+      'Suscripciones',
+      'Metodos de pago',
+      'Datos personales y exportación',
+    ])
+  })
+
+  it.each(['MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
+    'oculta privacidad cuando el rol primario es %s',
+    async (role) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(json(200, { ...ACCOUNT, roles: ['PLAYER', role] })),
+      )
+      renderAt()
+
+      expect(await screen.findByText('Ana Ramirez')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('link', { name: 'Datos personales y exportación' }),
+      ).not.toBeInTheDocument()
+    },
+  )
+
+  it('navega a Seguridad y Privacidad conservando el shell de Mi cuenta', async () => {
+    const user = userEvent.setup()
+    mockAccountBackend()
+    const { router } = renderAt()
+
+    await user.click(await screen.findByRole('link', { name: 'Seguridad' }))
+
+    expect(router.state.location.pathname).toBe('/account/security')
+    expect(screen.getByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
+    expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Seguridad' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('heading', { name: 'Cambiar contrasena' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'Datos personales y exportación' }))
+
+    expect(router.state.location.pathname).toBe('/account/privacy')
+    expect(screen.getByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
+    expect(screen.getAllByText('Ana Ramirez').length).toBeGreaterThan(0)
+    expect(
+      await screen.findByText('Cuenta: Ana Privacidad (titular autenticado)'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Datos personales y exportación' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.getByRole('heading', { name: 'Mis datos personales' })).toBeInTheDocument()
   })
 })

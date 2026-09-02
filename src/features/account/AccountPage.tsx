@@ -70,11 +70,11 @@ export const AccountPage = (): React.JSX.Element => {
 
       {query.isSuccess && (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,17rem)_1fr]">
-          <aside className="space-y-4">
+          <aside className="min-w-0 space-y-4">
             <Card>
               <AccountSummary account={query.data} />
             </Card>
-            <AccountSectionNav />
+            <AccountSectionNav roles={query.data.roles} />
           </aside>
 
           <div className="min-w-0">

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { HttpError } from '@/lib/http'
-import { fetchOwnAccount, updateOwnAccount, validateDisplayName } from './api'
+import { HttpError, httpClient } from '@/lib/http'
+import { fetchOwnAccount, fetchOwnPersonalData, updateOwnAccount, validateDisplayName } from './api'
 
 const ACCOUNT = {
   id: 'acc-1',
@@ -13,6 +13,15 @@ const ACCOUNT = {
   roles: ['PLAYER'],
 }
 
+const PERSONAL_DATA = {
+  email: 'valeria.privacidad@nexus.test',
+  displayName: 'Valeria Privacidad',
+  firstNames: 'Valeria',
+  lastNames: 'Rios',
+  roles: ['PLAYER'],
+  termsAccepted: true,
+}
+
 const jsonResponse = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), {
     status,
@@ -21,6 +30,7 @@ const jsonResponse = (status: number, body: unknown): Response =>
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('fetchOwnAccount', () => {
@@ -46,6 +56,38 @@ describe('fetchOwnAccount', () => {
     await expect(fetchOwnAccount()).rejects.toSatisfy(
       (error: unknown) => error instanceof HttpError && error.isUnauthorized,
     )
+  })
+})
+
+describe('fetchOwnPersonalData', () => {
+  it('delega en httpClient con la ruta relativa del contrato de privacidad', async () => {
+    const signal = new AbortController().signal
+    const get = vi.spyOn(httpClient, 'get').mockResolvedValue(PERSONAL_DATA)
+
+    const result = await fetchOwnPersonalData(signal)
+
+    expect(get).toHaveBeenCalledWith('/accounts/me/privacy', signal)
+    expect(get.mock.calls[0]?.[0]).not.toContain('/api/')
+    expect(get.mock.calls[0]?.[0]).not.toMatch(/^https?:\/\//u)
+    expect(get.mock.calls[0]?.[0]).not.toMatch(/accountId|subject/u)
+    expect(result).toEqual(PERSONAL_DATA)
+  })
+
+  it('pide GET /api/accounts/me/privacy sin identificador de titular ni body', async () => {
+    const signal = new AbortController().signal
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, PERSONAL_DATA))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    const result = await fetchOwnPersonalData(signal)
+
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/accounts/me/privacy')
+    expect(url).not.toMatch(/^https?:\/\//u)
+    expect(url).not.toMatch(/accountId|subject/u)
+    expect(init.method).toBe('GET')
+    expect(init.signal).toBe(signal)
+    expect(init.body).toBeUndefined()
+    expect(result).toEqual(PERSONAL_DATA)
   })
 })
 
