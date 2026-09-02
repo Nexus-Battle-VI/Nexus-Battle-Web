@@ -13,6 +13,11 @@ export interface ShowcaseProps {
   readonly onAddToCart: (sku: string) => void
   readonly onOpenDetail?: (sku: string) => void
   readonly busySku?: string | null
+  /** HU-56. Ausentes cuando la lista de deseos no esta disponible. */
+  readonly isWished?: (sku: string) => boolean
+  readonly isOwned?: (sku: string) => boolean
+  readonly onToggleWish?: (sku: string) => void
+  readonly wishBusySku?: string | null
 }
 
 /**
@@ -29,6 +34,10 @@ export const Showcase = ({
   onAddToCart,
   onOpenDetail,
   busySku = null,
+  isWished,
+  isOwned,
+  onToggleWish,
+  wishBusySku = null,
 }: ShowcaseProps): React.JSX.Element => {
   const [filters, setFilters] = useState<ShowcaseFilters>(NO_FILTERS)
   const [page, setPage] = useState(1)
@@ -80,6 +89,10 @@ export const Showcase = ({
             onAddToCart={onAddToCart}
             onOpenDetail={onOpenDetail ?? ((): void => undefined)}
             busySku={busySku}
+            {...(isWished === undefined ? {} : { isWished })}
+            {...(isOwned === undefined ? {} : { isOwned })}
+            {...(onToggleWish === undefined ? {} : { onToggleWish })}
+            wishBusySku={wishBusySku}
           />
 
           {current.pageCount > 1 && (
