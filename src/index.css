@@ -68,12 +68,12 @@
   --nb-surface-image:
     radial-gradient(
       1360px 900px at 6% -14%,
-      color-mix(in oklab, var(--color-brand) 26%, transparent),
+      color-mix(in oklab, var(--color-brand) 38%, transparent),
       transparent 62%
     ),
     radial-gradient(
       1120px 780px at 114% 2%,
-      color-mix(in oklab, var(--color-brand) 17%, transparent),
+      color-mix(in oklab, var(--color-brand) 26%, transparent),
       transparent 56%
     ),
     radial-gradient(

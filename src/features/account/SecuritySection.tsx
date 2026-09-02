@@ -58,11 +58,11 @@ export const SecuritySection = ({
       return
     }
     if (fields.next !== fields.confirm) {
-      setClientError('La confirmacion no coincide con la contrasena nueva.')
+      setClientError('La confirmación no coincide con la contraseña nueva.')
       return
     }
     if (fields.next === fields.current) {
-      setClientError('La contrasena nueva debe ser distinta de la actual.')
+      setClientError('La contraseña nueva debe ser distinta de la actual.')
       return
     }
 
@@ -73,7 +73,7 @@ export const SecuritySection = ({
   let backendError: string | null = null
   if (mutation.isError) {
     backendError =
-      mutation.error instanceof Error ? mutation.error.message : 'No se pudo cambiar la contrasena.'
+      mutation.error instanceof Error ? mutation.error.message : 'No se pudo cambiar la contraseña.'
   }
   const shownError = clientError ?? backendError
 
@@ -83,7 +83,7 @@ export const SecuritySection = ({
         <Card>
           <p className="text-sm text-muted">
             <span className="font-medium text-ink">Entorno local:</span> el proveedor de identidad
-            de desarrollo no valida credenciales reales, asi que el cambio de contrasena y el
+            de desarrollo no valida credenciales reales, asi que el cambio de contraseña y el
             segundo factor no completan de extremo a extremo aqui. La interfaz y sus estados son los
             definitivos.
           </p>
@@ -91,13 +91,13 @@ export const SecuritySection = ({
       )}
 
       <Card
-        title="Cambiar contrasena"
-        description="Necesitas tu contrasena actual. La nueva la valida el proveedor de identidad."
+        title="Cambiar contraseña"
+        description="Necesitas tu contraseña actual. La nueva la valida el proveedor de identidad."
       >
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div>
             <label htmlFor="current-password" className={FIELD_LABEL_CLASS}>
-              Contrasena actual
+              Contraseña actual
             </label>
             <PasswordField
               id="current-password"
@@ -110,7 +110,7 @@ export const SecuritySection = ({
 
           <div>
             <label htmlFor="new-password" className={FIELD_LABEL_CLASS}>
-              Contrasena nueva
+              Contraseña nueva
             </label>
             <PasswordField
               id="new-password"
@@ -125,7 +125,7 @@ export const SecuritySection = ({
 
           <div>
             <label htmlFor="confirm-password" className={FIELD_LABEL_CLASS}>
-              Repite la contrasena nueva
+              Repite la contraseña nueva
             </label>
             <PasswordField
               id="confirm-password"
@@ -144,11 +144,11 @@ export const SecuritySection = ({
 
           <div className="flex items-center gap-3">
             <Button type="submit" loading={mutation.isPending}>
-              Cambiar contrasena
+              Cambiar contraseña
             </Button>
             {mutation.isSuccess && (
               <p role="status" className="text-sm text-success">
-                Contrasena actualizada.
+                Contraseña actualizada.
               </p>
             )}
           </div>
