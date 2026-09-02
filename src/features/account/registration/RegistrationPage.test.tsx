@@ -442,6 +442,9 @@ describe('RegistrationPage', () => {
     // Pestana nueva: quien todavia esta llenando el formulario no pierde su
     // progreso al consultar el documento.
     expect(link).toHaveAttribute('target', '_blank')
+    // `rel="noreferrer"` evita reverse tabnabbing: sin el, la pestana nueva
+    // podria manipular `window.opener` de esta pantalla de registro.
+    expect(link.getAttribute('rel')).toContain('noreferrer')
     // El checkbox de aceptacion sigue siendo el unico control de consentimiento:
     // el enlace no es un segundo control ni forma parte de la etiqueta que
     // marca/desmarca el checkbox.
