@@ -4,6 +4,7 @@ import { CartPanel } from './cart/CartPanel'
 import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
 import { Showcase } from './showcase/Showcase'
+import { useWishlist } from './wishlist/useWishlist'
 
 /**
  * Pantalla del bounded context Commerce.
@@ -14,6 +15,7 @@ import { Showcase } from './showcase/Showcase'
  */
 export const CommercePage = (): React.JSX.Element => {
   const { cart, isLoading, error, busySku, add, changeQuantity, remove, mutationError } = useCart()
+  const wishlist = useWishlist()
   const panel = useCartPanelState(true)
 
   return (
@@ -42,7 +44,19 @@ export const CommercePage = (): React.JSX.Element => {
           add({ sku, quantity: 1 })
         }}
         busySku={busySku}
+        isWished={wishlist.isWished}
+        isOwned={wishlist.isOwned}
+        onToggleWish={wishlist.toggle}
+        wishBusySku={wishlist.busySku}
       />
+
+      {wishlist.mutationError !== null && (
+        <p role="alert" className="text-sm text-danger">
+          {wishlist.mutationError instanceof Error
+            ? wishlist.mutationError.message
+            : 'No se pudo actualizar la lista de deseos.'}
+        </p>
+      )}
 
       <Card title="Pendiente en la vitrina">
         <p className="text-sm text-muted">
