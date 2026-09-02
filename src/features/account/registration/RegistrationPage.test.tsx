@@ -425,14 +425,30 @@ describe('RegistrationPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('ofrece los documentos legales como acciones y declara que faltan', async () => {
+  it('declara que faltan los Terminos y Condiciones, que todavia no existen', async () => {
     const user = setup()
 
     renderPage(vi.fn())
     await user.click(screen.getByRole('button', { name: 'Términos y Condiciones' }))
 
-    expect(screen.getByRole('button', { name: 'Política de Privacidad' })).toBeInTheDocument()
     expect(await screen.findByRole('status')).toHaveTextContent(/todavía no está publicado/u)
+  })
+
+  it('enlaza la Politica de Privacidad al PDF real, en pestana nueva, no como marcador de posicion (EN-011)', () => {
+    renderPage(vi.fn())
+
+    const link = screen.getByRole('link', { name: 'Política de Privacidad' })
+    expect(link).toHaveAttribute('href', '/assets/privacy-policy-v0.3.pdf')
+    // Pestana nueva: quien todavia esta llenando el formulario no pierde su
+    // progreso al consultar el documento.
+    expect(link).toHaveAttribute('target', '_blank')
+    // `rel="noreferrer"` evita reverse tabnabbing: sin el, la pestana nueva
+    // podria manipular `window.opener` de esta pantalla de registro.
+    expect(link.getAttribute('rel')).toContain('noreferrer')
+    // El checkbox de aceptacion sigue siendo el unico control de consentimiento:
+    // el enlace no es un segundo control ni forma parte de la etiqueta que
+    // marca/desmarca el checkbox.
+    expect(screen.queryByRole('button', { name: 'Política de Privacidad' })).not.toBeInTheDocument()
   })
 
   it('Cancelar saca del registro y no deja la URL donde estaba', async () => {
