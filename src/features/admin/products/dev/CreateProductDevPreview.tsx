@@ -20,7 +20,8 @@ const stubCreate = (request: CreateProductRequest): Promise<CreatedProduct> =>
     name: request.name,
     type: request.type,
     printRun: request.printRun,
-    printRunMode: request.printRun === -1 ? 'INFINITE' : request.printRun === 1 ? 'UNIQUE' : 'LIMITED',
+    printRunMode:
+      request.printRun === -1 ? 'INFINITE' : request.printRun === 1 ? 'UNIQUE' : 'LIMITED',
     lifecycleStatus: 'ACTIVE',
     creditsPrice: request.creditsPrice,
     premium: request.premium,
