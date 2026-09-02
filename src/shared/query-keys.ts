@@ -28,6 +28,12 @@ export const queryKeys = {
      */
     cart: ['commerce', 'cart'] as const,
     /**
+     * Carrito guardado entre sesiones. Clave distinta de `cart`: son dos
+     * cosas distintas, y compartir clave haria que guardar pareciera cambiar
+     * el carrito vigente.
+     */
+    savedCart: ['commerce', 'saved-cart'] as const,
+    /**
      * Resumen de compra de un pedido. Lleva el pedido en la clave porque el
      * resumen es el de ese pedido concreto, no el del carrito de turno.
      */

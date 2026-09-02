@@ -7,16 +7,18 @@ import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
 import { CheckoutPanel } from './checkout/CheckoutPanel'
 import { useCheckout } from './checkout/useCheckout'
+import { SavedCartPanel } from './saved-cart/SavedCartPanel'
+import { useSavedCart } from './saved-cart/useSavedCart'
 import { Showcase } from './showcase/Showcase'
 import { useWishlist } from './wishlist/useWishlist'
 
 /**
  * Pantalla del bounded context Commerce.
  *
- * Reune la vitrina (HU-57), el carrito (HU-58) y, al proceder al pago, el
- * resumen de compra y el formulario de pago simulado (HU-59). El carrito
- * permanece visible en la pantalla, que es lo que pide RF-58 con «disponible en
- * todas las vistas del modulo».
+ * Reune la vitrina (HU-57), el carrito (HU-58), el carrito guardado entre
+ * sesiones (HU-61) y, al proceder al pago, el resumen de compra y el formulario
+ * de pago simulado (HU-59). El carrito permanece visible en la pantalla, que es
+ * lo que pide RF-58 con «disponible en todas las vistas del modulo».
  *
  * Cuando se escribio HU-59 la vitrina todavia no existia y esta pantalla
  * declaraba lo que faltaba en lugar de simularlo. Ya existe, asi que el flujo
@@ -24,6 +26,7 @@ import { useWishlist } from './wishlist/useWishlist'
  */
 export const CommercePage = (): React.JSX.Element => {
   const { cart, isLoading, error, busySku, add, changeQuantity, remove, mutationError } = useCart()
+  const savedCart = useSavedCart()
   const wishlist = useWishlist()
   const panel = useCartPanelState(true)
 
@@ -77,6 +80,17 @@ export const CommercePage = (): React.JSX.Element => {
           )}
         </QueryState>
       )}
+
+      <SavedCartPanel
+        saved={savedCart.saved}
+        unavailable={savedCart.unavailable}
+        canSave={cart !== null && cart.lines.length > 0}
+        onSave={savedCart.save}
+        onRestore={savedCart.restore}
+        onDiscard={savedCart.discard}
+        isBusy={savedCart.isBusy}
+        error={savedCart.actionError ?? savedCart.error}
+      />
 
       <Showcase
         onAddToCart={(sku) => {
