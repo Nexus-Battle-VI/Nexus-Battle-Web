@@ -27,6 +27,18 @@ export const queryKeys = {
      * aqui obligaria a conocerlo antes de poder consultarlo.
      */
     cart: ['commerce', 'cart'] as const,
+    /**
+     * Vitrina. No lleva los filtros en la clave: se consulta el catalogo una
+     * vez y el filtrado ocurre en memoria, asi que incluirlos provocaria una
+     * peticion por cada tecla escrita en la busqueda.
+     */
+    showcase: ['commerce', 'showcase'] as const,
+    /**
+     * Lista de deseos. Se consulta entera una vez y se resuelve por referencia
+     * en memoria: pedir el estado producto a producto serian dieciseis
+     * peticiones para pintar una pagina de la vitrina.
+     */
+    wishlist: ['commerce', 'wishlist'] as const,
   },
   account: {
     detail: (accountId: string) => ['account', accountId] as const,
