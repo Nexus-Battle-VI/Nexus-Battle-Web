@@ -34,12 +34,13 @@ export interface LegalDocument {
  * documento de Terminos y Condiciones. Redactar aqui un texto legal inventado
  * seria peor que no tenerlo, porque pareceria vinculante.
  *
- * `privacy` SI tiene destino (EN-011, CA-01): `/privacy` presenta el
- * documento real de Nexus-Battle-Infrastructure (ver
- * `@/features/privacy/PrivacyPolicyPage.tsx`). No es una URL externa ni un
- * enlace a GitHub: es una ruta propia de este producto.
+ * `privacy` SI tiene destino (EN-011, CA-01): abre el PDF real de la
+ * Política, servido como asset estatico del build
+ * (`public/assets/privacy-policy-v0.3.pdf`, generado desde el documento
+ * fuente de Nexus-Battle-Infrastructure). No es una URL externa ni un enlace
+ * a GitHub: el archivo viaja con el propio despliegue de Web.
  */
 export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
   { id: 'terms', label: 'Términos y Condiciones', href: null },
-  { id: 'privacy', label: 'Política de Privacidad', href: '/privacy' },
+  { id: 'privacy', label: 'Política de Privacidad', href: '/assets/privacy-policy-v0.3.pdf' },
 ]

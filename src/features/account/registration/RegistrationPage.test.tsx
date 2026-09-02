@@ -434,13 +434,14 @@ describe('RegistrationPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(/todavía no está publicado/u)
   })
 
-  it('enlaza la Politica de Privacidad hacia la pagina real, no como marcador de posicion (EN-011)', () => {
+  it('enlaza la Politica de Privacidad al PDF real, en pestana nueva, no como marcador de posicion (EN-011)', () => {
     renderPage(vi.fn())
 
-    expect(screen.getByRole('link', { name: 'Política de Privacidad' })).toHaveAttribute(
-      'href',
-      '/privacy',
-    )
+    const link = screen.getByRole('link', { name: 'Política de Privacidad' })
+    expect(link).toHaveAttribute('href', '/assets/privacy-policy-v0.3.pdf')
+    // Pestana nueva: quien todavia esta llenando el formulario no pierde su
+    // progreso al consultar el documento.
+    expect(link).toHaveAttribute('target', '_blank')
     // El checkbox de aceptacion sigue siendo el unico control de consentimiento:
     // el enlace no es un segundo control ni forma parte de la etiqueta que
     // marca/desmarca el checkbox.

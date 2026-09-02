@@ -10,7 +10,6 @@ import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
-import { PrivacyPolicyPage } from '@/features/privacy/PrivacyPolicyPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
@@ -132,12 +131,6 @@ export const routes: RouteObject[] = [
     path: '/register',
     element: <RegistrationPage onSubmit={registerAccount} />,
   },
-  // Publica y alcanzable con o sin sesion (EN-011, CA-01): igual que
-  // `/register`, no se envuelve en `RequireSession` -excluiria a quien
-  // todavia no tiene cuenta, que es quien mas necesita leerla antes de
-  // registrarse- ni en `PublicOnlyRoute` -una persona ya autenticada tambien
-  // puede querer consultarla-.
-  { path: '/privacy', element: <PrivacyPolicyPage /> },
   // La ruta de retorno del proveedor de identidad OIDC. No aparece en la
   // navegacion ni la enlaza ningun control: se conserva por si una compilacion
   // futura reactiva el flujo de codigo, pero el alta y el login del producto
