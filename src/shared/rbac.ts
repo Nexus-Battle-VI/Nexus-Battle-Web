@@ -24,6 +24,8 @@ export const roleLabel = (role: string): string => ROLE_LABELS[role] ?? role
 
 const ROLE_PRECEDENCE = ['SUPER_ADMINISTRATOR', 'ADMINISTRATOR', 'MODERATOR', 'PLAYER'] as const
 
+export const ADMIN_USER_PRIMARY_ROLES = ['ADMINISTRATOR', 'SUPER_ADMINISTRATOR'] as const
+
 /** Rol vigente hacia fuera: el de mayor precedencia del conjunto acumulado. */
 export const primaryRole = (roles: readonly string[]): string | null => {
   for (const role of ROLE_PRECEDENCE) {
@@ -33,4 +35,11 @@ export const primaryRole = (roles: readonly string[]): string | null => {
   }
 
   return roles[0] ?? null
+}
+
+/** Presentacion de HU-44; Account sigue siendo la autoridad y valida el testimonio. */
+export const canViewAdminUsers = (roles: readonly string[]): boolean => {
+  const role = primaryRole(roles)
+
+  return ADMIN_USER_PRIMARY_ROLES.some((allowedRole) => allowedRole === role)
 }
