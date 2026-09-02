@@ -143,6 +143,37 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(router.state.location.pathname).toBe('/register')
   })
 
+  /**
+   * EN-011, CA-01: /privacy no puede vivir detras de `RequireSession` -dejaria
+   * fuera a quien todavia no tiene cuenta, que es quien mas necesita leerla
+   * antes de registrarse- ni detras de `PublicOnlyRoute` -una persona ya
+   * autenticada tambien puede querer consultarla-.
+   */
+  it('sin sesion, /privacy muestra la Politica de Privacidad directamente', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    const { router } = renderRoute('/privacy')
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Política de Privacidad y Tratamiento de Datos Personales',
+      }),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/privacy')
+  })
+
+  it('con sesion iniciada, /privacy tambien es accesible', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/privacy')
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'Política de Privacidad y Tratamiento de Datos Personales',
+      }),
+    ).toBeInTheDocument()
+  })
+
   it('sin sesion, una ruta autenticada muestra el aviso "Para continuar" en el mismo sitio, sin redirigir a /login', async () => {
     useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/ecommerce')

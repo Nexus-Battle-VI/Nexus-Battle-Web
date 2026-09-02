@@ -30,12 +30,16 @@ export interface LegalDocument {
 /**
  * Documentos legales enlazados desde la aceptacion.
  *
- * Ambos `href` son `null` a proposito: en este repositorio no hay ningun PDF ni
- * pagina de terminos o privacidad. Redactar aqui un texto legal inventado seria
- * peor que no tenerlo, porque pareceria vinculante. Cuando existan, basta con
- * poner su URL aqui.
+ * `terms` sigue en `null` a proposito: en este repositorio no hay ningun
+ * documento de Terminos y Condiciones. Redactar aqui un texto legal inventado
+ * seria peor que no tenerlo, porque pareceria vinculante.
+ *
+ * `privacy` SI tiene destino (EN-011, CA-01): `/privacy` presenta el
+ * documento real de Nexus-Battle-Infrastructure (ver
+ * `@/features/privacy/content.ts`). No es una URL externa ni un enlace a
+ * GitHub: es una ruta propia de este producto.
  */
 export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
   { id: 'terms', label: 'Términos y Condiciones', href: null },
-  { id: 'privacy', label: 'Política de Privacidad', href: null },
+  { id: 'privacy', label: 'Política de Privacidad', href: '/privacy' },
 ]
