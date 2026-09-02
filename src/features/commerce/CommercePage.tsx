@@ -3,6 +3,8 @@ import { QueryState } from '@/components/ui/QueryState'
 import { CartPanel } from './cart/CartPanel'
 import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
+import { SavedCartPanel } from './saved-cart/SavedCartPanel'
+import { useSavedCart } from './saved-cart/useSavedCart'
 
 /**
  * Pantalla del bounded context Commerce.
@@ -14,6 +16,7 @@ import { useCart } from './cart/useCart'
  */
 export const CommercePage = (): React.JSX.Element => {
   const { cart, isLoading, error, busySku, changeQuantity, remove, mutationError } = useCart()
+  const savedCart = useSavedCart()
   const panel = useCartPanelState(true)
 
   return (
@@ -36,6 +39,17 @@ export const CommercePage = (): React.JSX.Element => {
             : 'No se pudo actualizar el carrito.'}
         </p>
       )}
+
+      <SavedCartPanel
+        saved={savedCart.saved}
+        unavailable={savedCart.unavailable}
+        canSave={cart !== null && cart.lines.length > 0}
+        onSave={savedCart.save}
+        onRestore={savedCart.restore}
+        onDiscard={savedCart.discard}
+        isBusy={savedCart.isBusy}
+        error={savedCart.actionError ?? savedCart.error}
+      />
 
       <Card title="Vitrina" description="Busqueda y filtros de productos.">
         <p className="text-sm text-muted">
