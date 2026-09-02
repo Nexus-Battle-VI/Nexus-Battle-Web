@@ -32,6 +32,9 @@ describe('NAVIGATION', () => {
       '/tournament',
       '/inventory',
       '/auction',
+      // HU-33: catalogo administrativo. Solo lo ven los roles administrativos;
+      // el filtro se comprueba mas abajo.
+      '/admin/products/new',
       '/admin/roles',
     ])
     expect(paths).not.toContain('/account')
@@ -53,6 +56,32 @@ describe('NAVIGATION', () => {
     expect(
       navigationForPrimaryRole('SUPER_ADMINISTRATOR').some((item) => item.path === '/admin/roles'),
     ).toBe(true)
+  })
+
+  /**
+   * La jerarquia va en UN solo sentido y hay que comprobar las dos caras. Un
+   * Super Administrador ve lo que se exige a un Administrador; un Administrador
+   * NO ve la gestion de roles. Sin el segundo caso, «hay jerarquia» podria
+   * cumplirse dandoselo todo a cualquier rol administrativo.
+   */
+  it('un Administrador ve el catalogo administrativo pero no la gestion de roles', () => {
+    const paths = navigationForPrimaryRole('ADMINISTRATOR').map((item) => item.path)
+
+    expect(paths).toContain('/admin/products/new')
+    expect(paths).not.toContain('/admin/roles')
+  })
+
+  it('un Super Administrador ve tambien lo que se exige a un Administrador', () => {
+    const paths = navigationForPrimaryRole('SUPER_ADMINISTRATOR').map((item) => item.path)
+
+    expect(paths).toContain('/admin/products/new')
+    expect(paths).toContain('/admin/roles')
+  })
+
+  it('un jugador no ve ningun acceso administrativo', () => {
+    const paths = navigationForPrimaryRole('PLAYER').map((item) => item.path)
+
+    expect(paths.some((path) => path.startsWith('/admin/'))).toBe(false)
   })
 })
 
