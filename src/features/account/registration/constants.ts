@@ -36,8 +36,8 @@ export interface LegalDocument {
  *
  * `privacy` SI tiene destino (EN-011, CA-01): `/privacy` presenta el
  * documento real de Nexus-Battle-Infrastructure (ver
- * `@/features/privacy/content.ts`). No es una URL externa ni un enlace a
- * GitHub: es una ruta propia de este producto.
+ * `@/features/privacy/PrivacyPolicyPage.tsx`). No es una URL externa ni un
+ * enlace a GitHub: es una ruta propia de este producto.
  */
 export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
   { id: 'terms', label: 'Términos y Condiciones', href: null },
