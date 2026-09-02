@@ -28,6 +28,11 @@ export const queryKeys = {
      */
     cart: ['commerce', 'cart'] as const,
     /**
+     * Resumen de compra de un pedido. Lleva el pedido en la clave porque el
+     * resumen es el de ese pedido concreto, no el del carrito de turno.
+     */
+    checkout: (orderId: string) => ['commerce', 'checkout', orderId] as const,
+    /**
      * Vitrina. No lleva los filtros en la clave: se consulta el catalogo una
      * vez y el filtrado ocurre en memoria, asi que incluirlos provocaria una
      * peticion por cada tecla escrita en la busqueda.

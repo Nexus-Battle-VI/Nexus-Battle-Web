@@ -1,22 +1,35 @@
+import { useState } from 'react'
+
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { CartPanel } from './cart/CartPanel'
 import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
+import { CheckoutPanel } from './checkout/CheckoutPanel'
+import { useCheckout } from './checkout/useCheckout'
 import { Showcase } from './showcase/Showcase'
 import { useWishlist } from './wishlist/useWishlist'
 
 /**
  * Pantalla del bounded context Commerce.
  *
- * Reune la vitrina (HU-57) y el carrito (HU-58). El carrito permanece visible
- * en la pantalla, que es lo que pide RF-58 con «disponible en todas las vistas
- * del modulo».
+ * Reune la vitrina (HU-57), el carrito (HU-58) y, al proceder al pago, el
+ * resumen de compra y el formulario de pago simulado (HU-59). El carrito
+ * permanece visible en la pantalla, que es lo que pide RF-58 con «disponible en
+ * todas las vistas del modulo».
+ *
+ * Cuando se escribio HU-59 la vitrina todavia no existia y esta pantalla
+ * declaraba lo que faltaba en lugar de simularlo. Ya existe, asi que el flujo
+ * es completo: se anade desde la vitrina y se paga sin salir de aqui.
  */
 export const CommercePage = (): React.JSX.Element => {
   const { cart, isLoading, error, busySku, add, changeQuantity, remove, mutationError } = useCart()
   const wishlist = useWishlist()
   const panel = useCartPanelState(true)
+
+  /** Pedido que se esta pagando. `null` mientras se navega el carrito. */
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null)
+  const checkout = useCheckout(payingOrderId)
 
   return (
     <div className="flex flex-col gap-4">
@@ -28,6 +41,13 @@ export const CommercePage = (): React.JSX.Element => {
           onChangeQuantity={changeQuantity}
           onRemove={remove}
           busySku={busySku}
+          {...(cart === null || cart.lines.length === 0
+            ? {}
+            : {
+                onCheckout: (): void => {
+                  setPayingOrderId(cart.id)
+                },
+              })}
         />
       </QueryState>
 
@@ -37,6 +57,25 @@ export const CommercePage = (): React.JSX.Element => {
             ? mutationError.message
             : 'No se pudo actualizar el carrito.'}
         </p>
+      )}
+
+      {payingOrderId !== null && (
+        <QueryState isLoading={checkout.isLoading} error={checkout.error}>
+          {checkout.summary === null ? (
+            <p className="text-sm text-muted">No hay resumen de compra que mostrar.</p>
+          ) : (
+            <CheckoutPanel
+              summary={checkout.summary}
+              onPay={checkout.pay}
+              onCancel={() => {
+                setPayingOrderId(null)
+              }}
+              isPaying={checkout.isPaying}
+              error={checkout.paymentError}
+              result={checkout.result}
+            />
+          )}
+        </QueryState>
       )}
 
       <Showcase
@@ -66,7 +105,8 @@ export const CommercePage = (): React.JSX.Element => {
           <code className="mx-1 rounded bg-surface px-1.5 py-0.5 text-xs">
             Nexus-Battle-Catalog
           </code>
-          no los publica en su API. El detalle de producto y el pago corresponden a HU-59.
+          no los publica en su API. El detalle de producto sigue pendiente por el mismo motivo; el
+          pago ya esta en esta pantalla (HU-59).
         </p>
       </Card>
     </div>
