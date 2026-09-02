@@ -7,18 +7,24 @@ import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
 import { CheckoutPanel } from './checkout/CheckoutPanel'
 import { useCheckout } from './checkout/useCheckout'
+import { Showcase } from './showcase/Showcase'
+import { useWishlist } from './wishlist/useWishlist'
 
 /**
  * Pantalla del bounded context Commerce.
  *
- * Presenta el carrito (HU-58) y, al proceder al pago, el resumen de compra y
- * el formulario de pago simulado (HU-59). La vitrina desde la que se anaden
- * productos es HU-57 y todavia no existe, asi que **aqui no se simula una**:
- * una rejilla de productos inventados seria indistinguible de la real, y esa
- * confusion es peor que declarar lo que falta.
+ * Reune la vitrina (HU-57), el carrito (HU-58) y, al proceder al pago, el
+ * resumen de compra y el formulario de pago simulado (HU-59). El carrito
+ * permanece visible en la pantalla, que es lo que pide RF-58 con «disponible en
+ * todas las vistas del modulo».
+ *
+ * Cuando se escribio HU-59 la vitrina todavia no existia y esta pantalla
+ * declaraba lo que faltaba en lugar de simularlo. Ya existe, asi que el flujo
+ * es completo: se anade desde la vitrina y se paga sin salir de aqui.
  */
 export const CommercePage = (): React.JSX.Element => {
-  const { cart, isLoading, error, busySku, changeQuantity, remove, mutationError } = useCart()
+  const { cart, isLoading, error, busySku, add, changeQuantity, remove, mutationError } = useCart()
+  const wishlist = useWishlist()
   const panel = useCartPanelState(true)
 
   /** Pedido que se esta pagando. `null` mientras se navega el carrito. */
@@ -72,14 +78,35 @@ export const CommercePage = (): React.JSX.Element => {
         </QueryState>
       )}
 
-      <Card title="Vitrina" description="Busqueda y filtros de productos.">
+      <Showcase
+        onAddToCart={(sku) => {
+          add({ sku, quantity: 1 })
+        }}
+        busySku={busySku}
+        isWished={wishlist.isWished}
+        isOwned={wishlist.isOwned}
+        onToggleWish={wishlist.toggle}
+        wishBusySku={wishlist.busySku}
+      />
+
+      {wishlist.mutationError !== null && (
+        <p role="alert" className="text-sm text-danger">
+          {wishlist.mutationError instanceof Error
+            ? wishlist.mutationError.message
+            : 'No se pudo actualizar la lista de deseos.'}
+        </p>
+      )}
+
+      <Card title="Pendiente en la vitrina">
         <p className="text-sm text-muted">
-          La vitrina todavia no esta implementada: corresponde a HU-57. Hasta entonces el carrito se
-          puede consultar y modificar, pero los productos se anaden desde el servicio
+          La vitrina muestra el nombre, el tipo y el precio de cada producto. La imagen, la
+          descripcion, las habilidades y el marcador de promocion todavia no se pueden mostrar
+          porque el servicio
           <code className="mx-1 rounded bg-surface px-1.5 py-0.5 text-xs">
-            Nexus-Battle-Commerce
+            Nexus-Battle-Catalog
           </code>
-          .
+          no los publica en su API. El detalle de producto sigue pendiente por el mismo motivo; el
+          pago ya esta en esta pantalla (HU-59).
         </p>
       </Card>
     </div>
