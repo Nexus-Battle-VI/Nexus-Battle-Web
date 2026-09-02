@@ -38,6 +38,10 @@ describe('toRegistrationFormData', () => {
     expect(form.get('password')).toBe('Abcdefg1!')
     expect(form.get('nickname')).toBe('Ana Ramirez')
     expect(form.get('termsAccepted')).toBe('true')
+    // EN-011: se decidio explicitamente NO versionar la Politica en runtime.
+    // Account solo acepta `termsAccepted`; que este campo reaparezca aqui
+    // seria reintroducir un contrato que ya se retiro del backend.
+    expect(form.get('privacyPolicyVersion')).toBeNull()
 
     const rawAnswers = form.get('securityAnswers')
     expect(typeof rawAnswers).toBe('string')

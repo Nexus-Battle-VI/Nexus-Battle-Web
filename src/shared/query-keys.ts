@@ -27,6 +27,29 @@ export const queryKeys = {
      * aqui obligaria a conocerlo antes de poder consultarlo.
      */
     cart: ['commerce', 'cart'] as const,
+    /**
+     * Carrito guardado entre sesiones. Clave distinta de `cart`: son dos
+     * cosas distintas, y compartir clave haria que guardar pareciera cambiar
+     * el carrito vigente.
+     */
+    savedCart: ['commerce', 'saved-cart'] as const,
+    /**
+     * Resumen de compra de un pedido. Lleva el pedido en la clave porque el
+     * resumen es el de ese pedido concreto, no el del carrito de turno.
+     */
+    checkout: (orderId: string) => ['commerce', 'checkout', orderId] as const,
+    /**
+     * Vitrina. No lleva los filtros en la clave: se consulta el catalogo una
+     * vez y el filtrado ocurre en memoria, asi que incluirlos provocaria una
+     * peticion por cada tecla escrita en la busqueda.
+     */
+    showcase: ['commerce', 'showcase'] as const,
+    /**
+     * Lista de deseos. Se consulta entera una vez y se resuelve por referencia
+     * en memoria: pedir el estado producto a producto serian dieciseis
+     * peticiones para pintar una pagina de la vitrina.
+     */
+    wishlist: ['commerce', 'wishlist'] as const,
   },
   account: {
     detail: (accountId: string) => ['account', accountId] as const,

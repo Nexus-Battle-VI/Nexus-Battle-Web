@@ -232,7 +232,7 @@ export const RecoveryPage = ({
   }
 
   return (
-    <div className="min-h-dvh bg-surface px-4 py-8 text-ink sm:px-6">
+    <div className="min-h-dvh px-4 py-8 text-ink sm:px-6">
       <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
         <div className="flex justify-end">
           <ThemeToggle />
