@@ -27,6 +27,11 @@ export const queryKeys = {
      * aqui obligaria a conocerlo antes de poder consultarlo.
      */
     cart: ['commerce', 'cart'] as const,
+    /**
+     * Resumen de compra de un pedido. Lleva el pedido en la clave porque el
+     * resumen es el de ese pedido concreto, no el del carrito de turno.
+     */
+    checkout: (orderId: string) => ['commerce', 'checkout', orderId] as const,
   },
   account: {
     detail: (accountId: string) => ['account', accountId] as const,
