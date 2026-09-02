@@ -298,33 +298,57 @@ describe('Pantallas todavia no implementadas', () => {
   })
 
   /**
-   * Commerce salio de esta lista con HU-58: ya presenta el carrito. Lo que
-   * sigue declarandose pendiente es la vitrina, que es HU-57.
+   * Commerce salio de esta lista con HU-58 (carrito) y HU-57 (vitrina). Lo que
+   * sigue declarandose pendiente no es una pantalla, sino los campos que
+   * Catalog todavia no publica.
    */
-  it('Commerce ya presenta el carrito y solo declara pendiente la vitrina', async () => {
-    // El servicio responde «todavia no hay carrito», que es lo que ve quien
-    // entra por primera vez. Sin este doble la consulta fallaria y la pantalla
-    // mostraria un error, que no es lo que esta prueba examina.
+  it('Commerce presenta carrito y vitrina, y declara lo que Catalog no publica', async () => {
+    // El carrito responde 404 («todavia no hay carrito», lo que ve quien entra
+    // por primera vez) y el catalogo devuelve un producto. Sin estos dobles
+    // ambas consultas fallarian y la pantalla mostraria errores, que no es lo
+    // que esta prueba examina.
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ message: 'No hay carrito.' }), {
-          status: 404,
-          headers: { 'content-type': 'application/json' },
-        }),
-      ),
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/products')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify([
+                {
+                  sku: 'espada-de-hierro',
+                  name: 'Espada de hierro',
+                  category: 'armas',
+                  price: { amount: 15_000, currency: 'COP' },
+                  isPremium: false,
+                  realMoneyPrice: null,
+                  status: 'PUBLISHED',
+                },
+              ]),
+              { status: 200, headers: { 'content-type': 'application/json' } },
+            ),
+          )
+        }
+
+        return Promise.resolve(
+          new Response(JSON.stringify({ message: 'No hay carrito.' }), {
+            status: 404,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }),
     )
 
     try {
       renderWithProviders(<CommercePage />)
 
-      // Lo que sigue pendiente se declara, y se nombra la historia responsable.
       expect(screen.getByRole('heading', { name: 'Vitrina' })).toBeInTheDocument()
-      expect(screen.getByText(/La vitrina todavia no esta implementada/u)).toBeInTheDocument()
+      // La ausencia que queda se declara, y se nombra el servicio responsable.
+      expect(screen.getByRole('heading', { name: 'Pendiente en la vitrina' })).toBeInTheDocument()
+      expect(screen.getByText('Nexus-Battle-Catalog')).toBeInTheDocument()
 
-      // El carrito llega tras consultar el servicio, asi que se espera por el.
       expect(await screen.findByRole('heading', { name: /Carrito/u })).toBeInTheDocument()
       expect(screen.getByText('Tu carrito esta vacio.')).toBeInTheDocument()
+      expect(await screen.findByText('Espada de hierro')).toBeInTheDocument()
     } finally {
       vi.unstubAllGlobals()
     }
