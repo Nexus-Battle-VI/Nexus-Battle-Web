@@ -12,16 +12,16 @@
 
 ## Ambiente
 
-| Campo | Valor |
-|---|---|
-| Repositorio | `Nexus-Battle-VI/Nexus-Battle-Web` |
-| Rama | `feat/hu-06-5-validacion-evidencia-estadisticas-logros` |
-| HEAD | `ee87ce836facff835a73967ced651e2979a3d0d2` (idéntico a `origin/develop`) |
-| Node | v24.13.1 |
-| npm | 11.8.0 |
-| Fecha de esta validación | 2026-09-01 |
-| Entorno de pruebas | Local (Windows), sin `Nexus-Battle-Account` levantado. Pruebas automáticas con Vitest + Testing Library (mocks de `fetch`); revisión visual manual con Chrome vía automatización, sin sesión ni backend reales. |
-| Cambios locales sin commit (ya autorizados en la fase anterior) | `src/index.css`, `src/features/account/SecuritySection.tsx`, `src/features/account/SecuritySection.test.tsx`, `src/features/auth/recovery/RecoveryPage.tsx` |
+| Campo                                                           | Valor                                                                                                                                                                                                           |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repositorio                                                     | `Nexus-Battle-VI/Nexus-Battle-Web`                                                                                                                                                                              |
+| Rama                                                            | `feat/hu-06-5-validacion-evidencia-estadisticas-logros`                                                                                                                                                         |
+| HEAD                                                            | `ee87ce836facff835a73967ced651e2979a3d0d2` (idéntico a `origin/develop`)                                                                                                                                        |
+| Node                                                            | v24.13.1                                                                                                                                                                                                        |
+| npm                                                             | 11.8.0                                                                                                                                                                                                          |
+| Fecha de esta validación                                        | 2026-09-01                                                                                                                                                                                                      |
+| Entorno de pruebas                                              | Local (Windows), sin `Nexus-Battle-Account` levantado. Pruebas automáticas con Vitest + Testing Library (mocks de `fetch`); revisión visual manual con Chrome vía automatización, sin sesión ni backend reales. |
+| Cambios locales sin commit (ya autorizados en la fase anterior) | `src/index.css`, `src/features/account/SecuritySection.tsx`, `src/features/account/SecuritySection.test.tsx`, `src/features/auth/recovery/RecoveryPage.tsx`                                                     |
 
 ## Matriz RF-06 → CA-01…CA-07
 
@@ -29,102 +29,102 @@ Convenciones: **Nivel de prueba** = unitario/integración frontend, manual DEV, 
 
 ### CA-01 — Consulta propia
 
-| Campo | Detalle |
-|---|---|
-| Escenario | Un jugador autenticado consulta sus propias estadísticas y logros. |
-| Precondición | Sesión válida; `GET /api/accounts/me` resuelto. |
-| Datos | Ninguno inventado; en producción, sin backend de estadísticas, no hay datos que consultar. |
-| Resultado esperado | El frontend muestra la sección "Estadísticas y logros" asociada a la cuenta propia, sin mezclar datos de otra cuenta. |
-| Nivel de prueba | Unitario/integración frontend (`StatisticsSection.test.tsx`, `AccountPage.test.tsx`) + manual DEV. |
+| Campo                | Detalle                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escenario            | Un jugador autenticado consulta sus propias estadísticas y logros.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Precondición         | Sesión válida; `GET /api/accounts/me` resuelto.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Datos                | Ninguno inventado; en producción, sin backend de estadísticas, no hay datos que consultar.                                                                                                                                                                                                                                                                                                                                                               |
+| Resultado esperado   | El frontend muestra la sección "Estadísticas y logros" asociada a la cuenta propia, sin mezclar datos de otra cuenta.                                                                                                                                                                                                                                                                                                                                    |
+| Nivel de prueba      | Unitario/integración frontend (`StatisticsSection.test.tsx`, `AccountPage.test.tsx`) + manual DEV.                                                                                                                                                                                                                                                                                                                                                       |
 | Evidencia disponible | El panel es un componente presentacional puro que recibe `state` por props (`StatisticsPanel.tsx`); en producción `StatisticsSection` no acepta ni construye ningún identificador de jugador — se monta bajo `/account/statistics`, dentro del shell `AccountPage`, que resuelve una única cuenta vía `GET /api/accounts/me` (autenticación por token, sin `accountId` en la URL ni en el estado). No existe ninguna ruta tipo `/statistics/{playerId}`. |
-| Tipo de evidencia | B (DEV controlada) para presentación; A (real/productiva) solo para la ausencia de mecanismo de consulta ajena, verificable por código. |
-| Estado | **VALIDADO PARCIALMENTE** — el frontend demuestra que solo puede mostrar la cuenta propia (no hay forma de pedir otra); la propiedad real de los datos devueltos requiere un backend de estadísticas que no existe. |
-| Bloqueo | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS para la parte de datos reales. |
+| Tipo de evidencia    | B (DEV controlada) para presentación; A (real/productiva) solo para la ausencia de mecanismo de consulta ajena, verificable por código.                                                                                                                                                                                                                                                                                                                  |
+| Estado               | **VALIDADO PARCIALMENTE** — el frontend demuestra que solo puede mostrar la cuenta propia (no hay forma de pedir otra); la propiedad real de los datos devueltos requiere un backend de estadísticas que no existe.                                                                                                                                                                                                                                      |
+| Bloqueo              | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS para la parte de datos reales.                                                                                                                                                                                                                                                                                                                                                                        |
 
 ### CA-02 — Logros obtenidos
 
-| Campo | Detalle |
-|---|---|
-| Escenario | El jugador ve la lista de logros ya obtenidos. |
-| Precondición | Servicio de logros con al menos un registro. |
-| Datos | Fixture DEV (`devPlayerAchievements`, 2 logros de ejemplo). |
-| Resultado esperado | Se listan los logros obtenidos, con nombre, descripción y marca "Obtenido"; nunca logros bloqueados ni progreso de desbloqueo (fuera de alcance de RF-06). |
-| Nivel de prueba | Unitario (`TEST 3`, `TEST 14` en `StatisticsSection.test.tsx`) + manual DEV (`?state=content`, `?state=no-achievements`). |
+| Campo                | Detalle                                                                                                                                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escenario            | El jugador ve la lista de logros ya obtenidos.                                                                                                                                                                                                           |
+| Precondición         | Servicio de logros con al menos un registro.                                                                                                                                                                                                             |
+| Datos                | Fixture DEV (`devPlayerAchievements`, 2 logros de ejemplo).                                                                                                                                                                                              |
+| Resultado esperado   | Se listan los logros obtenidos, con nombre, descripción y marca "Obtenido"; nunca logros bloqueados ni progreso de desbloqueo (fuera de alcance de RF-06).                                                                                               |
+| Nivel de prueba      | Unitario (`TEST 3`, `TEST 14` en `StatisticsSection.test.tsx`) + manual DEV (`?state=content`, `?state=no-achievements`).                                                                                                                                |
 | Evidencia disponible | Verificado en código y visualmente: `AchievementItem` renderiza nombre + descripción + badge "Obtenido"; `TEST 14` confirma ausencia de métricas no aprobadas por RF-06 (derrotas, win rate, ranking, rareza, puntos, bloqueado, desbloqueo, XP, nivel). |
-| Tipo de evidencia | B (DEV controlada). |
-| Estado | **VALIDADO PARCIALMENTE** — la presentación está validada; la existencia real de logros de un jugador real requiere el servicio de logros, inexistente. |
-| Bloqueo | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS para el dato real. |
+| Tipo de evidencia    | B (DEV controlada).                                                                                                                                                                                                                                      |
+| Estado               | **VALIDADO PARCIALMENTE** — la presentación está validada; la existencia real de logros de un jugador real requiere el servicio de logros, inexistente.                                                                                                  |
+| Bloqueo              | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS para el dato real.                                                                                                                                                                                    |
 
 ### CA-03 — Sin logros
 
-| Campo | Detalle |
-|---|---|
-| Escenario | El jugador no tiene logros registrados. |
-| Precondición | Servicio de logros disponible mas colección vacía. |
-| Datos | Fixture DEV `?state=no-achievements` (con estadísticas) y `?state=empty` (sin estadísticas ni logros). |
-| Resultado esperado | Mensaje neutro ("Aún no tienes logros registrados."), sin `role="alert"`, sin logros ficticios, distinto del estado de error. |
-| Nivel de prueba | Unitario (`TEST 7`) + manual DEV. |
+| Campo                | Detalle                                                                                                                                                                                                                                       |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escenario            | El jugador no tiene logros registrados.                                                                                                                                                                                                       |
+| Precondición         | Servicio de logros disponible mas colección vacía.                                                                                                                                                                                            |
+| Datos                | Fixture DEV `?state=no-achievements` (con estadísticas) y `?state=empty` (sin estadísticas ni logros).                                                                                                                                        |
+| Resultado esperado   | Mensaje neutro ("Aún no tienes logros registrados."), sin `role="alert"`, sin logros ficticios, distinto del estado de error.                                                                                                                 |
+| Nivel de prueba      | Unitario (`TEST 7`) + manual DEV.                                                                                                                                                                                                             |
 | Evidencia disponible | Confirmado por test y por captura manual: el mensaje es neutro, no lleva `role="alert"`, y es visualmente distinto tanto de `error` (rojo, `role="alert"`) como de `pending` ("Aún no disponible", con explicación de que falta el servicio). |
-| Tipo de evidencia | B (DEV controlada). |
-| Estado | **VALIDADO PARCIALMENTE** — la presentación frontend de "sin logros" está validada; una cuenta real sin logros, servida por un backend real, no puede verificarse porque ese backend no existe. |
-| Bloqueo | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS para la integración real. |
+| Tipo de evidencia    | B (DEV controlada).                                                                                                                                                                                                                           |
+| Estado               | **VALIDADO PARCIALMENTE** — la presentación frontend de "sin logros" está validada; una cuenta real sin logros, servida por un backend real, no puede verificarse porque ese backend no existe.                                               |
+| Bloqueo              | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS para la integración real.                                                                                                                                                                  |
 
 ### CA-04 — Aislamiento entre cuentas
 
-| Campo | Detalle |
-|---|---|
-| Escenario | El Jugador A no puede ver las estadísticas del Jugador B. |
-| Precondición | Dos cuentas reales con estadísticas propias y autorización de backend funcionando. |
-| Datos | Ninguno — no se puede simular con fixtures sin invalidar el criterio. |
-| Resultado esperado | Cada sesión solo accede a sus propios datos; el backend rechaza cualquier intento de leer datos de otro `accountId`. |
-| Nivel de prueba | E2E / integración backend (no ejecutable hoy). |
+| Campo                | Detalle                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escenario            | El Jugador A no puede ver las estadísticas del Jugador B.                                                                                                                                                                                                                                                                                                                                                               |
+| Precondición         | Dos cuentas reales con estadísticas propias y autorización de backend funcionando.                                                                                                                                                                                                                                                                                                                                      |
+| Datos                | Ninguno — no se puede simular con fixtures sin invalidar el criterio.                                                                                                                                                                                                                                                                                                                                                   |
+| Resultado esperado   | Cada sesión solo accede a sus propios datos; el backend rechaza cualquier intento de leer datos de otro `accountId`.                                                                                                                                                                                                                                                                                                    |
+| Nivel de prueba      | E2E / integración backend (no ejecutable hoy).                                                                                                                                                                                                                                                                                                                                                                          |
 | Evidencia disponible | Por código: el frontend no construye, no acepta por URL ni por estado ningún identificador de otro jugador para pedir estadísticas (`StatisticsSection` no toma `playerId`; `AccountPage` resuelve la cuenta únicamente vía el token de la sesión vigente). Esto descarta que el **frontend** sea el vector de fuga, pero no demuestra aislamiento porque no hay backend que pueda fallar o acertar en ese aislamiento. |
-| Tipo de evidencia | C (bloqueada) para el criterio en sí; A (real) solo para la ausencia de mecanismo de fuga en el cliente. |
-| Estado | **BLOQUEADO** |
-| Bloqueo | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS. Simular "Jugador A" y "Jugador B" con dos fixtures DEV no demuestra aislamiento — solo demuestra que el componente de presentación pinta lo que se le pasa, que es un hecho distinto y no sustituye la autorización real. |
+| Tipo de evidencia    | C (bloqueada) para el criterio en sí; A (real) solo para la ausencia de mecanismo de fuga en el cliente.                                                                                                                                                                                                                                                                                                                |
+| Estado               | **BLOQUEADO**                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Bloqueo              | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS. Simular "Jugador A" y "Jugador B" con dos fixtures DEV no demuestra aislamiento — solo demuestra que el componente de presentación pinta lo que se le pasa, que es un hecho distinto y no sustituye la autorización real.                                                                                                                                           |
 
 ### CA-05 — Manipulación de consulta
 
-| Campo | Detalle |
-|---|---|
-| Escenario | Alguien intenta forzar una consulta de estadísticas alterando un parámetro (id, query param, header) para leer datos ajenos. |
-| Precondición | Backend de estadísticas con autorización por `accountId`/token. |
-| Datos | Ninguno. |
-| Resultado esperado | El backend rechaza la consulta manipulada (401/403), independientemente de lo que el cliente envíe. |
-| Nivel de prueba | Seguridad / integración backend (no ejecutable hoy). |
+| Campo                | Detalle                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escenario            | Alguien intenta forzar una consulta de estadísticas alterando un parámetro (id, query param, header) para leer datos ajenos.                                                                                                                                                                                                                                                                                                                                    |
+| Precondición         | Backend de estadísticas con autorización por `accountId`/token.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Datos                | Ninguno.                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Resultado esperado   | El backend rechaza la consulta manipulada (401/403), independientemente de lo que el cliente envíe.                                                                                                                                                                                                                                                                                                                                                             |
+| Nivel de prueba      | Seguridad / integración backend (no ejecutable hoy).                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Evidencia disponible | Por código: no existe ningún input, ruta ni parámetro en el frontend de estadísticas que acepte un identificador manipulable (no hay `?playerId=`, no hay `/statistics/:id`). `RequireSession.tsx` documenta explícitamente que su gate es "presentación, no seguridad" y que la autorización real la debe validar cada servicio contra el testimonio — es decir, el propio código reconoce que el frontend no es, ni pretende ser, la barrera de autorización. |
-| Tipo de evidencia | C (bloqueada) para el criterio; A (real) para la cita textual del código que deslinda la responsabilidad. |
-| Estado | **BLOQUEADO** |
-| Bloqueo | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS. No hay servicio contra el cual intentar la manipulación. |
+| Tipo de evidencia    | C (bloqueada) para el criterio; A (real) para la cita textual del código que deslinda la responsabilidad.                                                                                                                                                                                                                                                                                                                                                       |
+| Estado               | **BLOQUEADO**                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Bloqueo              | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS. No hay servicio contra el cual intentar la manipulación.                                                                                                                                                                                                                                                                                                                                                    |
 
 ### CA-06 — Información vigente
 
-| Campo | Detalle |
-|---|---|
-| Escenario | Las estadísticas mostradas reflejan el estado más reciente conocido por el sistema. |
-| Precondición | Backend con persistencia y mecanismo de actualización/consulta. |
-| Datos | Ninguno. |
-| Resultado esperado | Sin datos obsoletos servidos como vigentes; invalidación/refetch cuando corresponda. |
-| Nivel de prueba | Integración backend + frontend (no ejecutable hoy en su totalidad). |
+| Campo                | Detalle                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escenario            | Las estadísticas mostradas reflejan el estado más reciente conocido por el sistema.                                                                                                                                                                                                                                                                                                                                                          |
+| Precondición         | Backend con persistencia y mecanismo de actualización/consulta.                                                                                                                                                                                                                                                                                                                                                                              |
+| Datos                | Ninguno.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Resultado esperado   | Sin datos obsoletos servidos como vigentes; invalidación/refetch cuando corresponda.                                                                                                                                                                                                                                                                                                                                                         |
+| Nivel de prueba      | Integración backend + frontend (no ejecutable hoy en su totalidad).                                                                                                                                                                                                                                                                                                                                                                          |
 | Evidencia disponible | El frontend no persiste ni cachea estadísticas propias (no hay `queryKeys.statistics`, no hay hook `useStatistics`, `StatisticsPanel` no importa `httpClient` ni React Query). El "progreso general" se mantiene explícitamente en `kind: 'pending-definition'` en el tipo (`types.ts`) y en la UI ("Definición funcional pendiente"), tanto en producción como en el fixture DEV — ninguno de los dos inventa una fórmula ni un porcentaje. |
-| Tipo de evidencia | A (real) para la ausencia de invención de dato/fórmula; C (bloqueada) para la vigencia real, que exige datos que hoy no existen. |
-| Estado | **BLOQUEADO** |
-| Bloqueo | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS. No hay "vigencia" que verificar sobre un dato que no se produce. |
+| Tipo de evidencia    | A (real) para la ausencia de invención de dato/fórmula; C (bloqueada) para la vigencia real, que exige datos que hoy no existen.                                                                                                                                                                                                                                                                                                             |
+| Estado               | **BLOQUEADO**                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Bloqueo              | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS. No hay "vigencia" que verificar sobre un dato que no se produce.                                                                                                                                                                                                                                                                                                                         |
 
 ### CA-07 — Solo lectura
 
-| Campo | Detalle |
-|---|---|
-| Escenario | Consultar estadísticas no debe mutar ningún estado. |
-| Precondición | Ninguna especial. |
-| Datos | Ninguno. |
-| Resultado esperado (frontend) | Ninguna petición `POST`/`PATCH`/`PUT`/`DELETE`, sin escritura en `localStorage`/sesión/query cache como efecto de ver el panel. |
-| Resultado esperado (backend) | Estado del backend antes = estado del backend después de cualquier número de consultas. |
-| Nivel de prueba | Unitario frontend (`TEST 2`, `TEST 11`) + integración backend (no ejecutable). |
-| Evidencia disponible | `TEST 2` (`no realiza ninguna peticion HTTP de estadisticas`) y `TEST 11` (`sin ninguna peticion de red` en la vista DEV) confirman, con un espía sobre `fetch`, que renderizar la sección no dispara ninguna llamada de red. Por código, `StatisticsPanel.tsx` no importa `httpClient`, `fetch`, `queryKeys` ni la sesión — es presentación pura. No hay ninguna mutación de React Query ni escritura en `localStorage` asociada a este panel. |
-| Tipo de evidencia | A (real) para el nivel frontend; C (bloqueada) para el nivel backend. |
-| Estado | **VALIDADO PARCIALMENTE** — `CA-07 frontend`: **VALIDADO** (ausencia demostrada de mutaciones/side effects). `CA-07 backend`: **BLOQUEADO** (no hay backend cuyo estado antes/después se pueda comparar). |
-| Bloqueo | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS, solo para el nivel backend. |
+| Campo                         | Detalle                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Escenario                     | Consultar estadísticas no debe mutar ningún estado.                                                                                                                                                                                                                                                                                                                                                                                             |
+| Precondición                  | Ninguna especial.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Datos                         | Ninguno.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Resultado esperado (frontend) | Ninguna petición `POST`/`PATCH`/`PUT`/`DELETE`, sin escritura en `localStorage`/sesión/query cache como efecto de ver el panel.                                                                                                                                                                                                                                                                                                                 |
+| Resultado esperado (backend)  | Estado del backend antes = estado del backend después de cualquier número de consultas.                                                                                                                                                                                                                                                                                                                                                         |
+| Nivel de prueba               | Unitario frontend (`TEST 2`, `TEST 11`) + integración backend (no ejecutable).                                                                                                                                                                                                                                                                                                                                                                  |
+| Evidencia disponible          | `TEST 2` (`no realiza ninguna peticion HTTP de estadisticas`) y `TEST 11` (`sin ninguna peticion de red` en la vista DEV) confirman, con un espía sobre `fetch`, que renderizar la sección no dispara ninguna llamada de red. Por código, `StatisticsPanel.tsx` no importa `httpClient`, `fetch`, `queryKeys` ni la sesión — es presentación pura. No hay ninguna mutación de React Query ni escritura en `localStorage` asociada a este panel. |
+| Tipo de evidencia             | A (real) para el nivel frontend; C (bloqueada) para el nivel backend.                                                                                                                                                                                                                                                                                                                                                                           |
+| Estado                        | **VALIDADO PARCIALMENTE** — `CA-07 frontend`: **VALIDADO** (ausencia demostrada de mutaciones/side effects). `CA-07 backend`: **BLOQUEADO** (no hay backend cuyo estado antes/después se pueda comparar).                                                                                                                                                                                                                                       |
+| Bloqueo                       | BLOQUEADO POR AUSENCIA DE SERVICIO DE ESTADÍSTICAS, solo para el nivel backend.                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Evidencia frontend
 
@@ -143,14 +143,14 @@ Convenciones: **Nivel de prueba** = unitario/integración frontend, manual DEV, 
 
 Verificado visualmente en `/__dev/account/statistics` (Light y Dark), con el banner "Vista previa de desarrollo — datos de ejemplo (fixture DEV). No es una sesión real." siempre visible:
 
-| `?state=` | Resultado observado |
-|---|---|
-| `content` (por defecto) | 128 partidas, 74 victorias, progreso "Definición funcional pendiente", 2 logros obtenidos. |
-| `no-achievements` | Mismas estadísticas, "Aún no tienes logros registrados." (sin `role="alert"`). |
-| `empty` | "Sin registros todavía." en Partidas y Victorias, sin logros. |
-| `loading` | "Cargando tus estadísticas…" en `role="status"`, texto en `<strong>` subrayado, sin spinner. |
-| `error` | "No se pudieron cargar tus estadísticas. Vuelve a intentarlo en un momento." en rojo, `role="alert"`, sin bloque de logros. |
-| `pending` | Idéntico a lo que produce hoy la ruta productiva: "Aún no disponible" en las 3 métricas y en logros. |
+| `?state=`               | Resultado observado                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `content` (por defecto) | 128 partidas, 74 victorias, progreso "Definición funcional pendiente", 2 logros obtenidos.                                  |
+| `no-achievements`       | Mismas estadísticas, "Aún no tienes logros registrados." (sin `role="alert"`).                                              |
+| `empty`                 | "Sin registros todavía." en Partidas y Victorias, sin logros.                                                               |
+| `loading`               | "Cargando tus estadísticas…" en `role="status"`, texto en `<strong>` subrayado, sin spinner.                                |
+| `error`                 | "No se pudieron cargar tus estadísticas. Vuelve a intentarlo en un momento." en rojo, `role="alert"`, sin bloque de logros. |
+| `pending`               | Idéntico a lo que produce hoy la ruta productiva: "Aún no disponible" en las 3 métricas y en logros.                        |
 
 También verificado: `/__dev/account/security` (flujo completo de cambio de contraseña con fixture, Dark) y `/`, `/login` (Light y Dark).
 
@@ -164,11 +164,11 @@ También verificado: `/__dev/account/security` (flujo completo de cambio de cont
 
 ## Responsive
 
-| Viewport | Estado |
-|---|---|
-| Desktop (~1280×720, ancho real entregado por el entorno de esta sesión) | **VERIFICADO VISUALMENTE** en `/`, `/login`, `/recover`, `/__dev/account/security`, `/__dev/account/statistics` (los 6 estados), en Light y Dark. Sin scroll horizontal, sin recorte, sin solapamiento. |
-| Tablet (~800×768) | **NO VERIFICADO VISUALMENTE POR LIMITACIÓN DEL TOOLING** — `resize_window` reporta éxito pero `window.innerWidth` permanece en ~1280px tras la llamada (confirmado explícitamente con JavaScript en esta sesión). |
-| Mobile (~390×844) | **NO VERIFICADO VISUALMENTE POR LIMITACIÓN DEL TOOLING** — mismo síntoma, confirmado explícitamente en esta sesión (intento con 390×844, `innerWidth` resultante: 1280). |
+| Viewport                                                                | Estado                                                                                                                                                                                                            |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Desktop (~1280×720, ancho real entregado por el entorno de esta sesión) | **VERIFICADO VISUALMENTE** en `/`, `/login`, `/recover`, `/__dev/account/security`, `/__dev/account/statistics` (los 6 estados), en Light y Dark. Sin scroll horizontal, sin recorte, sin solapamiento.           |
+| Tablet (~800×768)                                                       | **NO VERIFICADO VISUALMENTE POR LIMITACIÓN DEL TOOLING** — `resize_window` reporta éxito pero `window.innerWidth` permanece en ~1280px tras la llamada (confirmado explícitamente con JavaScript en esta sesión). |
+| Mobile (~390×844)                                                       | **NO VERIFICADO VISUALMENTE POR LIMITACIÓN DEL TOOLING** — mismo síntoma, confirmado explícitamente en esta sesión (intento con 390×844, `innerWidth` resultante: 1280).                                          |
 
 Análisis estático de CSS/breakpoints (sustento de lo que sí puede concluirse sin verificación visual): `RecoveryPage.tsx` usa `max-w-lg` + `flex-wrap` en la navegación de pasos, sin anchos fijos en píxeles que excedan el viewport. `StatisticsPanel.tsx` usa `grid gap-4 sm:grid-cols-2 lg:grid-cols-3` (1 columna por debajo de `sm`) y `grid gap-3 sm:grid-cols-2` para logros. `AccountPage.tsx` usa `grid gap-6 lg:grid-cols-[minmax(0,17rem)_1fr]` (1 columna por debajo de `lg`). Todos siguen el patrón "mobile-first" documentado en `docs/frontend/base-responsive.md` (referencia `1360×768` como resolución mínima de verificación de `RNF-07`). Ninguno de los 3 refinamientos visuales de la fase anterior (copy, color-mix de fondo, remoción de `bg-surface`) toca media queries, anchos fijos ni breakpoints — el riesgo de regresión responsive es mecánicamente nulo por construcción, pero esto es una inferencia de código, no una observación visual en Tablet/Mobile.
 
@@ -185,11 +185,11 @@ Análisis estático de CSS/breakpoints (sustento de lo que sí puede concluirse 
 
 ## Navegadores
 
-| Navegador | Estado |
-|---|---|
-| Chrome | **VERIFICADO** (automatización vía extensión Claude in Chrome, esta sesión) |
-| Edge | **PENDIENTE DE VALIDACIÓN MANUAL** |
-| Firefox | **PENDIENTE DE VALIDACIÓN MANUAL** |
+| Navegador | Estado                                                                      |
+| --------- | --------------------------------------------------------------------------- |
+| Chrome    | **VERIFICADO** (automatización vía extensión Claude in Chrome, esta sesión) |
+| Edge      | **PENDIENTE DE VALIDACIÓN MANUAL**                                          |
+| Firefox   | **PENDIENTE DE VALIDACIÓN MANUAL**                                          |
 
 ## CI/CD
 
@@ -221,12 +221,12 @@ Suite completa (`npm test`): **54 archivos, 412 tests, 100% verdes.**
 
 `npm run test:coverage`:
 
-| Métrica | Resultado | Umbral configurado (`vite.config.ts`) |
-|---|---|---|
-| Statements | 91.96% (1523/1656) | 80% |
-| Branches | 84.66% (773/913) | 80% |
-| Functions | 91.1% (389/427) | 80% |
-| Lines | 91.76% (1470/1602) | 80% |
+| Métrica    | Resultado          | Umbral configurado (`vite.config.ts`) |
+| ---------- | ------------------ | ------------------------------------- |
+| Statements | 91.96% (1523/1656) | 80%                                   |
+| Branches   | 84.66% (773/913)   | 80%                                   |
+| Functions  | 91.1% (389/427)    | 80%                                   |
+| Lines      | 91.76% (1470/1602) | 80%                                   |
 
 Las cuatro métricas superan el umbral configurado sin redondeo favorable; no se modificó ningún umbral ni se excluyó ningún archivo adicional para lograrlo.
 
@@ -236,12 +236,12 @@ Ninguno. La ejecución de la suite completa (412 tests), lint, format, typecheck
 
 ## Riesgos
 
-| Riesgo | Detalle |
-|---|---|
-| Cierre prematuro de HU-06 | Si se interpretara la validación frontend (fixtures DEV + tests) como sustituto de integración real, se aceptaría un criterio (CA-04, CA-05, CA-06, y la mitad backend de CA-07) sin evidencia real. Este documento evita explícitamente esa confusión. |
+| Riesgo                                                                | Detalle                                                                                                                                                                                                                                                                             |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cierre prematuro de HU-06                                             | Si se interpretara la validación frontend (fixtures DEV + tests) como sustituto de integración real, se aceptaría un criterio (CA-04, CA-05, CA-06, y la mitad backend de CA-07) sin evidencia real. Este documento evita explícitamente esa confusión.                             |
 | Evidencia productiva de CA-01/CA-02/CA-03 no capturada en sesión real | Depende de `Nexus-Battle-Account` levantado y credenciales reales, no disponibles en este entorno. Mitigación: la evidencia de código + test automatizado es sólida y reproducible por cualquiera con acceso al repo, pero no sustituye una captura de pantalla en producción real. |
-| Responsive Tablet/Mobile no verificado visualmente | Mitigado parcialmente por análisis estático de CSS (breakpoints Tailwind estándar, sin anchos fijos que exploten el viewport), pero no es una confirmación visual. |
-| Edge y Firefox sin verificar | Sin acceso a esos navegadores en este entorno de ejecución. |
+| Responsive Tablet/Mobile no verificado visualmente                    | Mitigado parcialmente por análisis estático de CSS (breakpoints Tailwind estándar, sin anchos fijos que exploten el viewport), pero no es una confirmación visual.                                                                                                                  |
+| Edge y Firefox sin verificar                                          | Sin acceso a esos navegadores en este entorno de ejecución.                                                                                                                                                                                                                         |
 
 ## Limitaciones
 
