@@ -20,6 +20,14 @@ navegador  ->  /api/products   ->  proxy  ->  Catalog
 
 Esa indirección es lo que permite que la demo corra en una sola máquina y que la arquitectura objetivo viva detrás de un balanceador **sin cambiar una línea del frontend**. Ningún componente construye una URL de servicio a mano: todo pasa por `src/lib/http.ts`.
 
+## Recursos visuales de Producto
+
+La administración carga la imagen principal de Producto mediante una intención
+firmada de Catalog y una carga directa temporal a S3; el navegador no guarda
+credenciales AWS ni URL firmadas. Tras la validación, Catalog devuelve la URL
+canónica que se usa al crear el Producto. El flujo, límites y pruebas están
+documentados en [HU-37.7](docs/frontend/hu-37-7-product-assets.md).
+
 ## Inicio de sesión
 
 La aplicación usa **código de autorización con PKCE** contra el hosted UI del user pool de Cognito ([ADR-004](https://github.com/Nexus-Battle-VI/Nexus-Battle-Infrastructure/blob/main/docs/adr/ADR-004-identity-directory.md)).

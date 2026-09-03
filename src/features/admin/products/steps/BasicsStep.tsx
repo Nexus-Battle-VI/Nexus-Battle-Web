@@ -6,6 +6,7 @@ import { TextareaField } from '@/components/ui/form/TextareaField'
 
 import { PRODUCT_TYPES, PRODUCT_TYPE_LABELS, type ProductType } from '../contract'
 import type { ProductDraft } from '../draft'
+import type { FinalizedProductAsset } from '../product-assets'
 import type { FieldErrors } from '../validation'
 
 export interface StepProps {
@@ -14,25 +15,47 @@ export interface StepProps {
   readonly errors: FieldErrors
 }
 
+interface BasicsStepProps extends StepProps {
+  readonly onUploadPrimaryImage: (file: File) => Promise<FinalizedProductAsset>
+}
+
 /**
  * Paso 1: los datos que todo producto tiene, sea del tipo que sea.
  *
- * SOBRE LA IMAGEN. El diseño dibuja un selector de archivo, y aqui hay un campo
- * de URL. No es una simplificacion por comodidad: el servicio de
- * almacenamiento de objetos todavia no existe -ADR-016 esta «Proposed» y sin
- * provisionar-, asi que un boton «Seleccionar archivo» no tendria donde subir
- * nada. Catalog persiste una REFERENCIA (`imageUrl`), que es exactamente lo
- * que este campo captura, y la propia HU-33 lo dice: «el microservicio de
- * catalogo solo persiste la referencia/URL».
- *
- * Poner el boton y no subir el archivo seria peor que no ponerlo: la pantalla
- * afirmaria algo que no ocurre. Cuando ADR-016 se acepte y se provisione, este
- * campo se sustituye por la carga real sin tocar el resto del formulario.
+ * La URL no se escribe: solo Catalog puede emitir la referencia canónica tras
+ * firmar, recibir y validar el archivo. Así el formulario nunca persiste una
+ * URL temporal de S3 ni una referencia externa que Catalog rechazaría.
  */
-export const BasicsStep = ({ draft, onChange, errors }: StepProps): React.JSX.Element => {
+export const BasicsStep = ({
+  draft,
+  onChange,
+  errors,
+  onUploadPrimaryImage,
+}: BasicsStepProps): React.JSX.Element => {
   const [previewFailed, setPreviewFailed] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const image = draft.imageUrl.trim()
   const showPreview = image !== '' && !previewFailed
+
+  const selectImage = async (file: File | undefined): Promise<void> => {
+    if (file === undefined) {
+      return
+    }
+
+    setUploading(true)
+    setUploadError(null)
+    setPreviewFailed(false)
+
+    try {
+      const asset = await onUploadPrimaryImage(file)
+      onChange({ imageUrl: asset.imageUrl })
+    } catch (error: unknown) {
+      setUploadError(error instanceof Error ? error.message : 'No se pudo cargar la imagen.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -95,19 +118,46 @@ export const BasicsStep = ({ draft, onChange, errors }: StepProps): React.JSX.El
           )}
         </div>
 
-        <TextField
-          label="Imagen representativa"
-          required
-          type="url"
-          value={draft.imageUrl}
-          error={errors.imageUrl}
-          placeholder="https://…/espada.webp"
-          hint="Referencia a una imagen ya publicada (PNG, JPG o WEBP). La carga de archivos llega con ADR-016."
-          onChange={(event) => {
-            setPreviewFailed(false)
-            onChange({ imageUrl: event.target.value })
-          }}
-        />
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-ink" htmlFor="product-primary-image">
+            Imagen representativa <span aria-hidden="true">*</span>
+          </label>
+          <input
+            id="product-primary-image"
+            className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink file:mr-3 file:rounded file:border-0 file:bg-brand/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={uploading}
+            aria-invalid={errors.imageUrl !== undefined || uploadError !== null}
+            aria-describedby="product-primary-image-help"
+            onChange={(event) => {
+              void selectImage(event.target.files?.[0])
+            }}
+          />
+          <p id="product-primary-image-help" className="text-xs text-muted">
+            JPG, PNG o WEBP; máximo 5 MiB. La imagen se valida antes de asociarla al producto.
+          </p>
+          {uploading && (
+            <p role="status" className="text-sm text-muted">
+              Cargando y validando imagen…
+            </p>
+          )}
+          {!uploading && image !== '' && (
+            <p role="status" className="text-sm text-success">
+              Imagen cargada y validada.
+            </p>
+          )}
+          {uploadError !== null && (
+            <p role="alert" className="text-sm text-danger">
+              {uploadError}
+            </p>
+          )}
+          {errors.imageUrl !== undefined && (
+            <p role="alert" className="text-sm text-danger">
+              {errors.imageUrl}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )
