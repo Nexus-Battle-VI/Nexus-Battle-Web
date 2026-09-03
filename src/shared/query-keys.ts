@@ -31,35 +31,27 @@ export const queryKeys = {
   commerce: {
     byCustomer: (customerId: string) => ['commerce', 'orders', customerId] as const,
     detail: (orderId: string) => ['commerce', 'order', orderId] as const,
-    /**
-     * El carrito vigente no lleva el cliente en la clave: el servicio lo
-     * deduce del testimonio, asi que la peticion ya es "mi carrito". Ponerlo
-     * aqui obligaria a conocerlo antes de poder consultarlo.
-     */
-    cart: ['commerce', 'cart'] as const,
+    /** La identidad en cache evita reutilizar datos privados de otra sesion. */
+    cart: (subject: string | null) => ['commerce', 'cart', subject] as const,
     /**
      * Carrito guardado entre sesiones. Clave distinta de `cart`: son dos
      * cosas distintas, y compartir clave haria que guardar pareciera cambiar
      * el carrito vigente.
      */
-    savedCart: ['commerce', 'saved-cart'] as const,
+    savedCart: (subject: string | null) => ['commerce', 'saved-cart', subject] as const,
     /**
      * Resumen de compra de un pedido. Lleva el pedido en la clave porque el
      * resumen es el de ese pedido concreto, no el del carrito de turno.
      */
-    checkout: (orderId: string) => ['commerce', 'checkout', orderId] as const,
-    /**
-     * Vitrina. No lleva los filtros en la clave: se consulta el catalogo una
-     * vez y el filtrado ocurre en memoria, asi que incluirlos provocaria una
-     * peticion por cada tecla escrita en la busqueda.
-     */
-    showcase: ['commerce', 'showcase'] as const,
-    /**
-     * Lista de deseos. Se consulta entera una vez y se resuelve por referencia
-     * en memoria: pedir el estado producto a producto serian dieciseis
-     * peticiones para pintar una pagina de la vitrina.
-     */
-    wishlist: ['commerce', 'wishlist'] as const,
+    checkout: (subject: string | null, orderId: string) =>
+      ['commerce', 'checkout', subject, orderId] as const,
+    /** Catalog valida y ejecuta cada consulta, incluidas busqueda y paginacion. */
+    showcase: (criteria: string) => ['commerce', 'showcase', criteria] as const,
+    product: (reference: string) => ['commerce', 'product', reference] as const,
+    payment: (subject: string | null, orderId: string | null) =>
+      ['commerce', 'payment', subject, orderId] as const,
+    /** Estado deseado/adquirido de todas las referencias visibles. */
+    wishlist: (subject: string | null) => ['commerce', 'wishlist', subject] as const,
   },
   account: {
     detail: (accountId: string) => ['account', accountId] as const,

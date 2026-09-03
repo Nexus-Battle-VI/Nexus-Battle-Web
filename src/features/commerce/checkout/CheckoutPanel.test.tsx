@@ -7,6 +7,7 @@ import { CheckoutPanel } from './CheckoutPanel'
 import type { CheckoutSummary, PaymentResult } from './api'
 
 const SUMMARY: CheckoutSummary = {
+  version: 1,
   id: 'ord-1',
   status: 'DRAFT',
   currency: 'COP',
@@ -19,6 +20,7 @@ const SUMMARY: CheckoutSummary = {
 }
 
 const RESULT: PaymentResult = {
+  status: 'COMPLETED',
   order: { ...SUMMARY, status: 'CONFIRMED' },
   paymentReference: 'sim-ord-1',
   maskedCard: '1111',
@@ -118,9 +120,7 @@ describe('Formulario de pago simulado', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirmar pago' }))
 
     expect(onPay).not.toHaveBeenCalled()
-    expect(
-      screen.getByText('El numero de tarjeta solo admite digitos, espacios o guiones.'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('Escribe el numero de tarjeta de prueba.')).toBeInTheDocument()
   })
 
   it('los errores solo aparecen tras intentar confirmar', async () => {
