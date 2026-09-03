@@ -210,7 +210,7 @@ describe('AccountPage', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
     expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Seguridad' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('heading', { name: 'Cambiar contrasena' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Cambiar contraseña' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('link', { name: 'Datos personales y exportación' }))
 

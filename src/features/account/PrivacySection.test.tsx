@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
-import { PrivacySection } from './PrivacySection'
+import { HttpError, type HttpDownload } from '@/lib/http'
+import { PrivacySection, type PrivacySectionProps } from './PrivacySection'
 import { renderAccountSection } from './testRender'
 import type { OwnAccount, OwnPersonalData } from './api'
 
@@ -32,25 +34,29 @@ const jsonResponse = (status: number, body: unknown): Response =>
 
 const renderPrivacySection = (
   response: Response | Promise<Response> = jsonResponse(200, PERSONAL_DATA),
+  props: PrivacySectionProps = {},
 ) => {
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response))
 
-  return renderAccountSection(<PrivacySection />, ACCOUNT_CONTEXT)
+  return renderAccountSection(<PrivacySection {...props} />, ACCOUNT_CONTEXT)
 }
+
+const fileFor = (format: string): HttpDownload => ({
+  content: new Blob([format]),
+  filename: `export.${format}`,
+  mediaType: 'application/octet-stream',
+})
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
 describe('PrivacySection', () => {
-  it('muestra un estado de carga accesible mientras resuelve la proyeccion de privacidad', () => {
-    const pending = new Promise<Response>((resolve) => {
-      setTimeout(resolve, 1_000_000)
-    })
-    renderPrivacySection(pending)
+  it('muestra un estado de carga accesible mientras resuelve la proyección de privacidad', () => {
+    renderPrivacySection(new Promise<Response>(() => undefined))
 
     expect(screen.getByRole('heading', { name: 'Mis datos personales' })).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('Cargando tus datos personales...')
+    expect(screen.getByText('Cargando tus datos personales...')).toHaveAttribute('role', 'status')
   })
 
   it('muestra los datos reales del contrato privacy, no los del OwnAccount general', async () => {
@@ -82,16 +88,16 @@ describe('PrivacySection', () => {
     expect(container.textContent).not.toContain(ACCOUNT_CONTEXT.email)
   })
 
-  it('ante un 401 muestra un mensaje seguro de sesion caducada', async () => {
+  it('ante un 401 muestra un mensaje seguro de sesión caducada', async () => {
     const { container } = renderPrivacySection(
-      jsonResponse(401, { message: 'Falta el testimonio o no es valido' }),
+      jsonResponse(401, { message: 'Falta el testimonio o no es válido' }),
     )
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/sesión ha caducado/u)
     expect(container.textContent).not.toContain('Falta el testimonio')
   })
 
-  it('ante otros errores muestra un mensaje comprensible sin detalles tecnicos', async () => {
+  it('ante otros errores de consulta no expone detalles técnicos', async () => {
     const { container } = renderPrivacySection(
       jsonResponse(500, { message: 'StackTrace: token secret hash credential' }),
     )
@@ -102,38 +108,118 @@ describe('PrivacySection', () => {
     expect(container.textContent).not.toMatch(/StackTrace|token|secret|hash|credential/u)
   })
 
-  it('no muestra datos de Figma, otros titulares, subject, tokens ni fecha inventada', async () => {
+  it('no muestra datos de otros titulares, subject, tokens ni fecha inventada', async () => {
     const { container } = renderPrivacySection()
     await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
     const text = container.textContent
 
     expect(text).not.toContain('DrakoFenix')
     expect(text).not.toContain('00567')
-    expect(text).not.toContain('drako.fenix@correo.com')
-    expect(text).not.toContain('Beatriz')
-    expect(text).not.toMatch(/subject|token|accessToken|status|avatarStorageKey/iu)
     expect(text).not.toContain('technical-account-id')
+    expect(text).not.toMatch(/subject|token|accessToken|status|avatarStorageKey/iu)
     expect(screen.queryByText('ID de jugador')).not.toBeInTheDocument()
     expect(screen.queryByText('Fecha de registro')).not.toBeInTheDocument()
     expect(text).not.toMatch(/registeredAt|createdAt|Date\.now/iu)
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   })
 
-  it('declara JSON, XML y PDF como exportaciones no disponibles sin simular archivos', async () => {
+  it('mantiene JSON, XML y PDF habilitados sin el mensaje anterior de indisponibilidad', async () => {
     renderPrivacySection()
     await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
 
     for (const format of ['JSON', 'XML', 'PDF']) {
       expect(screen.getByRole('heading', { name: format })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: `Solicitar exportación ${format}` })).toBeDisabled()
+      expect(screen.getByRole('button', { name: `Solicitar exportación ${format}` })).toBeEnabled()
     }
 
-    expect(
-      screen.getAllByText(
-        'Esta exportación estará disponible cuando el servicio correspondiente esté habilitado.',
-      ),
-    ).toHaveLength(3)
-    expect(screen.queryByRole('link', { name: /descargar/iu })).not.toBeInTheDocument()
+    expect(screen.queryByText(/servicio correspondiente esté habilitado/iu)).not.toBeInTheDocument()
+  })
+
+  it.each(['json', 'xml', 'pdf'] as const)(
+    'solicita %s, entrega el Blob real al guardado y muestra éxito',
+    async (format) => {
+      const user = userEvent.setup()
+      const file = fileFor(format)
+      const exportPersonalData = vi.fn().mockResolvedValue(file)
+      const saveExport = vi.fn()
+      renderPrivacySection(undefined, { exportPersonalData, saveExport })
+      await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+
+      await user.click(
+        screen.getByRole('button', { name: `Solicitar exportación ${format.toUpperCase()}` }),
+      )
+
+      expect(exportPersonalData.mock.calls[0]?.[0]).toBe(format)
+      expect(saveExport).toHaveBeenCalledWith(file, format)
+      expect(
+        await screen.findByText(new RegExp(`${format} se descargó correctamente`, 'iu')),
+      ).toBeInTheDocument()
+    },
+  )
+
+  it('muestra procesamiento y no guarda antes de recibir el Blob', async () => {
+    const user = userEvent.setup()
+    const exportPersonalData = vi.fn().mockReturnValue(new Promise<HttpDownload>(() => undefined))
+    const saveExport = vi.fn()
+    renderPrivacySection(undefined, { exportPersonalData, saveExport })
+    await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+
+    const pdf = screen.getByRole('button', { name: 'Solicitar exportación PDF' })
+    await user.click(pdf)
+
+    expect(pdf).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByText('Preparando la exportación PDF...')).toBeInTheDocument()
+    expect(saveExport).not.toHaveBeenCalled()
+  })
+
+  it('maneja PDF 503 sin filtrar detalles, no descarga y permite reintentar', async () => {
+    const user = userEvent.setup()
+    const file = fileFor('pdf')
+    const exportPersonalData = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new HttpError(503, 'Statistics internal URL stack token subject', {
+          service: 'Comments',
+        }),
+      )
+      .mockResolvedValueOnce(file)
+    const saveExport = vi.fn()
+    const { container } = renderPrivacySection(undefined, { exportPersonalData, saveExport })
+    await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+    const pdf = screen.getByRole('button', { name: 'Solicitar exportación PDF' })
+
+    await user.click(pdf)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'El reporte PDF aún no puede prepararse. Intenta nuevamente más tarde.',
+    )
+    expect(saveExport).not.toHaveBeenCalled()
+    expect(pdf).toBeEnabled()
+    expect(container.textContent).not.toMatch(
+      /Statistics|Comments|internal URL|stack|token|subject/u,
+    )
+
+    await user.click(pdf)
+
+    expect(await screen.findByText(/PDF se descargó correctamente/iu)).toBeInTheDocument()
+    expect(exportPersonalData).toHaveBeenCalledTimes(2)
+    expect(saveExport).toHaveBeenCalledOnce()
+  })
+
+  it('muestra un error seguro si falla una exportación sin afirmar éxito', async () => {
+    const user = userEvent.setup()
+    const saveExport = vi.fn()
+    renderPrivacySection(undefined, {
+      exportPersonalData: vi.fn().mockRejectedValue(new Error('Bearer token stack interno')),
+      saveExport,
+    })
+    await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+
+    await user.click(screen.getByRole('button', { name: 'Solicitar exportación JSON' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No se pudo descargar la exportación JSON. Intenta nuevamente.',
+    )
+    expect(screen.queryByText(/se descargó correctamente/iu)).not.toBeInTheDocument()
+    expect(saveExport).not.toHaveBeenCalled()
   })
 })

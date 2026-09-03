@@ -1,4 +1,4 @@
-import { httpClient } from '@/lib/http'
+import { httpClient, type HttpDownload } from '@/lib/http'
 
 /**
  * Transporte de la cuenta propia contra Account (HU-05.4).
@@ -53,6 +53,45 @@ export interface OwnPersonalData {
 
 export const fetchOwnPersonalData = async (signal?: AbortSignal): Promise<OwnPersonalData> =>
   httpClient.get<OwnPersonalData>('/accounts/me/privacy', signal)
+
+export type PrivacyExportFormat = 'json' | 'xml' | 'pdf'
+
+const PRIVACY_EXPORT_FALLBACKS: Readonly<Record<PrivacyExportFormat, string>> = {
+  json: 'nexus-battles-personal-data.json',
+  xml: 'nexus-battles-personal-data.xml',
+  pdf: 'nexus-battles-privacy-report.pdf',
+}
+
+/**
+ * Descarga la exportacion producida por Account. El titular procede
+ * exclusivamente del testimonio que adjunta `httpClient`; la Web solo elige
+ * el formato y nunca construye el contenido en el navegador.
+ */
+export const downloadOwnPersonalData = (
+  format: PrivacyExportFormat,
+  signal?: AbortSignal,
+): Promise<HttpDownload> =>
+  httpClient.download(`/accounts/me/privacy/export?format=${format}`, signal)
+
+/** Guarda temporalmente el Blob y libera siempre la Object URL al terminar. */
+export const saveOwnPersonalDataDownload = (
+  file: HttpDownload,
+  format: PrivacyExportFormat,
+): void => {
+  const url = URL.createObjectURL(file.content)
+  const anchor = document.createElement('a')
+
+  try {
+    anchor.href = url
+    anchor.download = file.filename ?? PRIVACY_EXPORT_FALLBACKS[format]
+    anchor.hidden = true
+    document.body.append(anchor)
+    anchor.click()
+  } finally {
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }
+}
 
 /**
  * Campos editables por el contrato `UpdateOwnAccountRequest`. Hoy es solo el

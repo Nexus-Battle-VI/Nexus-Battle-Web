@@ -1,8 +1,16 @@
+import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { HttpError } from '@/lib/http'
+import { HttpError, type HttpDownload } from '@/lib/http'
 import { primaryRole, roleLabel } from '@/shared/rbac'
-import type { OwnPersonalData } from './api'
+import {
+  downloadOwnPersonalData,
+  saveOwnPersonalDataDownload,
+  type OwnPersonalData,
+  type PrivacyExportFormat,
+} from './api'
 import { useOwnPersonalData } from './useOwnAccount'
 
 interface SummaryRow {
@@ -11,20 +19,28 @@ interface SummaryRow {
 }
 
 interface ExportOption {
-  readonly format: 'JSON' | 'XML' | 'PDF'
+  readonly format: PrivacyExportFormat
   readonly icon: string
   readonly description: string
 }
 
-const EXPORT_UNAVAILABLE_MESSAGE =
-  'Esta exportación estará disponible cuando el servicio correspondiente esté habilitado.'
+type ExportFeedback =
+  | { readonly format: PrivacyExportFormat; readonly kind: 'success'; readonly message: string }
+  | { readonly format: PrivacyExportFormat; readonly kind: 'error'; readonly message: string }
+
+export type PrivacyExportTransport = (format: PrivacyExportFormat) => Promise<HttpDownload>
+
+export interface PrivacySectionProps {
+  readonly exportPersonalData?: PrivacyExportTransport
+  readonly saveExport?: (file: HttpDownload, format: PrivacyExportFormat) => void
+}
 
 const PRIVACY_LOAD_FAILED = 'No se pudo cargar tu información personal. Intenta de nuevo más tarde.'
 
 const EXPORT_OPTIONS: readonly ExportOption[] = [
-  { format: 'JSON', icon: '{ }', description: 'Formato estructurado para uso técnico.' },
-  { format: 'XML', icon: '</>', description: 'Formato estructurado estándar.' },
-  { format: 'PDF', icon: 'PDF', description: 'Documento legible para imprimir o archivar.' },
+  { format: 'json', icon: '{ }', description: 'Formato estructurado para uso técnico.' },
+  { format: 'xml', icon: '</>', description: 'Formato estructurado estándar.' },
+  { format: 'pdf', icon: 'PDF', description: 'Documento legible para imprimir o archivar.' },
 ]
 
 const SummaryRow = ({ label, value }: SummaryRow): React.JSX.Element => (
@@ -50,69 +66,134 @@ const rowsFrom = (personalData: OwnPersonalData): readonly SummaryRow[] => {
   ]
 }
 
-const ExportOptions = (): React.JSX.Element => (
-  <section className="space-y-3" aria-labelledby="privacy-export-title">
-    <div>
-      <h3 id="privacy-export-title" className="text-sm font-semibold text-ink">
-        Solicitar exportación
-      </h3>
-      <p className="mt-2 text-xs text-muted">
-        Elige el formato en el que deseas recibir tus datos.
-      </p>
-    </div>
+const exportErrorMessage = (error: unknown, format: PrivacyExportFormat): string => {
+  if (error instanceof HttpError && error.isUnauthorized) {
+    return 'Tu sesión ha caducado. Vuelve a iniciar sesión para exportar tus datos.'
+  }
 
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-3">
-      {EXPORT_OPTIONS.map((option) => {
-        const descriptionId = `privacy-export-${option.format.toLowerCase()}-status`
+  if (format === 'pdf' && error instanceof HttpError && error.status === 503) {
+    return 'El reporte PDF aún no puede prepararse. Intenta nuevamente más tarde.'
+  }
 
-        return (
-          <article
-            key={option.format}
-            className="flex min-w-0 flex-col items-center gap-2 rounded-lg border border-border bg-surface p-4 text-center"
-            aria-label={`Exportación ${option.format}`}
-          >
-            <span
-              aria-hidden
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-brand bg-brand/15 text-xs font-semibold text-brand"
+  return `No se pudo descargar la exportación ${format.toUpperCase()}. Intenta nuevamente.`
+}
+
+const ExportOptions = ({
+  exportPersonalData,
+  saveExport,
+}: Required<PrivacySectionProps>): React.JSX.Element => {
+  const [feedback, setFeedback] = useState<ExportFeedback | null>(null)
+  const exportMutation = useMutation({ mutationFn: exportPersonalData })
+
+  const requestExport = (format: PrivacyExportFormat): void => {
+    setFeedback(null)
+    exportMutation.mutate(format, {
+      onSuccess: (file) => {
+        try {
+          saveExport(file, format)
+          setFeedback({
+            format,
+            kind: 'success',
+            message: `La exportación ${format.toUpperCase()} se descargó correctamente.`,
+          })
+        } catch {
+          setFeedback({
+            format,
+            kind: 'error',
+            message: `No se pudo guardar la exportación ${format.toUpperCase()}. Intenta nuevamente.`,
+          })
+        }
+      },
+      onError: (error) => {
+        setFeedback({ format, kind: 'error', message: exportErrorMessage(error, format) })
+      },
+    })
+  }
+
+  return (
+    <section className="space-y-3" aria-labelledby="privacy-export-title">
+      <div>
+        <h3 id="privacy-export-title" className="text-sm font-semibold text-ink">
+          Solicitar exportación
+        </h3>
+        <p className="mt-2 text-xs text-muted">
+          Elige el formato en el que deseas recibir tus datos.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:grid-cols-3">
+        {EXPORT_OPTIONS.map((option) => {
+          const label = option.format.toUpperCase()
+          const descriptionId = `privacy-export-${option.format}-status`
+          const isPending = exportMutation.isPending && exportMutation.variables === option.format
+          const optionFeedback = feedback?.format === option.format ? feedback : null
+
+          return (
+            <article
+              key={option.format}
+              className="flex min-w-0 flex-col items-center gap-2 rounded-lg border border-border bg-surface p-4 text-center"
+              aria-label={`Exportación ${label}`}
             >
-              {option.icon}
-            </span>
-            <h4 className="text-sm font-semibold text-ink">{option.format}</h4>
-            <p className="min-h-8 min-w-0 max-w-full break-words text-xs text-muted">
-              {option.description}
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled
-              aria-label={`Solicitar exportación ${option.format}`}
-              aria-describedby={descriptionId}
-              className="mt-1 w-full"
-            >
-              Solicitar
-            </Button>
-            <p id={descriptionId} className="min-w-0 max-w-full break-words text-xs text-muted">
-              {EXPORT_UNAVAILABLE_MESSAGE}
-            </p>
-          </article>
-        )
-      })}
-    </div>
-  </section>
-)
+              <span
+                aria-hidden
+                className="flex h-9 w-9 items-center justify-center rounded-md border border-brand bg-brand/15 text-xs font-semibold text-brand"
+              >
+                {option.icon}
+              </span>
+              <h4 className="text-sm font-semibold text-ink">{label}</h4>
+              <p className="min-h-8 min-w-0 max-w-full break-words text-xs text-muted">
+                {option.description}
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                loading={isPending}
+                disabled={exportMutation.isPending}
+                onClick={() => {
+                  requestExport(option.format)
+                }}
+                aria-label={`Solicitar exportación ${label}`}
+                aria-describedby={descriptionId}
+                className="mt-1 w-full"
+              >
+                Solicitar
+              </Button>
+              <p
+                id={descriptionId}
+                role={optionFeedback?.kind === 'error' ? 'alert' : 'status'}
+                aria-live="polite"
+                className={`min-w-0 max-w-full break-words text-xs ${
+                  optionFeedback?.kind === 'error'
+                    ? 'text-danger'
+                    : optionFeedback?.kind === 'success'
+                      ? 'text-success'
+                      : 'text-muted'
+                }`}
+              >
+                {isPending
+                  ? `Preparando la exportación ${label}...`
+                  : (optionFeedback?.message ?? `Descarga tus datos en formato ${label}.`)}
+              </p>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
 
 /**
  * Portal de privacidad del titular autenticado (HU-45.4).
  *
  * Los datos personales salen de `GET /api/accounts/me/privacy`, no del
- * `AccountResponse` general que el shell usa para resumen y navegacion. La Web
+ * `AccountResponse` general que el shell usa para resumen y navegación. La Web
  * no elige titular ni manda identificadores: Account resuelve la identidad con
- * el testimonio de la sesion.
- *
- * Figma contiene "Fecha de registro", pero el contrato aprobado actual no la
- * expone; por eso se omite hasta que exista un contrato autorizado.
+ * el testimonio de la sesión.
  */
-export const PrivacySection = (): React.JSX.Element => {
+export const PrivacySection = ({
+  exportPersonalData = downloadOwnPersonalData,
+  saveExport = saveOwnPersonalDataDownload,
+}: PrivacySectionProps = {}): React.JSX.Element => {
   const query = useOwnPersonalData()
   const sessionExpired = query.error instanceof HttpError && query.error.isUnauthorized
 
@@ -169,7 +250,7 @@ export const PrivacySection = (): React.JSX.Element => {
         </section>
       )}
 
-      <ExportOptions />
+      <ExportOptions exportPersonalData={exportPersonalData} saveExport={saveExport} />
     </section>
   )
 }
