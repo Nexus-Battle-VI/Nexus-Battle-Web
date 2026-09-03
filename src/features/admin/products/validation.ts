@@ -281,15 +281,16 @@ export const validatePricing = (draft: ProductDraft): FieldErrors => {
   const errors: Record<string, string> = {}
   const printRun = draft.printRun.trim()
 
-  if (printRun === '') {
-    errors.printRun = 'Obligatorio.'
-  } else if (!isInteger(printRun)) {
-    errors.printRun = 'El tiraje debe ser un entero positivo o -1 para tiraje infinito.'
-  } else {
-    const value = Number(printRun)
-
-    if (value !== -1 && value < 1) {
-      errors.printRun = 'El tiraje debe ser un entero positivo o -1 para tiraje infinito.'
+  // Con tiraje infinito NO se pide cantidad, asi que tampoco se valida: exigir
+  // un numero que la pantalla no muestra dejaria el formulario bloqueado sin
+  // que se viera donde.
+  if (draft.printRunMode === 'LIMITED') {
+    if (printRun === '') {
+      errors.printRun = 'Obligatorio.'
+    } else if (!isInteger(printRun)) {
+      errors.printRun = 'La cantidad debe ser un entero mayor o igual que 1.'
+    } else if (Number(printRun) < 1) {
+      errors.printRun = 'La cantidad debe ser un entero mayor o igual que 1.'
     }
   }
 

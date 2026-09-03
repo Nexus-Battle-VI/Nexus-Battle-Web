@@ -72,6 +72,15 @@ export interface ProductDraft {
   readonly generalEffect: EffectDraft
   readonly specificEffect: EffectDraft
 
+  /**
+   * Modalidad del tiraje, ELEGIDA y no deducida de un numero.
+   *
+   * El servicio recibe `-1` para infinito, pero pedirle eso a una persona
+   * invita a escribir `0` o `-5` y descubrir el 422 despues. La pantalla
+   * pregunta cual de las dos modalidades es, y la traduccion a `-1` la hace el
+   * codigo.
+   */
+  readonly printRunMode: 'LIMITED' | 'INFINITE'
   readonly printRun: string
   readonly creditsPrice: string
   readonly premium: boolean
@@ -129,6 +138,7 @@ export const emptyDraft = (): ProductDraft => ({
   generalEffect: emptyEffect(),
   specificEffect: emptyEffect(),
 
+  printRunMode: 'LIMITED',
   printRun: '',
   creditsPrice: '',
   premium: false,
