@@ -391,6 +391,8 @@ describe('Pantallas todavia no implementadas', () => {
     try {
       renderWithProviders(<CommercePage />)
       expect(screen.getByRole('heading', { name: 'Vitrina' })).toBeInTheDocument()
+      expect(screen.queryByText('Tu carrito esta vacio.')).not.toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: 'Carrito, 0 productos' }))
       expect(await screen.findByText('Tu carrito esta vacio.')).toBeInTheDocument()
       expect(await screen.findByText('Espada de hierro')).toBeInTheDocument()
       expect(

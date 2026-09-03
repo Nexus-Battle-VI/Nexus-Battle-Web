@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 import { TextareaField } from '@/components/ui/form/TextareaField'
+import { ProductImage } from '@/components/ui/ProductImage'
 
 import { PRODUCT_TYPES, PRODUCT_TYPE_LABELS, type ProductType } from '../contract'
 import type { ProductDraft } from '../draft'
@@ -32,11 +33,10 @@ export const BasicsStep = ({
   errors,
   onUploadPrimaryImage,
 }: BasicsStepProps): React.JSX.Element => {
-  const [previewFailed, setPreviewFailed] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const image = draft.imageUrl.trim()
-  const showPreview = image !== '' && !previewFailed
+  const showPreview = image !== ''
 
   const selectImage = async (file: File | undefined): Promise<void> => {
     if (file === undefined) {
@@ -45,7 +45,6 @@ export const BasicsStep = ({
 
     setUploading(true)
     setUploadError(null)
-    setPreviewFailed(false)
 
     try {
       const asset = await onUploadPrimaryImage(file)
@@ -103,18 +102,13 @@ export const BasicsStep = ({
           aria-hidden="true"
         >
           {showPreview ? (
-            <img
-              src={image}
-              alt=""
-              className="size-full object-cover"
-              onError={() => {
-                setPreviewFailed(true)
-              }}
+            <ProductImage
+              source={image}
+              name={draft.name || 'producto'}
+              className="size-full object-contain"
             />
           ) : (
-            <span className="px-2 text-center text-xs text-muted">
-              {previewFailed ? 'No se pudo cargar la imagen' : 'Vista previa de la imagen'}
-            </span>
+            <span className="px-2 text-center text-xs text-muted">Vista previa de la imagen</span>
           )}
         </div>
 
