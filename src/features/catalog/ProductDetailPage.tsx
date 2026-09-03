@@ -9,6 +9,7 @@ import { Star } from '@/components/ui/icons'
 import { formatMoney } from '@/lib/format'
 import { queryKeys } from '@/shared/query-keys'
 import { ProductCommentsAndRating } from '@/features/product-reviews/ProductCommentsAndRating'
+import { ProductCommentsList } from '@/features/product-reviews/ProductCommentsList'
 import { fetchCanonicalProduct } from './api'
 
 /**
@@ -78,7 +79,10 @@ export const ProductDetailPage = (): React.JSX.Element => {
 
         {product !== undefined && (
           <Card>
-            <ProductCommentsAndRating productId={product.productId} />
+            <div className="space-y-6">
+              <ProductCommentsList productId={product.productId} />
+              <ProductCommentsAndRating productId={product.productId} />
+            </div>
           </Card>
         )}
       </div>

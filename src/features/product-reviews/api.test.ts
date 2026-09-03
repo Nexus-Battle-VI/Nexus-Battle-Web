@@ -4,6 +4,8 @@ import {
   fetchProductComments,
   fetchProductReviewSummary,
   publishProductComment,
+  reportComment,
+  ReportCategory,
   submitProductRating,
 } from './api'
 
@@ -76,6 +78,77 @@ describe('submitProductRating', () => {
 
     const init = fetchImpl.mock.calls[0]?.[1] as RequestInit
     expect(init.body).toBe(JSON.stringify({ rating: 4 }))
+  })
+})
+
+describe('reportComment', () => {
+  it('llama a POST /comments/:commentId/reports con la categoria y sin descripcion', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(201, {
+        id: 'report-1',
+        commentId: 'comment-1',
+        authorId: 'acc-1',
+        category: ReportCategory.Spam,
+        description: null,
+        createdAt: '2026-09-03T10:00:00.000Z',
+      }),
+    )
+    vi.stubGlobal('fetch', fetchImpl)
+
+    const result = await reportComment('comment-1', { category: ReportCategory.Spam })
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/api/comments/comment-1/reports',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit
+    expect(init.body).toBe(JSON.stringify({ category: 'SPAM' }))
+    expect(result.id).toBe('report-1')
+  })
+
+  it('incluye la descripcion opcional cuando se proporciona', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(201, {
+        id: 'report-2',
+        commentId: 'comment-1',
+        authorId: 'acc-1',
+        category: ReportCategory.Harassment,
+        description: 'Insulta a otro jugador.',
+        createdAt: '2026-09-03T10:00:00.000Z',
+      }),
+    )
+    vi.stubGlobal('fetch', fetchImpl)
+
+    await reportComment('comment-1', {
+      category: ReportCategory.Harassment,
+      description: 'Insulta a otro jugador.',
+    })
+
+    const init = fetchImpl.mock.calls[0]?.[1] as RequestInit
+    expect(init.body).toBe(
+      JSON.stringify({ category: 'HARASSMENT', description: 'Insulta a otro jugador.' }),
+    )
+  })
+
+  it('el identificador del comentario reportado se codifica en la ruta', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(201, {
+        id: 'report-3',
+        commentId: 'comentario con espacio',
+        authorId: 'acc-1',
+        category: ReportCategory.Spam,
+        description: null,
+        createdAt: '2026-09-03T10:00:00.000Z',
+      }),
+    )
+    vi.stubGlobal('fetch', fetchImpl)
+
+    await reportComment('comentario con espacio', { category: ReportCategory.Spam })
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/api/comments/comentario%20con%20espacio/reports',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 })
 
