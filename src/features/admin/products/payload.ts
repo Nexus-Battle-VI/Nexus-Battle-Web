@@ -173,7 +173,10 @@ export const buildCreateRequest = (draft: ProductDraft): CreateProductRequest =>
     description: draft.description.trim(),
     type: draft.type,
     attributes: { schemaVersion: '1', values: attributeValuesOf(draft, draft.type) },
-    printRun: toInteger(draft.printRun),
+    // `-1` es el valor que el contrato reserva para tiraje infinito. La
+    // traduccion ocurre aqui, en un solo sitio, y no en la cabeza de quien
+    // rellena el formulario.
+    printRun: draft.printRunMode === 'INFINITE' ? -1 : toInteger(draft.printRun),
     creditsPrice: toInteger(draft.creditsPrice),
     premium: draft.premium,
     // `realMoneyPrice` se OMITE cuando no es premium. Mandarlo en `null`

@@ -22,6 +22,7 @@ import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
+import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
@@ -203,6 +204,17 @@ export const routes: RouteObject[] = [
         element: (
           <RequireAdministrator>
             <CreateProductPage />
+          </RequireAdministrator>
+        ),
+      },
+      // Ajuste de tiraje (HU-34). NO entra en `NAVIGATION`: se llega con un
+      // producto concreto en la mano, y un enlace de menu sin identificador no
+      // lleva a ninguna parte.
+      {
+        path: 'admin/products/:productId/inventory',
+        element: (
+          <RequireAdministrator>
+            <AdjustInventoryPage />
           </RequireAdministrator>
         ),
       },

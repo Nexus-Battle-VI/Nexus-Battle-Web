@@ -55,3 +55,77 @@ export const describeCreationFailure = (error: unknown): string => {
 
   return 'No se pudo crear el producto.'
 }
+
+/**
+ * Producto tal y como lo ve la administración (HU-34).
+ *
+ * Incluye `availableUnits`, que la vitrina pública no recibe: cuántas unidades
+ * quedan es información de gestión.
+ */
+export interface AdministeredProduct {
+  readonly productId: string
+  readonly name: string
+  readonly type: string
+  readonly printRun: number
+  readonly printRunMode: 'UNIQUE' | 'LIMITED' | 'INFINITE'
+  readonly availableUnits: number | null
+  readonly lifecycleStatus: 'ACTIVE' | 'SUSPENDED'
+  readonly creditsPrice: number
+  readonly premium: boolean
+}
+
+export const fetchAdministeredProduct = (productId: string): Promise<AdministeredProduct> =>
+  httpClient.get<AdministeredProduct>(`/v1/admin/products/${productId}`)
+
+/**
+ * Ajusta el tiraje (HU-34, CA-02).
+ *
+ * SOLO SE ENVIA `printRun`. La disponibilidad la recalcula el servicio a partir
+ * de las unidades ya entregadas; mandarla desde aquí permitiría reabrir un
+ * producto agotado sin ampliar su tiraje.
+ */
+export const adjustProductInventory = (
+  productId: string,
+  printRun: number,
+): Promise<AdministeredProduct> =>
+  httpClient.patch<AdministeredProduct>(`/v1/admin/products/${productId}/inventory`, { printRun })
+
+/**
+ * Traduce el fallo del ajuste.
+ *
+ * El 422 NO se reescribe: el servicio distingue «el tiraje debe ser un entero
+ * positivo o -1» de «no puede ser inferior a las unidades ya entregadas», y esa
+ * diferencia es exactamente lo que el administrador necesita para corregir.
+ * Un texto genérico se la quitaría.
+ */
+export const describeAdjustmentFailure = (error: unknown): string => {
+  if (!(error instanceof HttpError)) {
+    return 'No se pudo ajustar el tiraje. Revisa tu conexión e inténtalo de nuevo.'
+  }
+
+  if (error.status === 401) {
+    return 'Tu sesión no es válida o venció. Vuelve a iniciar sesión.'
+  }
+
+  if (error.status === 403) {
+    return 'No tiene permisos para gestionar el catálogo. Se exige rol administrativo y segundo factor verificado en esta sesión.'
+  }
+
+  if (error.status === 404) {
+    return 'El producto no existe.'
+  }
+
+  if (error.status === 409) {
+    return 'Otro ajuste modificó el producto mientras editabas. Vuelve a cargarlo y repite el cambio.'
+  }
+
+  if (error.status === 422 || error.status === 400) {
+    return error.message
+  }
+
+  if (error.status === 503) {
+    return 'No se pudo comprobar el segundo factor. Inténtalo de nuevo en unos minutos.'
+  }
+
+  return 'No se pudo ajustar el tiraje.'
+}
