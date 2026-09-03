@@ -47,8 +47,23 @@ describe('Paso 3: tiraje y precio', () => {
     expect(validatePricing(pricing({ printRun: '150', creditsPrice: '40' }))).toEqual({})
   })
 
-  it('acepta -1 como tiraje infinito', () => {
-    expect(validatePricing(pricing({ printRun: '-1', creditsPrice: '40' }))).toEqual({})
+  /**
+   * HU-34: con tiraje infinito NO se pide cantidad, asi que tampoco se valida.
+   * Exigir un numero que la pantalla ya no muestra dejaria el formulario
+   * bloqueado sin que se viera donde.
+   */
+  it('acepta tiraje infinito sin cantidad', () => {
+    expect(
+      validatePricing(pricing({ printRunMode: 'INFINITE', printRun: '', creditsPrice: '40' })),
+    ).toEqual({})
+  })
+
+  it('ignora la cantidad escrita antes de elegir infinito', () => {
+    // La modalidad manda sobre lo que quedara en el campo: cambiar a infinito
+    // no debe arrastrar un error de un valor que ya no se usa.
+    expect(
+      validatePricing(pricing({ printRunMode: 'INFINITE', printRun: '0', creditsPrice: '40' })),
+    ).toEqual({})
   })
 
   it('acepta precio en creditos cero', () => {
@@ -56,14 +71,17 @@ describe('Paso 3: tiraje y precio', () => {
   })
 
   /**
-   * CA-02 de HU-33: un tiraje de -5 debe rechazarse. Es el caso que la historia
-   * nombra explicitamente, y aqui se atrapa ANTES de gastar una peticion.
+   * CA-02: los valores que la historia nombra se atrapan ANTES de gastar una
+   * peticion. `-5` ya no puede escribirse -la modalidad se elige y el campo es
+   * de cantidad-, pero se mantiene el caso: si alguien volviera a permitir el
+   * signo, esta prueba lo diria.
    */
   it.each([
     ['-5', '-5'],
     ['cero', '0'],
     ['decimal', '1.5'],
-  ])('rechaza un tiraje de %s', (_caso, printRun) => {
+    ['vacio', ''],
+  ])('rechaza una cantidad de %s en tiraje limitado', (_caso, printRun) => {
     expect(validatePricing(pricing({ printRun, creditsPrice: '40' }))).toHaveProperty('printRun')
   })
 
