@@ -7,7 +7,8 @@ const withBasics = (patch: Partial<ProductDraft> = {}): ProductDraft => ({
   ...emptyDraft(),
   name: 'Espada de Fuego',
   description: 'Espada de dos manos con daño de fuego.',
-  imageUrl: 'https://assets.example.test/catalog/espada.webp',
+  imageUrl:
+    'https://api.example.test/api/v1/catalog/product-assets/f293ce6b-98e9-41da-99ef-0ad4e3a95120/content',
   type: 'ARMA',
   ...patch,
 })
@@ -28,15 +29,10 @@ describe('Paso 1: datos basicos', () => {
     expect(validateBasics(withBasics({ type: '' }))).toHaveProperty('type')
   })
 
-  /**
-   * Catalog exige una URL ABSOLUTA. Una ruta relativa se veria bien en el
-   * formulario y el servicio la rechazaria con 422 despues de recorrer los
-   * cuatro pasos.
-   */
-  it('rechaza una imagen que no es una URL absoluta', () => {
-    expect(validateBasics(withBasics({ imageUrl: '/imagenes/espada.webp' }))).toHaveProperty(
-      'imageUrl',
-    )
+  it('rechaza una imagen que no procede de un asset finalizado', () => {
+    expect(
+      validateBasics(withBasics({ imageUrl: 'https://assets.example.test/catalog/espada.webp' })),
+    ).toHaveProperty('imageUrl')
   })
 })
 
