@@ -13,6 +13,7 @@ import {
 } from './api'
 import { AccountDeletionRequest } from './privacy/AccountDeletionRequest'
 import { useOwnPersonalData } from './useOwnAccount'
+import { countryName } from './countries'
 
 interface SummaryRow {
   readonly label: string
@@ -62,6 +63,9 @@ const rowsFrom = (personalData: OwnPersonalData): readonly SummaryRow[] => {
     { label: 'Correo electrónico', value: personalData.email },
     { label: 'Nombre', value: personalData.firstNames },
     { label: 'Apellidos', value: personalData.lastNames },
+    ...(personalData.countryCode == null
+      ? []
+      : [{ label: 'País', value: countryName(personalData.countryCode) }]),
     { label: 'Rol', value: readableRole },
     { label: 'Aceptación de términos', value: personalData.termsAccepted ? 'Sí' : 'No' },
   ]

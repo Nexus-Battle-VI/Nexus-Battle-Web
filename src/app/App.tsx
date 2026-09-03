@@ -1,21 +1,17 @@
-import { useState } from 'react'
-import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createBrowserRouter } from 'react-router'
 
-import { createQueryClient } from '@/shared/query-client'
+import { useSession } from '@/shared/session'
 import { routes } from '@/routes/routes'
+import { SessionQueryProvider } from './SessionQueryProvider'
 
 const router = createBrowserRouter(routes)
 
 export const App = (): React.JSX.Element => {
-  // El cliente se crea una sola vez por montaje. Crearlo en el cuerpo del
-  // componente sin `useState` produciria una instancia nueva en cada render y
-  // vaciaria la cache en cada actualizacion.
-  const [queryClient] = useState(createQueryClient)
+  const subject = useSession((state) => state.subject)
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <SessionQueryProvider key={subject ?? 'signed-out'}>
       <RouterProvider router={router} />
-    </QueryClientProvider>
+    </SessionQueryProvider>
   )
 }

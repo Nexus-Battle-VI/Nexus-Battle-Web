@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
+import { ProductImage } from '@/features/commerce/ProductImage'
 import type { Cart } from './api'
 
 export interface CartPanelProps {
@@ -13,6 +14,7 @@ export interface CartPanelProps {
   readonly onCheckout?: () => void
   /** Referencia sobre la que hay una operacion en curso. */
   readonly busySku?: string | null
+  readonly disabled?: boolean
 }
 
 /** Cantidad maxima que admite el servicio. */
@@ -20,6 +22,7 @@ const MAX_QUANTITY = 999
 
 interface QuantityFieldProps {
   readonly sku: string
+  readonly name: string
   readonly quantity: number
   readonly disabled: boolean
   readonly onCommit: (sku: string, quantity: number) => void
@@ -38,6 +41,7 @@ interface QuantityFieldProps {
  */
 const QuantityField = ({
   sku,
+  name,
   quantity,
   disabled,
   onCommit,
@@ -51,11 +55,11 @@ const QuantityField = ({
   }
 
   const commit = (): void => {
-    const next = Number.parseInt(draft, 10)
+    const next = Number(draft)
 
     // Un campo vacio o no numerico no es una peticion de cantidad cero: se
     // descarta el borrador y se recupera lo que hay en el carrito.
-    if (Number.isNaN(next)) {
+    if (draft.trim() === '' || !Number.isInteger(next)) {
       setDraft(String(quantity))
 
       return
@@ -68,14 +72,14 @@ const QuantityField = ({
 
   return (
     <label className="flex items-center gap-2 text-xs text-muted">
-      <span className="sr-only">Cantidad de {sku}</span>
+      <span className="sr-only">Cantidad de {name}</span>
       <input
         type="number"
         min={1}
         max={MAX_QUANTITY}
         value={draft}
         disabled={disabled}
-        aria-label={`Cantidad de ${sku}`}
+        aria-label={`Cantidad de ${name}`}
         onChange={(event) => {
           setDraft(event.target.value)
         }}
@@ -113,6 +117,7 @@ export const CartPanel = ({
   onRemove,
   onCheckout,
   busySku = null,
+  disabled = false,
 }: CartPanelProps): React.JSX.Element => {
   const itemCount = cart?.itemCount ?? 0
 
@@ -165,31 +170,26 @@ export const CartPanel = ({
                 key={line.sku}
                 className="flex flex-wrap items-center gap-3 border-b border-border pb-3 last:border-b-0 last:pb-0"
               >
-                <img
-                  // El catalogo todavia no publica imagen por producto: se usa
-                  // la del sistema visual, sin inventar una URL que no existe.
-                  src={`/assets/products/${line.sku}.webp`}
-                  alt=""
-                  aria-hidden="true"
-                  width={48}
-                  height={48}
+                <ProductImage
+                  {...(line.imageUrl === undefined ? {} : { source: line.imageUrl })}
+                  name={line.name ?? line.sku}
                   className="size-12 shrink-0 rounded border border-border bg-surface object-cover"
-                  onError={(event) => {
-                    event.currentTarget.style.visibility = 'hidden'
-                  }}
                 />
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-ink">{line.sku}</p>
+                  <p className="break-words text-sm font-medium text-ink">
+                    {line.name ?? line.sku}
+                  </p>
                   <p className="text-xs text-muted">
                     {formatMoney(line.unitPrice, cart.currency)} por unidad
                   </p>
                 </div>
 
                 <QuantityField
-                  sku={line.sku}
+                  sku={line.productId ?? line.sku}
+                  name={line.name ?? line.sku}
                   quantity={line.quantity}
-                  disabled={busySku === line.sku}
+                  disabled={disabled || busySku === (line.productId ?? line.sku)}
                   onCommit={onChangeQuantity}
                 />
 
@@ -203,10 +203,10 @@ export const CartPanel = ({
                 <Button
                   variant="secondary"
                   onClick={() => {
-                    onRemove(line.sku)
+                    onRemove(line.productId ?? line.sku)
                   }}
-                  disabled={busySku === line.sku}
-                  aria-label={`Quitar ${line.sku} del carrito`}
+                  disabled={disabled || busySku === (line.productId ?? line.sku)}
+                  aria-label={`Quitar ${line.name ?? line.sku} del carrito`}
                 >
                   Quitar
                 </Button>
@@ -224,7 +224,7 @@ export const CartPanel = ({
                 {formatMoney(cart.total, cart.currency)}
               </span>
             </p>
-            <Button onClick={onCheckout} disabled={onCheckout === undefined}>
+            <Button onClick={onCheckout} disabled={disabled || onCheckout === undefined}>
               Proceder al pago
             </Button>
           </div>

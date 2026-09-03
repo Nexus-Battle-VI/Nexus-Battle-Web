@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/render'
 import { ShowcaseGrid } from './ShowcaseGrid'
 import type { ShowcaseProduct } from './api'
+import { showcaseProduct } from '@/test/commerce-fixtures'
 
 /**
  * Marcadores de lista de deseos y de producto adquirido (HU-56).
@@ -12,15 +13,8 @@ import type { ShowcaseProduct } from './api'
  * Viven aqui y no en `wishlist/` porque prueban `ShowcaseGrid`, que es de esta
  * feature: una feature no importa de otra, ni siquiera en sus pruebas.
  */
-const product = (sku: string, name: string): ShowcaseProduct => ({
-  sku,
-  name,
-  category: 'armas',
-  price: { amount: 15_000, currency: 'COP' },
-  isPremium: false,
-  realMoneyPrice: null,
-  status: 'PUBLISHED',
-})
+const product = (sku: string, name: string): ShowcaseProduct =>
+  showcaseProduct({ productId: sku, sku, name })
 
 const PRODUCTS = [
   product('espada-de-hierro', 'Espada de hierro'),

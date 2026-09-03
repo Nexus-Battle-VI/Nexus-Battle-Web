@@ -13,6 +13,7 @@ import { httpClient } from '@/lib/http'
  * saber que cuenta como compra, y esa regla vive en Commerce.
  */
 export interface WishlistItem {
+  readonly productId?: string
   readonly sku: string
   readonly enDeseos: boolean
   readonly adquirido: boolean
@@ -21,6 +22,9 @@ export interface WishlistItem {
 /** Referencias deseadas, cada una con su estado de adquisicion. */
 export const fetchWishlist = (signal?: AbortSignal): Promise<WishlistItem[]> =>
   httpClient.get<WishlistItem[]>('/wishlist', signal)
+
+export const fetchWishlistItem = (reference: string, signal?: AbortSignal): Promise<WishlistItem> =>
+  httpClient.get<WishlistItem>(`/wishlist/${encodeURIComponent(reference)}`, signal)
 
 /** Anadir es idempotente: hacerlo dos veces no falla ni duplica. */
 export const addToWishlist = (sku: string): Promise<WishlistItem> =>

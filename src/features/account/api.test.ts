@@ -172,6 +172,20 @@ describe('exportacion de datos personales', () => {
 })
 
 describe('updateOwnAccount', () => {
+  it.each(['CO', null])(
+    'envía countryCode %s cuando el usuario lo modifica',
+    async (countryCode) => {
+      const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, { ...ACCOUNT, countryCode }))
+      vi.stubGlobal('fetch', fetchImpl)
+      await updateOwnAccount({ displayName: ACCOUNT.displayName, countryCode })
+      const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
+      expect(JSON.parse(init.body as string)).toEqual({
+        displayName: ACCOUNT.displayName,
+        countryCode,
+      })
+    },
+  )
+
   it('envia PATCH /api/accounts/me solo con displayName', async () => {
     const fetchImpl = vi
       .fn()
