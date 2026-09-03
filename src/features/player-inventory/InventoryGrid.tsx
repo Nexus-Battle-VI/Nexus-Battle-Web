@@ -7,23 +7,31 @@ import { typeLabel } from './typeLabels'
 export interface InventoryGridProps {
   readonly items: readonly OwnedInventoryItem[]
   readonly selectedItemId: string | null
+  /**
+   * Tipo canónico compatible con la ranura elegida en el configurador (HU-28).
+   * Cuando está informado, los productos de otro tipo se atenúan —sin ocultarse
+   * ni deshabilitarse: el backend vuelve a validar—.
+   */
+  readonly highlightType?: string | null
   readonly onSelect: (itemId: string) => void
 }
 
 /**
  * Rejilla de hasta 16 objetos poseidos (RF-27). Al elegir una tarjeta se
- * actualiza el panel de detalle en la MISMA vista: no se navega a otra pantalla,
- * para no obligar a bajar y volver a subir.
+ * actualiza el panel de detalle en la MISMA vista y, si hay una ranura elegida
+ * en el configurador de HU-28, se marcan los productos compatibles.
  */
 export const InventoryGrid = ({
   items,
   selectedItemId,
+  highlightType = null,
   onSelect,
 }: InventoryGridProps): React.JSX.Element => (
   <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
     {items.map((item) => {
       const selected = item.itemId === selectedItemId
       const name = item.product?.name ?? item.itemId
+      const compatible = highlightType === null || item.product?.type === highlightType
 
       return (
         <li key={item.itemId}>
@@ -34,10 +42,12 @@ export const InventoryGrid = ({
             }}
             aria-pressed={selected}
             data-testid={`inventory-item-${item.itemId}`}
+            data-compatible={highlightType === null ? undefined : String(compatible)}
             className={clsx(
               'flex h-full w-full flex-col gap-2 rounded-lg border bg-surface-raised p-3 text-left transition-colors',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
               selected ? 'border-brand ring-1 ring-brand' : 'border-border hover:border-brand',
+              !compatible && 'opacity-40',
             )}
           >
             <ProductThumb src={item.product?.imageUrl ?? null} alt={name} />

@@ -204,13 +204,95 @@ describe('PlayerInventoryPage', () => {
     expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('page=2'))).toBe(true)
   })
 
-  it('no ofrece acciones de equipar/desequipar (HU-28)', async () => {
+  it('sin héroes visibles, el configurador de HU-28 no ofrece equipar', async () => {
     fetchMock.mockResolvedValue(jsonResponse(page([summary('espada-larga', 'Espada Larga')])))
 
     render()
     await screen.findByText('Espada Larga')
 
-    expect(screen.queryByRole('button', { name: /equipar|desequipar/iu })).toBeNull()
-    expect(screen.getByText(/Equipar y desequipar se implementan en HU-28/u)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Configurar héroe' })).toBeInTheDocument()
+    expect(screen.getByText(/No tienes héroes en esta vista del inventario/u)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Equipar$/u })).toBeNull()
+    // No hay auto-equip ni HU-29/épicas en la vista.
+    expect(screen.queryByText(/batalla|épica|epic/iu)).toBeNull()
+  })
+
+  it('HU-28: elegir héroe propio, ranura y producto compatible equipa y refleja el nuevo estado', async () => {
+    const user = userEvent.setup()
+    const heroEquipmentEmpty = {
+      hero: {
+        heroId: 'pid-guerrero-tanque',
+        reference: 'guerrero-tanque',
+        subtype: 'GUERRERO_TANQUE',
+        name: 'Guerrero Tanque',
+        imageUrl: 'https://assets.example.test/guerrero-tanque.png',
+      },
+      equipment: { weapons: [], armor: {}, items: [] },
+      baseStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      effectiveStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      deltas: [],
+      activeEffects: [],
+    }
+    const heroEquipmentEquipped = {
+      ...heroEquipmentEmpty,
+      equipment: {
+        weapons: [
+          {
+            slot: 'WEAPON_1',
+            itemId: 'espada-de-fuego',
+            productId: 'pid-espada-de-fuego',
+            name: 'Espada de Fuego',
+            imageUrl: 'https://assets.example.test/espada.png',
+            type: 'ARMA',
+            lifecycleStatus: 'ACTIVE',
+          },
+        ],
+        armor: {},
+        items: [],
+      },
+      effectiveStats: { power: 5, health: 40, defense: 8, attack: 12, damage: null, healing: null },
+      deltas: [{ statistic: 'ATTACK', base: 10, effective: 12, delta: 2 }],
+    }
+
+    let equipped = false
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/heroes/guerrero-tanque/equipment') && init?.method === 'PUT') {
+        equipped = true
+        return Promise.resolve(jsonResponse(heroEquipmentEquipped))
+      }
+      if (url.includes('/heroes/guerrero-tanque/equipment')) {
+        return Promise.resolve(jsonResponse(equipped ? heroEquipmentEquipped : heroEquipmentEmpty))
+      }
+      if (url.includes('/items/espada-de-fuego')) {
+        return Promise.resolve(jsonResponse(detail('espada-de-fuego', 'Espada de Fuego')))
+      }
+      return Promise.resolve(
+        jsonResponse(
+          page([
+            summary('guerrero-tanque', 'Guerrero Tanque', 'HEROE'),
+            summary('espada-de-fuego', 'Espada de Fuego', 'ARMA'),
+          ]),
+        ),
+      )
+    })
+
+    render()
+    await screen.findByText('Espada de Fuego')
+
+    await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+    await user.click(screen.getByTestId('inventory-item-espada-de-fuego'))
+
+    const equipButton = await screen.findByRole('button', { name: 'Equipar' })
+    await user.click(equipButton)
+
+    await waitFor(() => {
+      expect(equipped).toBe(true)
+    })
+    // La ranura y las estadísticas efectivas reflejan el nuevo estado.
+    expect(
+      await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('delta-ATTACK')).toHaveTextContent('+2')
   })
 })

@@ -11,6 +11,7 @@ import {
   type OwnPersonalData,
   type PrivacyExportFormat,
 } from './api'
+import { AccountDeletionRequest } from './privacy/AccountDeletionRequest'
 import { useOwnPersonalData } from './useOwnAccount'
 import { countryName } from './countries'
 
@@ -255,6 +256,8 @@ export const PrivacySection = ({
       )}
 
       <ExportOptions exportPersonalData={exportPersonalData} saveExport={saveExport} />
+
+      <AccountDeletionRequest />
     </section>
   )
 }
