@@ -40,6 +40,11 @@ El despliegue debe permitir la lectura CORS del destino S3 tras la redirección3
 
 ## Alcance pendiente de decisiones o de integración
 
+El perfil permite elegir y borrar `countryCode` ISO alpha-2. Se guarda en Account
+y aparece en la proyección de privacidad. Las cuentas antiguas quedan sin país
+hasta que su titular lo indique. Esto prepara la moneda regional; todavía no
+convierte los precios ni sustituye el selector transitorio de la vitrina.
+
 - HU57 CA03: el usuario confirmó que la moneda debe proceder del país/región del perfil. El selector manual de este primer incremento es transitorio y no cumple todavía esa decisión; se debe conectar al contrato de Account sin inventar conversión de divisas.
 - HU57 CA04 y CA10: Catalog aún no publica promociones. No se inventan descuentos ni un filtro que no tenga efecto.
 - HU59: la entrega única de inventario, recuperación durable y consistencia de compra se verifican en los servicios y en una prueba integrada real.
@@ -49,6 +54,14 @@ El despliegue debe permitir la lectura CORS del destino S3 tras la redirección3
 
 ## Verificación de esta entrega
 
-Se ejecutaron npm ci y la suite completa:620 pruebas en77 archivos, cobertura statements88.42%, branches82.38%, functions85.86%, lines88.35%. Se añadieron pruebas de contrato HTTP de vitrina/detalle, adquirido fuera de wishlist, recorrido carrito→cantidad→resumen→pago, expectedVersion, segunda compra, PROCESSING sin repago, imágenes autenticadas y aislamiento A/B con cancelación de respuestas tardías.
+Tras incorporar los cambios de develop de HU-28 y HU-43.5, la suite completa
+`npm run test:coverage -- --maxWorkers=2` aprobó 652 pruebas en 83 archivos.
+Cobertura: statements 88.69 %, branches 81.84 %, functions 86.39 %, lines 88.75 %.
+Se limitó el paralelismo local después de una ejecución interrumpida por tiempos
+de espera de workers; no se cambiaron assertions, timeouts ni umbrales.
+Se añadieron pruebas de contrato HTTP de vitrina/detalle, adquirido fuera de
+wishlist, recorrido carrito→cantidad→resumen→pago, expectedVersion, segunda
+compra, PROCESSING sin repago, imágenes autenticadas, país del perfil y
+aislamiento A/B con cancelación de respuestas tardías.
 
 Las pruebas sustituyen fetch con respuestas controladas; no se presentan como compras verificadas en producción. Lint, formato, tipos y build pasaron, además de las regresiones focales posteriores para checkout, detalle e imágenes. No se modifican guías históricas de otras entregas para reinterpretar su evidencia.
