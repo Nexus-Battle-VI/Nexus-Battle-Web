@@ -13,6 +13,16 @@ export const queryKeys = {
   },
   inventory: {
     byOwner: (ownerId: string) => ['inventory', ownerId] as const,
+    /**
+     * Pagina de "Mi Inventario" (HU-27). Lleva pagina, busqueda y filtro en la
+     * clave porque la paginacion y la busqueda ocurren en el servicio: cada
+     * combinacion es una consulta distinta, y el servicio ya restringe el
+     * resultado al inventario del testimonio.
+     */
+    mine: (params: { readonly page: number; readonly q: string; readonly type: string | null }) =>
+      ['inventory', 'me', 'items', params] as const,
+    /** Ficha de un producto poseido (`GET /api/inventories/me/items/:reference`). */
+    mineItem: (reference: string) => ['inventory', 'me', 'item', reference] as const,
   },
   community: {
     threads: ['community', 'threads'] as const,
