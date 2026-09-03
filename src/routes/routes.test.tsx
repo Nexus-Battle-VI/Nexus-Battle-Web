@@ -315,7 +315,6 @@ describe('Pantallas todavia no implementadas', () => {
    * indistinguibles de una pantalla terminada.
    */
   it.each([
-    ['Inventario', 'Nexus-Battle-Player-Inventory', <PlayerInventoryPage key="inventory" />],
     ['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />],
     ['Notificaciones', 'Nexus-Battle-Notifications', <NotificationsPage key="notifications" />],
   ])('%s declara su estado y nombra el servicio %s', (title, service, element) => {
@@ -324,6 +323,33 @@ describe('Pantallas todavia no implementadas', () => {
     expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
     expect(screen.getByText(/todavia no esta implementada/u)).toBeInTheDocument()
     expect(screen.getByText(service)).toBeInTheDocument()
+  })
+
+  /**
+   * "Mi Inventario" salio de esta lista con HU-27: ya no es un marcador de
+   * posicion, sino la consulta paginada real del inventario (HU-27.3). La
+   * cobertura de contenido vive en `player-inventory/PlayerInventoryPage.test.tsx`;
+   * aqui basta comprobar que la pantalla ya no se declara pendiente.
+   */
+  it('Mi Inventario ya no es un marcador de posicion', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ items: [], page: 1, pageSize: 16, totalItems: 0, totalPages: 0 }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+        ),
+    )
+
+    renderWithProviders(<PlayerInventoryPage />)
+
+    expect(await screen.findByRole('heading', { name: 'Mi Inventario' })).toBeInTheDocument()
+    expect(screen.queryByText(/todavia no esta implementada/u)).not.toBeInTheDocument()
+
+    vi.unstubAllGlobals()
   })
 
   /**
