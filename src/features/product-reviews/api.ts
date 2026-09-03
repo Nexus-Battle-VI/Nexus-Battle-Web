@@ -72,3 +72,47 @@ export const fetchProductReviewSummary = (
     `/products/${encodeURIComponent(productId)}/reviews/summary`,
     signal,
   )
+
+/**
+ * Categorías de violación de HU-46. Vocabulario cerrado: son exactamente las
+ * seis que declara `ReportCategory` en Community
+ * (`comment-report-values.ts`), ni una más.
+ */
+export const ReportCategory = {
+  Spam: 'SPAM',
+  OffensiveContent: 'OFFENSIVE_CONTENT',
+  Harassment: 'HARASSMENT',
+  FalseInformation: 'FALSE_INFORMATION',
+  InappropriateContent: 'INAPPROPRIATE_CONTENT',
+  CopyrightViolation: 'COPYRIGHT_VIOLATION',
+} as const
+
+export type ReportCategory = (typeof ReportCategory)[keyof typeof ReportCategory]
+
+export interface ReportCommentInput {
+  readonly category: ReportCategory
+  readonly description?: string
+}
+
+export interface CommentReport {
+  readonly id: string
+  readonly commentId: string
+  readonly authorId: string
+  readonly category: string
+  readonly description: string | null
+  readonly createdAt: string
+}
+
+/**
+ * `POST /api/comments/:commentId/reports`.
+ *
+ * `authorId` NUNCA viaja en el cuerpo: Community lo resuelve del testimonio,
+ * igual que en `publishProductComment`. 429 si el jugador excedió el límite
+ * de reportes -- HU-46 no fija ese número, así que esta capa tampoco lo
+ * conoce ni lo muestra.
+ */
+export const reportComment = (
+  commentId: string,
+  input: ReportCommentInput,
+): Promise<CommentReport> =>
+  httpClient.post<CommentReport>(`/comments/${encodeURIComponent(commentId)}/reports`, input)
