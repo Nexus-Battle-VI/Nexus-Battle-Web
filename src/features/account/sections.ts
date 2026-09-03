@@ -1,3 +1,5 @@
+import { ADMIN_USER_PRIMARY_ROLES, primaryRole } from '@/shared/rbac'
+
 /**
  * Secciones de "Mi cuenta" (HU-05.4).
  *
@@ -16,6 +18,7 @@ export interface AccountSection {
   readonly to: string
   readonly label: string
   readonly end: boolean
+  readonly requiredPrimaryRoles?: readonly string[]
 }
 
 export const ACCOUNT_SECTIONS: readonly AccountSection[] = [
@@ -25,4 +28,26 @@ export const ACCOUNT_SECTIONS: readonly AccountSection[] = [
   { to: 'statistics', label: 'Estadísticas y logros', end: false },
   { to: 'subscriptions', label: 'Suscripciones', end: false },
   { to: 'payment-methods', label: 'Metodos de pago', end: false },
+  {
+    to: 'privacy',
+    label: 'Datos personales y exportación',
+    end: false,
+    requiredPrimaryRoles: ['PLAYER'],
+  },
+  {
+    to: 'admin-users',
+    label: 'Panel administrativo',
+    end: false,
+    requiredPrimaryRoles: ADMIN_USER_PRIMARY_ROLES,
+  },
 ]
+
+export const accountSectionsForRoles = (roles: readonly string[]): readonly AccountSection[] => {
+  const role = primaryRole(roles)
+
+  return ACCOUNT_SECTIONS.filter(
+    (section) =>
+      section.requiredPrimaryRoles === undefined ||
+      section.requiredPrimaryRoles.some((requiredRole) => requiredRole === role),
+  )
+}

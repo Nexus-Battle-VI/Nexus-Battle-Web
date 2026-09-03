@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryRouter } from 'react-router'
@@ -8,8 +8,10 @@ import { AccountPage } from './AccountPage'
 import { accountSectionRoutes } from './routes'
 import { createTestQueryClient } from '@/test/render'
 import { ECOMMERCE_PATH } from '@/routes/routes'
+import { useSession } from '@/shared/session'
+import type { OwnAccount, OwnPersonalData } from './api'
 
-const ACCOUNT = {
+const ACCOUNT: OwnAccount = {
   id: 'acc-1',
   email: 'ana@nexus.test',
   displayName: 'Ana Ramirez',
@@ -19,8 +21,49 @@ const ACCOUNT = {
   roles: ['PLAYER'],
 }
 
+const PERSONAL_DATA: OwnPersonalData = {
+  email: 'ana.privacidad@nexus.test',
+  displayName: 'Ana Privacidad',
+  firstNames: 'Ana',
+  lastNames: 'Privacidad',
+  roles: ['PLAYER'],
+  termsAccepted: true,
+}
+
+const ADMIN_RESPONSE = {
+  items: [
+    {
+      id: 'acc-result-1',
+      email: 'resultado@nexus.test',
+      displayName: 'Resultado Administrativo',
+      firstNames: 'Resultado',
+      lastNames: 'Administrativo',
+      status: 'ACTIVE',
+      roles: ['PLAYER'],
+      registeredAt: '2026-08-01T10:00:00.000Z',
+    },
+  ],
+  statusCounts: { pendingVerification: 0, active: 1, suspended: 0 },
+}
+
 const json = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+
+const mockAccountBackend = (
+  account: OwnAccount = ACCOUNT,
+  personalData: OwnPersonalData = PERSONAL_DATA,
+) => {
+  const fetchImpl = vi.fn((input: RequestInfo | URL) => {
+    const url =
+      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+    const body = url.endsWith('/accounts/me/privacy') ? personalData : account
+
+    return Promise.resolve(json(200, body))
+  })
+  vi.stubGlobal('fetch', fetchImpl)
+
+  return fetchImpl
+}
 
 const renderAt = (entry = '/account') => {
   const router = createMemoryRouter(
@@ -28,15 +71,19 @@ const renderAt = (entry = '/account') => {
     { initialEntries: [entry] },
   )
 
-  return render(
-    <QueryClientProvider client={createTestQueryClient()}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
-  )
+  return {
+    router,
+    ...render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    ),
+  }
 }
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  useSession.setState({ roles: [], accessToken: null, expiresAt: null })
 })
 
 describe('AccountPage', () => {
@@ -53,7 +100,7 @@ describe('AccountPage', () => {
   })
 
   it('con la cuenta cargada muestra el resumen y la navegacion interna', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, ACCOUNT)))
+    mockAccountBackend()
     renderAt()
 
     expect(await screen.findByText('Ana Ramirez')).toBeInTheDocument()
@@ -68,6 +115,7 @@ describe('AccountPage', () => {
       'Estadísticas y logros',
       'Suscripciones',
       'Metodos de pago',
+      'Datos personales y exportación',
     ]) {
       expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
     }
@@ -132,4 +180,126 @@ describe('AccountPage', () => {
       'page',
     )
   })
+
+  it('muestra privacidad solo para PLAYER y justo debajo de Metodos de pago', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, ACCOUNT)))
+    renderAt()
+
+    const nav = await screen.findByRole('navigation', { name: 'Secciones de Mi cuenta' })
+    const labels = within(nav)
+      .getAllByRole('link')
+      .map((link) => link.textContent)
+
+    expect(labels).toEqual([
+      'Perfil',
+      'Seguridad',
+      'Preferencias',
+      'Estadísticas y logros',
+      'Suscripciones',
+      'Metodos de pago',
+      'Datos personales y exportación',
+    ])
+  })
+
+  it.each(['MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
+    'oculta privacidad cuando el rol primario es %s',
+    async (role) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(json(200, { ...ACCOUNT, roles: ['PLAYER', role] })),
+      )
+      renderAt()
+
+      expect(await screen.findByText('Ana Ramirez')).toBeInTheDocument()
+      expect(
+        screen.queryByRole('link', { name: 'Datos personales y exportación' }),
+      ).not.toBeInTheDocument()
+    },
+  )
+
+  it('navega a Seguridad y Privacidad conservando el shell de Mi cuenta', async () => {
+    const user = userEvent.setup()
+    mockAccountBackend()
+    const { router } = renderAt()
+
+    await user.click(await screen.findByRole('link', { name: 'Seguridad' }))
+
+    expect(router.state.location.pathname).toBe('/account/security')
+    expect(screen.getByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
+    expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Seguridad' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('heading', { name: 'Cambiar contraseña' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'Datos personales y exportación' }))
+
+    expect(router.state.location.pathname).toBe('/account/privacy')
+    expect(screen.getByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
+    expect(screen.getAllByText('Ana Ramirez').length).toBeGreaterThan(0)
+    expect(
+      await screen.findByText('Cuenta: Ana Privacidad (titular autenticado)'),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Datos personales y exportación' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.getByRole('heading', { name: 'Mis datos personales' })).toBeInTheDocument()
+  })
+
+  it.each(['ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
+    'muestra Panel administrativo debajo de Metodos de pago para %s y conserva el shell',
+    async (role) => {
+      const user = userEvent.setup()
+      const account = { ...ACCOUNT, roles: ['PLAYER', role] }
+      const fetchImpl = vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+
+        return Promise.resolve(
+          url.endsWith('/accounts/me') ? json(200, account) : json(200, ADMIN_RESPONSE),
+        )
+      })
+      vi.stubGlobal('fetch', fetchImpl)
+      useSession.setState({ roles: ['PLAYER', role] })
+      const { router } = renderAt('/account/payment-methods')
+
+      const nav = await screen.findByRole('navigation', { name: 'Secciones de Mi cuenta' })
+      const labels = within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent)
+      expect(labels.slice(-2)).toEqual(['Metodos de pago', 'Panel administrativo'])
+
+      await user.click(screen.getByRole('link', { name: 'Panel administrativo' }))
+
+      expect(router.state.location.pathname).toBe('/account/admin-users')
+      expect(screen.getByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
+      expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
+      expect(screen.getByRole('navigation', { name: 'Secciones de Mi cuenta' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Panel administrativo' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      )
+      expect(
+        await screen.findByRole('heading', { name: 'Panel administrativo de usuarios' }),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Resultado Administrativo')).toBeInTheDocument()
+    },
+  )
+
+  it.each(['PLAYER', 'MODERATOR'])(
+    'oculta el link y deniega la URL directa para %s sin consultar datos administrativos',
+    async (role) => {
+      const account = { ...ACCOUNT, roles: role === 'PLAYER' ? ['PLAYER'] : ['PLAYER', role] }
+      const fetchImpl = vi.fn().mockResolvedValue(json(200, account))
+      vi.stubGlobal('fetch', fetchImpl)
+      useSession.setState({ roles: account.roles })
+      renderAt('/account/admin-users')
+
+      expect(await screen.findByText('Ana Ramirez')).toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Panel administrativo' })).not.toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent('Acceso denegado')
+      expect(screen.queryByText('Resultado Administrativo')).not.toBeInTheDocument()
+      expect(fetchImpl).toHaveBeenCalledTimes(1)
+      expect(fetchImpl.mock.calls[0]?.[0]).toBe('/api/accounts/me')
+    },
+  )
 })

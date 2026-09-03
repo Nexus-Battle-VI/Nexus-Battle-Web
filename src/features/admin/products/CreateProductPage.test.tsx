@@ -37,7 +37,7 @@ const completeAttributes = async (): Promise<void> => {
 }
 
 const completePricing = async (printRun = '150'): Promise<void> => {
-  await userEvent.type(screen.getByLabelText(/tiraje/i), printRun)
+  await userEvent.type(screen.getByLabelText(/cantidad de unidades/i), printRun)
   await userEvent.type(screen.getByLabelText(/precio en créditos/i), '40')
   await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 }
@@ -66,24 +66,55 @@ describe('Alta de producto (HU-33)', () => {
   })
 
   /**
-   * CA-02: el tiraje invalido se detiene AQUI, sin gastar la peticion. El
+   * CA-02: la cantidad invalida se detiene AQUI, sin gastar la peticion. El
    * control es doble: aparece el mensaje y `onCreate` no llega a llamarse.
+   *
+   * HU-34 cambio la forma del paso: `-5` ya no puede escribirse porque la
+   * modalidad se ELIGE y el campo pide una cantidad. Se prueba con `0`, que es
+   * el valor invalido que si sigue siendo tecleable.
    */
-  it('no envía nada si el tiraje es -5', async () => {
+  it('no envía nada si la cantidad es 0', async () => {
     const onCreate = vi.fn<(request: CreateProductRequest) => Promise<CreatedProduct>>()
 
     renderWithProviders(<CreateProductPage onCreate={onCreate} />)
 
     await completeBasics()
     await completeAttributes()
-    await userEvent.type(screen.getByLabelText(/tiraje/i), '-5')
+    await userEvent.type(screen.getByLabelText(/cantidad de unidades/i), '0')
     await userEvent.type(screen.getByLabelText(/precio en créditos/i), '40')
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 
     expect(
-      await screen.findByText(/El tiraje debe ser un entero positivo o -1 para tiraje infinito/i),
+      await screen.findByText(/La cantidad debe ser un entero mayor o igual que 1/i),
     ).toBeInTheDocument()
     expect(onCreate).not.toHaveBeenCalled()
+  })
+
+  /**
+   * HU-34: elegir tiraje infinito manda `-1` sin que nadie lo escriba, y el
+   * campo de cantidad DESAPARECE. Ese segundo control importa: un campo que el
+   * servicio va a ignorar solo puede confundir sobre lo que se configura.
+   */
+  it('el tiraje infinito se elige y viaja como -1', async () => {
+    const onCreate = vi.fn<(request: CreateProductRequest) => Promise<CreatedProduct>>(() =>
+      Promise.resolve(created()),
+    )
+
+    renderWithProviders(<CreateProductPage onCreate={onCreate} />)
+
+    await completeBasics()
+    await completeAttributes()
+
+    await userEvent.selectOptions(screen.getByLabelText(/disponibilidad/i), 'INFINITE')
+
+    expect(screen.queryByLabelText(/cantidad de unidades/i)).not.toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText(/precio en créditos/i), '40')
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Publicar producto' }))
+
+    expect(await screen.findByText(/producto creado/i)).toBeInTheDocument()
+    expect(onCreate.mock.calls[0]?.[0].printRun).toBe(-1)
   })
 
   /** CA-03: nombre duplicado. El 409 se traduce, no se muestra crudo. */
@@ -151,7 +182,7 @@ describe('Alta de producto (HU-33)', () => {
 
     await completeBasics()
     await completeAttributes()
-    await userEvent.type(screen.getByLabelText(/tiraje/i), '1')
+    await userEvent.type(screen.getByLabelText(/cantidad de unidades/i), '1')
 
     expect(await screen.findByText(/nacerá en estado/i)).toHaveTextContent('único')
   })

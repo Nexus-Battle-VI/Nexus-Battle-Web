@@ -62,6 +62,12 @@ export interface RequestOptions {
   readonly signal?: AbortSignal
 }
 
+export interface HttpDownload {
+  readonly content: Blob
+  readonly filename: string | null
+  readonly mediaType: string
+}
+
 const parseBody = async (response: Response): Promise<unknown> => {
   const text = await response.text()
 
@@ -90,6 +96,42 @@ const messageFrom = (body: unknown, fallback: string): string => {
   }
 
   return fallback
+}
+
+const safeFilename = (value: string): string | null => {
+  const filename = value
+    .trim()
+    .split(/[\\/]/u)
+    .at(-1)
+    ?.split('')
+    .filter((character) => {
+      const code = character.charCodeAt(0)
+
+      return code > 31 && code !== 127
+    })
+    .join('')
+
+  return filename === undefined || filename.length === 0 ? null : filename
+}
+
+const filenameFrom = (contentDisposition: string | null): string | null => {
+  if (contentDisposition === null) {
+    return null
+  }
+
+  const encoded = /filename\*=UTF-8''([^;]+)/iu.exec(contentDisposition)?.[1]
+
+  if (encoded !== undefined) {
+    try {
+      return safeFilename(decodeURIComponent(encoded))
+    } catch {
+      return safeFilename(encoded)
+    }
+  }
+
+  const regular = /filename=(?:"([^"]+)"|([^;]+))/iu.exec(contentDisposition)
+
+  return safeFilename(regular?.[1] ?? regular?.[2] ?? '')
 }
 
 export class HttpClient {
@@ -123,7 +165,7 @@ export class HttpClient {
     return (input, init) => globalThis.fetch(input, init)
   }
 
-  async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  private async send(path: string, options: RequestOptions = {}): Promise<Response> {
     const method = options.method ?? 'GET'
     const hasBody = options.body !== undefined
 
@@ -162,9 +204,9 @@ export class HttpClient {
 
     const response = await this.fetcher(`${this.baseUrl}${path}`, init)
 
-    const body = await parseBody(response)
-
     if (!response.ok) {
+      const body = await parseBody(response)
+
       throw new HttpError(
         response.status,
         messageFrom(body, `La peticion a ${path} fallo con estado ${String(response.status)}.`),
@@ -172,11 +214,29 @@ export class HttpClient {
       )
     }
 
+    return response
+  }
+
+  async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    const response = await this.send(path, options)
+    const body = await parseBody(response)
+
     return body as T
   }
 
   get<T>(path: string, signal?: AbortSignal): Promise<T> {
     return this.request<T>(path, signal === undefined ? {} : { signal })
+  }
+
+  async download(path: string, signal?: AbortSignal): Promise<HttpDownload> {
+    const response = await this.send(path, signal === undefined ? {} : { signal })
+    const content = await response.blob()
+
+    return {
+      content,
+      filename: filenameFrom(response.headers.get('content-disposition')),
+      mediaType: response.headers.get('content-type') ?? content.type,
+    }
   }
 
   post<T>(path: string, body?: unknown): Promise<T> {

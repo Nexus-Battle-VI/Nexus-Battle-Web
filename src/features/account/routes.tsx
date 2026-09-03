@@ -1,11 +1,14 @@
 import type { RouteObject } from 'react-router'
 
+import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { ProfileSection } from './ProfileSection'
 import { SecuritySection } from './SecuritySection'
 import { PreferencesSection } from './PreferencesSection'
 import { StatisticsSection } from './statistics/StatisticsSection'
 import { SubscriptionsSection } from './SubscriptionsSection'
 import { PaymentMethodsSection } from './PaymentMethodsSection'
+import { PrivacySection } from './PrivacySection'
+import { AdminUsersSection } from './admin-users/AdminUsersSection'
 
 /**
  * Rutas hijas de "Mi cuenta" (HU-05.4).
@@ -21,4 +24,13 @@ export const accountSectionRoutes: RouteObject[] = [
   { path: 'statistics', element: <StatisticsSection /> },
   { path: 'subscriptions', element: <SubscriptionsSection /> },
   { path: 'payment-methods', element: <PaymentMethodsSection /> },
+  { path: 'privacy', element: <PrivacySection /> },
+  {
+    path: 'admin-users',
+    element: (
+      <RequireAdministrator>
+        <AdminUsersSection />
+      </RequireAdministrator>
+    ),
+  },
 ]
