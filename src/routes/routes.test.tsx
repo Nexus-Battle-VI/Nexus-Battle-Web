@@ -32,6 +32,10 @@ describe('NAVIGATION', () => {
       '/missions',
       '/tournament',
       '/inventory',
+      // HU-07: preparar al heroe es un paso previo a jugar y no cuelga de
+      // ningun otro flujo. Sin acceso propio solo se llegaria escribiendo la
+      // URL.
+      '/heroes',
       '/auction',
       // HU-33: catalogo administrativo. Solo lo ven los roles administrativos;
       // el filtro se comprueba mas abajo.

@@ -12,6 +12,7 @@ import { accountSectionRoutes } from '@/features/account/routes'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
+import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
@@ -76,6 +77,11 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: '/missions', label: 'Misiones' },
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
+  // HU-07. Entra en la navegacion porque preparar al heroe es un paso previo a
+  // jugar y no cuelga de ningun otro flujo: sin acceso propio solo se llegaria
+  // escribiendo la URL. El prototipo de Figma no la enumera porque su barra de
+  // navegacion es anterior a la que HU-02 dejo acordada.
+  { path: '/heroes', label: 'Mi Héroe' },
   { path: '/auction', label: 'Subasta' },
   // "Mi Cuenta" ya no vive en la navegacion central (HU-05.4): el acceso a la
   // cuenta es `SessionControl`. La ruta `/account` sigue montada mas abajo.
@@ -183,6 +189,9 @@ export const routes: RouteObject[] = [
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
+      // Seleccion y preparacion del heroe (HU-07). Equipar sigue viviendo en
+      // `/inventory`: esta pantalla elige el heroe y enseña con que entraria.
+      { path: 'heroes', element: <HeroSelectionPage /> },
       { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver

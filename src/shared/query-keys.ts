@@ -30,6 +30,20 @@ export const queryKeys = {
      */
     heroEquipment: (heroReference: string) =>
       ['inventory', 'me', 'hero-equipment', heroReference] as const,
+    /**
+     * Heroes que el jugador puede preparar (HU-07,
+     * `GET /api/inventories/me/heroes`). Sin parametros: el servicio deduce el
+     * jugador del testimonio.
+     */
+    availableHeroes: ['inventory', 'me', 'heroes'] as const,
+    /**
+     * Configuracion preparada del jugador (HU-07,
+     * `GET /api/inventories/me/heroes/selection`). Clave distinta de
+     * `heroEquipment`: aquella es "el equipamiento de ESTE heroe" y esta es "el
+     * heroe con el que voy a jugar". Compartir clave haria que cambiar de
+     * seleccion pareciera cambiar el equipamiento.
+     */
+    heroSelection: ['inventory', 'me', 'hero-selection'] as const,
   },
   community: {
     threads: ['community', 'threads'] as const,
