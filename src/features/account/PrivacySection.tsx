@@ -11,6 +11,7 @@ import {
   type OwnPersonalData,
   type PrivacyExportFormat,
 } from './api'
+import { AccountDeletionRequest } from './privacy/AccountDeletionRequest'
 import { useOwnPersonalData } from './useOwnAccount'
 
 interface SummaryRow {
@@ -251,6 +252,8 @@ export const PrivacySection = ({
       )}
 
       <ExportOptions exportPersonalData={exportPersonalData} saveExport={saveExport} />
+
+      <AccountDeletionRequest />
     </section>
   )
 }
