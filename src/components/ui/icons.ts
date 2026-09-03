@@ -16,6 +16,12 @@
  * navegación de retorno y de las tres métricas y del bloque de logros que la
  * referencia UX de HU-06.2 aprobó. Todos son decorativos (`aria-hidden`): la
  * información nunca depende del icono.
+ *
+ * `Star` se añade para el selector de calificación de 1 a 5 estrellas de
+ * "Comentarios y calificación" (HU-40.4, Task #174): es el icono que el
+ * prototipo de Figma de esa tarea usa para el control. Es decorativo
+ * (`aria-hidden`): la calificación seleccionada se comunica por texto/estado,
+ * nunca solo por el relleno del icono.
  */
 export {
   ChevronDown,
@@ -31,4 +37,5 @@ export {
   Trophy,
   TrendingUp,
   Download,
+  Star,
 } from 'lucide-react'

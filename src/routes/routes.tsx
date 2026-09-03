@@ -14,6 +14,7 @@ import { RegistrationPage } from '@/features/account/registration/RegistrationPa
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
+import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -230,6 +231,10 @@ export const routes: RouteObject[] = [
       // URL directa; solo se retiraron de `NAVIGATION` porque HU-02 exige que
       // la navegacion principal no nombre bounded contexts.
       { path: 'catalog', element: <CatalogPage /> },
+      // Ficha de producto con comentarios y calificación (HU-40, HU-40.4).
+      // NO entra en `NAVIGATION`: se llega con un producto concreto en la
+      // mano, mismo criterio que `admin/products/:productId/inventory`.
+      { path: 'catalog/:productId', element: <ProductDetailPage /> },
       { path: 'community', element: <CommunityPage /> },
       { path: 'orders', element: <Navigate to={ECOMMERCE_PATH} replace /> },
       { path: 'notifications', element: <NotificationsPage /> },
