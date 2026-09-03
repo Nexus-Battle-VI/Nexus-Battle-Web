@@ -55,5 +55,7 @@ export const queryKeys = {
     detail: (accountId: string) => ['account', accountId] as const,
     /** La cuenta propia resuelta por el testimonio (`GET /api/accounts/me`). */
     me: ['account', 'me'] as const,
+    /** Datos personales autorizados para el portal de privacidad (HU-45.4). */
+    privacy: ['account', 'me', 'privacy'] as const,
   },
 } as const

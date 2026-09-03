@@ -14,10 +14,15 @@ describe('devRoutes', () => {
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
   })
 
-  it('la vista previa de "Mi cuenta" (HU-05.4) es una ruta publica de solo desarrollo, fuera de NAVIGATION', () => {
-    // En modo test `import.meta.env.DEV` es verdadero: la ruta existe aqui.
-    expect(publicDevRoutes.map((route) => route.path)).toEqual(['__dev/account'])
-    expect(NAVIGATION.some((item) => item.path.includes('__dev/account'))).toBe(false)
+  it('las vistas previas publicas son de solo desarrollo y no aparecen en NAVIGATION', () => {
+    // En modo test `import.meta.env.DEV` es verdadero: las rutas existen aqui.
+    // Son las dos pantallas que viven tras una sesion que el entorno local no
+    // puede establecer: "Mi cuenta" (HU-05.4) y el alta de producto (HU-33).
+    expect(publicDevRoutes.map((route) => route.path)).toEqual([
+      '__dev/account',
+      '__dev/admin/products/new',
+    ])
+    expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 
     // La unica forma de que exista es la guarda `import.meta.env.DEV`: en una
     // compilacion de produccion (`DEV === false`) el arreglo queda vacio.

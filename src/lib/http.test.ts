@@ -9,6 +9,66 @@ const jsonResponse = (status: number, body: unknown): Response =>
   })
 
 describe('HttpClient', () => {
+  it('descarga un attachment conservando testimonio, filename, content type y AbortSignal', async () => {
+    const signal = new AbortController().signal
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response('[{"id":"acc-1"}]', {
+        status: 200,
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          'content-disposition': 'attachment; filename="nexus-battles-users.json"',
+        },
+      }),
+    )
+    const client = new HttpClient({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      tokenProvider: () => 'access-token',
+    })
+
+    const file = await client.download('/accounts/export?status=ACTIVE', signal)
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/api/accounts/export?status=ACTIVE',
+      expect.objectContaining({
+        method: 'GET',
+        signal,
+        headers: { authorization: 'Bearer access-token' },
+      }),
+    )
+    expect(file.filename).toBe('nexus-battles-users.json')
+    expect(file.mediaType).toBe('application/json; charset=utf-8')
+    expect(await file.content.text()).toBe('[{"id":"acc-1"}]')
+  })
+
+  it('prioriza y decodifica filename* y elimina segmentos de ruta inseguros', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response('pdf', {
+        status: 200,
+        headers: {
+          'content-disposition':
+            'attachment; filename="ignored.pdf"; filename*=UTF-8\'\'..%2Freport%20privado.pdf',
+        },
+      }),
+    )
+    const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
+
+    const file = await client.download('/accounts/me/privacy/export?format=pdf')
+
+    expect(file.filename).toBe('report privado.pdf')
+  })
+
+  it('mantiene HttpError al fallar una descarga sin convertir el error en Blob', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(503, { message: 'Dependencia no disponible' }))
+    const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
+
+    await expect(client.download('/accounts/me/privacy/export?format=pdf')).rejects.toMatchObject({
+      name: 'HttpError',
+      status: 503,
+    })
+  })
+
   it('invoca fetch del entorno como metodo del Window, no suelto', async () => {
     const bound = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }))
     const windowFetch = function windowFetch(

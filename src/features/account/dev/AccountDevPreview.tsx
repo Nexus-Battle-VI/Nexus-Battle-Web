@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
 import { AccountPage } from '../AccountPage'
+import type { OwnPersonalData } from '../api'
 import { PREVIEW_ACCOUNT } from './previewRoutes'
 
 /**
@@ -22,7 +23,18 @@ import { PREVIEW_ACCOUNT } from './previewRoutes'
 const previewQueryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } },
 })
+
+const PREVIEW_PERSONAL_DATA: OwnPersonalData = {
+  email: 'jugador.demo@nexus.test',
+  displayName: 'Jugador Demo',
+  firstNames: 'Jugador',
+  lastNames: 'Demo',
+  roles: ['PLAYER'],
+  termsAccepted: true,
+}
+
 previewQueryClient.setQueryData(queryKeys.account.me, PREVIEW_ACCOUNT)
+previewQueryClient.setQueryData(queryKeys.account.privacy, PREVIEW_PERSONAL_DATA)
 
 export const AccountDevPreview = (): React.JSX.Element => (
   <QueryClientProvider client={previewQueryClient}>
