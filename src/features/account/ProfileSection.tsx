@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { COUNTRY_OPTIONS } from './countries'
 
 import { Button } from '@/components/ui/Button'
 import { statusLabel } from '@/lib/format'
@@ -17,7 +18,7 @@ import {
  * Informacion personal de la cuenta (HU-05.4).
  *
  * Contrato REAL: `GET /api/accounts/me` trae todo; `PATCH /api/accounts/me` solo
- * admite `displayName`. Por eso el apodo es el unico campo editable y el correo,
+ * admite `displayName` y `countryCode`. El apodo y el país se editan; el correo,
  * los nombres y el estado se muestran de solo lectura -no como controles
  * deshabilitados que inviten a pensar que "algun dia" se podran tocar aqui-.
  *
@@ -50,17 +51,19 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
   const mutation = useUpdateOwnAccount(save)
 
   const [displayName, setDisplayName] = useState(account.displayName)
+  const [countryCode, setCountryCode] = useState(account.countryCode ?? '')
   const [clientError, setClientError] = useState<string | null>(null)
 
   const errorId = useId()
 
   const trimmed = displayName.trim().replace(/\s+/gu, ' ')
-  const unchanged = trimmed === account.displayName
+  const countryUnchanged = countryCode === (account.countryCode ?? '')
+  const unchanged = trimmed === account.displayName && countryUnchanged
 
   let backendError: string | null = null
   if (mutation.isError) {
     backendError =
-      mutation.error instanceof Error ? mutation.error.message : 'No se pudo guardar el apodo.'
+      mutation.error instanceof Error ? mutation.error.message : 'No se pudo guardar el perfil.'
   }
   const shownError = clientError ?? backendError
 
@@ -75,7 +78,10 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
     }
 
     setClientError(null)
-    mutation.mutate({ displayName: trimmed })
+    mutation.mutate({
+      displayName: trimmed,
+      ...(countryUnchanged ? {} : { countryCode: countryCode || null }),
+    })
   }
 
   return (
@@ -115,6 +121,31 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
             {shownError}
           </p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="account-country" className={FIELD_LABEL_CLASS}>
+          País
+        </label>
+        <select
+          id="account-country"
+          name="countryCode"
+          autoComplete="country"
+          className={`mt-1 ${FIELD_CLASS}`}
+          value={countryCode}
+          onChange={(event) => {
+            setCountryCode(event.target.value)
+            mutation.reset()
+          }}
+        >
+          <option value="">Sin especificar</option>
+          {COUNTRY_OPTIONS.map((country) => (
+            <option key={country.code} value={country.code}>
+              {country.name}
+            </option>
+          ))}
+        </select>
+        <p className={FIELD_HINT_CLASS}>Se usará para determinar la moneda de tus compras.</p>
       </div>
 
       <div className="flex items-center gap-3">

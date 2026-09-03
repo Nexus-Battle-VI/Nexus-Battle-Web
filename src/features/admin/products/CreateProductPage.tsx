@@ -9,6 +9,7 @@ import { createProduct, describeCreationFailure } from './api'
 import type { CreateProductRequest, CreatedProduct } from './contract'
 import { emptyDraft, type ProductDraft } from './draft'
 import { buildCreateRequest } from './payload'
+import { type FinalizedProductAsset, uploadProductPrimaryImage } from './product-assets'
 import { BasicsStep } from './steps/BasicsStep'
 import { AttributesStep } from './steps/AttributesStep'
 import { PricingStep } from './steps/PricingStep'
@@ -50,10 +51,13 @@ export interface CreateProductPageProps {
    * pruebas ejerciten el recorrido completo sin doblar el modulo HTTP.
    */
   readonly onCreate?: (request: CreateProductRequest) => Promise<CreatedProduct>
+  /** Se inyecta para probar la carga sin depender de S3. */
+  readonly onUploadPrimaryImage?: (file: File) => Promise<FinalizedProductAsset>
 }
 
 export const CreateProductPage = ({
   onCreate = createProduct,
+  onUploadPrimaryImage = uploadProductPrimaryImage,
 }: CreateProductPageProps = {}): React.JSX.Element => {
   const [draft, setDraft] = useState<ProductDraft>(emptyDraft)
   const [step, setStep] = useState(0)
@@ -179,7 +183,14 @@ export const CreateProductPage = ({
             </div>
           ) : (
             <>
-              {step === 0 && <BasicsStep draft={draft} onChange={patch} errors={errors} />}
+              {step === 0 && (
+                <BasicsStep
+                  draft={draft}
+                  onChange={patch}
+                  errors={errors}
+                  onUploadPrimaryImage={onUploadPrimaryImage}
+                />
+              )}
               {step === 1 && <AttributesStep draft={draft} onChange={patch} errors={errors} />}
               {step === 2 && <PricingStep draft={draft} onChange={patch} errors={errors} />}
               {step === 3 && <ReviewStep draft={draft} />}

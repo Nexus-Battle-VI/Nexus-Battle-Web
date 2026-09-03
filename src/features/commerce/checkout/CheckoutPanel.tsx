@@ -19,6 +19,8 @@ export interface CheckoutPanelProps {
   readonly error?: unknown
   /** Resultado de una compra completada. Cuando llega, se muestra en su lugar. */
   readonly result?: PaymentResult | null
+  readonly processing?: boolean
+  readonly disabled?: boolean
 }
 
 const FIELDS: readonly { field: CardField; label: string; placeholder: string }[] = [
@@ -46,6 +48,8 @@ export const CheckoutPanel = ({
   isPaying = false,
   error,
   result = null,
+  processing = false,
+  disabled = false,
 }: CheckoutPanelProps): React.JSX.Element => {
   const [card, setCard] = useState<CardForm>(EMPTY_CARD)
   const [touched, setTouched] = useState(false)
@@ -53,7 +57,27 @@ export const CheckoutPanel = ({
   const errors: CardErrors = validateCard(card)
   const hasErrors = Object.keys(errors).length > 0
 
-  if (result !== null) {
+  if (processing) {
+    return (
+      <section
+        aria-label="Compra en proceso"
+        className="rounded-lg border border-border bg-surface-raised p-5"
+      >
+        <h2 className="text-lg font-semibold text-ink">Compra en proceso</h2>
+        <p role="status" className="mt-2 text-sm text-muted">
+          Estamos verificando el resultado de tu compra. Esta pantalla se actualizará
+          automáticamente.
+        </p>
+        {error instanceof Error && (
+          <p role="alert" className="mt-2 text-sm text-danger">
+            {error.message}
+          </p>
+        )}
+      </section>
+    )
+  }
+
+  if (result?.status === 'COMPLETED') {
     return (
       <section
         aria-label="Compra completada"
@@ -84,6 +108,9 @@ export const CheckoutPanel = ({
             ? 'Atencion: el servicio informa de un movimiento financiero real.'
             : 'Pago simulado: no se ejecuto ningun movimiento financiero real.'}
         </p>
+        <Button className="mt-4" onClick={onCancel}>
+          Seguir comprando
+        </Button>
       </section>
     )
   }
@@ -99,7 +126,7 @@ export const CheckoutPanel = ({
           {summary.lines.map((line) => (
             <li key={line.sku} className="flex justify-between gap-3 text-sm">
               <span className="text-ink">
-                {line.sku} <span className="text-muted">x{line.quantity}</span>
+                {line.name ?? line.sku} <span className="text-muted">x{line.quantity}</span>
               </span>
               <span data-testid={`resumen-subtotal-${line.sku}`} className="text-ink tabular-nums">
                 {formatMoney(line.subtotal, summary.currency)}
@@ -125,7 +152,7 @@ export const CheckoutPanel = ({
           event.preventDefault()
           setTouched(true)
 
-          if (!hasErrors) {
+          if (!hasErrors && !disabled && !isPaying) {
             onPay(card)
           }
         }}
@@ -149,6 +176,7 @@ export const CheckoutPanel = ({
                 // nada. Invitar al navegador a rellenar una tarjeta real seria
                 // pedir un dato sensible para un flujo que no lo necesita.
                 autoComplete="off"
+                disabled={isPaying || disabled}
                 aria-invalid={touched && errors[field] !== undefined}
                 aria-describedby={
                   touched && errors[field] !== undefined ? `error-${field}` : undefined
@@ -174,7 +202,7 @@ export const CheckoutPanel = ({
         )}
 
         <div className="flex flex-wrap gap-3">
-          <Button type="submit" loading={isPaying}>
+          <Button type="submit" loading={isPaying} disabled={disabled}>
             Confirmar pago
           </Button>
           <Button type="button" variant="secondary" onClick={onCancel} disabled={isPaying}>

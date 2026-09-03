@@ -55,6 +55,7 @@ export const useUpdateOwnAccount = (
     mutationFn: (edit: OwnAccountEdit) => transport(edit),
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.account.me, updated)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.account.privacy })
       void queryClient.invalidateQueries({ queryKey: queryKeys.account.me })
     },
   })
