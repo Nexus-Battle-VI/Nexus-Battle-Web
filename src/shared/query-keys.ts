@@ -48,6 +48,11 @@ export const queryKeys = {
   community: {
     threads: ['community', 'threads'] as const,
     thread: (threadId: string) => ['community', 'thread', threadId] as const,
+    /** Comentarios de un producto (HU-40, `GET /api/products/:productId/comments`). */
+    productComments: (productId: string) => ['community', 'product-comments', productId] as const,
+    /** Promedio y conteo de calificaciones (HU-40, CA-03). */
+    productReviewSummary: (productId: string) =>
+      ['community', 'product-review-summary', productId] as const,
   },
   commerce: {
     byCustomer: (customerId: string) => ['commerce', 'orders', customerId] as const,
