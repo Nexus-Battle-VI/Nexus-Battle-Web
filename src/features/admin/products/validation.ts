@@ -74,8 +74,10 @@ export const validateBasics = (draft: ProductDraft): FieldErrors => {
 
   if (image === '') {
     errors.imageUrl = 'La imagen representativa es obligatoria.'
-  } else if (!/^https?:\/\/\S+$/i.test(image)) {
-    errors.imageUrl = 'Debe ser una URL absoluta que empiece por http:// o https://.'
+  } else if (
+    !/^https?:\/\/\S+\/api\/v1\/catalog\/product-assets\/[0-9a-f-]+\/content$/i.test(image)
+  ) {
+    errors.imageUrl = 'La imagen debe cargarse y validarse antes de crear el producto.'
   }
 
   return errors
