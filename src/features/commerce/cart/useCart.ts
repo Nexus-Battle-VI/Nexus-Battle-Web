@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
+import { useSession } from '@/shared/session'
 import { addToCart, fetchCart, openCart, removeFromCart, setCartQuantity, type Cart } from './api'
 
 /**
@@ -13,7 +14,8 @@ import { addToCart, fetchCart, openCart, removeFromCart, setCartQuantity, type C
  */
 export const useCart = () => {
   const queryClient = useQueryClient()
-  const key = queryKeys.commerce.cart
+  const subject = useSession((state) => state.subject)
+  const key = queryKeys.commerce.cart(subject)
 
   const query = useQuery({
     queryKey: key,
@@ -22,11 +24,16 @@ export const useCart = () => {
 
   const write = (cart: Cart): void => {
     queryClient.setQueryData(key, cart)
+    void queryClient.invalidateQueries({ queryKey: queryKeys.commerce.checkout(subject, cart.id) })
   }
 
   /** El carrito sobre el que operar, abriendolo si todavia no existe. */
   const ensureCart = async (currency: string): Promise<Cart> => {
-    if (query.data !== null && query.data !== undefined) {
+    if (
+      query.data !== null &&
+      query.data !== undefined &&
+      (query.data.lines.length > 0 || query.data.currency === currency)
+    ) {
       return query.data
     }
 
@@ -38,17 +45,17 @@ export const useCart = () => {
 
   const add = useMutation({
     mutationFn: async ({
-      sku,
+      productId,
       quantity,
-      currency = 'COP',
+      currency,
     }: {
-      sku: string
+      productId: string
       quantity: number
-      currency?: string
+      currency: string
     }) => {
       const cart = await ensureCart(currency)
 
-      return addToCart(cart.id, sku, quantity)
+      return addToCart(cart.id, productId, quantity)
     },
     onSuccess: write,
   })
@@ -81,6 +88,7 @@ export const useCart = () => {
 
   /** Referencia con una operacion en curso, para deshabilitar solo esa fila. */
   const busySku =
+    (add.isPending ? add.variables.productId : null) ??
     (changeQuantity.isPending ? changeQuantity.variables.sku : null) ??
     (remove.isPending ? remove.variables : null)
 
@@ -89,6 +97,7 @@ export const useCart = () => {
     isLoading: query.isLoading,
     error: query.error,
     busySku,
+    isBusy: add.isPending || changeQuantity.isPending || remove.isPending,
     add: add.mutate,
     changeQuantity: (sku: string, quantity: number): void => {
       changeQuantity.mutate({ sku, quantity })

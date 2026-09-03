@@ -17,11 +17,13 @@ import { httpClient, type HttpDownload } from '@/lib/http'
 export type AccountStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'SUSPENDED'
 
 /**
- * Forma exacta de `AccountResponse`. Solo `displayName` es editable por
+ * Forma exacta de `AccountResponse`. `displayName` y `countryCode` son editables por
  * `PATCH /accounts/me`; el resto es de solo lectura self-service (el correo, los
  * nombres y el estado cambian por otras vias; los roles, por gestion de roles).
  */
 export interface OwnAccount {
+  /** Omitted only by a backend awaiting the country migration. */
+  readonly countryCode?: string | null
   readonly id: string
   readonly email: string
   readonly displayName: string
@@ -43,6 +45,7 @@ export const fetchOwnAccount = async (signal?: AbortSignal): Promise<OwnAccount>
  * desde el testimonio que adjunta `httpClient`.
  */
 export interface OwnPersonalData {
+  readonly countryCode?: string | null
   readonly email: string
   readonly displayName: string
   readonly firstNames: string
@@ -94,17 +97,21 @@ export const saveOwnPersonalDataDownload = (
 }
 
 /**
- * Campos editables por el contrato `UpdateOwnAccountRequest`. Hoy es solo el
- * apodo (`displayName`); cualquier otro campo hace que Account responda 400
+ * Campos editables por el contrato `UpdateOwnAccountRequest`. Incluyen
+ * apodo (`displayName`) y país (`countryCode`); otros campos hacen que Account responda 400
  * (`forbidNonWhitelisted`). Se declara como interfaz -y no como `string` suelto-
  * para que ampliar el contrato del backend sea un cambio localizado aqui.
  */
 export interface OwnAccountEdit {
+  readonly countryCode?: string | null
   readonly displayName: string
 }
 
 export const updateOwnAccount = async (edit: OwnAccountEdit): Promise<OwnAccount> =>
-  httpClient.patch<OwnAccount>('/accounts/me', { displayName: edit.displayName })
+  httpClient.patch<OwnAccount>('/accounts/me', {
+    displayName: edit.displayName,
+    ...(edit.countryCode === undefined ? {} : { countryCode: edit.countryCode }),
+  })
 
 /**
  * Validacion de FORMA del apodo, para dar respuesta inmediata sin ida y vuelta.

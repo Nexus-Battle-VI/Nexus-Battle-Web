@@ -6,6 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryRouter } from 'react-router'
 
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
+import { jsonResponse, showcaseProduct } from '@/test/commerce-fixtures'
 import { ECOMMERCE_PATH, NAVIGATION, navigationForPrimaryRole, routes } from './routes'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useSession } from '@/shared/session'
@@ -31,6 +32,10 @@ describe('NAVIGATION', () => {
       '/missions',
       '/tournament',
       '/inventory',
+      // HU-07: preparar al heroe es un paso previo a jugar y no cuelga de
+      // ningun otro flujo. Sin acceso propio solo se llegaria escribiendo la
+      // URL.
+      '/heroes',
       '/auction',
       // HU-33: catalogo administrativo. Solo lo ven los roles administrativos;
       // el filtro se comprueba mas abajo.
@@ -193,6 +198,14 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(router.state.location.pathname).toBe(ECOMMERCE_PATH)
   })
 
+  it('/orders conserva el acceso mediante una redireccion SPA a /ecommerce', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    const { router } = renderRoute('/orders')
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/ecommerce')
+    expect(useSession.getState().subject).toBe(AUTHENTICATED_STATE.subject)
+  })
+
   it('con sesion, /login redirige a E-commerce en lugar de mostrar el formulario', async () => {
     useSession.setState(AUTHENTICATED_STATE)
     renderRoute('/login')
@@ -315,7 +328,6 @@ describe('Pantallas todavia no implementadas', () => {
    * indistinguibles de una pantalla terminada.
    */
   it.each([
-    ['Inventario', 'Nexus-Battle-Player-Inventory', <PlayerInventoryPage key="inventory" />],
     ['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />],
     ['Notificaciones', 'Nexus-Battle-Notifications', <NotificationsPage key="notifications" />],
   ])('%s declara su estado y nombra el servicio %s', (title, service, element) => {
@@ -327,57 +339,63 @@ describe('Pantallas todavia no implementadas', () => {
   })
 
   /**
+   * "Mi Inventario" salio de esta lista con HU-27: ya no es un marcador de
+   * posicion, sino la consulta paginada real del inventario (HU-27.3). La
+   * cobertura de contenido vive en `player-inventory/PlayerInventoryPage.test.tsx`;
+   * aqui basta comprobar que la pantalla ya no se declara pendiente.
+   */
+  it('Mi Inventario ya no es un marcador de posicion', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ items: [], page: 1, pageSize: 16, totalItems: 0, totalPages: 0 }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+        ),
+    )
+
+    renderWithProviders(<PlayerInventoryPage />)
+
+    expect(await screen.findByRole('heading', { name: 'Mi Inventario' })).toBeInTheDocument()
+    expect(screen.queryByText(/todavia no esta implementada/u)).not.toBeInTheDocument()
+
+    vi.unstubAllGlobals()
+  })
+
+  /**
    * Commerce salio de esta lista con HU-58 (carrito) y HU-57 (vitrina). Lo que
    * sigue declarandose pendiente no es una pantalla, sino los campos que
    * Catalog todavia no publica.
    */
-  it('Commerce presenta carrito y vitrina, y declara lo que Catalog no publica', async () => {
-    // El carrito responde 404 («todavia no hay carrito», lo que ve quien entra
-    // por primera vez) y el catalogo devuelve un producto. Sin estos dobles
-    // ambas consultas fallarian y la pantalla mostraria errores, que no es lo
-    // que esta prueba examina.
+  it('Commerce presenta carrito y vitrina desde el contrato canonico', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/products')) {
-          return Promise.resolve(
-            new Response(
-              JSON.stringify([
-                {
-                  sku: 'espada-de-hierro',
-                  name: 'Espada de hierro',
-                  category: 'armas',
-                  price: { amount: 15_000, currency: 'COP' },
-                  isPremium: false,
-                  realMoneyPrice: null,
-                  status: 'PUBLISHED',
-                },
-              ]),
-              { status: 200, headers: { 'content-type': 'application/json' } },
-            ),
-          )
-        }
-
-        return Promise.resolve(
-          new Response(JSON.stringify({ message: 'No hay carrito.' }), {
-            status: 404,
-            headers: { 'content-type': 'application/json' },
-          }),
-        )
-      }),
+      vi.fn((url: string) =>
+        Promise.resolve(
+          url.includes('/v1/catalog/products?')
+            ? jsonResponse({ items: [showcaseProduct()], page: 1, pageSize: 16, total: 1 })
+            : url.includes('/wishlist/')
+              ? jsonResponse({
+                  productId: showcaseProduct().productId,
+                  sku: showcaseProduct().sku,
+                  enDeseos: false,
+                  adquirido: false,
+                })
+              : jsonResponse({ message: 'No hay carrito.' }, 404),
+        ),
+      ),
     )
-
     try {
       renderWithProviders(<CommercePage />)
-
       expect(screen.getByRole('heading', { name: 'Vitrina' })).toBeInTheDocument()
-      // La ausencia que queda se declara, y se nombra el servicio responsable.
-      expect(screen.getByRole('heading', { name: 'Pendiente en la vitrina' })).toBeInTheDocument()
-      expect(screen.getByText('Nexus-Battle-Catalog')).toBeInTheDocument()
-
-      expect(await screen.findByRole('heading', { name: /Carrito/u })).toBeInTheDocument()
-      expect(screen.getByText('Tu carrito esta vacio.')).toBeInTheDocument()
+      expect(await screen.findByText('Tu carrito esta vacio.')).toBeInTheDocument()
       expect(await screen.findByText('Espada de hierro')).toBeInTheDocument()
+      expect(
+        screen.queryByText('No hay productos disponibles por el momento.'),
+      ).not.toBeInTheDocument()
     } finally {
       vi.unstubAllGlobals()
     }

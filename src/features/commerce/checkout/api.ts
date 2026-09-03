@@ -2,6 +2,9 @@ import { httpClient } from '@/lib/http'
 import type { CardForm } from './validation'
 
 export interface CheckoutLine {
+  readonly productId?: string
+  readonly name?: string
+  readonly imageUrl?: string
   readonly sku: string
   readonly unitPrice: number
   readonly quantity: number
@@ -10,6 +13,7 @@ export interface CheckoutLine {
 
 /** Resumen de la compra: el contenido vigente del carrito y su total. */
 export interface CheckoutSummary {
+  readonly version: number
   readonly id: string
   readonly status: string
   readonly currency: string
@@ -19,6 +23,7 @@ export interface CheckoutSummary {
 }
 
 export interface PaymentResult {
+  readonly status: 'COMPLETED' | 'PROCESSING'
   readonly order: CheckoutSummary
   readonly paymentReference: string
   /** Cuatro ultimos digitos. El servicio nunca devuelve el numero completo. */
@@ -40,10 +45,18 @@ export const fetchCheckoutSummary = (
  * hay estado global, ni almacenamiento local, ni registro. Lo unico que vuelve
  * es la referencia de la transaccion y los cuatro ultimos digitos.
  */
-export const payOrder = (orderId: string, card: CardForm): Promise<PaymentResult> =>
+export const payOrder = (
+  orderId: string,
+  card: CardForm,
+  expectedVersion: number,
+): Promise<PaymentResult> =>
   httpClient.post<PaymentResult>(`/orders/${encodeURIComponent(orderId)}/payment`, {
     holder: card.holder.trim(),
     number: card.number.trim(),
     expiry: card.expiry.trim(),
     securityCode: card.securityCode.trim(),
+    expectedVersion,
   })
+
+export const fetchPayment = (orderId: string, signal?: AbortSignal): Promise<PaymentResult> =>
+  httpClient.get<PaymentResult>(`/orders/${encodeURIComponent(orderId)}/payment`, signal)

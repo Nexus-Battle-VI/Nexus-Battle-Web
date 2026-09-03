@@ -7,6 +7,7 @@ import { renderWithProviders } from '@/test/render'
 
 import { CreateProductPage } from './CreateProductPage'
 import type { CreateProductRequest, CreatedProduct } from './contract'
+import type { FinalizedProductAsset } from './product-assets'
 
 const created = (): CreatedProduct => ({
   productId: '5f2a1c9d-7b3e-4a11-9c5d-2e8f0a6b4c37',
@@ -19,15 +20,33 @@ const created = (): CreatedProduct => ({
   premium: false,
 })
 
+const uploadedAsset = (): FinalizedProductAsset => ({
+  assetId: 'f293ce6b-98e9-41da-99ef-0ad4e3a95120',
+  purpose: 'PRIMARY_IMAGE',
+  status: 'READY',
+  contentType: 'image/webp',
+  contentLength: 3,
+  width: 1024,
+  height: 1024,
+  checksumSha256: 'b64:checksum',
+  imageUrl:
+    'https://api.example.test/api/v1/catalog/product-assets/f293ce6b-98e9-41da-99ef-0ad4e3a95120/content',
+})
+
+const uploadPrimaryImage = vi.fn<(file: File) => Promise<FinalizedProductAsset>>(() =>
+  Promise.resolve(uploadedAsset()),
+)
+
 /** Rellena el paso 1 con el caso base de HU-33 y avanza. */
 const completeBasics = async (): Promise<void> => {
   await userEvent.type(screen.getByLabelText(/nombre del producto/i), 'Espada de Fuego')
   await userEvent.selectOptions(screen.getByLabelText(/tipo de producto/i), 'ARMA')
   await userEvent.type(screen.getByLabelText(/descripción detallada/i), 'Espada de dos manos.')
-  await userEvent.type(
+  await userEvent.upload(
     screen.getByLabelText(/imagen representativa/i),
-    'https://assets.example.test/espada.webp',
+    new File(['webp'], 'espada.webp', { type: 'image/webp' }),
   )
+  await screen.findByText(/imagen cargada y validada/i)
   await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 }
 
@@ -49,7 +68,9 @@ describe('Alta de producto (HU-33)', () => {
       Promise.resolve(created()),
     )
 
-    renderWithProviders(<CreateProductPage onCreate={onCreate} />)
+    renderWithProviders(
+      <CreateProductPage onCreate={onCreate} onUploadPrimaryImage={uploadPrimaryImage} />,
+    )
 
     await completeBasics()
     await completeAttributes()
@@ -61,6 +82,7 @@ describe('Alta de producto (HU-33)', () => {
 
     const request = onCreate.mock.calls[0]?.[0]
     expect(request?.name).toBe('Espada de Fuego')
+    expect(request?.imageUrl).toBe(uploadedAsset().imageUrl)
     expect(request?.printRun).toBe(150)
     expect(request?.premium).toBe(false)
   })
@@ -76,7 +98,9 @@ describe('Alta de producto (HU-33)', () => {
   it('no envía nada si la cantidad es 0', async () => {
     const onCreate = vi.fn<(request: CreateProductRequest) => Promise<CreatedProduct>>()
 
-    renderWithProviders(<CreateProductPage onCreate={onCreate} />)
+    renderWithProviders(
+      <CreateProductPage onCreate={onCreate} onUploadPrimaryImage={uploadPrimaryImage} />,
+    )
 
     await completeBasics()
     await completeAttributes()
@@ -100,7 +124,9 @@ describe('Alta de producto (HU-33)', () => {
       Promise.resolve(created()),
     )
 
-    renderWithProviders(<CreateProductPage onCreate={onCreate} />)
+    renderWithProviders(
+      <CreateProductPage onCreate={onCreate} onUploadPrimaryImage={uploadPrimaryImage} />,
+    )
 
     await completeBasics()
     await completeAttributes()
@@ -123,7 +149,9 @@ describe('Alta de producto (HU-33)', () => {
       Promise.reject(new HttpError(409, 'Conflict', { message: 'Conflict' })),
     )
 
-    renderWithProviders(<CreateProductPage onCreate={onCreate} />)
+    renderWithProviders(
+      <CreateProductPage onCreate={onCreate} onUploadPrimaryImage={uploadPrimaryImage} />,
+    )
 
     await completeBasics()
     await completeAttributes()
@@ -145,7 +173,9 @@ describe('Alta de producto (HU-33)', () => {
       Promise.reject(new HttpError(403, 'Forbidden', { message: 'Forbidden' })),
     )
 
-    renderWithProviders(<CreateProductPage onCreate={onCreate} />)
+    renderWithProviders(
+      <CreateProductPage onCreate={onCreate} onUploadPrimaryImage={uploadPrimaryImage} />,
+    )
 
     await completeBasics()
     await completeAttributes()
@@ -161,15 +191,18 @@ describe('Alta de producto (HU-33)', () => {
    * podria cumplirse mostrando siempre los mismos campos.
    */
   it('pide atributos distintos según el tipo elegido', async () => {
-    renderWithProviders(<CreateProductPage onCreate={vi.fn()} />)
+    renderWithProviders(
+      <CreateProductPage onCreate={vi.fn()} onUploadPrimaryImage={uploadPrimaryImage} />,
+    )
 
     await userEvent.type(screen.getByLabelText(/nombre del producto/i), 'Guerrero Eterno')
     await userEvent.selectOptions(screen.getByLabelText(/tipo de producto/i), 'HEROE')
     await userEvent.type(screen.getByLabelText(/descripción detallada/i), 'Un héroe.')
-    await userEvent.type(
+    await userEvent.upload(
       screen.getByLabelText(/imagen representativa/i),
-      'https://assets.example.test/heroe.webp',
+      new File(['webp'], 'heroe.webp', { type: 'image/webp' }),
     )
+    await screen.findByText(/imagen cargada y validada/i)
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 
     expect(await screen.findByLabelText(/subtipo de héroe/i)).toBeInTheDocument()
@@ -178,7 +211,9 @@ describe('Alta de producto (HU-33)', () => {
   })
 
   it('el tiraje 1 anticipa que el producto nacerá único', async () => {
-    renderWithProviders(<CreateProductPage onCreate={vi.fn()} />)
+    renderWithProviders(
+      <CreateProductPage onCreate={vi.fn()} onUploadPrimaryImage={uploadPrimaryImage} />,
+    )
 
     await completeBasics()
     await completeAttributes()

@@ -68,14 +68,28 @@ describe('CartPanel — vista minimizada', () => {
 describe('CartPanel — vista desplegada', () => {
   /** CA-01: imagen, nombre, precio unitario, cantidad y subtotal por producto. */
   it('muestra los cinco datos de cada producto', () => {
-    renderPanel()
+    renderPanel({
+      cart: {
+        ...CART,
+        lines: [
+          {
+            ...CART.lines[0]!,
+            productId: 'product-uuid',
+            name: 'Espada real',
+            imageUrl: 'https://images.example.test/espada.webp',
+          },
+        ],
+      },
+    })
 
-    expect(screen.getByText('espada-de-hierro')).toBeInTheDocument()
+    expect(screen.getByText('Espada real')).toBeInTheDocument()
     expect(screen.getByText('$ 150,00 por unidad')).toBeInTheDocument()
-    expect(screen.getByLabelText('Cantidad de espada-de-hierro')).toHaveValue(2)
+    expect(screen.getByLabelText('Cantidad de Espada real')).toHaveValue(2)
     expect(screen.getByTestId('subtotal-espada-de-hierro')).toHaveTextContent('300,00')
-    // La imagen es decorativa: el nombre ya identifica el producto.
-    expect(screen.getAllByRole('presentation', { hidden: true }).length).toBeGreaterThan(0)
+    expect(screen.getByRole('img', { name: 'Espada real' })).toHaveAttribute(
+      'src',
+      'https://images.example.test/espada.webp',
+    )
   })
 
   it('muestra el total y el boton para proceder al pago', () => {

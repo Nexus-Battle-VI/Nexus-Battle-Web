@@ -13,14 +13,26 @@ Este repositorio contiene código y Pull Requests. No contiene Issues ni Product
 Todas las peticiones salen contra el **mismo origen**, bajo `/api`. Es el proxy inverso quien enruta hacia el servicio correspondiente.
 
 ```text
-navegador  ->  /api/products   ->  proxy  ->  Catalog
+navegador  ->  /api/v1/catalog/products  ->  proxy  ->  Catalog
                /api/orders                    Commerce
                /api/threads                   Community
 ```
 
 Esa indirección es lo que permite que la demo corra en una sola máquina y que la arquitectura objetivo viva detrás de un balanceador **sin cambiar una línea del frontend**. Ningún componente construye una URL de servicio a mano: todo pasa por `src/lib/http.ts`.
 
+## Recursos visuales de Producto
+
+La administración carga la imagen principal de Producto mediante una intención
+firmada de Catalog y una carga directa temporal a S3; el navegador no guarda
+credenciales AWS ni URL firmadas. Tras la validación, Catalog devuelve la URL
+canónica que se usa al crear el Producto. El flujo, límites y pruebas están
+documentados en [HU-37.7](docs/frontend/hu-37-7-product-assets.md).
+
 ## Inicio de sesión
+
+La tienda se abre en `/ecommerce`; `/orders` conserva una redirección dentro de la aplicación.
+Consulta [contratos, estados y alcance de E-commerce](docs/frontend/ecommerce-integration.md)
+para la integración con productos canónicos, deseos, carrito, pago simulado y guardado.
 
 La aplicación usa **código de autorización con PKCE** contra el hosted UI del user pool de Cognito ([ADR-004](https://github.com/Nexus-Battle-VI/Nexus-Battle-Infrastructure/blob/main/docs/adr/ADR-004-identity-directory.md)).
 

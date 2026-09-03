@@ -1,6 +1,9 @@
 import { httpClient, HttpError } from '@/lib/http'
 
 export interface SavedCartItem {
+  readonly productId?: string
+  readonly name?: string
+  readonly imageUrl?: string
   readonly sku: string
   /** Precio congelado al guardar, no el vigente. */
   readonly unitPrice: number

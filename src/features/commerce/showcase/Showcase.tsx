@@ -1,64 +1,50 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
 import { queryKeys } from '@/shared/query-keys'
-import { fetchShowcase } from './api'
+import { useWishlist } from '@/features/commerce/wishlist/useWishlist'
+import {
+  fetchShowcase,
+  NO_FILTERS,
+  showcaseQuery,
+  type ShowcaseFilters,
+  type ShowcaseProduct,
+} from './api'
 import { ShowcaseFiltersBar } from './ShowcaseFiltersBar'
 import { ShowcaseGrid } from './ShowcaseGrid'
-import { applyFilters, categoriesOf, NO_FILTERS, paginate, type ShowcaseFilters } from './search'
+import { ProductDetail } from './ProductDetail'
 
 export interface ShowcaseProps {
-  readonly onAddToCart: (sku: string) => void
-  readonly onOpenDetail?: (sku: string) => void
+  readonly onAddToCart: (product: ShowcaseProduct) => void
+  readonly onOpenDetail?: (reference: string) => void
   readonly busySku?: string | null
-  /** HU-56. Ausentes cuando la lista de deseos no esta disponible. */
-  readonly isWished?: (sku: string) => boolean
-  readonly isOwned?: (sku: string) => boolean
-  readonly onToggleWish?: (sku: string) => void
-  readonly wishBusySku?: string | null
+  readonly disabled?: boolean
+  readonly cartCurrency?: string | null
 }
 
-/**
- * Vitrina de E-commerce (HU-57).
- *
- * El filtrado y la paginacion ocurren en el cliente porque
- * `GET /api/products` solo admite filtrar por categoria: no acepta termino de
- * busqueda, ni rango de precio, ni pagina. Mientras Catalog no los ofrezca,
- * hacerlo aqui es lo unico que permite cumplir CA-06 a CA-12. Es una solucion
- * correcta para el volumen actual del catalogo y **no escala**: cuando el
- * catalogo crezca, el filtrado tiene que bajar al servicio.
- */
+/** Catalog ejecuta la consulta completa; la UI nunca vuelve a filtrar ni paginar sus resultados. */
 export const Showcase = ({
   onAddToCart,
   onOpenDetail,
   busySku = null,
-  isWished,
-  isOwned,
-  onToggleWish,
-  wishBusySku = null,
+  disabled = false,
+  cartCurrency = null,
 }: ShowcaseProps): React.JSX.Element => {
   const [filters, setFilters] = useState<ShowcaseFilters>(NO_FILTERS)
   const [page, setPage] = useState(1)
-
+  const [selected, setSelected] = useState<string | null>(null)
+  const criteria = showcaseQuery(filters, page)
   const query = useQuery({
-    queryKey: queryKeys.commerce.showcase,
-    queryFn: ({ signal }) => fetchShowcase(signal),
+    queryKey: queryKeys.commerce.showcase(criteria),
+    queryFn: ({ signal }) => fetchShowcase(criteria, signal),
   })
-
-  const products = useMemo(() => query.data ?? [], [query.data])
-  const categories = useMemo(() => categoriesOf(products), [products])
-  const filtered = useMemo(() => applyFilters(products, filters), [products, filters])
-  const current = useMemo(() => paginate(filtered, page), [filtered, page])
-
-  const changeFilters = (next: ShowcaseFilters): void => {
-    setFilters(next)
-    // Al cambiar los criterios se vuelve a la primera pagina: quedarse en la
-    // cuarta de un resultado que ahora tiene una sola pagina mostraria un
-    // vacio que parece un fallo.
-    setPage(1)
-  }
+  const products = query.data?.items ?? []
+  const wishlist = useWishlist(products.map((product) => product.productId))
+  const wishlistError = wishlist.error ?? wishlist.mutationError
+  const pageCount = Math.ceil((query.data?.total ?? 0) / 16)
+  const currentPage = query.data?.page ?? page
 
   return (
     <section aria-label="Vitrina de productos" className="flex flex-col gap-4">
@@ -68,56 +54,80 @@ export const Showcase = ({
           Explora los productos disponibles y anadelos a tu carrito.
         </p>
       </div>
-
-      <ShowcaseFiltersBar filters={filters} categories={categories} onChange={changeFilters} />
-
+      <ShowcaseFiltersBar
+        filters={filters}
+        onChange={(next) => {
+          setFilters(next)
+          setPage(1)
+        }}
+      />
+      {selected !== null && (
+        <ProductDetail
+          key={selected}
+          reference={selected}
+          onClose={() => {
+            setSelected(null)
+          }}
+        />
+      )}
       <QueryState
         isLoading={query.isLoading}
         error={query.error}
-        isEmpty={current.total === 0}
+        isEmpty={query.data?.total === 0}
         emptyMessage="Ningun producto cumple los criterios seleccionados."
       >
-        <>
-          <p role="status" className="text-xs text-muted">
-            {current.total} producto{current.total === 1 ? '' : 's'}
-            {current.pageCount > 1 &&
-              ` · pagina ${String(current.page)} de ${String(current.pageCount)}`}
+        <p role="status" className="text-xs text-muted">
+          {query.data?.total ?? 0} productos
+          {pageCount > 1 && ` · pagina ${String(currentPage)} de ${String(pageCount)}`}
+        </p>
+        {wishlist.isLoading && (
+          <p className="text-xs text-muted">Consultando deseos y compras...</p>
+        )}
+        {wishlistError !== null && (
+          <p role="alert" className="text-sm text-danger">
+            {wishlistError instanceof Error
+              ? wishlistError.message
+              : 'No se pudo consultar o actualizar tu lista de deseos.'}
           </p>
-
-          <ShowcaseGrid
-            products={current.items}
-            onAddToCart={onAddToCart}
-            onOpenDetail={onOpenDetail ?? ((): void => undefined)}
-            busySku={busySku}
-            {...(isWished === undefined ? {} : { isWished })}
-            {...(isOwned === undefined ? {} : { isOwned })}
-            {...(onToggleWish === undefined ? {} : { onToggleWish })}
-            wishBusySku={wishBusySku}
-          />
-
-          {current.pageCount > 1 && (
-            <nav aria-label="Paginacion" className="flex items-center justify-center gap-3">
-              <Button
-                variant="secondary"
-                disabled={current.page === 1}
-                onClick={() => {
-                  setPage(current.page - 1)
-                }}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={current.page === current.pageCount}
-                onClick={() => {
-                  setPage(current.page + 1)
-                }}
-              >
-                Siguiente
-              </Button>
-            </nav>
-          )}
-        </>
+        )}
+        <ShowcaseGrid
+          products={products}
+          onAddToCart={onAddToCart}
+          onOpenDetail={(reference) => {
+            setSelected(reference)
+            onOpenDetail?.(reference)
+          }}
+          busySku={busySku}
+          disabled={disabled}
+          cartCurrency={cartCurrency}
+          isWished={wishlist.isWished}
+          isOwned={wishlist.isOwned}
+          onToggleWish={wishlist.toggle}
+          wishBusySku={wishlist.busySku}
+          wishlistUnavailable={wishlist.isLoading || wishlist.error !== null}
+        />
+        {pageCount > 1 && (
+          <nav aria-label="Paginacion" className="flex items-center justify-center gap-3">
+            <Button
+              variant="secondary"
+              disabled={currentPage === 1}
+              onClick={() => {
+                setPage(currentPage - 1)
+              }}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={currentPage >= pageCount}
+              onClick={() => {
+                setPage(currentPage + 1)
+              }}
+            >
+              Siguiente
+            </Button>
+          </nav>
+        )}
       </QueryState>
     </section>
   )

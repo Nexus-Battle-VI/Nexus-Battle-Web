@@ -1,75 +1,101 @@
 import { Button } from '@/components/ui/Button'
-import { formatMoney } from '@/lib/format'
-import type { ShowcaseProduct } from './api'
+import { ProductImage } from '@/features/commerce/ProductImage'
+import { PRODUCT_TYPE_LABELS, type ShowcaseProduct } from './api'
+import { ProductAttributes } from './ProductAttributes'
+import { ProductPrice } from './ProductPrice'
 
 export interface ShowcaseGridProps {
   readonly products: readonly ShowcaseProduct[]
-  readonly onAddToCart: (sku: string) => void
-  readonly onOpenDetail: (sku: string) => void
-  /** Referencia con una operacion en curso. */
+  readonly onAddToCart: (product: ShowcaseProduct) => void
+  readonly onOpenDetail: (reference: string) => void
   readonly busySku?: string | null
-  /** HU-56. Ausentes cuando la lista de deseos no esta disponible. */
-  readonly isWished?: (sku: string) => boolean
-  readonly isOwned?: (sku: string) => boolean
-  readonly onToggleWish?: (sku: string) => void
+  readonly disabled?: boolean
+  readonly cartCurrency?: string | null
+  readonly isWished?: (reference: string) => boolean
+  readonly isOwned?: (reference: string) => boolean
+  readonly onToggleWish?: (reference: string) => void
   readonly wishBusySku?: string | null
+  readonly wishlistUnavailable?: boolean
 }
 
-/**
- * Rejilla de productos de la vitrina.
- *
- * Muestra **lo que Catalog publica hoy**: nombre, tipo y precio. HU-57 pide
- * ademas imagen, descripcion y habilidades, y el porcentaje de descuento
- * cuando hay promocion; ninguno de esos campos existe todavia en
- * `GET /api/products`. No se rellenan con valores inventados: una tarjeta con
- * una descripcion de relleno seria indistinguible de una terminada, y esa
- * confusion es peor que una ausencia declarada.
- */
 export const ShowcaseGrid = ({
   products,
   onAddToCart,
   onOpenDetail,
   busySku = null,
+  disabled = false,
+  cartCurrency = null,
   isWished,
   isOwned,
   onToggleWish,
   wishBusySku = null,
+  wishlistUnavailable = false,
 }: ShowcaseGridProps): React.JSX.Element => (
-  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  <ul
+    aria-label="Productos"
+    className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4"
+  >
     {products.map((product) => {
-      const wished = isWished?.(product.sku) ?? false
-      const owned = isOwned?.(product.sku) ?? false
-
+      const wished = isWished?.(product.productId) ?? false
+      const owned = isOwned?.(product.productId) ?? false
+      const otherCurrency =
+        cartCurrency !== null &&
+        product.realMoneyPrice !== null &&
+        product.realMoneyPrice.currency !== cartCurrency
+      const unavailable =
+        !product.premium ||
+        product.realMoneyPrice === null ||
+        product.availableUnits === 0 ||
+        product.lifecycleStatus !== 'ACTIVE'
       return (
-        <li key={product.sku}>
+        <li key={product.productId}>
           <article
             data-testid={`product-${product.sku}`}
-            // El resaltado al pasar el raton es CA-05. `focus-within` lo replica
-            // para quien navega con teclado, que no genera eventos de raton.
-            className="flex h-full flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4 transition-colors hover:border-brand focus-within:border-brand"
+            className="flex h-full min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4 transition-colors hover:border-brand focus-within:border-brand"
           >
-            <div className="flex items-start justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenDetail(product.sku)
-                }}
-                className="text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              >
-                <h3 className="text-sm font-semibold text-ink">{product.name}</h3>
-                <p className="mt-0.5 text-xs text-muted">{product.category}</p>
-              </button>
-
+            <button
+              type="button"
+              aria-label={`Ver detalle de ${product.name}`}
+              onClick={() => {
+                onOpenDetail(product.productId)
+              }}
+              className="text-left focus-visible:outline-2 focus-visible:outline-brand"
+            >
+              <ProductImage source={product.imageUrl} name={product.name} />
+              <h3 className="mt-3 text-base font-semibold text-ink">{product.name}</h3>
+              <p className="text-xs text-muted">{PRODUCT_TYPE_LABELS[product.type]}</p>
+            </button>
+            <p className="whitespace-pre-wrap break-words text-sm text-muted">
+              {product.description}
+            </p>
+            <ProductAttributes values={product.attributes.values} />
+            <ProductPrice product={product} />
+            <div className="flex flex-wrap items-center gap-2">
+              {product.premium && <span className="text-xs font-medium text-brand">Premium</span>}
+              {product.availableUnits === 0 && <span className="text-xs text-muted">Agotado</span>}
+              {wished && (
+                <span
+                  data-testid={`badge-deseos-${product.sku}`}
+                  className="rounded-full border border-brand px-2 py-0.5 text-xs text-brand"
+                >
+                  En deseos
+                </span>
+              )}
+              {owned && (
+                <span
+                  data-testid={`badge-propio-${product.sku}`}
+                  className="rounded-full border border-border px-2 py-0.5 text-xs text-muted"
+                >
+                  Propio
+                </span>
+              )}
               {onToggleWish !== undefined && (
                 <button
                   type="button"
                   onClick={() => {
-                    onToggleWish(product.sku)
+                    onToggleWish(product.productId)
                   }}
-                  disabled={wishBusySku === product.sku}
-                  // `aria-pressed` comunica el estado, que es lo que distingue
-                  // «en deseos» de «no en deseos» para un lector de pantalla: el
-                  // corazon relleno solo lo ve quien mira.
+                  disabled={wishlistUnavailable || wishBusySku === product.productId}
                   aria-pressed={wished}
                   aria-label={
                     wished
@@ -77,54 +103,32 @@ export const ShowcaseGrid = ({
                       : `Anadir ${product.name} a la lista de deseos`
                   }
                   data-testid={`wish-${product.sku}`}
-                  className="shrink-0 rounded p-1 text-lg leading-none transition-opacity hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="rounded p-2 text-lg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-brand"
                 >
                   <span aria-hidden="true">{wished ? '♥' : '♡'}</span>
                 </button>
               )}
             </div>
-
-            <p className="text-base font-semibold text-ink tabular-nums">
-              {formatMoney(product.price.amount, product.price.currency)}
-            </p>
-
-            <div className="flex flex-wrap gap-2">
-              {product.isPremium && <span className="text-xs font-medium text-brand">Premium</span>}
-
-              {/*
-              Dos marcas distintas porque son dos conceptos distintos, y CA-05
-              lo exige: anadir a deseos no marca nada como adquirido. Un
-              producto puede estar en deseos, adquirido, ambas cosas o ninguna.
-            */}
-              {wished && (
-                <span
-                  data-testid={`badge-deseos-${product.sku}`}
-                  className="rounded-full border border-brand px-2 py-0.5 text-xs font-medium text-brand"
-                >
-                  En deseos
-                </span>
-              )}
-
-              {owned && (
-                <span
-                  data-testid={`badge-propio-${product.sku}`}
-                  className="rounded-full border border-border bg-surface px-2 py-0.5 text-xs font-medium text-muted"
-                >
-                  Propio
-                </span>
-              )}
-            </div>
-
             <Button
               className="mt-auto"
               onClick={() => {
-                onAddToCart(product.sku)
+                onAddToCart(product)
               }}
-              disabled={busySku === product.sku}
+              disabled={disabled || busySku === product.productId || unavailable || otherCurrency}
               aria-label={`Anadir ${product.name} al carrito`}
             >
               Anadir al carrito
             </Button>
+            {!product.premium && (
+              <p className="text-xs text-muted">
+                La compra con dinero está disponible para productos premium.
+              </p>
+            )}
+            {otherCurrency && (
+              <p className="text-xs text-muted">
+                Tu carrito está en {cartCurrency}. Vacíalo antes de elegir otra moneda.
+              </p>
+            )}
           </article>
         </li>
       )

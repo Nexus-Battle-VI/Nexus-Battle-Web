@@ -94,7 +94,7 @@ export const SavedCartPanel = ({
             {saved.items.map((item) => (
               <li key={item.sku} className="flex justify-between gap-3 text-xs text-muted">
                 <span>
-                  {item.sku} <span aria-hidden="true">x{item.quantity}</span>
+                  {item.name ?? item.sku} <span aria-hidden="true">x{item.quantity}</span>
                 </span>
                 <span data-testid={`guardado-subtotal-${item.sku}`} className="tabular-nums">
                   {formatMoney(item.subtotal, saved.currency)}
