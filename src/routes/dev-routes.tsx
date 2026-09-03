@@ -34,6 +34,11 @@ if (import.meta.env.DEV) {
       default: module.AccountDevPreview,
     })),
   )
+  const CreateProductDevPreviewLazy = lazy(() =>
+    import('@/features/admin/products/dev/CreateProductDevPreview').then((module) => ({
+      default: module.CreateProductDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -63,6 +68,17 @@ if (import.meta.env.DEV) {
         </Suspense>
       ),
       children: accountPreviewChildren,
+    },
+    // HU-33: el alta de producto vive tras `RequireSession` y una guarda de rol
+    // administrativo, que el entorno local no puede satisfacer. El envio se
+    // resuelve dentro del propio preview y NO llega a Catalog.
+    {
+      path: '__dev/admin/products/new',
+      element: (
+        <Suspense fallback={null}>
+          <CreateProductDevPreviewLazy />
+        </Suspense>
+      ),
     },
   ]
 }
