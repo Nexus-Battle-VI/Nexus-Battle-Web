@@ -69,6 +69,19 @@ describe('HttpClient', () => {
     })
   })
 
+  it('mantiene HttpError al fallar una descarga administrativa', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(403, { message: 'La identidad no es administradora' }))
+    const client = new HttpClient({ fetchImpl: fetchImpl as unknown as typeof fetch })
+
+    await expect(client.download('/accounts/export')).rejects.toMatchObject({
+      name: 'HttpError',
+      status: 403,
+      message: 'La identidad no es administradora',
+    })
+  })
+
   it('invoca fetch del entorno como metodo del Window, no suelto', async () => {
     const bound = vi.fn().mockResolvedValue(jsonResponse(200, { ok: true }))
     const windowFetch = function windowFetch(

@@ -30,4 +30,5 @@ export {
   Swords,
   Trophy,
   TrendingUp,
+  Download,
 } from 'lucide-react'

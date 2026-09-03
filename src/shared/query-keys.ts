@@ -23,7 +23,7 @@ export const queryKeys = {
     detail: (orderId: string) => ['commerce', 'order', orderId] as const,
     /**
      * El carrito vigente no lleva el cliente en la clave: el servicio lo
-     * deduce del testimonio, asi que la peticion ya es «mi carrito». Ponerlo
+     * deduce del testimonio, asi que la peticion ya es "mi carrito". Ponerlo
      * aqui obligaria a conocerlo antes de poder consultarlo.
      */
     cart: ['commerce', 'cart'] as const,
@@ -57,5 +57,7 @@ export const queryKeys = {
     me: ['account', 'me'] as const,
     /** Datos personales autorizados para el portal de privacidad (HU-45.4). */
     privacy: ['account', 'me', 'privacy'] as const,
+    /** Panel administrativo de usuarios filtrado por criterios serializados. */
+    adminUsers: (criteriaKey: string) => ['account', 'admin-users', criteriaKey] as const,
   },
 } as const

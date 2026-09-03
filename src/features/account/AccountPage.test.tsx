@@ -8,6 +8,7 @@ import { AccountPage } from './AccountPage'
 import { accountSectionRoutes } from './routes'
 import { createTestQueryClient } from '@/test/render'
 import { ECOMMERCE_PATH } from '@/routes/routes'
+import { useSession } from '@/shared/session'
 import type { OwnAccount, OwnPersonalData } from './api'
 
 const ACCOUNT: OwnAccount = {
@@ -27,6 +28,22 @@ const PERSONAL_DATA: OwnPersonalData = {
   lastNames: 'Privacidad',
   roles: ['PLAYER'],
   termsAccepted: true,
+}
+
+const ADMIN_RESPONSE = {
+  items: [
+    {
+      id: 'acc-result-1',
+      email: 'resultado@nexus.test',
+      displayName: 'Resultado Administrativo',
+      firstNames: 'Resultado',
+      lastNames: 'Administrativo',
+      status: 'ACTIVE',
+      roles: ['PLAYER'],
+      registeredAt: '2026-08-01T10:00:00.000Z',
+    },
+  ],
+  statusCounts: { pendingVerification: 0, active: 1, suspended: 0 },
 }
 
 const json = (status: number, body: unknown): Response =>
@@ -66,6 +83,7 @@ const renderAt = (entry = '/account') => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  useSession.setState({ roles: [], accessToken: null, expiresAt: null })
 })
 
 describe('AccountPage', () => {
@@ -226,4 +244,62 @@ describe('AccountPage', () => {
     )
     expect(screen.getByRole('heading', { name: 'Mis datos personales' })).toBeInTheDocument()
   })
+
+  it.each(['ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
+    'muestra Panel administrativo debajo de Metodos de pago para %s y conserva el shell',
+    async (role) => {
+      const user = userEvent.setup()
+      const account = { ...ACCOUNT, roles: ['PLAYER', role] }
+      const fetchImpl = vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+
+        return Promise.resolve(
+          url.endsWith('/accounts/me') ? json(200, account) : json(200, ADMIN_RESPONSE),
+        )
+      })
+      vi.stubGlobal('fetch', fetchImpl)
+      useSession.setState({ roles: ['PLAYER', role] })
+      const { router } = renderAt('/account/payment-methods')
+
+      const nav = await screen.findByRole('navigation', { name: 'Secciones de Mi cuenta' })
+      const labels = within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent)
+      expect(labels.slice(-2)).toEqual(['Metodos de pago', 'Panel administrativo'])
+
+      await user.click(screen.getByRole('link', { name: 'Panel administrativo' }))
+
+      expect(router.state.location.pathname).toBe('/account/admin-users')
+      expect(screen.getByRole('heading', { level: 1, name: 'Mi cuenta' })).toBeInTheDocument()
+      expect(screen.getByText('Ana Ramirez')).toBeInTheDocument()
+      expect(screen.getByRole('navigation', { name: 'Secciones de Mi cuenta' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Panel administrativo' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      )
+      expect(
+        await screen.findByRole('heading', { name: 'Panel administrativo de usuarios' }),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Resultado Administrativo')).toBeInTheDocument()
+    },
+  )
+
+  it.each(['PLAYER', 'MODERATOR'])(
+    'oculta el link y deniega la URL directa para %s sin consultar datos administrativos',
+    async (role) => {
+      const account = { ...ACCOUNT, roles: role === 'PLAYER' ? ['PLAYER'] : ['PLAYER', role] }
+      const fetchImpl = vi.fn().mockResolvedValue(json(200, account))
+      vi.stubGlobal('fetch', fetchImpl)
+      useSession.setState({ roles: account.roles })
+      renderAt('/account/admin-users')
+
+      expect(await screen.findByText('Ana Ramirez')).toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Panel administrativo' })).not.toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent('Acceso denegado')
+      expect(screen.queryByText('Resultado Administrativo')).not.toBeInTheDocument()
+      expect(fetchImpl).toHaveBeenCalledTimes(1)
+      expect(fetchImpl.mock.calls[0]?.[0]).toBe('/api/accounts/me')
+    },
+  )
 })
