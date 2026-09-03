@@ -4,6 +4,7 @@ import { AppLayout } from '@/app/AppLayout'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
+import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
@@ -20,6 +21,7 @@ import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
+import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
@@ -65,7 +67,7 @@ export const ACCOUNT_PATH = '/account'
 export interface NavigationItem {
   readonly path: string
   readonly label: string
-  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR'
+  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR' | 'ADMINISTRATOR'
 }
 
 export const NAVIGATION: readonly NavigationItem[] = [
@@ -78,16 +80,40 @@ export const NAVIGATION: readonly NavigationItem[] = [
   // "Mi Cuenta" ya no vive en la navegacion central (HU-05.4): el acceso a la
   // cuenta es `SessionControl`. La ruta `/account` sigue montada mas abajo.
   {
+    path: '/admin/products/new',
+    label: 'Crear producto',
+    requiredPrimaryRole: 'ADMINISTRATOR',
+  },
+  {
     path: '/admin/roles',
     label: 'Gestionar roles',
     requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
   },
 ]
 
+/**
+ * Jerarquia de los roles administrativos, de mayor a menor.
+ *
+ * Existe porque un acceso que exige `ADMINISTRATOR` tambien debe verlo un
+ * Super Administrador. Comparar por igualdad -como se hacia cuando el unico
+ * acceso restringido era el suyo- se lo ocultaria, y el sintoma seria confuso:
+ * la ruta funciona si se escribe a mano, pero no aparece en la navegacion.
+ */
+const ADMINISTRATIVE_RANK: Readonly<Record<string, number>> = {
+  SUPER_ADMINISTRATOR: 2,
+  ADMINISTRATOR: 1,
+}
+
 export const navigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
-  NAVIGATION.filter(
-    (item) => item.requiredPrimaryRole === undefined || item.requiredPrimaryRole === role,
-  )
+  NAVIGATION.filter((item) => {
+    if (item.requiredPrimaryRole === undefined) {
+      return true
+    }
+
+    const held = role === null ? 0 : (ADMINISTRATIVE_RANK[role] ?? 0)
+
+    return held >= (ADMINISTRATIVE_RANK[item.requiredPrimaryRole] ?? 0)
+  })
 
 export const routes: RouteObject[] = [
   // Publicas: alcanzables sin sesion. `/` y `/login` se protegen al reves (si
@@ -168,6 +194,16 @@ export const routes: RouteObject[] = [
           <RequireSuperAdministrator>
             <RoleManagementPage />
           </RequireSuperAdministrator>
+        ),
+      },
+      // Catalogo administrativo (HU-33). La guarda es de presentacion: Catalog
+      // exige ademas evidencia de segundo factor y responde 403 por su cuenta.
+      {
+        path: 'admin/products/new',
+        element: (
+          <RequireAdministrator>
+            <CreateProductPage />
+          </RequireAdministrator>
         ),
       },
       // Pantallas de HUs anteriores. Se mantienen montadas y accesibles por
