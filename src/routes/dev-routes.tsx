@@ -39,6 +39,11 @@ if (import.meta.env.DEV) {
       default: module.CreateProductDevPreview,
     })),
   )
+  const HeroSelectionDevPreviewLazy = lazy(() =>
+    import('@/features/player-inventory/dev/HeroSelectionDevPreview').then((module) => ({
+      default: module.HeroSelectionDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -77,6 +82,16 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <CreateProductDevPreviewLazy />
+        </Suspense>
+      ),
+    }, // HU-07: la seleccion de heroe vive tras `RequireSession` y necesita
+    // Player/Inventory y Catalog. El preview monta el componente de produccion
+    // con datos de ejemplo y sin red, para poder revisar el diseño en local.
+    {
+      path: '__dev/heroes',
+      element: (
+        <Suspense fallback={null}>
+          <HeroSelectionDevPreviewLazy />
         </Suspense>
       ),
     },
