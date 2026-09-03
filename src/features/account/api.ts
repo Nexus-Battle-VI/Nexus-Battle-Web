@@ -1,10 +1,11 @@
-import { httpClient } from '@/lib/http'
+import { httpClient, type HttpDownload } from '@/lib/http'
 
 /**
  * Transporte de la cuenta propia contra Account (HU-05.4).
  *
  * Endpoints REALES (Nexus-Battle-Account, `accounts.controller.ts`):
  * - `GET   /api/accounts/me`  -> la cuenta asociada al testimonio.
+ * - `GET   /api/accounts/me/privacy` -> proyeccion de datos personales HU-45.
  * - `PATCH /api/accounts/me`  -> actualiza la informacion personal editable.
  *
  * El testimonio viaja solo: `httpClient` lo adjunta como Bearer. Estas funciones
@@ -33,6 +34,64 @@ export interface OwnAccount {
 
 export const fetchOwnAccount = async (signal?: AbortSignal): Promise<OwnAccount> =>
   httpClient.get<OwnAccount>('/accounts/me', signal)
+
+/**
+ * Proyeccion autorizada para el portal de privacidad (HU-45.4).
+ *
+ * No es `AccountResponse`: excluye identificadores tecnicos, estado, avatar y
+ * cualquier dato de autenticacion. La identidad del titular la resuelve Account
+ * desde el testimonio que adjunta `httpClient`.
+ */
+export interface OwnPersonalData {
+  readonly email: string
+  readonly displayName: string
+  readonly firstNames: string
+  readonly lastNames: string
+  readonly roles: readonly string[]
+  readonly termsAccepted: boolean
+}
+
+export const fetchOwnPersonalData = async (signal?: AbortSignal): Promise<OwnPersonalData> =>
+  httpClient.get<OwnPersonalData>('/accounts/me/privacy', signal)
+
+export type PrivacyExportFormat = 'json' | 'xml' | 'pdf'
+
+const PRIVACY_EXPORT_FALLBACKS: Readonly<Record<PrivacyExportFormat, string>> = {
+  json: 'nexus-battles-personal-data.json',
+  xml: 'nexus-battles-personal-data.xml',
+  pdf: 'nexus-battles-privacy-report.pdf',
+}
+
+/**
+ * Descarga la exportacion producida por Account. El titular procede
+ * exclusivamente del testimonio que adjunta `httpClient`; la Web solo elige
+ * el formato y nunca construye el contenido en el navegador.
+ */
+export const downloadOwnPersonalData = (
+  format: PrivacyExportFormat,
+  signal?: AbortSignal,
+): Promise<HttpDownload> =>
+  httpClient.download(`/accounts/me/privacy/export?format=${format}`, signal)
+
+/** Guarda temporalmente el Blob y libera siempre la Object URL al terminar. */
+export const saveOwnPersonalDataDownload = (
+  file: HttpDownload,
+  format: PrivacyExportFormat,
+): void => {
+  const url = URL.createObjectURL(file.content)
+  const anchor = document.createElement('a')
+
+  try {
+    anchor.href = url
+    anchor.download = file.filename ?? PRIVACY_EXPORT_FALLBACKS[format]
+    anchor.hidden = true
+    document.body.append(anchor)
+    anchor.click()
+  } finally {
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }
+}
 
 /**
  * Campos editables por el contrato `UpdateOwnAccountRequest`. Hoy es solo el

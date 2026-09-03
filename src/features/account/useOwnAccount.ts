@@ -2,7 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
-import { fetchOwnAccount, updateOwnAccount, type OwnAccount, type OwnAccountEdit } from './api'
+import {
+  fetchOwnAccount,
+  fetchOwnPersonalData,
+  updateOwnAccount,
+  type OwnAccount,
+  type OwnAccountEdit,
+  type OwnPersonalData,
+} from './api'
 
 /**
  * Estado servidor de la cuenta propia (HU-05.4).
@@ -15,6 +22,19 @@ export const useOwnAccount = (): UseQueryResult<OwnAccount> =>
   useQuery({
     queryKey: queryKeys.account.me,
     queryFn: ({ signal }) => fetchOwnAccount(signal),
+  })
+
+/**
+ * Estado servidor de los datos personales autorizados para HU-45.4.
+ *
+ * Se consulta por contrato propio (`GET /api/accounts/me/privacy`) y se separa
+ * de `AccountResponse`: el portal de privacidad no consume identificadores
+ * tecnicos ni estado general de cuenta.
+ */
+export const useOwnPersonalData = (): UseQueryResult<OwnPersonalData> =>
+  useQuery({
+    queryKey: queryKeys.account.privacy,
+    queryFn: ({ signal }) => fetchOwnPersonalData(signal),
   })
 
 /**
