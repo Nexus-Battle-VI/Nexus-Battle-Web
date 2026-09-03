@@ -60,7 +60,7 @@ export const PREVIEW_ADMIN_USERS: AdminAccountsResponse = {
 }
 
 const fixtureSave = (edit: OwnAccountEdit): Promise<OwnAccount> =>
-  Promise.resolve({ ...PREVIEW_ACCOUNT, displayName: edit.displayName })
+  Promise.resolve({ ...PREVIEW_ACCOUNT, ...edit })
 
 const fixtureChangePassword = (): Promise<void> => Promise.resolve()
 
