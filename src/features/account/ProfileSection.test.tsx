@@ -9,6 +9,31 @@ import type { OwnAccount } from './api'
 const ok = (account: OwnAccount) => vi.fn().mockResolvedValue(account)
 
 describe('ProfileSection', () => {
+  it('guarda el país elegido en el perfil sin inventar un país inicial', async () => {
+    const user = userEvent.setup()
+    const save = ok({ ...FIXTURE_ACCOUNT, countryCode: 'CO' })
+    renderAccountSection(<ProfileSection save={save} />)
+    expect(screen.getByLabelText('País')).toHaveValue('')
+    await user.selectOptions(screen.getByLabelText('País'), 'CO')
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(save).toHaveBeenCalledWith({
+      displayName: FIXTURE_ACCOUNT.displayName,
+      countryCode: 'CO',
+    })
+    expect(await screen.findByRole('status')).toHaveTextContent('Cambios guardados')
+  })
+
+  it('permite borrar un país guardado enviando null explícito', async () => {
+    const user = userEvent.setup()
+    const account = { ...FIXTURE_ACCOUNT, countryCode: 'ES' }
+    const save = ok({ ...account, countryCode: null })
+    renderAccountSection(<ProfileSection save={save} />, account)
+    expect(screen.getByLabelText('País')).toHaveValue('ES')
+    await user.selectOptions(screen.getByLabelText('País'), '')
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    expect(save).toHaveBeenCalledWith({ displayName: account.displayName, countryCode: null })
+  })
+
   it('muestra correo, nombres y estado como solo lectura (no como campos)', () => {
     renderAccountSection(<ProfileSection save={ok(FIXTURE_ACCOUNT)} />)
 

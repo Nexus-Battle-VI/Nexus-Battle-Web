@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
+import { useSession } from '@/shared/session'
 import {
   discardSavedCart,
   fetchSavedCart,
@@ -36,7 +37,8 @@ export interface SavedCartState {
  */
 export const useSavedCart = (): SavedCartState => {
   const queryClient = useQueryClient()
-  const key = queryKeys.commerce.savedCart
+  const subject = useSession((state) => state.subject)
+  const key = queryKeys.commerce.savedCart(subject)
 
   const query = useQuery({
     queryKey: key,
@@ -54,7 +56,8 @@ export const useSavedCart = (): SavedCartState => {
   const restore = useMutation({
     mutationFn: restoreSavedCart,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.commerce.cart })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.commerce.cart(subject) })
+      void queryClient.invalidateQueries({ queryKey: ['commerce', 'checkout', subject] })
     },
   })
 

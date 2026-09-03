@@ -9,6 +9,9 @@ import { httpClient, HttpError } from '@/lib/http'
  * que no tener total.
  */
 export interface CartLine {
+  readonly productId?: string
+  readonly name?: string
+  readonly imageUrl?: string
   readonly sku: string
   readonly unitPrice: number
   readonly quantity: number
@@ -16,6 +19,7 @@ export interface CartLine {
 }
 
 export interface Cart {
+  readonly version?: number
   readonly id: string
   readonly customerId: string
   readonly status: string
@@ -50,8 +54,12 @@ export const fetchCart = async (signal?: AbortSignal): Promise<Cart | null> => {
 export const openCart = async (currency: string): Promise<Cart> =>
   httpClient.post<Cart>('/orders/cart', { currency })
 
-export const addToCart = async (orderId: string, sku: string, quantity: number): Promise<Cart> =>
-  httpClient.post<Cart>(`/orders/${orderId}/lines`, { sku, quantity })
+export const addToCart = async (
+  orderId: string,
+  productId: string,
+  quantity: number,
+): Promise<Cart> =>
+  httpClient.post<Cart>(`/orders/${encodeURIComponent(orderId)}/lines`, { productId, quantity })
 
 /**
  * Fija la cantidad a un valor exacto.
@@ -64,10 +72,13 @@ export const setCartQuantity = async (
   sku: string,
   quantity: number,
 ): Promise<Cart> =>
-  httpClient.request<Cart>(`/orders/${orderId}/lines/${sku}`, {
-    method: 'PATCH',
-    body: { quantity },
-  })
+  httpClient.request<Cart>(
+    `/orders/${encodeURIComponent(orderId)}/lines/${encodeURIComponent(sku)}`,
+    {
+      method: 'PATCH',
+      body: { quantity },
+    },
+  )
 
 export const removeFromCart = async (orderId: string, sku: string): Promise<Cart> =>
-  httpClient.delete<Cart>(`/orders/${orderId}/lines/${sku}`)
+  httpClient.delete<Cart>(`/orders/${encodeURIComponent(orderId)}/lines/${encodeURIComponent(sku)}`)

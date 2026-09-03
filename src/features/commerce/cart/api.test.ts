@@ -74,7 +74,7 @@ describe('api del carrito', () => {
 
     expect(urlOf(fetchImpl)).toContain('/orders/ord-1/lines')
     expect(JSON.parse(initOf(fetchImpl).body as string)).toEqual({
-      sku: 'espada-de-hierro',
+      productId: 'espada-de-hierro',
       quantity: 2,
     })
   })
