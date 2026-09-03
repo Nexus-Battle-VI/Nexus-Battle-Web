@@ -45,6 +45,7 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   PENDING_VERIFICATION: 'Pendiente de verificacion',
   ACTIVE: 'Activa',
   SUSPENDED: 'Suspendida',
+  RECEIVED: 'Recibida',
 }
 
 export const statusLabel = (status: string): string => STATUS_LABELS[status] ?? status

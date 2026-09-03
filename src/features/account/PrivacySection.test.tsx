@@ -205,6 +205,16 @@ describe('PrivacySection', () => {
     expect(saveExport).toHaveBeenCalledOnce()
   })
 
+  it('incluye la solicitud de eliminación de cuenta (HU-43.5) dentro del mismo portal de privacidad', async () => {
+    renderPrivacySection()
+    await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+
+    expect(screen.getByRole('heading', { name: 'Eliminar mi cuenta' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Solicitar eliminación de cuenta' }),
+    ).toBeInTheDocument()
+  })
+
   it('muestra un error seguro si falla una exportación sin afirmar éxito', async () => {
     const user = userEvent.setup()
     const saveExport = vi.fn()
