@@ -23,6 +23,13 @@ export const queryKeys = {
       ['inventory', 'me', 'items', params] as const,
     /** Ficha de un producto poseido (`GET /api/inventories/me/items/:reference`). */
     mineItem: (reference: string) => ['inventory', 'me', 'item', reference] as const,
+    /**
+     * Configuracion de equipamiento de un heroe propio (HU-28,
+     * `GET /api/inventories/me/heroes/:heroId/equipment`). El servicio deduce el
+     * jugador del testimonio; la clave solo lleva el heroe.
+     */
+    heroEquipment: (heroReference: string) =>
+      ['inventory', 'me', 'hero-equipment', heroReference] as const,
   },
   community: {
     threads: ['community', 'threads'] as const,
