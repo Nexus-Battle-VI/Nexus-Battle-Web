@@ -6,6 +6,7 @@ import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
 import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
+import { RequireModerator } from '@/app/RequireModerator'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
@@ -24,6 +25,7 @@ import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
+import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
@@ -225,6 +227,17 @@ export const routes: RouteObject[] = [
           <RequireAdministrator>
             <AdjustInventoryPage />
           </RequireAdministrator>
+        ),
+      },
+      // Cola de moderacion de comentarios (HU-41.4). NO entra en `NAVIGATION`:
+      // es una superficie de Moderador/Administrador sin un producto concreto
+      // en la mano, mismo criterio de alcance que la ruta de inventario.
+      {
+        path: 'admin/comments/moderation',
+        element: (
+          <RequireModerator>
+            <ModerationQueuePage />
+          </RequireModerator>
         ),
       },
       // Pantallas de HUs anteriores. Se mantienen montadas y accesibles por

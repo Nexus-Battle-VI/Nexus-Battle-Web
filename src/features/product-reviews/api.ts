@@ -10,6 +10,22 @@ import { httpClient } from '@/lib/http'
  * `httpClient` lo adjunta solo.
  */
 
+/**
+ * Estado de moderacion de un comentario (HU-41). `PENDING` para todo
+ * comentario recien publicado; los otros cinco son el resultado de la accion
+ * de moderacion correspondiente.
+ */
+export const ModerationStatus = {
+  Pending: 'PENDING',
+  Approved: 'APPROVED',
+  Deleted: 'DELETED',
+  Hidden: 'HIDDEN',
+  Edited: 'EDITED',
+  Marked: 'MARKED',
+} as const
+
+export type ModerationStatus = (typeof ModerationStatus)[keyof typeof ModerationStatus]
+
 export interface ProductComment {
   readonly id: string
   readonly productId: string
@@ -17,6 +33,7 @@ export interface ProductComment {
   readonly content: string
   readonly images: readonly string[]
   readonly createdAt: string
+  readonly moderationStatus: ModerationStatus
 }
 
 export interface ProductCommentPage {

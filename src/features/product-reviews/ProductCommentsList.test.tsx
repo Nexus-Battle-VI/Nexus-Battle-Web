@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
 import { ProductCommentsList } from './ProductCommentsList'
-import type { ProductComment, ProductCommentPage } from './api'
+import { ModerationStatus, type ProductComment, type ProductCommentPage } from './api'
 
 const PRODUCT_ID = '3f2a1e4c-6b7d-4a8e-9c1f-2d3e4f5a6b7c'
 
@@ -15,6 +15,7 @@ const comment = (overrides: Partial<ProductComment>): ProductComment => ({
   content: 'Muy buen producto.',
   images: [],
   createdAt: '2026-09-03T10:00:00.000Z',
+  moderationStatus: ModerationStatus.Pending,
   ...overrides,
 })
 

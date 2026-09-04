@@ -87,6 +87,7 @@ describe('ProductDetailPage (HU-40)', () => {
           content: 'Muy buen producto.',
           images: [],
           createdAt: '2026-09-03T10:00:00.000Z',
+          moderationStatus: 'PENDING',
         },
       ],
       total: 1,

@@ -17,12 +17,13 @@ describe('devRoutes', () => {
   it('las vistas previas publicas son de solo desarrollo y no aparecen en NAVIGATION', () => {
     // En modo test `import.meta.env.DEV` es verdadero: las rutas existen aqui.
     // Son las pantallas que viven tras una sesion que el entorno local no
-    // puede establecer: "Mi cuenta" (HU-05.4), el alta de producto (HU-33) y
-    // la seleccion de heroe (HU-07).
+    // puede establecer: "Mi cuenta" (HU-05.4), el alta de producto (HU-33), la
+    // seleccion de heroe (HU-07) y la cola de moderacion (HU-41.4).
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/account',
       '__dev/admin/products/new',
       '__dev/heroes',
+      '__dev/admin/comments/moderation',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 
