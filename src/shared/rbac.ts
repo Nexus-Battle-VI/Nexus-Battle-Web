@@ -26,6 +26,13 @@ const ROLE_PRECEDENCE = ['SUPER_ADMINISTRATOR', 'ADMINISTRATOR', 'MODERATOR', 'P
 
 export const ADMIN_USER_PRIMARY_ROLES = ['ADMINISTRATOR', 'SUPER_ADMINISTRATOR'] as const
 
+/** HU-41: Community exige Moderador o Administrador para moderar comentarios. */
+export const COMMENT_MODERATION_PRIMARY_ROLES = [
+  'MODERATOR',
+  'ADMINISTRATOR',
+  'SUPER_ADMINISTRATOR',
+] as const
+
 /** Rol vigente hacia fuera: el de mayor precedencia del conjunto acumulado. */
 export const primaryRole = (roles: readonly string[]): string | null => {
   for (const role of ROLE_PRECEDENCE) {
@@ -42,4 +49,11 @@ export const canViewAdminUsers = (roles: readonly string[]): boolean => {
   const role = primaryRole(roles)
 
   return ADMIN_USER_PRIMARY_ROLES.some((allowedRole) => allowedRole === role)
+}
+
+/** Presentacion de HU-41; Community sigue siendo la autoridad y valida el testimonio. */
+export const canModerateComments = (roles: readonly string[]): boolean => {
+  const role = primaryRole(roles)
+
+  return COMMENT_MODERATION_PRIMARY_ROLES.some((allowedRole) => allowedRole === role)
 }

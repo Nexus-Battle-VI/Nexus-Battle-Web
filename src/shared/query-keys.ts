@@ -53,6 +53,13 @@ export const queryKeys = {
     /** Promedio y conteo de calificaciones (HU-40, CA-03). */
     productReviewSummary: (productId: string) =>
       ['community', 'product-review-summary', productId] as const,
+    /**
+     * Cola de moderacion (HU-41.1, `GET /api/comments/moderation-queue`).
+     * Lleva pagina en la clave porque cada combinacion es una consulta
+     * distinta, mismo criterio que `inventory.mine`.
+     */
+    moderationQueue: (params: { readonly limit: number; readonly offset: number }) =>
+      ['community', 'moderation-queue', params] as const,
   },
   commerce: {
     byCustomer: (customerId: string) => ['commerce', 'orders', customerId] as const,
