@@ -41,6 +41,9 @@ describe('NAVIGATION', () => {
       // el filtro se comprueba mas abajo.
       '/admin/products/new',
       '/admin/roles',
+      // HU-41.10: acceso visible a la cola de moderacion de comentarios para
+      // Moderador, Administrador y Super Administrador.
+      '/admin/comments/moderation',
     ])
     expect(paths).not.toContain('/account')
     expect(new Set(paths).size).toBe(paths.length)
@@ -87,6 +90,25 @@ describe('NAVIGATION', () => {
     const paths = navigationForPrimaryRole('PLAYER').map((item) => item.path)
 
     expect(paths.some((path) => path.startsWith('/admin/'))).toBe(false)
+  })
+
+  /**
+   * HU-41.10 (Management#312): Moderador, Administrador y Super Administrador
+   * deben ver el acceso a la cola de moderacion; Jugador nunca.
+   */
+  it.each(['MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
+    'el rol %s ve el acceso a la cola de moderacion de comentarios',
+    (role) => {
+      const paths = navigationForPrimaryRole(role).map((item) => item.path)
+
+      expect(paths).toContain('/admin/comments/moderation')
+    },
+  )
+
+  it('un jugador no ve el acceso a la cola de moderacion de comentarios', () => {
+    const paths = navigationForPrimaryRole('PLAYER').map((item) => item.path)
+
+    expect(paths).not.toContain('/admin/comments/moderation')
   })
 })
 

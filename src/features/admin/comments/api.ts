@@ -9,10 +9,21 @@ import type { ProductComment } from '@/features/product-reviews/api'
  * alcanza, aunque esta pantalla ya se oculta antes con `RequireModerator`.
  */
 
+/**
+ * Origen de un comentario en la cola (HU-41.7/HU-41.10, Management#29):
+ * reporte de otro jugador, filtro automatico de contenido, o ambos. Community
+ * ya calcula este arreglo -sin duplicados- en `ListModerationQueue`; Web no
+ * infiere ni recalcula el origen a partir de los conteos.
+ */
+export type ModerationQueueEntrySource = 'USER_REPORT' | 'AUTOMATIC_FILTER'
+
 export interface ModerationQueueEntry {
   readonly comment: ProductComment
   readonly reportCount: number
-  readonly lastReportedAt: string
+  readonly lastReportedAt: string | null
+  readonly automaticFlagCount: number
+  readonly lastAutomaticFlaggedAt: string | null
+  readonly sources: readonly ModerationQueueEntrySource[]
 }
 
 export interface ModerationQueuePage {
@@ -77,8 +88,11 @@ export const hideComment = (
 ): Promise<ProductComment> => moderate(commentId, 'hiding', input)
 
 /**
- * `POST /api/comments/:commentId/deletion`. Borrado LOGICO por moderacion: el
- * comentario pasa a `DELETED`, no se elimina la fila.
+ * `POST /api/comments/:commentId/deletion`. Borrado FISICO por moderacion
+ * (HU-41.9, Management#29): Community remueve la fila de forma permanente.
+ * El contrato HTTP no cambio -sigue devolviendo el comentario con
+ * `moderationStatus: 'DELETED'`-, pero una lectura posterior ya no lo
+ * encuentra, y tampoco reaparece en esta cola.
  */
 export const deleteCommentByModeration = (
   commentId: string,

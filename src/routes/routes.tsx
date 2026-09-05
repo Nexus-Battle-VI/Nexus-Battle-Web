@@ -71,7 +71,7 @@ export const ACCOUNT_PATH = '/account'
 export interface NavigationItem {
   readonly path: string
   readonly label: string
-  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR' | 'ADMINISTRATOR'
+  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR' | 'ADMINISTRATOR' | 'MODERATOR'
 }
 
 export const NAVIGATION: readonly NavigationItem[] = [
@@ -98,6 +98,14 @@ export const NAVIGATION: readonly NavigationItem[] = [
     label: 'Gestionar roles',
     requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
   },
+  // HU-41.10 (Management#312): acceso visible a la cola de moderacion para
+  // Moderador, Administrador y Super Administrador -nunca Jugador-. Antes
+  // solo se llegaba escribiendo la URL a mano.
+  {
+    path: '/admin/comments/moderation',
+    label: 'Moderación de comentarios',
+    requiredPrimaryRole: 'MODERATOR',
+  },
 ]
 
 /**
@@ -107,10 +115,16 @@ export const NAVIGATION: readonly NavigationItem[] = [
  * Super Administrador. Comparar por igualdad -como se hacia cuando el unico
  * acceso restringido era el suyo- se lo ocultaria, y el sintoma seria confuso:
  * la ruta funciona si se escribe a mano, pero no aparece en la navegacion.
+ *
+ * `MODERATOR` entra por debajo de `ADMINISTRATOR` (HU-41.10): Community
+ * tambien acepta Administrador y Super Administrador en las rutas de
+ * moderacion, asi que un acceso que exige `MODERATOR` debe ser visible para
+ * los tres, no solo para quien tiene exactamente ese rol.
  */
 const ADMINISTRATIVE_RANK: Readonly<Record<string, number>> = {
-  SUPER_ADMINISTRATOR: 2,
-  ADMINISTRATOR: 1,
+  SUPER_ADMINISTRATOR: 3,
+  ADMINISTRATOR: 2,
+  MODERATOR: 1,
 }
 
 export const navigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
@@ -229,9 +243,10 @@ export const routes: RouteObject[] = [
           </RequireAdministrator>
         ),
       },
-      // Cola de moderacion de comentarios (HU-41.4). NO entra en `NAVIGATION`:
-      // es una superficie de Moderador/Administrador sin un producto concreto
-      // en la mano, mismo criterio de alcance que la ruta de inventario.
+      // Cola de moderacion de comentarios (HU-41.4). Entra en `NAVIGATION`
+      // desde HU-41.10: a diferencia del ajuste de tiraje, esta pantalla no
+      // depende de un producto concreto, asi que un enlace de menu si lleva a
+      // alguna parte.
       {
         path: 'admin/comments/moderation',
         element: (
