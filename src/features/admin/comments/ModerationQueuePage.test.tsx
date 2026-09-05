@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
@@ -26,6 +26,9 @@ const entry = (overrides: Partial<ModerationQueueEntry> = {}): ModerationQueueEn
   comment: comment(),
   reportCount: 3,
   lastReportedAt: '2026-09-03T11:00:00.000Z',
+  automaticFlagCount: 0,
+  lastAutomaticFlaggedAt: null,
+  sources: ['USER_REPORT'],
   ...overrides,
 })
 
@@ -61,7 +64,9 @@ describe('ModerationQueuePage', () => {
     renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
 
     expect(
-      await screen.findByText('No hay comentarios reportados pendientes de revisión.'),
+      await screen.findByText(
+        'No hay comentarios reportados ni detectados pendientes de revisión.',
+      ),
     ).toBeInTheDocument()
   })
 
@@ -141,5 +146,93 @@ describe('ModerationQueuePage', () => {
     expect(within(form).getByRole('textbox', { name: 'Nuevo contenido' })).toHaveValue(
       'Contenido publicitario repetido en varios productos.',
     )
+  })
+
+  /**
+   * HU-41.10 (Management#312): la fila debe mostrar el origen que Community
+   * ya calculo (`entry.sources`), sin que Web infiera ni recalcule nada.
+   */
+  it('muestra el origen "reportado" para una fila que solo tiene reportes', async () => {
+    const listQueue = vi
+      .fn()
+      .mockResolvedValue(
+        page([
+          entry({ sources: ['USER_REPORT'], automaticFlagCount: 0, lastAutomaticFlaggedAt: null }),
+        ]),
+      )
+
+    renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
+
+    expect(await screen.findByText('Reportado por usuarios')).toBeInTheDocument()
+    expect(screen.queryByText('Detectado automáticamente')).not.toBeInTheDocument()
+  })
+
+  it('muestra el origen "deteccion automatica" para una fila solo detectada por el filtro', async () => {
+    const listQueue = vi.fn().mockResolvedValue(
+      page([
+        entry({
+          sources: ['AUTOMATIC_FILTER'],
+          reportCount: 0,
+          lastReportedAt: null,
+          automaticFlagCount: 2,
+          lastAutomaticFlaggedAt: '2026-09-04T09:00:00.000Z',
+        }),
+      ]),
+    )
+
+    renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
+
+    expect(await screen.findByText('Detectado automáticamente')).toBeInTheDocument()
+    expect(screen.queryByText('Reportado por usuarios')).not.toBeInTheDocument()
+    expect(
+      screen.getByText('2 detecciones automáticas · última detección', { exact: false }),
+    ).toBeInTheDocument()
+  })
+
+  it('una fila con ambos origenes muestra cada insignia una sola vez, sin duplicar', async () => {
+    const listQueue = vi.fn().mockResolvedValue(
+      page([
+        entry({
+          sources: ['USER_REPORT', 'AUTOMATIC_FILTER'],
+          automaticFlagCount: 1,
+          lastAutomaticFlaggedAt: '2026-09-04T09:00:00.000Z',
+        }),
+      ]),
+    )
+
+    renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
+
+    expect(await screen.findAllByText('Reportado por usuarios')).toHaveLength(1)
+    expect(screen.getAllByText('Detectado automáticamente')).toHaveLength(1)
+  })
+
+  /**
+   * HU-41.9/HU-41.10: eliminar borra FISICAMENTE el comentario en Community,
+   * asi que a diferencia de las demas acciones la fila debe desaparecer de la
+   * vista en lugar de quedar con una insignia "Eliminado".
+   */
+  it('eliminar retira la fila de la cola y no dejar una insignia de eliminado', async () => {
+    const user = userEvent.setup()
+    const listQueue = vi.fn().mockResolvedValue(page([entry()]))
+    vi.spyOn(api, 'deleteCommentByModeration').mockResolvedValue(
+      comment({ moderationStatus: 'DELETED' }),
+    )
+
+    renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
+
+    await screen.findByText('Contenido publicitario repetido en varios productos.')
+    await user.click(screen.getByRole('button', { name: 'Eliminar' }))
+
+    const form = screen.getByRole('form', { name: /Eliminar comentario/ })
+    await user.type(within(form).getByRole('textbox', { name: 'Motivo de la acción' }), 'Infringe.')
+    await user.click(within(form).getByRole('button', { name: 'Eliminar' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('eliminado permanentemente')
+    expect(
+      screen.queryByText('Contenido publicitario repetido en varios productos.'),
+    ).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(listQueue).toHaveBeenCalledTimes(2)
+    })
   })
 })

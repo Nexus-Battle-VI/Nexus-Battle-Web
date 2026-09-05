@@ -15,9 +15,9 @@ import { ModerationQueuePage } from '../ModerationQueuePage'
  * A diferencia de `CreateProductDevPreview` (que resuelve el envío sin tocar
  * la red), aquí se intercepta `fetch` para las rutas de `/api/comments/*`
  * mientras el preview está montado: es la forma de ver el flujo REAL
- * -incluida la actualización de la insignia tras una acción- sin depender de
- * `ModerationQueuePage` aceptando transportes inyectables que la pantalla
- * productiva no necesita.
+ * -incluida la actualización de la insignia tras una acción, y el borrado
+ * físico tras eliminar (HU-41.9)- sin depender de `ModerationQueuePage`
+ * aceptando transportes inyectables que la pantalla productiva no necesita.
  */
 interface StubComment {
   id: string
@@ -29,33 +29,98 @@ interface StubComment {
   moderationStatus: string
 }
 
+interface StubOrigin {
+  reportCount: number
+  lastReportedAt: string | null
+  automaticFlagCount: number
+  lastAutomaticFlaggedAt: string | null
+  sources: readonly ('USER_REPORT' | 'AUTOMATIC_FILTER')[]
+}
+
 const now = new Date().toISOString()
 
-const comments: Record<string, StubComment> = {
-  'comment-1': {
-    id: 'comment-1',
-    productId: '3f2a1e4c-6b7d-4a8e-9c1f-2d3e4f5a6b7c',
-    authorId: 'acc-0b1d5b0e',
-    content: 'Compra en este otro sitio, es más barato: enlace-sospechoso.example',
-    images: [],
-    createdAt: now,
-    moderationStatus: 'PENDING',
-  },
-  'comment-2': {
-    id: 'comment-2',
-    productId: 'a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d',
-    authorId: 'acc-2f3e4d5c',
-    content: 'Este producto es una estafa, no funciona como dicen.',
-    images: [],
-    createdAt: now,
-    moderationStatus: 'MARKED',
-  },
-}
+/**
+ * `Map`, no `Record`: el borrado de un comentario (HU-41.9) necesita quitar
+ * la clave por completo, y `Map#delete` evita el patrón de `delete obj[key]`
+ * con clave dinamica.
+ */
+const comments = new Map<string, StubComment>([
+  [
+    'comment-1',
+    {
+      id: 'comment-1',
+      productId: '3f2a1e4c-6b7d-4a8e-9c1f-2d3e4f5a6b7c',
+      authorId: 'acc-0b1d5b0e',
+      content: 'Compra en este otro sitio, es más barato: enlace-sospechoso.example',
+      images: [],
+      createdAt: now,
+      moderationStatus: 'PENDING',
+    },
+  ],
+  [
+    'comment-2',
+    {
+      id: 'comment-2',
+      productId: 'a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d',
+      authorId: 'acc-2f3e4d5c',
+      content: 'Este producto es una estafa, no funciona como dicen.',
+      images: [],
+      createdAt: now,
+      moderationStatus: 'MARKED',
+    },
+  ],
+  [
+    'comment-3',
+    {
+      id: 'comment-3',
+      productId: 'a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d',
+      authorId: 'acc-9c8b7a6d',
+      content: 'Contiene un termino prohibido detectado por el filtro automatico.',
+      images: [],
+      createdAt: now,
+      moderationStatus: 'PENDING',
+    },
+  ],
+])
 
-const reports: Record<string, { reportCount: number; lastReportedAt: string }> = {
-  'comment-1': { reportCount: 4, lastReportedAt: now },
-  'comment-2': { reportCount: 1, lastReportedAt: now },
-}
+/**
+ * Simula `entry` de `GET /comments/moderation-queue` con los tres origenes
+ * posibles (HU-41.7/HU-41.10): solo reporte, solo deteccion automatica, y
+ * ambos a la vez -- asi el preview de desarrollo ejercita las tres insignias
+ * sin depender de Community respondiendo de verdad.
+ */
+const origins = new Map<string, StubOrigin>([
+  [
+    'comment-1',
+    {
+      reportCount: 4,
+      lastReportedAt: now,
+      automaticFlagCount: 0,
+      lastAutomaticFlaggedAt: null,
+      sources: ['USER_REPORT'],
+    },
+  ],
+  [
+    'comment-2',
+    {
+      reportCount: 1,
+      lastReportedAt: now,
+      automaticFlagCount: 2,
+      lastAutomaticFlaggedAt: now,
+      sources: ['USER_REPORT', 'AUTOMATIC_FILTER'],
+    },
+  ],
+  [
+    'comment-3',
+    {
+      reportCount: 0,
+      lastReportedAt: null,
+      automaticFlagCount: 1,
+      lastAutomaticFlaggedAt: now,
+      sources: ['AUTOMATIC_FILTER'],
+    },
+  ],
+])
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -72,10 +137,11 @@ const handleModerationRequest = (input: string, init?: RequestInit): Response =>
   const url = new URL(input, globalThis.location.origin)
 
   if (url.pathname === '/api/comments/moderation-queue') {
-    const items = Object.keys(comments).map((commentId) => ({
-      comment: comments[commentId],
-      ...reports[commentId],
-    }))
+    const items = [...comments.entries()].flatMap(([commentId, comment]) => {
+      const origin = origins.get(commentId)
+
+      return origin === undefined ? [] : [{ comment, ...origin }]
+    })
 
     return jsonResponse({ items, total: items.length, limit: 20, offset: 0 })
   }
@@ -87,7 +153,7 @@ const handleModerationRequest = (input: string, init?: RequestInit): Response =>
   if (match) {
     const commentId = match[1] ?? ''
     const action = match[2] ?? ''
-    const existing = comments[commentId]
+    const existing = comments.get(commentId)
 
     if (existing === undefined) {
       return jsonResponse({ message: 'No existe un comentario con ese identificador.' }, 404)
@@ -110,7 +176,15 @@ const handleModerationRequest = (input: string, init?: RequestInit): Response =>
       moderationStatus: nextStatus,
     }
 
-    comments[commentId] = updated
+    if (action === 'deletion') {
+      // HU-41.9: borrado FISICO. La respuesta sigue devolviendo `DELETED`
+      // (contrato sin cambios), pero una lectura posterior de la cola ya no
+      // debe encontrar el comentario -- por eso se retira del stub aqui.
+      comments.delete(commentId)
+      origins.delete(commentId)
+    } else {
+      comments.set(commentId, updated)
+    }
 
     return jsonResponse(updated)
   }
