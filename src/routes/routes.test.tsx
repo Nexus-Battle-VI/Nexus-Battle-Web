@@ -112,6 +112,8 @@ describe('NAVIGATION', () => {
   })
 })
 
+const PRODUCT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
 
@@ -321,6 +323,35 @@ describe('Proteccion visual de rutas (HU-02)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Gestion de roles' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Gestionar roles' })).toBeInTheDocument()
+  })
+
+  /**
+   * HU-35 (Management#43): la suspension/reactivacion vive en la MISMA ruta
+   * administrativa que HU-34 (`admin/products/:productId/inventory`), asi que
+   * su guarda es la ya existente de `RequireAdministrator` -no una nueva-.
+   * `RequireAdministrator.test.tsx` ya cubre la jerarquia de roles en
+   * aislamiento; esto solo confirma que la ruta real esta conectada a ella.
+   */
+  it('un jugador no accede a la ruta administrativa de estado del producto', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute(`/admin/products/${PRODUCT_ID}/inventory`)
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(/403/)
+  })
+
+  it('un Super Administrador accede a la ruta administrativa de estado del producto', async () => {
+    useSession.setState({
+      ...AUTHENTICATED_STATE,
+      roles: ['PLAYER', 'SUPER_ADMINISTRATOR'],
+    })
+    renderRoute(`/admin/products/${PRODUCT_ID}/inventory`)
+
+    // La guarda deja pasar la pantalla real, que arranca pidiendo el producto:
+    // suficiente para probar que RequireAdministrator no la bloqueo, sin
+    // necesitar un servidor que responda la peticion.
+    expect(await screen.findByText('Cargando el producto…')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Acceso denegado' })).not.toBeInTheDocument()
   })
 
   it('cerrar sesion elimina la sesion y vuelve al estado publico esperado', async () => {
