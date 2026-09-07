@@ -10,7 +10,7 @@ al `AppLayout` real, con el backend ya implementado en
 e [Infrastructure#93-97](https://github.com/Nexus-Battle-VI/Nexus-Battle-Infrastructure).
 
 1. **Dos adaptaciones deliberadas del mockup, no invenciones.**
-   - El Light/Dark que el mockup dibuja *dentro* de cada pantalla NO se
+   - El Light/Dark que el mockup dibuja _dentro_ de cada pantalla NO se
      replicó: `AppHeader` ya tiene un único `ThemeToggle` global, y las
      pantallas nuevas responden a ese tema con los tokens existentes
      (`bg-surface-raised`, `text-ink`, `text-muted`, `border-border`,
