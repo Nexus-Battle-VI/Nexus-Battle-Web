@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ShoppingCart } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
@@ -130,12 +131,14 @@ export const CartPanel = ({
         // El nombre accesible dice el numero, no solo lo pinta: quien navega
         // con lector de pantalla necesita saber cuantos productos lleva.
         aria-label={`Carrito, ${String(itemCount)} productos`}
-        className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-raised px-3 py-2 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        aria-haspopup="dialog"
+        className="commerce-cart-bubble inline-flex items-center gap-3 rounded-full border border-brand/40 bg-brand px-5 py-3 text-sm font-semibold text-brand-ink shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
-        <span aria-hidden="true">🛒</span>
+        <ShoppingCart aria-hidden="true" className="size-5" />
+        <span>Carrito</span>
         <span
           data-testid="cart-item-count"
-          className="min-w-5 rounded-full bg-brand px-1.5 text-center text-xs font-semibold text-brand-ink"
+          className="min-w-6 rounded-full bg-surface px-1.5 py-0.5 text-center text-xs font-semibold text-ink"
         >
           {itemCount}
         </span>
@@ -164,7 +167,11 @@ export const CartPanel = ({
         <p className="mt-4 text-sm text-muted">Tu carrito esta vacio.</p>
       ) : (
         <>
-          <ul className="mt-4 flex flex-col gap-3">
+          <ul
+            aria-label="Productos del carrito"
+            tabIndex={0}
+            className="commerce-cart-lines mt-4 flex max-h-[32dvh] flex-col gap-3 overflow-y-auto overscroll-contain pr-1 focus-visible:outline-2 focus-visible:outline-brand"
+          >
             {cart.lines.map((line) => (
               <li
                 key={line.sku}
