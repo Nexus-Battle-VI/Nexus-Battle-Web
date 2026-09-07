@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
@@ -41,6 +41,49 @@ const fillValidCard = async (): Promise<void> => {
 }
 
 describe('Resumen de la compra (CA-02)', () => {
+  it('identifica el resumen y los datos de pago como regiones accesibles distintas', () => {
+    renderPanel({
+      summary: {
+        ...SUMMARY,
+        itemCount: 1,
+        lines: [{ ...SUMMARY.lines[0]!, name: 'Espada de hierro', quantity: 1 }],
+      },
+    })
+
+    const summary = screen.getByRole('region', { name: 'Resumen de la compra' })
+    expect(within(summary).getByText('1 unidad')).toBeInTheDocument()
+    expect(within(summary).getByRole('list', { name: 'Productos de la compra' })).toHaveTextContent(
+      'Espada de hierro',
+    )
+    expect(
+      within(screen.getByRole('form', { name: 'Datos de pago' })).getByLabelText(
+        'Nombre del titular',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('conserva todos los productos de un resumen largo y permite enfocar el listado con teclado', async () => {
+    const lines = Array.from({ length: 40 }, (_, index) => ({
+      sku: `producto-${String(index)}`,
+      productId: `id-${String(index)}`,
+      name: `Producto de prueba ${String(index + 1)}`,
+      unitPrice: 100,
+      quantity: 1,
+      subtotal: 100,
+    }))
+    renderPanel({ summary: { ...SUMMARY, lines, itemCount: 40, total: 4_000 } })
+
+    const list = screen.getByRole('list', { name: 'Productos de la compra' })
+    expect(within(list).getAllByRole('listitem')).toHaveLength(40)
+    expect(within(list).getByText('Producto de prueba 40')).toBeInTheDocument()
+    expect(screen.getByTestId('resumen-total')).toHaveTextContent('40,00')
+    expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled()
+    await userEvent.tab()
+    expect(list).toHaveFocus()
+    await userEvent.tab()
+    expect(screen.getByLabelText('Nombre del titular')).toHaveFocus()
+  })
+
   it('muestra los productos vigentes y sus subtotales', () => {
     renderPanel()
 
@@ -139,6 +182,9 @@ describe('Formulario de pago simulado', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirmar pago' }))
 
     expect(screen.getByLabelText('Numero de tarjeta')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Numero de tarjeta')).toHaveAccessibleDescription(
+      'Escribe el numero de tarjeta de prueba.',
+    )
   })
 
   it('muestra el error que devuelve el servicio', () => {
@@ -161,6 +207,46 @@ describe('Formulario de pago simulado', () => {
 
     expect(screen.getByRole('button', { name: 'Volver al carrito' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Procesando...' })).toBeDisabled()
+    expect(screen.getByLabelText('Numero de tarjeta')).toBeDisabled()
+  })
+
+  it('permite reintentar un fallo confirmado sin perder los datos del formulario abierto', async () => {
+    const onPay = vi.fn()
+    const onCancel = vi.fn()
+    const { rerender } = renderPanel({ onPay, onCancel })
+    await fillValidCard()
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar pago' }))
+    rerender(
+      <CheckoutPanel
+        summary={SUMMARY}
+        onPay={onPay}
+        onCancel={onCancel}
+        error={new Error('Intenta de nuevo.')}
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Intenta de nuevo.')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar pago' }))
+    expect(onPay).toHaveBeenCalledTimes(2)
+  })
+
+  it('durante PROCESSING muestra el seguimiento sin permitir otro pago', () => {
+    renderPanel({ processing: true, error: new Error('Seguimos consultando el estado.') })
+
+    expect(screen.getByRole('region', { name: 'Compra en proceso' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('automáticamente')
+    expect(screen.getByRole('alert')).toHaveTextContent('Seguimos consultando el estado.')
+    expect(screen.queryByRole('form', { name: 'Datos de pago' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument()
+  })
+
+  it('impide confirmar mientras el resumen se actualiza', async () => {
+    const onPay = vi.fn()
+    renderPanel({ onPay, disabled: true })
+
+    expect(screen.getByLabelText('Nombre del titular')).toBeDisabled()
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar pago' }))
+    expect(onPay).not.toHaveBeenCalled()
   })
 })
 
@@ -196,6 +282,14 @@ describe('Compra completada (CA-01, CA-03)', () => {
 
     expect(screen.queryByLabelText('Numero de tarjeta')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument()
+  })
+
+  it('permite continuar para iniciar otra compra después del resultado', async () => {
+    const onCancel = vi.fn()
+    renderPanel({ result: RESULT, onCancel })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Seguir comprando' }))
+    expect(onCancel).toHaveBeenCalledOnce()
   })
 
   it('no muestra el numero completo de la tarjeta en ningun momento', async () => {

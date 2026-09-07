@@ -1,11 +1,18 @@
-import { PRODUCT_TYPES, PRODUCT_TYPE_LABELS, type Currency, type ShowcaseFilters } from './api'
+import { SlidersHorizontal } from 'lucide-react'
+import {
+  PRODUCT_TYPES,
+  PRODUCT_TYPE_LABELS,
+  NO_FILTERS,
+  type Currency,
+  type ShowcaseFilters,
+} from './api'
 
 export interface ShowcaseFiltersBarProps {
   readonly filters: ShowcaseFilters
   readonly onChange: (filters: ShowcaseFilters) => void
 }
 const FIELD =
-  'rounded border border-border bg-surface px-2 py-1.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
+  'w-full min-w-0 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-50'
 const toAmount = (raw: string): number | null =>
   raw.trim() === '' ? null : Math.round(Number(raw) * 100)
 
@@ -13,20 +20,26 @@ export const ShowcaseFiltersBar = ({
   filters,
   onChange,
 }: ShowcaseFiltersBarProps): React.JSX.Element => (
-  <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-surface-raised p-4">
-    <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs text-muted">
-      Buscar
-      <input
-        type="search"
-        value={filters.term}
-        placeholder="Nombre, descripción, habilidad o precio"
-        onChange={(event) => {
-          onChange({ ...filters, term: event.target.value })
+  <aside
+    aria-label="Filtros de productos"
+    className="commerce-filters rounded-xl border border-border bg-surface-raised"
+  >
+    <div className="flex items-center justify-between gap-2">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+        <SlidersHorizontal aria-hidden="true" className="size-4 text-brand" />
+        Filtros
+      </h3>
+      <button
+        type="button"
+        onClick={() => {
+          onChange(NO_FILTERS)
         }}
-        className={FIELD}
-      />
-    </label>
-    <label className="flex flex-col gap-1 text-xs text-muted">
+        className="rounded text-xs text-brand underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+      >
+        Limpiar
+      </button>
+    </div>
+    <label className="flex min-w-0 flex-col gap-1.5 text-xs text-muted">
       Tipo de producto
       <select
         value={filters.type ?? ''}
@@ -43,7 +56,7 @@ export const ShowcaseFiltersBar = ({
         ))}
       </select>
     </label>
-    <label className="flex flex-col gap-1 text-xs text-muted">
+    <label className="flex min-w-0 flex-col gap-1.5 text-xs text-muted">
       Moneda del precio
       <select
         value={filters.currency ?? ''}
@@ -63,7 +76,7 @@ export const ShowcaseFiltersBar = ({
         <option value="EUR">EUR</option>
       </select>
     </label>
-    <label className="flex w-28 flex-col gap-1 text-xs text-muted">
+    <label className="flex min-w-0 flex-col gap-1.5 text-xs text-muted">
       Precio desde
       <input
         type="number"
@@ -78,7 +91,7 @@ export const ShowcaseFiltersBar = ({
         className={FIELD}
       />
     </label>
-    <label className="flex w-28 flex-col gap-1 text-xs text-muted">
+    <label className="flex min-w-0 flex-col gap-1.5 text-xs text-muted">
       Precio hasta
       <input
         type="number"
@@ -93,11 +106,13 @@ export const ShowcaseFiltersBar = ({
         className={FIELD}
       />
     </label>
-    {filters.currency === null && (
-      <p className="w-full text-xs text-muted">
-        Selecciona una moneda para filtrar precios. Los importes se muestran en la moneda de cada
-        producto.
-      </p>
-    )}
-  </div>
+    <p className="text-xs leading-relaxed text-muted">
+      {filters.currency === null
+        ? 'Selecciona una moneda para filtrar precios. Los importes se muestran en la moneda de cada producto.'
+        : 'Los precios se muestran en la moneda publicada para cada producto.'}
+    </p>
+    <p className="commerce-filter-footnote text-xs leading-relaxed text-muted">
+      Hasta 12 productos por página. Abre un producto para ver todos sus atributos.
+    </p>
+  </aside>
 )
