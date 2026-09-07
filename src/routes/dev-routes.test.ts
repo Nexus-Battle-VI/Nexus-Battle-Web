@@ -18,12 +18,15 @@ describe('devRoutes', () => {
     // En modo test `import.meta.env.DEV` es verdadero: las rutas existen aqui.
     // Son las pantallas que viven tras una sesion que el entorno local no
     // puede establecer: "Mi cuenta" (HU-05.4), el alta de producto (HU-33), la
-    // seleccion de heroe (HU-07) y la cola de moderacion (HU-41.4).
+    // seleccion de heroe (HU-07), la cola de moderacion (HU-41.4) y las
+    // novedades/banner de catalogo (HU-38, Task #181/#185).
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/account',
       '__dev/admin/products/new',
       '__dev/heroes',
       '__dev/admin/comments/moderation',
+      '__dev/hu38/notifications',
+      '__dev/hu38/admin-banners',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 

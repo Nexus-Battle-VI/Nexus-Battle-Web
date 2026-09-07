@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import { QueryState } from '@/components/ui/QueryState'
+import { CatalogBanner } from '@/features/notifications/CatalogBanner'
+import { CatalogNotificationsSummary } from '@/features/notifications/CatalogNotificationsSummary'
 import { CartPanel } from './cart/CartPanel'
 import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
@@ -23,6 +25,8 @@ export const CommercePage = (): React.JSX.Element => {
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold text-ink">E-commerce</h1>
+      <CatalogBanner />
+      <CatalogNotificationsSummary />
       <QueryState isLoading={isLoading} error={error}>
         <CartPanel
           cart={cart}

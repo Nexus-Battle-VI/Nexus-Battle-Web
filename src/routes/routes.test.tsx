@@ -13,7 +13,6 @@ import { useSession } from '@/shared/session'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
-import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 
 describe('NAVIGATION', () => {
   /**
@@ -40,6 +39,8 @@ describe('NAVIGATION', () => {
       // HU-33: catalogo administrativo. Solo lo ven los roles administrativos;
       // el filtro se comprueba mas abajo.
       '/admin/products/new',
+      // HU-38 (Task #181): gestion del banner informativo.
+      '/admin/banners',
       '/admin/roles',
       // HU-41.10: acceso visible a la cola de moderacion de comentarios para
       // Moderador, Administrador y Super Administrador.
@@ -72,10 +73,11 @@ describe('NAVIGATION', () => {
    * NO ve la gestion de roles. Sin el segundo caso, «hay jerarquia» podria
    * cumplirse dandoselo todo a cualquier rol administrativo.
    */
-  it('un Administrador ve el catalogo administrativo pero no la gestion de roles', () => {
+  it('un Administrador ve el catalogo administrativo y el banner, pero no la gestion de roles', () => {
     const paths = navigationForPrimaryRole('ADMINISTRATOR').map((item) => item.path)
 
     expect(paths).toContain('/admin/products/new')
+    expect(paths).toContain('/admin/banners')
     expect(paths).not.toContain('/admin/roles')
   })
 
@@ -83,6 +85,7 @@ describe('NAVIGATION', () => {
     const paths = navigationForPrimaryRole('SUPER_ADMINISTRATOR').map((item) => item.path)
 
     expect(paths).toContain('/admin/products/new')
+    expect(paths).toContain('/admin/banners')
     expect(paths).toContain('/admin/roles')
   })
 
@@ -326,6 +329,39 @@ describe('Proteccion visual de rutas (HU-02)', () => {
   })
 
   /**
+   * HU-38 (Task #181): gestion del banner informativo. Misma guarda que el
+   * resto de superficies administrativas (`RequireAdministrator`): Jugador
+   * queda fuera, Administrador y Super Administrador entran.
+   */
+  it('un jugador recibe 403 visual al intentar la gestion del banner', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ items: [] })))
+
+    try {
+      renderRoute('/admin/banners')
+
+      expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent(/403/)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('un Administrador ve el acceso y abre la gestion del banner', async () => {
+    useSession.setState({ ...AUTHENTICATED_STATE, roles: ['PLAYER', 'ADMINISTRATOR'] })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ items: [] })))
+
+    try {
+      renderRoute('/admin/banners')
+
+      expect(await screen.findByRole('heading', { name: 'Banner informativo' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Gestionar banner' })).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  /**
    * HU-35 (Management#43): la suspension/reactivacion vive en la MISMA ruta
    * administrativa que HU-34 (`admin/products/:productId/inventory`), asi que
    * su guarda es la ya existente de `RequireAdministrator` -no una nueva-.
@@ -380,16 +416,16 @@ describe('Pantallas todavia no implementadas', () => {
    * responsable, en lugar de mostrar datos inventados que las harian
    * indistinguibles de una pantalla terminada.
    */
-  it.each([
-    ['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />],
-    ['Notificaciones', 'Nexus-Battle-Notifications', <NotificationsPage key="notifications" />],
-  ])('%s declara su estado y nombra el servicio %s', (title, service, element) => {
-    renderWithProviders(element)
+  it.each([['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />]])(
+    '%s declara su estado y nombra el servicio %s',
+    (title, service, element) => {
+      renderWithProviders(element)
 
-    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
-    expect(screen.getByText(/todavia no esta implementada/u)).toBeInTheDocument()
-    expect(screen.getByText(service)).toBeInTheDocument()
-  })
+      expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+      expect(screen.getByText(/todavia no esta implementada/u)).toBeInTheDocument()
+      expect(screen.getByText(service)).toBeInTheDocument()
+    },
+  )
 
   /**
    * "Mi Inventario" salio de esta lista con HU-27: ya no es un marcador de
@@ -437,7 +473,9 @@ describe('Pantallas todavia no implementadas', () => {
                   enDeseos: false,
                   adquirido: false,
                 })
-              : jsonResponse({ message: 'No hay carrito.' }, 404),
+              : url.includes('/v1/notifications/me/pending') || url.includes('/v1/banners')
+                ? jsonResponse({ items: [] })
+                : jsonResponse({ message: 'No hay carrito.' }, 404),
         ),
       ),
     )
