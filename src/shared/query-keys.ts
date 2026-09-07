@@ -95,4 +95,20 @@ export const queryKeys = {
     /** Panel administrativo de usuarios filtrado por criterios serializados. */
     adminUsers: (criteriaKey: string) => ['account', 'admin-users', criteriaKey] as const,
   },
+  notifications: {
+    /**
+     * Novedades de catálogo pendientes de presentar (HU-38,
+     * `GET /api/v1/notifications/me/pending`). La identidad en cache evita
+     * reutilizar datos privados de otra sesion, mismo criterio que
+     * `commerce.cart`. El servicio deduce el jugador del testimonio; el
+     * subject NUNCA viaja en la peticion HTTP.
+     */
+    pending: (subject: string | null) => ['notifications', 'catalog', 'pending', subject] as const,
+    /** Historial completo (`GET /api/v1/notifications/me/history`). */
+    history: (subject: string | null) => ['notifications', 'catalog', 'history', subject] as const,
+    /** Banners vigentes, ya filtrados por el backend (`GET /api/v1/banners`). Publico: sin subject. */
+    banners: ['notifications', 'banners', 'active'] as const,
+    /** Listado administrativo (`GET /api/v1/admin/banners`). */
+    adminBanners: ['notifications', 'banners', 'admin'] as const,
+  },
 } as const

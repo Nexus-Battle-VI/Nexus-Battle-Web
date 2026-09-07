@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import { QueryState } from '@/components/ui/QueryState'
+import { CatalogBanner } from '@/features/notifications/CatalogBanner'
+import { CatalogNotificationsSummary } from '@/features/notifications/CatalogNotificationsSummary'
 import { CartPanel } from './cart/CartPanel'
 import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
@@ -52,6 +54,8 @@ export const CommercePage = (): React.JSX.Element => {
           {cart?.itemCount ?? 0} productos en tu carrito
         </p>
       </header>
+      <CatalogBanner />
+      <CatalogNotificationsSummary />
       {cartError !== null && (
         <p role="alert" className="commerce-notice text-sm text-danger">
           {cartError instanceof Error ? cartError.message : 'No se pudo actualizar el carrito.'}

@@ -26,6 +26,7 @@ import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
+import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
@@ -91,6 +92,14 @@ export const NAVIGATION: readonly NavigationItem[] = [
   {
     path: '/admin/products/new',
     label: 'Crear producto',
+    requiredPrimaryRole: 'ADMINISTRATOR',
+  },
+  // HU-38 (Task #181): gestion del banner informativo. No depende de un
+  // identificador concreto -a diferencia del ajuste de tiraje-, asi que un
+  // acceso de menu si lleva a alguna parte.
+  {
+    path: '/admin/banners',
+    label: 'Gestionar banner',
     requiredPrimaryRole: 'ADMINISTRATOR',
   },
   {
@@ -240,6 +249,17 @@ export const routes: RouteObject[] = [
         element: (
           <RequireAdministrator>
             <AdjustInventoryPage />
+          </RequireAdministrator>
+        ),
+      },
+      // Gestion del banner informativo (HU-38, Task #181). Misma guarda que el
+      // resto de superficies administrativas: el backend tambien valida el
+      // testimonio y responde 403 aunque alguien escriba la URL a mano.
+      {
+        path: 'admin/banners',
+        element: (
+          <RequireAdministrator>
+            <BannerManagementPage />
           </RequireAdministrator>
         ),
       },

@@ -28,6 +28,8 @@ describe('Recorrido de interfaz con contratos HTTP', () => {
           : {}
       if (path === '/api/v1/catalog/products')
         return Promise.resolve(jsonResponse({ items: [product], page: 1, pageSize: 16, total: 1 }))
+      if (path === '/api/v1/notifications/me/pending' || path === '/api/v1/banners')
+        return Promise.resolve(jsonResponse({ items: [] }))
       if (path.startsWith('/api/wishlist/'))
         return Promise.resolve(
           jsonResponse({
