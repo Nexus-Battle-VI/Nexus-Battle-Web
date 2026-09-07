@@ -6,6 +6,7 @@ import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
 import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
+import { RequireModerator } from '@/app/RequireModerator'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
@@ -14,6 +15,7 @@ import { RegistrationPage } from '@/features/account/registration/RegistrationPa
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
+import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -23,6 +25,7 @@ import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
+import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
@@ -68,7 +71,7 @@ export const ACCOUNT_PATH = '/account'
 export interface NavigationItem {
   readonly path: string
   readonly label: string
-  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR' | 'ADMINISTRATOR'
+  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR' | 'ADMINISTRATOR' | 'MODERATOR'
 }
 
 export const NAVIGATION: readonly NavigationItem[] = [
@@ -95,6 +98,14 @@ export const NAVIGATION: readonly NavigationItem[] = [
     label: 'Gestionar roles',
     requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
   },
+  // HU-41.10 (Management#312): acceso visible a la cola de moderacion para
+  // Moderador, Administrador y Super Administrador -nunca Jugador-. Antes
+  // solo se llegaba escribiendo la URL a mano.
+  {
+    path: '/admin/comments/moderation',
+    label: 'Moderación de comentarios',
+    requiredPrimaryRole: 'MODERATOR',
+  },
 ]
 
 /**
@@ -104,10 +115,16 @@ export const NAVIGATION: readonly NavigationItem[] = [
  * Super Administrador. Comparar por igualdad -como se hacia cuando el unico
  * acceso restringido era el suyo- se lo ocultaria, y el sintoma seria confuso:
  * la ruta funciona si se escribe a mano, pero no aparece en la navegacion.
+ *
+ * `MODERATOR` entra por debajo de `ADMINISTRATOR` (HU-41.10): Community
+ * tambien acepta Administrador y Super Administrador en las rutas de
+ * moderacion, asi que un acceso que exige `MODERATOR` debe ser visible para
+ * los tres, no solo para quien tiene exactamente ese rol.
  */
 const ADMINISTRATIVE_RANK: Readonly<Record<string, number>> = {
-  SUPER_ADMINISTRATOR: 2,
-  ADMINISTRATOR: 1,
+  SUPER_ADMINISTRATOR: 3,
+  ADMINISTRATOR: 2,
+  MODERATOR: 1,
 }
 
 export const navigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
@@ -226,10 +243,26 @@ export const routes: RouteObject[] = [
           </RequireAdministrator>
         ),
       },
+      // Cola de moderacion de comentarios (HU-41.4). Entra en `NAVIGATION`
+      // desde HU-41.10: a diferencia del ajuste de tiraje, esta pantalla no
+      // depende de un producto concreto, asi que un enlace de menu si lleva a
+      // alguna parte.
+      {
+        path: 'admin/comments/moderation',
+        element: (
+          <RequireModerator>
+            <ModerationQueuePage />
+          </RequireModerator>
+        ),
+      },
       // Pantallas de HUs anteriores. Se mantienen montadas y accesibles por
       // URL directa; solo se retiraron de `NAVIGATION` porque HU-02 exige que
       // la navegacion principal no nombre bounded contexts.
       { path: 'catalog', element: <CatalogPage /> },
+      // Ficha de producto con comentarios y calificación (HU-40, HU-40.4).
+      // NO entra en `NAVIGATION`: se llega con un producto concreto en la
+      // mano, mismo criterio que `admin/products/:productId/inventory`.
+      { path: 'catalog/:productId', element: <ProductDetailPage /> },
       { path: 'community', element: <CommunityPage /> },
       { path: 'orders', element: <Navigate to={ECOMMERCE_PATH} replace /> },
       { path: 'notifications', element: <NotificationsPage /> },

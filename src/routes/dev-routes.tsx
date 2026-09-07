@@ -44,6 +44,11 @@ if (import.meta.env.DEV) {
       default: module.HeroSelectionDevPreview,
     })),
   )
+  const ModerationQueueDevPreviewLazy = lazy(() =>
+    import('@/features/admin/comments/dev/ModerationQueueDevPreview').then((module) => ({
+      default: module.ModerationQueueDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -92,6 +97,18 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <HeroSelectionDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-41.4: la cola de moderacion vive tras `RequireSession` y
+    // `RequireModerator`, y necesita Community respondiendo de verdad. El
+    // preview intercepta `fetch` para `/api/comments/*` y monta el componente
+    // de produccion sin guardas, igual que el resto de este bloque.
+    {
+      path: '__dev/admin/comments/moderation',
+      element: (
+        <Suspense fallback={null}>
+          <ModerationQueueDevPreviewLazy />
         </Suspense>
       ),
     },

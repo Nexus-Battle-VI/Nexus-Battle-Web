@@ -46,6 +46,13 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   ACTIVE: 'Activa',
   SUSPENDED: 'Suspendida',
   RECEIVED: 'Recibida',
+  // Estado de moderacion de un comentario (HU-41).
+  PENDING: 'Pendiente',
+  APPROVED: 'Aprobado',
+  DELETED: 'Eliminado',
+  HIDDEN: 'Oculto',
+  EDITED: 'Editado',
+  MARKED: 'Marcado',
 }
 
 export const statusLabel = (status: string): string => STATUS_LABELS[status] ?? status

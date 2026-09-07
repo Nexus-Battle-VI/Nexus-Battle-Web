@@ -48,6 +48,18 @@ export const queryKeys = {
   community: {
     threads: ['community', 'threads'] as const,
     thread: (threadId: string) => ['community', 'thread', threadId] as const,
+    /** Comentarios de un producto (HU-40, `GET /api/products/:productId/comments`). */
+    productComments: (productId: string) => ['community', 'product-comments', productId] as const,
+    /** Promedio y conteo de calificaciones (HU-40, CA-03). */
+    productReviewSummary: (productId: string) =>
+      ['community', 'product-review-summary', productId] as const,
+    /**
+     * Cola de moderacion (HU-41.1, `GET /api/comments/moderation-queue`).
+     * Lleva pagina en la clave porque cada combinacion es una consulta
+     * distinta, mismo criterio que `inventory.mine`.
+     */
+    moderationQueue: (params: { readonly limit: number; readonly offset: number }) =>
+      ['community', 'moderation-queue', params] as const,
   },
   commerce: {
     byCustomer: (customerId: string) => ['commerce', 'orders', customerId] as const,
