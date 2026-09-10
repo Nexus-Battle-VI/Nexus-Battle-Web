@@ -7,6 +7,7 @@ Este repositorio contiene código y Pull Requests. No contiene Issues ni Product
 - **Teams propietarios:** Team Alfa, Team Beta y Team Gama. Es el único repositorio compartido por los tres; `CODEOWNERS` reparte la propiedad **por feature**, alineada con la propiedad de cada servicio.
 - **Arquitectura interna:** una feature por bounded context, sin microfrontends
 - **Documentación técnica del sistema:** [Nexus-Battle-Infrastructure](https://github.com/Nexus-Battle-VI/Nexus-Battle-Infrastructure)
+- **HU-11:** [Presentación y preview de desarrollo del recurso Poder](docs/frontend/hu-11-power-preview.md).
 
 ## La aplicación no conoce la topología de los servicios
 

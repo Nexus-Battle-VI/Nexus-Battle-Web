@@ -18,12 +18,13 @@ describe('devRoutes', () => {
     // En modo test `import.meta.env.DEV` es verdadero: las rutas existen aqui.
     // Son las pantallas que viven tras una sesion que el entorno local no
     // puede establecer: "Mi cuenta" (HU-05.4), el alta de producto (HU-33), la
-    // seleccion de heroe (HU-07), la cola de moderacion (HU-41.4) y las
+    // seleccion de heroe (HU-07), Poder (HU-11), la cola de moderacion (HU-41.4) y las
     // novedades/banner de catalogo (HU-38, Task #181/#185).
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/account',
       '__dev/admin/products/new',
       '__dev/heroes',
+      '__dev/hu11/power',
       '__dev/admin/comments/moderation',
       '__dev/hu38/notifications',
       '__dev/hu38/admin-banners',
@@ -33,6 +34,24 @@ describe('devRoutes', () => {
     // La unica forma de que exista es la guarda `import.meta.env.DEV`: en una
     // compilacion de produccion (`DEV === false`) el arreglo queda vacio.
     expect(import.meta.env.DEV).toBe(true)
+  })
+
+  it('el preview de HU-11 presenta y permite recorrer estados sin red', async () => {
+    const route = publicDevRoutes.find((candidate) => candidate.path === '__dev/hu11/power')
+    if (!route) {
+      throw new Error('se esperaba el harness de Poder en modo test (DEV)')
+    }
+
+    render(route.element)
+
+    expect(
+      await screen.findByRole('heading', { name: 'Gestión del recurso Poder' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Poder de Guerrero Tanque' })).toHaveAttribute(
+      'aria-valuenow',
+      '10',
+    )
+    expect(screen.getByRole('button', { name: 'Saldo insuficiente' })).toBeInTheDocument()
   })
 
   it('el harness perezoso de heroes resuelve y muestra los 8/8 heroes con nombre visible', async () => {
