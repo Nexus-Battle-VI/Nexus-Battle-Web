@@ -217,6 +217,23 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register')
   })
 
+  it('sin sesion, /account/privacy no monta el portal ni realiza consultas o exportaciones', async () => {
+    const fetchImpl = vi.fn()
+    vi.stubGlobal('fetch', fetchImpl)
+    useSession.setState(ANONYMOUS_STATE)
+    const { router } = renderRoute('/account/privacy')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/account/privacy')
+    expect(screen.queryByRole('heading', { name: 'Mis datos personales' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Solicitar exportacion/iu }),
+    ).not.toBeInTheDocument()
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
   it('con sesion, la raiz lleva a E-commerce y no a una pantalla distinta', async () => {
     useSession.setState(AUTHENTICATED_STATE)
     const { router } = renderRoute('/')
