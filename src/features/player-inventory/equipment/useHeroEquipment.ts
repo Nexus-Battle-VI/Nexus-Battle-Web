@@ -28,9 +28,10 @@ export const useHeroEquipment = (heroReference: string | null): UseQueryResult<H
 
 /**
  * Mutación de equipar. No hace actualización optimista: la operación puede
- * fallar por reglas del backend (capacidad, ranura ocupada, 503), y revertir un
- * loadout a mano es fragil. En su lugar, la respuesta de `PUT` ya trae el nuevo
- * estado consistente y se escribe directamente en la cache de la consulta.
+ * fallar por reglas del backend (capacidad, ranura ocupada, `battle_lock`,
+ * 503), y revertir un loadout a mano es fragil. En su lugar, la respuesta de
+ * `PUT` ya trae el nuevo estado consistente y se escribe directamente en la
+ * cache de la consulta.
  */
 export const useEquipItem = (
   heroReference: string | null,
