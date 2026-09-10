@@ -171,6 +171,21 @@ describe('PrivacySection', () => {
     expect(saveExport).not.toHaveBeenCalled()
   })
 
+  it('previene solicitudes duplicadas mientras una exportación está en curso', async () => {
+    const user = userEvent.setup()
+    const exportPersonalData = vi.fn().mockReturnValue(new Promise<HttpDownload>(() => undefined))
+    renderPrivacySection(undefined, { exportPersonalData, saveExport: vi.fn() })
+    await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+
+    const json = screen.getByRole('button', { name: 'Solicitar exportación JSON' })
+    await user.dblClick(json)
+
+    expect(exportPersonalData).toHaveBeenCalledOnce()
+    expect(json).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Solicitar exportación XML' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Solicitar exportación PDF' })).toBeDisabled()
+  })
+
   it('maneja PDF 503 sin filtrar detalles, no descarga y permite reintentar', async () => {
     const user = userEvent.setup()
     const file = fileFor('pdf')
@@ -215,21 +230,26 @@ describe('PrivacySection', () => {
     ).toBeInTheDocument()
   })
 
-  it('muestra un error seguro si falla una exportación sin afirmar éxito', async () => {
-    const user = userEvent.setup()
-    const saveExport = vi.fn()
-    renderPrivacySection(undefined, {
-      exportPersonalData: vi.fn().mockRejectedValue(new Error('Bearer token stack interno')),
-      saveExport,
-    })
-    await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+  it.each(['json', 'xml', 'pdf'] as const)(
+    'muestra un error seguro si falla una exportación %s sin afirmar éxito',
+    async (format) => {
+      const user = userEvent.setup()
+      const saveExport = vi.fn()
+      renderPrivacySection(undefined, {
+        exportPersonalData: vi.fn().mockRejectedValue(new Error('Bearer token stack interno')),
+        saveExport,
+      })
+      await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
 
-    await user.click(screen.getByRole('button', { name: 'Solicitar exportación JSON' }))
+      await user.click(
+        screen.getByRole('button', { name: `Solicitar exportación ${format.toUpperCase()}` }),
+      )
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'No se pudo descargar la exportación JSON. Intenta nuevamente.',
-    )
-    expect(screen.queryByText(/se descargó correctamente/iu)).not.toBeInTheDocument()
-    expect(saveExport).not.toHaveBeenCalled()
-  })
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        `No se pudo descargar la exportación ${format.toUpperCase()}. Intenta nuevamente.`,
+      )
+      expect(screen.queryByText(/se descargó correctamente/iu)).not.toBeInTheDocument()
+      expect(saveExport).not.toHaveBeenCalled()
+    },
+  )
 })
