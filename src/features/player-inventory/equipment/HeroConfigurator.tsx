@@ -2,7 +2,6 @@ import { useState } from 'react'
 import clsx from 'clsx'
 
 import { QueryState } from '@/components/ui/QueryState'
-import { HttpError } from '@/lib/http'
 import {
   Hero3D,
   HERO_IDS,
@@ -10,6 +9,7 @@ import {
   type HeroId,
 } from '@/shared/visual-library/heroes'
 import type { EquipmentSlotId } from './api'
+import { EquipmentMutationFeedback } from './EquipmentMutationFeedback'
 import { EquipmentSlots } from './EquipmentSlots'
 import { HeroStatsPanel } from './HeroStatsPanel'
 import { heroIdFromReference } from './heroSubtype'
@@ -91,14 +91,6 @@ export const HeroConfigurator = ({
     selectedProductReference !== null &&
     selectedProductType === slotMeta.productType &&
     !equipMutation.isPending
-
-  const equipError = equipMutation.error
-  const equipErrorMessage =
-    equipError instanceof HttpError
-      ? equipError.message
-      : equipError != null
-        ? 'No se pudo equipar el producto. Inténtalo de nuevo.'
-        : null
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4">
@@ -223,11 +215,7 @@ export const HeroConfigurator = ({
                     >
                       {equipMutation.isPending ? 'Equipando…' : 'Equipar'}
                     </button>
-                    {equipErrorMessage !== null && (
-                      <p role="alert" className="mt-1 text-danger">
-                        {equipErrorMessage}
-                      </p>
-                    )}
+                    <EquipmentMutationFeedback error={equipMutation.error} />
                   </div>
                 )}
 
