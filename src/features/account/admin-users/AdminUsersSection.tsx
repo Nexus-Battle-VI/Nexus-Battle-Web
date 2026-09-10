@@ -24,12 +24,17 @@ import {
 type SearchField = 'id' | 'email' | 'firstNames' | 'displayName'
 type RoleFilter = '' | AdminAccountRole
 type StatusFilter = '' | AdminAccountStatus
+type SanctionHistoryFilter = '' | 'true' | 'false'
 
 const FIELD_CLASS =
   'w-full rounded-md border border-border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60'
 
 const LABEL_CLASS = 'block text-xs font-semibold text-ink'
 const CONTROL_HELP = 'mt-1 text-xs text-muted'
+const DATE_RANGE_ERROR = 'La fecha Desde no puede ser posterior a la fecha Hasta.'
+
+const utcStartOfDay = (calendarDate: string): string => `${calendarDate}T00:00:00.000Z`
+const utcEndOfDay = (calendarDate: string): string => `${calendarDate}T23:59:59.999Z`
 
 const queryMessage = (error: unknown): string => {
   if (error instanceof HttpError && error.isUnauthorized) {
@@ -60,6 +65,9 @@ const criteriaFrom = (
   searchField: SearchField,
   role: RoleFilter,
   status: StatusFilter,
+  sanctionHistory: SanctionHistoryFilter,
+  registeredFromDate: string,
+  registeredToDate: string,
 ): AdminAccountQueryCriteria => {
   const text = searchText.trim()
   const searchCriteria: AdminAccountQueryCriteria =
@@ -77,6 +85,9 @@ const criteriaFrom = (
     ...searchCriteria,
     ...(role === '' ? {} : { role }),
     ...(status === '' ? {} : { status }),
+    ...(sanctionHistory === '' ? {} : { hasSanctionHistory: sanctionHistory === 'true' }),
+    ...(registeredFromDate === '' ? {} : { registeredFrom: utcStartOfDay(registeredFromDate) }),
+    ...(registeredToDate === '' ? {} : { registeredTo: utcEndOfDay(registeredToDate) }),
   }
 }
 
@@ -119,7 +130,11 @@ export const AdminUsersSection = ({
   const [searchField, setSearchField] = useState<SearchField>('displayName')
   const [role, setRole] = useState<RoleFilter>('')
   const [status, setStatus] = useState<StatusFilter>('')
+  const [sanctionHistory, setSanctionHistory] = useState<SanctionHistoryFilter>('')
+  const [registeredFromDate, setRegisteredFromDate] = useState('')
+  const [registeredToDate, setRegisteredToDate] = useState('')
   const [appliedCriteria, setAppliedCriteria] = useState<AdminAccountQueryCriteria>({})
+  const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [exportFeedback, setExportFeedback] = useState<string | null>(null)
   const query = useAdminAccounts(appliedCriteria, loadAccounts)
   const exportMutation = useAdminAccountsExport(exportAccounts)
@@ -127,7 +142,40 @@ export const AdminUsersSection = ({
   const applyCriteria = (event: SyntheticEvent<HTMLFormElement>): void => {
     event.preventDefault()
     setExportFeedback(null)
-    setAppliedCriteria(criteriaFrom(searchText, searchField, role, status))
+    if (
+      registeredFromDate !== '' &&
+      registeredToDate !== '' &&
+      registeredFromDate > registeredToDate
+    ) {
+      setValidationMessage(DATE_RANGE_ERROR)
+      return
+    }
+
+    setValidationMessage(null)
+    setAppliedCriteria(
+      criteriaFrom(
+        searchText,
+        searchField,
+        role,
+        status,
+        sanctionHistory,
+        registeredFromDate,
+        registeredToDate,
+      ),
+    )
+  }
+
+  const clearCriteria = (): void => {
+    setSearchText('')
+    setSearchField('displayName')
+    setRole('')
+    setStatus('')
+    setSanctionHistory('')
+    setRegisteredFromDate('')
+    setRegisteredToDate('')
+    setValidationMessage(null)
+    setExportFeedback(null)
+    setAppliedCriteria({})
   }
 
   const exportResults = (): void => {
@@ -233,33 +281,72 @@ export const AdminUsersSection = ({
             </label>
 
             <label className={LABEL_CLASS}>
-              Fecha de registro
-              <select disabled aria-label="Fecha de registro" className={`${FIELD_CLASS} mt-1`}>
-                <option>Cualquier fecha</option>
+              Desde
+              <input
+                type="date"
+                aria-label="Desde"
+                value={registeredFromDate}
+                onChange={(event) => {
+                  setRegisteredFromDate(event.target.value)
+                }}
+                aria-describedby={validationMessage === null ? undefined : 'registered-range-error'}
+                aria-invalid={validationMessage !== null}
+                className={`${FIELD_CLASS} mt-1`}
+              />
+              <span className={CONTROL_HELP}>Fecha de registro desde el inicio del día UTC.</span>
+            </label>
+
+            <label className={LABEL_CLASS}>
+              Hasta
+              <input
+                type="date"
+                aria-label="Hasta"
+                value={registeredToDate}
+                onChange={(event) => {
+                  setRegisteredToDate(event.target.value)
+                }}
+                aria-describedby={validationMessage === null ? undefined : 'registered-range-error'}
+                aria-invalid={validationMessage !== null}
+                className={`${FIELD_CLASS} mt-1`}
+              />
+              <span className={CONTROL_HELP}>Fecha de registro hasta el final del día UTC.</span>
+            </label>
+
+            <label className={LABEL_CLASS}>
+              Historial de sanciones
+              <select
+                value={sanctionHistory}
+                onChange={(event) => {
+                  setSanctionHistory(event.target.value as SanctionHistoryFilter)
+                }}
+                className={`${FIELD_CLASS} mt-1`}
+              >
+                <option value="">Cualquiera</option>
+                <option value="true">Con sanciones</option>
+                <option value="false">Sin sanciones</option>
               </select>
-              <span className={CONTROL_HELP}>Filtro pendiente de contrato backend.</span>
             </label>
           </div>
 
-          <fieldset disabled className="space-y-2">
-            <legend className="text-xs font-semibold text-ink">Historial de sanciones</legend>
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink">
-              {['Con sanciones', 'Sin sanciones', 'Advertencia', 'Suspensión', 'Baneo'].map(
-                (label) => (
-                  <label key={label} className="inline-flex items-center gap-2 opacity-60">
-                    <input type="checkbox" className="h-4 w-4 accent-brand" />
-                    {label}
-                  </label>
-                ),
-              )}
-            </div>
-            <p className={CONTROL_HELP}>Historial y filtros de sanciones pendientes de backend.</p>
-          </fieldset>
+          {validationMessage !== null && (
+            <p
+              id="registered-range-error"
+              role="alert"
+              className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger"
+            >
+              {validationMessage}
+            </p>
+          )}
         </fieldset>
 
-        <Button type="submit" className="w-full">
-          Buscar usuarios
-        </Button>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button type="submit" className="w-full">
+            Buscar usuarios
+          </Button>
+          <Button type="button" variant="secondary" className="w-full" onClick={clearCriteria}>
+            Limpiar filtros
+          </Button>
+        </div>
       </form>
 
       {query.isLoading && (
