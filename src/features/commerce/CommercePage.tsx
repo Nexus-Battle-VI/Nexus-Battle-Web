@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import { QueryState } from '@/components/ui/QueryState'
+import { SignInPrompt } from '@/app/SignInPrompt'
+import { useSession } from '@/shared/session'
 import { CatalogBanner } from '@/features/notifications/CatalogBanner'
 import { CatalogNotificationsSummary } from '@/features/notifications/CatalogNotificationsSummary'
 import { CartPanel } from './cart/CartPanel'
@@ -14,13 +16,23 @@ import { Showcase } from './showcase/Showcase'
 import { CommerceDialog } from './CommerceDialog'
 import './commerce.css'
 
-/** La vitrina conserva su espacio mientras carrito, detalle y pago se abren en una capa. */
+/**
+ * La vitrina conserva su espacio mientras carrito, detalle y pago se abren en una capa.
+ *
+ * NAVEGACION DE INVITADO: esta pantalla vive fuera de `RequireSession` (ver
+ * `routes.tsx`) porque ver la vitrina y el detalle de un producto no exige
+ * cuenta. Comprar si la exige -el carrito es por cuenta en Commerce-, asi que
+ * el aviso de "inicia sesion o crea una cuenta" aparece justo al intentar
+ * anadir algo al carrito, no antes: quien solo quiere mirar nunca lo ve.
+ */
 export const CommercePage = (): React.JSX.Element => {
+  const subject = useSession((state) => state.subject)
   const { cart, isLoading, error, busySku, isBusy, add, changeQuantity, remove, mutationError } =
     useCart()
   const savedCart = useSavedCart()
   const panel = useCartPanelState()
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null)
+  const [signInPromptOpen, setSignInPromptOpen] = useState(false)
   const checkout = useCheckout(payingOrderId)
   const locked = isBusy || savedCart.isBusy || checkout.isPaying
   const closePayment = (): void => {
@@ -63,6 +75,10 @@ export const CommercePage = (): React.JSX.Element => {
       )}
       <Showcase
         onAddToCart={(product) => {
+          if (subject === null) {
+            setSignInPromptOpen(true)
+            return
+          }
           if (product.realMoneyPrice !== null)
             add({
               productId: product.productId,
@@ -77,6 +93,23 @@ export const CommercePage = (): React.JSX.Element => {
       <div className="commerce-cart-launcher">
         <CartPanel {...cartProps} expanded={false} />
       </div>
+      {signInPromptOpen && (
+        <CommerceDialog
+          title="Inicia sesión para comprar"
+          onClose={() => {
+            setSignInPromptOpen(false)
+          }}
+        >
+          <div className="flex justify-center p-6">
+            <SignInPrompt
+              description="Necesitas iniciar sesión o crear una cuenta para añadir productos al carrito."
+              onCancel={() => {
+                setSignInPromptOpen(false)
+              }}
+            />
+          </div>
+        </CommerceDialog>
+      )}
       {panel.expanded && (
         <CommerceDialog title="Tu carrito" floating onClose={panel.toggle}>
           <QueryState isLoading={isLoading} error={error}>
