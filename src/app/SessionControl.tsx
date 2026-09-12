@@ -61,8 +61,12 @@ export const SessionControl = (): React.JSX.Element => {
 
   if (!available) {
     return (
-      <p className="ml-auto text-xs text-muted" data-testid="auth-unavailable">
-        Sin proveedor de identidad: nadie verifica quien realiza las peticiones
+      <p
+        className="ml-auto max-w-[10rem] shrink truncate text-xs text-muted"
+        title="Sin proveedor de identidad: nadie verifica quien realiza las peticiones"
+        data-testid="auth-unavailable"
+      >
+        Sin proveedor de identidad
       </p>
     )
   }
