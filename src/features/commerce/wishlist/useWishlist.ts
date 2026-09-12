@@ -10,11 +10,16 @@ export const useWishlist = (references: readonly string[]) => {
   const subject = useSession((state) => state.subject)
   const key = queryKeys.commerce.wishlist(subject)
   const unique = [...new Set(references)].sort()
+  // `enabled: subject !== null`: deseos y compras son por cuenta. La vitrina
+  // se navega sin sesion (guest-vitrina), y sin esta guarda cada visita
+  // anonima pediria de inmediato la lista de deseos que Commerce solo entrega
+  // por cuenta -el 401 resultante se veria como "Falta el testimonio de
+  // identidad." en vez de la ausencia de sesion que en realidad es.
   const query = useQuery({
     queryKey: [...key, unique.join(',')],
     queryFn: ({ signal }) =>
       Promise.all(unique.map((reference) => fetchWishlistItem(reference, signal))),
-    enabled: unique.length > 0,
+    enabled: subject !== null && unique.length > 0,
   })
   const items = query.data ?? []
   const find = (reference: string) =>
