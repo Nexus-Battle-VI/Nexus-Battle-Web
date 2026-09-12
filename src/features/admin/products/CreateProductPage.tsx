@@ -169,13 +169,7 @@ export const CreateProductPage = ({
                 className="rounded-md border border-success/40 bg-success/10 px-4 py-3 text-sm text-ink"
               >
                 <p className="font-semibold">Producto creado.</p>
-                <p className="mt-1 text-muted">
-                  «{created.name}» ya está disponible en el catálogo con identificador{' '}
-                  <code className="rounded bg-surface px-1.5 py-0.5 text-xs">
-                    {created.productId}
-                  </code>
-                  .
-                </p>
+                <p className="mt-1 text-muted">«{created.name}» ya está disponible en el catálogo.</p>
               </div>
               <div>
                 <Button onClick={startAnother}>Crear otro producto</Button>
