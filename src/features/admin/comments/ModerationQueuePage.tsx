@@ -194,9 +194,9 @@ export const ModerationQueuePage = ({
         <p className="text-xs uppercase tracking-widest text-muted">Moderación</p>
         <h1 className="mt-1 text-2xl font-semibold text-ink">Cola de moderación</h1>
         <p className="mt-1 text-sm text-muted">
-          Comentarios reportados por otros jugadores (HU-46), detectados automáticamente por el
-          filtro de contenido (HU-41.7), o ambos. Aprobar, ocultar, editar o marcar no retira la
-          fila; eliminar sí, porque borra el comentario de forma permanente.
+          Comentarios reportados por otros jugadores, detectados automáticamente por el filtro de
+          contenido, o ambos. Aprobar, ocultar, editar o marcar no retira la fila; eliminar sí,
+          porque borra el comentario de forma permanente.
         </p>
       </header>
 

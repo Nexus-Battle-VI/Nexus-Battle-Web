@@ -33,9 +33,17 @@ export const usePendingCatalogNotifications = () => {
   const subject = useSession((state) => state.subject)
   const key = queryKeys.notifications.pending(subject)
 
+  // `enabled: subject !== null`: las novedades son "desde tu ultima sesion",
+  // por cuenta. `CommercePage` (vitrina, navegacion de invitado) monta este
+  // resumen sin exigir sesion; sin esta guarda, cualquier visita anonima
+  // pediria de inmediato un recurso que Notifications solo entrega por
+  // cuenta, y el 401 resultante se mostraria como "No se pudieron cargar las
+  // novedades del catalogo." en vez de la ausencia de sesion que en realidad
+  // es -para un invitado, sencillamente no hay nada que resumir-.
   const query = useQuery({
     queryKey: key,
     queryFn: ({ signal }) => fetchPendingCatalogNotifications(signal),
+    enabled: subject !== null,
   })
 
   const items = query.data ?? []

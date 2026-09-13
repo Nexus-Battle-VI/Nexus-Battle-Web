@@ -1,17 +1,32 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
 import { jsonResponse, showcaseProduct } from '@/test/commerce-fixtures'
+import { useSession } from '@/shared/session'
 import { CommercePage } from './CommercePage'
 import type { Cart } from './cart/api'
 import type { PaymentResult } from './checkout/api'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  useSession.setState({ subject: null, accessToken: null, expiresAt: null })
 })
 describe('Recorrido de interfaz con contratos HTTP', () => {
+  // E-commerce se navega sin sesion (vitrina y detalle de producto son
+  // publicos), asi que anadir al carrito solo funciona con cuenta: estas
+  // pruebas ejercitan ese recorrido autenticado. El recorrido sin sesion
+  // (aviso de "inicia sesion o crea una cuenta") tiene sus propios casos mas
+  // abajo.
+  beforeEach(() => {
+    useSession.setState({
+      subject: 'sujeto-ana',
+      accessToken: 'token-de-sesion',
+      expiresAt: Date.now() + 900_000,
+    })
+  })
+
   it('anade por UUID, actualiza el resumen al cambiar cantidad y refresca adquirido despues del pago', async () => {
     const product = showcaseProduct()
     let cart: Cart | null = null
@@ -239,5 +254,102 @@ describe('Recorrido de interfaz con contratos HTTP', () => {
     expect(
       within(screen.getByRole('region', { name: 'Carrito de compras' })).getByText(product.name),
     ).toBeInTheDocument()
+  })
+})
+
+/**
+ * Navegacion de invitado: E-commerce vive fuera de `RequireSession` (ver
+ * routes.tsx), asi que llega gente sin cuenta. Ver la vitrina es libre; el
+ * carrito es por cuenta en Commerce, asi que anadir algo dispara el aviso de
+ * "inicia sesion o crea una cuenta" en vez de la peticion de verdad.
+ */
+describe('Navegacion sin sesion (vitrina publica)', () => {
+  it('muestra la vitrina sin pedir el carrito, y sin ningun error visible', async () => {
+    const product = showcaseProduct()
+    const fetcher = vi.fn((input: string) => {
+      const path = new URL(input, globalThis.location.origin).pathname
+      if (path === '/api/v1/catalog/products')
+        return Promise.resolve(jsonResponse({ items: [product], page: 1, pageSize: 16, total: 1 }))
+      if (path === '/api/v1/notifications/me/pending' || path === '/api/v1/banners')
+        return Promise.resolve(jsonResponse({ items: [] }))
+      return Promise.reject(new Error(`Peticion inesperada sin sesion: ${path}`))
+    })
+    vi.stubGlobal('fetch', fetcher)
+
+    renderWithProviders(<CommercePage />)
+
+    expect(await screen.findByText(product.name)).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    // Ninguna peticion de carrito ni de carrito guardado: `useCart`/`useSavedCart`
+    // no deben intentar nada sin sesion.
+    expect(
+      fetcher.mock.calls.some(
+        ([url]) => new URL(url, globalThis.location.origin).pathname === '/api/orders/cart',
+      ),
+    ).toBe(false)
+  })
+
+  it('al anadir al carrito sin sesion, invita a iniciar sesion o crear cuenta en vez de fallar', async () => {
+    const product = showcaseProduct()
+    const fetcher = vi.fn((input: string) => {
+      const path = new URL(input, globalThis.location.origin).pathname
+      if (path === '/api/v1/catalog/products')
+        return Promise.resolve(jsonResponse({ items: [product], page: 1, pageSize: 16, total: 1 }))
+      if (path === '/api/v1/notifications/me/pending' || path === '/api/v1/banners')
+        return Promise.resolve(jsonResponse({ items: [] }))
+      return Promise.reject(new Error(`Peticion inesperada sin sesion: ${path}`))
+    })
+    vi.stubGlobal('fetch', fetcher)
+
+    renderWithProviders(<CommercePage />)
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: `Anadir ${product.name} al carrito` }),
+    )
+
+    const prompt = await screen.findByRole('dialog', { name: 'Inicia sesión para comprar' })
+    expect(within(prompt).getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute(
+      'href',
+      '/login',
+    )
+    expect(within(prompt).getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute(
+      'href',
+      '/register',
+    )
+    // El carrito nunca se toco: ni se abrio uno nuevo ni se le anadio nada.
+    expect(
+      fetcher.mock.calls.some(
+        ([url]) => new URL(url, globalThis.location.origin).pathname === '/api/orders/cart',
+      ),
+    ).toBe(false)
+    expect(screen.getByRole('button', { name: 'Carrito, 0 productos' })).toBeInTheDocument()
+  })
+
+  it('cancelar el aviso cierra el dialogo y deja seguir viendo la vitrina', async () => {
+    const product = showcaseProduct()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string) => {
+        const path = new URL(input, globalThis.location.origin).pathname
+        if (path === '/api/v1/catalog/products')
+          return Promise.resolve(
+            jsonResponse({ items: [product], page: 1, pageSize: 16, total: 1 }),
+          )
+        if (path === '/api/v1/notifications/me/pending' || path === '/api/v1/banners')
+          return Promise.resolve(jsonResponse({ items: [] }))
+        return Promise.reject(new Error(`Peticion inesperada sin sesion: ${path}`))
+      }),
+    )
+
+    renderWithProviders(<CommercePage />)
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: `Anadir ${product.name} al carrito` }),
+    )
+    await screen.findByRole('dialog', { name: 'Inicia sesión para comprar' })
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByText(product.name)).toBeInTheDocument()
   })
 })
