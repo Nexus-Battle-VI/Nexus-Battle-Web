@@ -1,11 +1,22 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 
 import { renderWithProviders } from '@/test/render'
+import { useSession } from '@/shared/session'
 import { CatalogNotificationsSummary } from './CatalogNotificationsSummary'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  useSession.setState({ subject: null, accessToken: null, expiresAt: null })
+})
+// Las novedades son "desde tu ultima sesion", por cuenta (useQuery solo
+// consulta con sesion). El recorrido sin cuenta tiene su propio caso mas abajo.
+beforeEach(() => {
+  useSession.setState({
+    subject: 'sujeto-ana',
+    accessToken: 'token-de-sesion',
+    expiresAt: Date.now() + 900_000,
+  })
 })
 
 const jsonResponse = (body: unknown, status = 200): Response =>
@@ -152,5 +163,17 @@ describe('CatalogNotificationsSummary (HU-38, Task #185)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No se pudieron cargar las novedades del catálogo',
     )
+  })
+
+  it('sin sesion no consulta pendientes ni muestra error: no renderiza ningun panel', async () => {
+    useSession.setState({ subject: null, accessToken: null, expiresAt: null })
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse({ items: [] }))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    const { container } = renderWithProviders(<CatalogNotificationsSummary />)
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(container).toBeEmptyDOMElement()
+    expect(fetchImpl).not.toHaveBeenCalled()
   })
 })

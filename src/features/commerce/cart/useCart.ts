@@ -17,9 +17,15 @@ export const useCart = () => {
   const subject = useSession((state) => state.subject)
   const key = queryKeys.commerce.cart(subject)
 
+  // `enabled: subject !== null`: E-commerce se navega sin sesion (vitrina y
+  // detalle de producto son publicos). Sin esta guarda, cualquier visita
+  // anonima pediria de inmediato un carrito que Commerce solo entrega por
+  // cuenta, y el 401 resultante se veria como un error real de "no se pudo
+  // actualizar el carrito" en vez de la ausencia de sesion que en realidad es.
   const query = useQuery({
     queryKey: key,
     queryFn: ({ signal }) => fetchCart(signal),
+    enabled: subject !== null,
   })
 
   const write = (cart: Cart): void => {

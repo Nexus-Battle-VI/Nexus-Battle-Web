@@ -1,13 +1,26 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
 import { jsonResponse, showcaseProduct } from '@/test/commerce-fixtures'
+import { useSession } from '@/shared/session'
 import { Showcase } from './Showcase'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  useSession.setState({ subject: null, accessToken: null, expiresAt: null })
+})
+// La lista de deseos es por cuenta (useWishlist solo consulta con sesion). La
+// mayoria de estas pruebas ejercitan deseos/adquirido, asi que autentican por
+// defecto; el recorrido anonimo (vitrina sin sesion) tiene su propio describe
+// mas abajo.
+beforeEach(() => {
+  useSession.setState({
+    subject: 'sujeto-ana',
+    accessToken: 'token-de-sesion',
+    expiresAt: Date.now() + 900_000,
+  })
 })
 const product = showcaseProduct()
 const catalogProducts = Array.from({ length: 25 }, (_, index) =>
@@ -246,5 +259,22 @@ describe('Vitrina canonica', () => {
     rerender(<Showcase onAddToCart={vi.fn()} cartCurrency="USD" />)
     expect(screen.getByRole('button', { name: `Anadir ${product.name} al carrito` })).toBeDisabled()
     expect(screen.getByText(/Tu carrito está en USD/u)).toBeInTheDocument()
+  })
+})
+
+describe('Vitrina sin sesion (navegacion de invitado)', () => {
+  beforeEach(() => {
+    useSession.setState({ subject: null, accessToken: null, expiresAt: null })
+  })
+
+  it('no consulta la lista de deseos y muestra el control deshabilitado, sin el error de Commerce', async () => {
+    const fetcher = setup()
+    show()
+    expect(await screen.findByText(product.description)).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: `Anadir ${product.name} a la lista de deseos` }),
+    ).toBeDisabled()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(fetcher.mock.calls.some(([url]) => url.includes('/api/wishlist/'))).toBe(false)
   })
 })
