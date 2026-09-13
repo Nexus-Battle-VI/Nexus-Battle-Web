@@ -21,10 +21,7 @@ const resolveSource = (src: string): { path: string | null; direct: string | nul
   try {
     const url = new URL(src, globalThis.location.origin)
 
-    if (
-      url.origin === globalThis.location.origin &&
-      url.pathname.startsWith(`${API_BASE_URL}/`)
-    ) {
+    if (url.origin === globalThis.location.origin && url.pathname.startsWith(`${API_BASE_URL}/`)) {
       return { path: `${url.pathname.slice(API_BASE_URL.length)}${url.search}`, direct: null }
     }
 
@@ -66,7 +63,8 @@ export const ProductThumb = ({ src, alt, className }: ProductThumbProps): React.
     url: string
   } | null>(null)
 
-  const { path, direct } = src !== null && src !== '' ? resolveSource(src) : { path: null, direct: null }
+  const { path, direct } =
+    src !== null && src !== '' ? resolveSource(src) : { path: null, direct: null }
 
   useEffect(() => {
     if (path === null || src === null) return
@@ -93,7 +91,8 @@ export const ProductThumb = ({ src, alt, className }: ProductThumbProps): React.
   }, [src, subject])
 
   const resolvedUrl =
-    direct ?? (loaded !== null && loaded.src === src && loaded.subject === subject ? loaded.url : null)
+    direct ??
+    (loaded !== null && loaded.src === src && loaded.subject === subject ? loaded.url : null)
 
   const box = clsx(
     'flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-surface',
