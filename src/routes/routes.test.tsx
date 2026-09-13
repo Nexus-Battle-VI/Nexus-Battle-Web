@@ -204,17 +204,40 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(router.state.location.pathname).toBe('/register')
   })
 
-  it('sin sesion, una ruta autenticada muestra el aviso "Para continuar" en el mismo sitio, sin redirigir a /login', async () => {
+  /**
+   * E-commerce es la unica pantalla del shell que se ve SIN sesion: la
+   * vitrina y el detalle de un producto no exigen cuenta, solo comprar la
+   * exige (ver `CommercePage`, que gestiona ese aviso en el punto exacto
+   * donde hace falta). Por eso, a diferencia de cualquier otra ruta
+   * autenticada, `/ecommerce` NO muestra "Para continuar" sin sesion.
+   */
+  it('sin sesion, E-commerce muestra la vitrina real, no el aviso "Para continuar"', async () => {
     useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/ecommerce')
 
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
-    ).toBeInTheDocument()
+      screen.queryByRole('heading', { level: 1, name: 'Para continuar' }),
+    ).not.toBeInTheDocument()
     // No hubo redireccion: la URL sigue siendo la que la persona pidio.
     expect(router.state.location.pathname).toBe('/ecommerce')
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register')
+  })
+
+  /**
+   * Con proveedor configurado (a diferencia de `ANONYMOUS_STATE`, que
+   * describe "sin proveedor" y no "sin sesion"), la cabecera SI ofrece los
+   * dos caminos para identificarse, sin bloquear la vitrina que hay detras.
+   */
+  it('sin sesion pero con proveedor configurado, la cabecera invita a iniciar sesion o crear cuenta sin tapar la vitrina', async () => {
+    useSession.setState({ ...ANONYMOUS_STATE, authenticationAvailable: true })
+    renderRoute('/ecommerce')
+
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    // `SessionControl` (la cabecera autenticada) escribe "Iniciar sesion" sin
+    // tilde -copy propio de ese componente, distinto del de `SignInPrompt"-,
+    // asi que se busca por el testid en vez de por el texto exacto.
+    expect(screen.getByTestId('sign-in')).toHaveAttribute('href', '/login')
+    expect(screen.getByTestId('sign-up')).toHaveAttribute('href', '/register')
   })
 
   it('sin sesion, /account/privacy no monta el portal ni realiza consultas o exportaciones', async () => {
