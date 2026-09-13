@@ -206,3 +206,30 @@ export const chooseSecondFactor = async (
 
   return toLoginOutcome(response)
 }
+
+/**
+ * Intenta restablecer la sesion sin credenciales, a partir de la cookie
+ * `HttpOnly` que Account dejo en el ultimo login (sesion persistente tras
+ * recargar la pagina). Se llama una unica vez al arrancar la aplicacion
+ * (`App.tsx`).
+ *
+ * NUNCA lanza: sin cookie, con el testimonio de refresco vencido o con el
+ * proveedor caido, la consecuencia practica es identica -no hay sesion que
+ * restablecer-, y quien arranca la aplicacion no debe bloquearse ni mostrar
+ * un error por algo que, para la persona que llega, es indistinguible de
+ * "todavia no ha iniciado sesion".
+ *
+ * La cookie viaja sola: es del mismo origen que este cliente HTTP (el proxy
+ * inverso sirve Web y Account bajo el mismo host), asi que el navegador la
+ * adjunta sin que este cliente tenga que pedirlo.
+ */
+export const refreshSession = async (): Promise<AuthenticatedSession | null> => {
+  try {
+    const response = await httpClient.post<SessionResponse>('/sessions/refresh')
+    const outcome = toLoginOutcome(response)
+
+    return outcome.status === 'AUTHENTICATED' ? outcome.session : null
+  } catch {
+    return null
+  }
+}
