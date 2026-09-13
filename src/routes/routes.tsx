@@ -199,9 +199,22 @@ export const routes: RouteObject[] = [
   // `import.meta.env.DEV` (ver `./dev-routes`). Vacio en produccion.
   ...publicDevRoutes,
 
+  // E-commerce es la ÚNICA pantalla del shell que se ve SIN sesion: navegar
+  // la vitrina y abrir el detalle de un producto no exige cuenta, solo
+  // comprar la exige (el carrito vive en Commerce, por cuenta). Vive en su
+  // propio `AppLayout` -sin `RequireSession`- para que quien visita sin
+  // identificarse vea la vitrina real, no el aviso "Para continuar".
+  // `SessionControl` en la cabecera ya distingue autenticado/anonimo por su
+  // cuenta; `CommercePage` gestiona el aviso de "inicia sesion o crea una
+  // cuenta" en el punto exacto donde hace falta (anadir al carrito).
+  {
+    element: <AppLayout />,
+    children: [{ path: 'ecommerce', element: <CommercePage /> }],
+  },
+
   // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi que
-  // sus hijos siguen resolviendo a las mismas rutas absolutas (`/ecommerce`,
-  // `/inventory`, ...). Es el shell autenticado; `RequireSession` decide si
+  // sus hijos siguen resolviendo a las mismas rutas absolutas (`/inventory`,
+  // `/catalog`, ...). Es el shell autenticado; `RequireSession` decide si
   // se muestra o si en su lugar aparece el aviso "Para continuar".
   {
     element: (
@@ -210,7 +223,6 @@ export const routes: RouteObject[] = [
       </RequireSession>
     ),
     children: [
-      { path: 'ecommerce', element: <CommercePage /> },
       { path: 'play', element: <ModuleUnavailable title="Jugar Online" /> },
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
