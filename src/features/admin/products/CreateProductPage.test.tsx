@@ -62,8 +62,12 @@ const completePricing = async (printRun = '150'): Promise<void> => {
 }
 
 describe('Alta de producto (HU-33)', () => {
-  /** CA-01: flujo principal completo, hasta el 201 y el identificador. */
-  it('crea el producto y muestra el identificador devuelto', async () => {
+  /**
+   * CA-01: flujo principal completo, hasta el 201. El identificador interno
+   * (UUID) no se muestra: no aporta nada a quien crea el producto y expone
+   * un dato tecnico sin proposito en la interfaz.
+   */
+  it('crea el producto y confirma el alta sin exponer el identificador interno', async () => {
     const onCreate = vi.fn<(request: CreateProductRequest) => Promise<CreatedProduct>>(() =>
       Promise.resolve(created()),
     )
@@ -78,7 +82,8 @@ describe('Alta de producto (HU-33)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Publicar producto' }))
 
     expect(await screen.findByText(/producto creado/i)).toBeInTheDocument()
-    expect(screen.getByText('5f2a1c9d-7b3e-4a11-9c5d-2e8f0a6b4c37')).toBeInTheDocument()
+    expect(screen.getByText(/ya está disponible en el catálogo/iu)).toBeInTheDocument()
+    expect(screen.queryByText('5f2a1c9d-7b3e-4a11-9c5d-2e8f0a6b4c37')).not.toBeInTheDocument()
 
     const request = onCreate.mock.calls[0]?.[0]
     expect(request?.name).toBe('Espada de Fuego')

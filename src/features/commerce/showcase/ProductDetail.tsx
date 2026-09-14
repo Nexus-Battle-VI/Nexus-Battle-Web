@@ -54,7 +54,10 @@ export const ProductDetail = ({
                 ? 'Disponibilidad ilimitada'
                 : `Disponibles: ${String(query.data.availableUnits)}`}
             </p>
-            <ProductAttributes values={query.data.attributes.values} />
+            <div className="rounded-lg border border-border bg-surface p-4">
+              <h4 className="mb-3 text-sm font-semibold text-ink">Atributos</h4>
+              <ProductAttributes values={query.data.attributes.values} />
+            </div>
           </>
         )}
       </QueryState>

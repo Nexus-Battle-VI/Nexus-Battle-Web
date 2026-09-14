@@ -41,7 +41,13 @@ export const AppHeader = ({ variant }: AppHeaderProps): React.JSX.Element => {
   const inAccountArea = matchPath({ path: ACCOUNT_PATH, end: false }, pathname) !== null
 
   return (
-    <header className="border-b border-border bg-surface-raised/85 backdrop-blur">
+    // `relative z-50`: `backdrop-blur` crea su propio contexto de apilamiento
+    // en el <header>. Sin un z-index explicito aqui, ese contexto entero -el
+    // menu desplegable de "Mi cuenta" incluido, aunque el menu declare su
+    // propio z-50- pinta segun el orden del DOM frente a <main>, que llega
+    // despues y por tanto queda ENCIMA. En la vitrina de e-commerce (grid de
+    // tarjetas) eso tapaba visualmente el menu abierto.
+    <header className="relative z-50 border-b border-border bg-surface-raised/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
         <Link
           to={brandTarget}
