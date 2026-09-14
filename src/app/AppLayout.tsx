@@ -8,7 +8,7 @@ export const AppLayout = (): React.JSX.Element => {
   const commerce = useLocation().pathname === ECOMMERCE_PATH
   return (
     <div className={commerce ? 'commerce-layout min-h-dvh' : 'min-h-dvh'}>
-      <AppHeader variant="authenticated" />
+      <AppHeader />
 
       <main
         className={
