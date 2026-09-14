@@ -19,7 +19,6 @@ import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
-import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
@@ -65,9 +64,9 @@ export const ACCOUNT_PATH = '/account'
  * siguen montadas mas abajo -no se elimino ninguna pantalla ya implementada-,
  * simplemente ya no aparecen en esta lista.
  *
- * Tambien la reutiliza `LandingPage`: son los mismos destinos, solo que quien
- * los ve sin sesion recibe el aviso "Para continuar" de `RequireSession` en
- * lugar del contenido real.
+ * Quien navega sin sesion ve la misma lista en la cabecera; para lo que no
+ * es E-commerce, `RequireSession` muestra ahi mismo el aviso "Para continuar"
+ * en lugar del contenido real.
  */
 export interface NavigationItem {
   readonly path: string
@@ -148,18 +147,15 @@ export const navigationForPrimaryRole = (role: string | null): readonly Navigati
   })
 
 export const routes: RouteObject[] = [
-  // Publicas: alcanzables sin sesion. `/` y `/login` se protegen al reves (si
-  // ya hay sesion, no tiene sentido volver a mostrarlas). `/register` no se
-  // protege: HU-01 no exige cerrar sesion antes de registrar una cuenta
-  // nueva, y esta rama no inventa esa regla.
-  {
-    path: '/',
-    element: (
-      <PublicOnlyRoute>
-        <LandingPage />
-      </PublicOnlyRoute>
-    ),
-  },
+  // La raiz ya no es un menu propio de "elige iniciar sesion o crear cuenta":
+  // E-commerce ES el punto de entrada, con o sin cuenta (ver la ruta
+  // `ecommerce` mas abajo). Redirige ahi directo, con o sin sesion, en vez de
+  // mostrar una pantalla intermedia que solo repetia los mismos dos enlaces
+  // que ya ofrece la cabecera.
+  { path: '/', element: <Navigate to={ECOMMERCE_PATH} replace /> },
+  // `/login` se protege al reves (si ya hay sesion, no tiene sentido volver a
+  // mostrarlo). `/register` no se protege: HU-01 no exige cerrar sesion antes
+  // de registrar una cuenta nueva, y esta rama no inventa esa regla.
   {
     path: '/login',
     element: (

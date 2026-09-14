@@ -157,26 +157,17 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     useSession.setState(ANONYMOUS_STATE)
   })
 
-  it('sin sesion, la raiz muestra el menu publico, no el formulario de login', async () => {
+  /**
+   * E-commerce es el punto de entrada, con o sin cuenta: la raiz ya no
+   * muestra una pantalla intermedia de "elige iniciar sesion o crear
+   * cuenta" (esa invitacion ya vive en la cabecera de la propia vitrina).
+   */
+  it('sin sesion, la raiz redirige a E-commerce y muestra la vitrina real', async () => {
     useSession.setState(ANONYMOUS_STATE)
-    renderRoute('/')
+    const { router } = renderRoute('/')
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Bienvenido al universo Nexus' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', { level: 1, name: 'Iniciar sesión' }),
-    ).not.toBeInTheDocument()
-  })
-
-  it('desde el menu publico se puede ir a iniciar sesion o a crear cuenta', async () => {
-    useSession.setState(ANONYMOUS_STATE)
-    renderRoute('/')
-
-    await screen.findByRole('heading', { level: 1, name: 'Bienvenido al universo Nexus' })
-
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register')
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(ECOMMERCE_PATH)
   })
 
   /**
