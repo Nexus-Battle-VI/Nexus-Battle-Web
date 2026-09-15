@@ -6,10 +6,10 @@ import { AppHeader } from './AppHeader'
 import { useSession } from '@/shared/session'
 import { initTheme, useTheme } from '@/shared/theme'
 
-const renderHeader = (variant: 'authenticated' | 'public', route = '/ecommerce') =>
+const renderHeader = (route = '/ecommerce') =>
   render(
     <MemoryRouter initialEntries={[route]}>
-      <AppHeader variant={variant} />
+      <AppHeader />
     </MemoryRouter>,
   )
 
@@ -22,8 +22,8 @@ afterEach(() => {
 })
 
 describe('AppHeader', () => {
-  it('la marca tiene nombre accesible y, en el shell autenticado, enlaza a /ecommerce', () => {
-    renderHeader('authenticated')
+  it('la marca tiene nombre accesible y enlaza a /ecommerce', () => {
+    renderHeader()
 
     const brand = screen.getByRole('link', { name: 'Nexus Battles VI' })
     expect(brand).toHaveAttribute('href', '/ecommerce')
@@ -31,28 +31,37 @@ describe('AppHeader', () => {
   })
 
   it('incluye la navegacion principal y el conmutador de tema', () => {
-    renderHeader('authenticated')
+    renderHeader()
 
     expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Tema de la interfaz' })).toBeInTheDocument()
   })
 
-  it('en la variante autenticada monta el control de sesion', () => {
+  it('con sesion monta el control de cuenta', () => {
     useSession.setState({
       authenticationAvailable: true,
       subject: 'sujeto-ana',
       displayName: 'Ana',
       accessToken: 'token',
     })
-    renderHeader('authenticated')
+    renderHeader()
 
     expect(screen.getByTestId('user-menu-trigger')).toBeInTheDocument()
   })
 
-  it('en la variante publica no monta el control de sesion, pero si el tema', () => {
-    renderHeader('public', '/')
+  it('sin sesion pero con proveedor configurado, invita a iniciar sesion o crear cuenta', () => {
+    useSession.setState({ authenticationAvailable: true })
+    renderHeader('/')
+
+    expect(screen.getByTestId('sign-in')).toBeInTheDocument()
+    expect(screen.getByTestId('sign-up')).toBeInTheDocument()
+  })
+
+  it('sin proveedor de identidad no monta ningun control de sesion, pero si el tema', () => {
+    renderHeader('/')
 
     expect(screen.queryByTestId('user-menu-trigger')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sign-in')).not.toBeInTheDocument()
     expect(screen.queryByTestId('auth-unavailable')).not.toBeInTheDocument()
     expect(screen.getByRole('group', { name: 'Tema de la interfaz' })).toBeInTheDocument()
   })
@@ -61,22 +70,22 @@ describe('AppHeader', () => {
     const themeGroup = () => screen.queryByRole('group', { name: 'Tema de la interfaz' })
 
     it('muestra el conmutador fuera de /account (/ecommerce)', () => {
-      renderHeader('authenticated', '/ecommerce')
+      renderHeader('/ecommerce')
       expect(themeGroup()).toBeInTheDocument()
     })
 
     it('muestra el conmutador fuera de /account (/inventory)', () => {
-      renderHeader('authenticated', '/inventory')
+      renderHeader('/inventory')
       expect(themeGroup()).toBeInTheDocument()
     })
 
     it('oculta el conmutador en /account', () => {
-      renderHeader('authenticated', '/account')
+      renderHeader('/account')
       expect(themeGroup()).not.toBeInTheDocument()
     })
 
     it('oculta el conmutador en un descendiente de /account (p. ej. /account/preferences)', () => {
-      renderHeader('authenticated', '/account/preferences')
+      renderHeader('/account/preferences')
       expect(themeGroup()).not.toBeInTheDocument()
     })
 
@@ -84,7 +93,7 @@ describe('AppHeader', () => {
       initTheme()
       useTheme.getState().setTheme('dark')
 
-      renderHeader('authenticated', '/account')
+      renderHeader('/account')
 
       // El control no esta en el DOM...
       expect(themeGroup()).not.toBeInTheDocument()

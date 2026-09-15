@@ -28,13 +28,16 @@ describe('contrato administrativo de cuentas', () => {
         displayName: 'Capitana Panel',
         role: 'ADMINISTRATOR',
         status: 'SUSPENDED',
+        hasSanctionHistory: true,
+        registeredFrom: '2026-08-01T00:00:00.000Z',
+        registeredTo: '2026-08-31T23:59:59.999Z',
       }),
     ).toBe(
-      '?id=acc%2Funo&email=persona%2Badmin%40nexus.test&firstNames=Ana+Maria&lastNames=Vega+Rios&nickname=Capitana+Panel&role=ADMINISTRATOR&status=SUSPENDED',
+      '?id=acc%2Funo&email=persona%2Badmin%40nexus.test&firstNames=Ana+Maria&lastNames=Vega+Rios&nickname=Capitana+Panel&role=ADMINISTRATOR&status=SUSPENDED&hasSanctionHistory=true&registeredFrom=2026-08-01T00%3A00%3A00.000Z&registeredTo=2026-08-31T23%3A59%3A59.999Z',
     )
   })
 
-  it('omite valores vacios y no inventa paginacion, fecha, sanciones ni busqueda global', () => {
+  it('omite valores vacios y criterios opcionales sin seleccionar', () => {
     const query = buildAdminAccountsQuery({
       id: '  ',
       email: '',
@@ -42,7 +45,9 @@ describe('contrato administrativo de cuentas', () => {
     })
 
     expect(query).toBe('?nickname=Panel')
-    expect(query).not.toMatch(/page|limit|offset|registeredAt|sanction|banned|search/iu)
+    expect(query).not.toMatch(
+      /page|limit|offset|registeredFrom|registeredTo|sanction|banned|search/iu,
+    )
   })
 
   it('consulta GET /accounts con httpClient, criterios y AbortSignal', async () => {

@@ -92,12 +92,125 @@ describe('AdminUsersSection', () => {
       expect(within(results).getByText(value, { exact: false })).toBeInTheDocument()
     }
 
-    expect(screen.getByLabelText('Fecha de registro')).toBeDisabled()
-    expect(screen.getByLabelText('Con sanciones')).toBeDisabled()
+    expect(screen.getByLabelText('Desde')).toBeEnabled()
+    expect(screen.getByLabelText('Hasta')).toBeEnabled()
+    expect(screen.getByLabelText('Historial de sanciones')).toBeEnabled()
+    expect(document.body.textContent).not.toMatch(/pendiente de contrato backend/iu)
     expect(screen.getByRole('option', { name: 'Todos los campos (no disponible)' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Página anterior' })).toBeDisabled()
     expect(screen.getByText(/paginación estará disponible/iu)).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/PhoenixArrow|LunaEcho|ZenithByte|DrakoFenix/u)
+  })
+
+  it.each([
+    ['Desde', '2026-08-05', { registeredFrom: '2026-08-05T00:00:00.000Z' }],
+    ['Hasta', '2026-08-20', { registeredTo: '2026-08-20T23:59:59.999Z' }],
+  ] as const)(
+    'convierte correctamente el limite %s cuando se usa solo',
+    async (label, date, expected) => {
+      const user = userEvent.setup()
+      const load = vi.fn().mockResolvedValue(ADMIN_RESPONSE)
+      useSession.setState({ roles: ['PLAYER', 'ADMINISTRATOR'] })
+      renderWithProviders(<AdminUsersSection loadAccounts={load} />)
+
+      await screen.findByText('Capitana Panel')
+      await user.type(screen.getByLabelText(label), date)
+      await user.click(screen.getByRole('button', { name: 'Buscar usuarios' }))
+
+      await waitFor(() => {
+        expect(load).toHaveBeenLastCalledWith(expected, expect.any(AbortSignal))
+      })
+    },
+  )
+
+  it('combina fechas, sanciones, busqueda, rol y estado en una sola consulta', async () => {
+    const user = userEvent.setup()
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, ADMIN_RESPONSE))
+    vi.stubGlobal('fetch', fetchImpl)
+    useSession.setState({ roles: ['PLAYER', 'ADMINISTRATOR'] })
+    renderWithProviders(<AdminUsersSection />)
+
+    await screen.findByText('Capitana Panel')
+    await user.type(screen.getByLabelText('Buscar'), 'persona@nexus.test')
+    await user.selectOptions(screen.getByLabelText('Campo de búsqueda'), 'email')
+    await user.selectOptions(screen.getByLabelText('Rol'), 'ADMINISTRATOR')
+    await user.selectOptions(screen.getByLabelText('Estado de cuenta'), 'ACTIVE')
+    await user.type(screen.getByLabelText('Desde'), '2026-08-01')
+    await user.type(screen.getByLabelText('Hasta'), '2026-08-31')
+    await user.selectOptions(screen.getByLabelText('Historial de sanciones'), 'true')
+    await user.click(screen.getByRole('button', { name: 'Buscar usuarios' }))
+
+    await waitFor(() => {
+      expect(fetchImpl).toHaveBeenCalledTimes(2)
+    })
+    expect(fetchImpl.mock.calls[1]?.[0]).toBe(
+      '/api/accounts?email=persona%40nexus.test&role=ADMINISTRATOR&status=ACTIVE&hasSanctionHistory=true&registeredFrom=2026-08-01T00%3A00%3A00.000Z&registeredTo=2026-08-31T23%3A59%3A59.999Z',
+    )
+  })
+
+  it.each([
+    ['true', true],
+    ['false', false],
+  ] as const)('mapea historial de sanciones %s al booleano %s', async (option, expected) => {
+    const user = userEvent.setup()
+    const load = vi.fn().mockResolvedValue(ADMIN_RESPONSE)
+    useSession.setState({ roles: ['PLAYER', 'ADMINISTRATOR'] })
+    renderWithProviders(<AdminUsersSection loadAccounts={load} />)
+
+    await screen.findByText('Capitana Panel')
+    await user.selectOptions(screen.getByLabelText('Historial de sanciones'), option)
+    await user.click(screen.getByRole('button', { name: 'Buscar usuarios' }))
+
+    await waitFor(() => {
+      expect(load).toHaveBeenLastCalledWith(
+        { hasSanctionHistory: expected },
+        expect.any(AbortSignal),
+      )
+    })
+  })
+
+  it('omite sanciones en Cualquiera y permite limpiar todos los filtros', async () => {
+    const user = userEvent.setup()
+    const load = vi.fn().mockResolvedValue(ADMIN_RESPONSE)
+    useSession.setState({ roles: ['PLAYER', 'ADMINISTRATOR'] })
+    renderWithProviders(<AdminUsersSection loadAccounts={load} />)
+
+    await screen.findByText('Capitana Panel')
+    await user.type(screen.getByLabelText('Buscar'), 'Capitana')
+    await user.type(screen.getByLabelText('Desde'), '2026-08-01')
+    await user.type(screen.getByLabelText('Hasta'), '2026-08-31')
+    await user.selectOptions(screen.getByLabelText('Historial de sanciones'), 'true')
+    await user.click(screen.getByRole('button', { name: 'Buscar usuarios' }))
+    await waitFor(() => {
+      expect(load).toHaveBeenCalledTimes(2)
+    })
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+    expect(screen.getByLabelText('Buscar')).toHaveValue('')
+    expect(screen.getByLabelText('Desde')).toHaveValue('')
+    expect(screen.getByLabelText('Hasta')).toHaveValue('')
+    expect(screen.getByLabelText('Historial de sanciones')).toHaveValue('')
+    await waitFor(() => {
+      expect(load).toHaveBeenCalledTimes(3)
+      expect(load).toHaveBeenLastCalledWith({}, expect.any(AbortSignal))
+    })
+  })
+
+  it('rechaza un rango invertido sin ejecutar otra consulta', async () => {
+    const user = userEvent.setup()
+    const load = vi.fn().mockResolvedValue(ADMIN_RESPONSE)
+    useSession.setState({ roles: ['PLAYER', 'ADMINISTRATOR'] })
+    renderWithProviders(<AdminUsersSection loadAccounts={load} />)
+
+    await screen.findByText('Capitana Panel')
+    await user.type(screen.getByLabelText('Desde'), '2026-08-31')
+    await user.type(screen.getByLabelText('Hasta'), '2026-08-01')
+    await user.click(screen.getByRole('button', { name: 'Buscar usuarios' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La fecha Desde no puede ser posterior a la fecha Hasta.',
+    )
+    expect(load).toHaveBeenCalledTimes(1)
   })
 
   it('separa draft de applied y consulta solo al pulsar Buscar con params soportados', async () => {
@@ -222,10 +335,19 @@ describe('AdminUsersSection', () => {
     await screen.findByText('Capitana Panel')
     await user.selectOptions(screen.getByLabelText('Rol'), 'ADMINISTRATOR')
     await user.selectOptions(screen.getByLabelText('Estado de cuenta'), 'ACTIVE')
+    await user.type(screen.getByLabelText('Desde'), '2026-08-01')
+    await user.type(screen.getByLabelText('Hasta'), '2026-08-31')
+    await user.selectOptions(screen.getByLabelText('Historial de sanciones'), 'false')
     await user.click(screen.getByRole('button', { name: 'Buscar usuarios' }))
     await waitFor(() => {
       expect(load).toHaveBeenLastCalledWith(
-        { role: 'ADMINISTRATOR', status: 'ACTIVE' },
+        {
+          role: 'ADMINISTRATOR',
+          status: 'ACTIVE',
+          hasSanctionHistory: false,
+          registeredFrom: '2026-08-01T00:00:00.000Z',
+          registeredTo: '2026-08-31T23:59:59.999Z',
+        },
         expect.any(AbortSignal),
       )
     })
@@ -233,7 +355,13 @@ describe('AdminUsersSection', () => {
     await user.click(screen.getByRole('button', { name: 'Exportar resultados' }))
 
     await waitFor(() => {
-      expect(exportAccounts).toHaveBeenCalledWith({ role: 'ADMINISTRATOR', status: 'ACTIVE' })
+      expect(exportAccounts).toHaveBeenCalledWith({
+        role: 'ADMINISTRATOR',
+        status: 'ACTIVE',
+        hasSanctionHistory: false,
+        registeredFrom: '2026-08-01T00:00:00.000Z',
+        registeredTo: '2026-08-31T23:59:59.999Z',
+      })
     })
     expect(saveExport).toHaveBeenCalledOnce()
     expect(screen.getByRole('status')).toHaveTextContent('Exportación preparada.')

@@ -40,14 +40,14 @@ describe('SessionControl', () => {
   /**
    * Sin proveedor configurado, ofrecer un boton de iniciar sesion que no puede
    * funcionar seria peor que no ofrecer nada: sugiere que hay autenticacion
-   * donde no la hay. La interfaz lo dice.
+   * donde no la hay. La interfaz simplemente no renderiza nada en ese lugar.
    */
-  it('declara la ausencia de proveedor en lugar de ofrecer un boton inutil', () => {
-    renderWithProviders(<SessionControl />)
+  it('no ofrece ningun control de sesion sin proveedor configurado', () => {
+    const { container } = renderWithProviders(<SessionControl />)
 
-    expect(screen.getByTestId('auth-unavailable')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /iniciar sesion/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /crear cuenta/i })).not.toBeInTheDocument()
+    expect(container).toBeEmptyDOMElement()
+    expect(screen.queryByRole('link', { name: /iniciar sesion/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /crear cuenta/i })).not.toBeInTheDocument()
   })
 
   it('ofrece iniciar sesion cuando hay proveedor y no hay sesion', () => {

@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderWithProviders } from '@/test/render'
+import { HttpError } from '@/lib/http'
 
 import { AdjustInventoryPage } from './AdjustInventoryPage'
 import * as api from './api'
@@ -162,5 +163,200 @@ describe('Ajuste de tiraje (HU-34)', () => {
     await userEvent.click(screen.getByRole('button', { name: /ajustar tiraje/i }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/Vuelve a cargarlo/i)
+  })
+})
+
+/**
+ * Suspension y reactivacion (HU-35, Management#43). Comparten pantalla y
+ * fixture con el ajuste de tiraje (HU-34); estas pruebas cubren unicamente el
+ * comportamiento nuevo.
+ */
+describe('Suspension y reactivacion de producto (HU-35)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const REASON = 'Rebalanceo pendiente de estadísticas'
+
+  it('un producto ACTIVE muestra la accion Suspender', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(
+      producto({ lifecycleStatus: 'ACTIVE' }),
+    )
+
+    montar()
+
+    expect(await screen.findByRole('button', { name: 'Suspender producto' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reactivar producto' })).not.toBeInTheDocument()
+  })
+
+  it('un producto SUSPENDED muestra la accion Reactivar', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(
+      producto({ lifecycleStatus: 'SUSPENDED' }),
+    )
+
+    montar()
+
+    expect(await screen.findByRole('button', { name: 'Reactivar producto' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Suspender producto' })).not.toBeInTheDocument()
+  })
+
+  it('abre la confirmacion sin ejecutar la operacion todavia', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(producto())
+    const cambiar = vi.spyOn(api, 'updateProductLifecycleStatus')
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender producto' }))
+
+    expect(screen.getByRole('form', { name: 'Suspender producto' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/motivo/i)).toBeInTheDocument()
+    expect(cambiar).not.toHaveBeenCalled()
+  })
+
+  it('no permite confirmar con el motivo vacío', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(producto())
+    const cambiar = vi.spyOn(api, 'updateProductLifecycleStatus')
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender producto' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar suspensión' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/obligatorio, mínimo 10 caracteres/i)
+    expect(cambiar).not.toHaveBeenCalled()
+  })
+
+  it('no permite confirmar con un motivo de menos de 10 caracteres', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(producto())
+    const cambiar = vi.spyOn(api, 'updateProductLifecycleStatus')
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender producto' }))
+    await userEvent.type(screen.getByLabelText(/motivo/i), 'corto')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar suspensión' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/obligatorio, mínimo 10 caracteres/i)
+    expect(cambiar).not.toHaveBeenCalled()
+  })
+
+  it('envia SUSPENDED con el motivo, y solo actualiza tras la respuesta real de Catalog', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(
+      producto({ lifecycleStatus: 'ACTIVE' }),
+    )
+    const cambiar = vi
+      .spyOn(api, 'updateProductLifecycleStatus')
+      .mockResolvedValue(producto({ lifecycleStatus: 'SUSPENDED' }))
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender producto' }))
+    await userEvent.type(screen.getByLabelText(/motivo/i), REASON)
+
+    // Antes de confirmar, la pantalla NO adelanta el estado.
+    expect(screen.getByText('Activo')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar suspensión' }))
+
+    expect(cambiar).toHaveBeenCalledWith(ID, 'SUSPENDED', REASON)
+    expect(await screen.findByText('Suspendido')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Reactivar producto' })).toBeInTheDocument()
+  })
+
+  it('envia ACTIVE con el motivo al reactivar', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(
+      producto({ lifecycleStatus: 'SUSPENDED' }),
+    )
+    const cambiar = vi
+      .spyOn(api, 'updateProductLifecycleStatus')
+      .mockResolvedValue(producto({ lifecycleStatus: 'ACTIVE' }))
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Reactivar producto' }))
+    await userEvent.type(screen.getByLabelText(/motivo/i), REASON)
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar reactivación' }))
+
+    expect(cambiar).toHaveBeenCalledWith(ID, 'ACTIVE', REASON)
+    expect(await screen.findByText('Activo')).toBeInTheDocument()
+  })
+
+  it('refresca la consulta y muestra el aviso de éxito tras confirmar', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(
+      producto({ lifecycleStatus: 'ACTIVE' }),
+    )
+    vi.spyOn(api, 'updateProductLifecycleStatus').mockResolvedValue(
+      producto({ lifecycleStatus: 'SUSPENDED' }),
+    )
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender producto' }))
+    await userEvent.type(screen.getByLabelText(/motivo/i), REASON)
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar suspensión' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Estado actualizado.')
+    // El formulario se cierra: no queda abierto pidiendo un segundo envio.
+    expect(screen.queryByRole('form', { name: /suspender|reactivar/i })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    [400, 'El motivo de suspensión es obligatorio, mínimo 10 caracteres'],
+    [401, /sesión no es válida o venció/i],
+    [403, /segundo factor verificado/i],
+    [404, /el producto no existe/i],
+    [503, /no se pudo comprobar el segundo factor/i],
+  ])('el error %i del servicio se muestra de forma comprensible', async (status, esperado) => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(producto())
+    vi.spyOn(api, 'updateProductLifecycleStatus').mockRejectedValue(
+      new HttpError(status, String(esperado), { message: String(esperado) }),
+    )
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender producto' }))
+    await userEvent.type(screen.getByLabelText(/motivo/i), REASON)
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar suspensión' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(esperado)
+  })
+
+  it('un fallo de red (sin HttpError) muestra un mensaje generico', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(producto())
+    vi.spyOn(api, 'updateProductLifecycleStatus').mockRejectedValue(
+      new TypeError('Failed to fetch'),
+    )
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender producto' }))
+    await userEvent.type(screen.getByLabelText(/motivo/i), REASON)
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar suspensión' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/revisa tu conexión/i)
+  })
+
+  /**
+   * HU-35, CA-03: reactivar un producto agotado NO repone unidades. La
+   * insignia deriva de `availableUnits`, que Catalog devuelve intacto.
+   */
+  it('un producto agotado sigue mostrando Agotado despues de reactivarse', async () => {
+    vi.spyOn(api, 'fetchAdministeredProduct').mockResolvedValue(
+      producto({ lifecycleStatus: 'SUSPENDED', availableUnits: 0 }),
+    )
+    vi.spyOn(api, 'updateProductLifecycleStatus').mockResolvedValue(
+      producto({ lifecycleStatus: 'ACTIVE', availableUnits: 0 }),
+    )
+
+    montar()
+
+    expect(await screen.findByText('Agotado')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reactivar producto' }))
+    await userEvent.type(screen.getByLabelText(/motivo/i), REASON)
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar reactivación' }))
+
+    expect(await screen.findByText('Activo')).toBeInTheDocument()
+    expect(screen.getByText('Agotado')).toBeInTheDocument()
   })
 })

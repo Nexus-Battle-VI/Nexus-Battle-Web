@@ -129,3 +129,54 @@ export const describeAdjustmentFailure = (error: unknown): string => {
 
   return 'No se pudo ajustar el tiraje.'
 }
+
+/**
+ * Suspende o reactiva un producto (HU-35, borrado lógico): `PATCH
+ * /v1/admin/products/{id}/status`. Catalog sigue siendo la única autoridad
+ * del estado -esta funcion solo transporta la solicitud y devuelve
+ * exactamente lo que el servicio confirma-.
+ */
+export const updateProductLifecycleStatus = (
+  productId: string,
+  status: AdministeredProduct['lifecycleStatus'],
+  reason: string,
+): Promise<AdministeredProduct> =>
+  httpClient.patch<AdministeredProduct>(`/v1/admin/products/${productId}/status`, {
+    status,
+    reason,
+  })
+
+/**
+ * Traduce el fallo del cambio de estado.
+ *
+ * Misma taxonomia que Catalog expone para esta ruta (400/401/403/404/503):
+ * no se inventa un codigo ni un mensaje distinto de los que el servicio ya
+ * documenta para `PATCH .../status`.
+ */
+export const describeLifecycleStatusFailure = (error: unknown): string => {
+  if (!(error instanceof HttpError)) {
+    return 'No se pudo actualizar el estado del producto. Revisa tu conexión e inténtalo de nuevo.'
+  }
+
+  if (error.status === 400) {
+    return error.message
+  }
+
+  if (error.status === 401) {
+    return 'Tu sesión no es válida o venció. Vuelve a iniciar sesión.'
+  }
+
+  if (error.status === 403) {
+    return 'No tiene permisos para gestionar el catálogo. Se exige rol administrativo y segundo factor verificado en esta sesión.'
+  }
+
+  if (error.status === 404) {
+    return 'El producto no existe.'
+  }
+
+  if (error.status === 503) {
+    return 'No se pudo comprobar el segundo factor. Inténtalo de nuevo en unos minutos.'
+  }
+
+  return 'No se pudo actualizar el estado del producto.'
+}

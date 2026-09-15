@@ -33,6 +33,9 @@ export interface AdminAccountQueryCriteria {
   readonly displayName?: string
   readonly role?: AdminAccountRole
   readonly status?: AdminAccountStatus
+  readonly hasSanctionHistory?: boolean
+  readonly registeredFrom?: string
+  readonly registeredTo?: string
 }
 
 const appendText = (params: URLSearchParams, key: string, value: string | undefined): void => {
@@ -54,6 +57,11 @@ export const buildAdminAccountsQuery = (criteria: AdminAccountQueryCriteria): st
   appendText(params, 'nickname', criteria.displayName)
   appendText(params, 'role', criteria.role)
   appendText(params, 'status', criteria.status)
+  if (criteria.hasSanctionHistory !== undefined) {
+    params.set('hasSanctionHistory', String(criteria.hasSanctionHistory))
+  }
+  appendText(params, 'registeredFrom', criteria.registeredFrom)
+  appendText(params, 'registeredTo', criteria.registeredTo)
 
   const query = params.toString()
 
