@@ -1,0 +1,48 @@
+/*
+ * Ajustes del tema claro para la moderacion (HU-41), acotados a esta feature.
+ * El tema oscuro conserva exactamente sus clases y tokens existentes; Light
+ * utiliza las superficies y colores semanticos del Design System ya global.
+ */
+:root[data-theme='light'] .moderation-queue__comment-card {
+  background-color: var(--nb-field);
+  border-color: transparent;
+}
+
+:root[data-theme='light'] .moderation-queue__action-form {
+  background-color: var(--color-surface-raised);
+}
+
+:root[data-theme='light'] .moderation-queue__comment-preview,
+:root[data-theme='light'] .moderation-queue__action-form [data-moderation-control='cancel'] {
+  background-color: var(--nb-field);
+  border-color: transparent;
+}
+
+:root[data-theme='light'] .moderation-queue__delete-warning {
+  background-color: color-mix(in oklab, var(--color-danger) 6%, var(--color-surface-raised));
+}
+
+:root[data-theme='light'] .moderation-queue button[data-moderation-action='hide'] {
+  border-color: #b27305;
+  color: #8a5700;
+}
+
+:root[data-theme='light']
+  .moderation-queue__action-form[data-moderation-action='hide']
+  [data-moderation-control='submit'] {
+  border-color: #b27305;
+  background-color: #b27305;
+  color: white;
+}
+
+:root[data-theme='light'] .moderation-queue [data-moderation-source='AUTOMATIC_FILTER'] {
+  border-color: color-mix(in oklab, #b27305 32%, white);
+  background-color: color-mix(in oklab, #b27305 12%, white);
+  color: #8a5700;
+}
+
+:root[data-theme='light'] .moderation-queue__success-banner {
+  border-color: var(--color-success);
+  background-color: color-mix(in oklab, var(--color-success) 10%, var(--color-surface-raised));
+  color: var(--color-success);
+}

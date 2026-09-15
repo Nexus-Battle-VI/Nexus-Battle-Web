@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { ModerationQueuePage } from '../ModerationQueuePage'
 
 /**
@@ -214,10 +215,13 @@ export const ModerationQueueDevPreview = (): React.JSX.Element => {
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <p className="mb-4 rounded-md border border-border bg-surface/40 px-4 py-2 text-xs text-muted">
-        Vista previa de desarrollo. La cola y las acciones de moderación están simuladas: no llegan
-        a Community.
-      </p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="rounded-md border border-border bg-surface/40 px-4 py-2 text-xs text-muted">
+          Vista previa de desarrollo. La cola y las acciones de moderación están simuladas: no
+          llegan a Community.
+        </p>
+        <ThemeToggle />
+      </div>
       <ModerationQueuePage />
     </div>
   )

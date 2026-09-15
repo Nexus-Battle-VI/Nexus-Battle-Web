@@ -114,12 +114,13 @@ export const ModerationActionForm = ({
     <form
       onSubmit={handleSubmit}
       aria-label={`${actionLabel} comentario ${commentId}`}
-      className="mt-3 space-y-3 rounded-lg border border-border bg-surface p-3 sm:p-4"
+      data-moderation-action={action}
+      className="moderation-queue__action-form mt-3 space-y-3 rounded-lg border border-border bg-surface p-3 sm:p-4"
     >
       <h3 className="text-sm font-semibold text-ink">{actionLabel} comentario</h3>
 
       {action === 'delete' && (
-        <div className="rounded-lg border-l-2 border-danger bg-danger/5 px-3.5 py-3 text-[13px]">
+        <div className="moderation-queue__delete-warning rounded-lg border-l-2 border-danger bg-danger/5 px-3.5 py-3 text-[13px]">
           <p className="font-semibold text-ink">Esta acción es irreversible</p>
           <p className="mt-1 text-muted">
             El comentario será eliminado permanentemente y no podrá restaurarse.
@@ -128,7 +129,7 @@ export const ModerationActionForm = ({
       )}
 
       {authorId !== undefined && commentContent !== undefined && (
-        <blockquote className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5">
+        <blockquote className="moderation-queue__comment-preview rounded-lg border border-border bg-surface-raised px-3.5 py-2.5">
           <p className="text-xs font-semibold text-muted">Autor {authorId}</p>
           <p className="mt-1 break-words text-[13px] text-ink">{commentContent}</p>
         </blockquote>
@@ -209,6 +210,7 @@ export const ModerationActionForm = ({
         <Button
           type="button"
           variant="secondary"
+          data-moderation-control="cancel"
           className="min-h-12 w-full rounded-lg"
           disabled={mutation.isPending}
           onClick={onCancel}
@@ -218,6 +220,7 @@ export const ModerationActionForm = ({
         <Button
           type="submit"
           variant={variant}
+          data-moderation-control="submit"
           className="min-h-12 w-full rounded-lg"
           loading={mutation.isPending}
         >

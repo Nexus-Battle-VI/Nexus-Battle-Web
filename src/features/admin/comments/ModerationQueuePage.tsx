@@ -21,6 +21,7 @@ import {
   type ModerationQueuePage as ModerationQueuePageDto,
 } from './api'
 import { ModerationActionForm, type ModerationActionKind } from './ModerationActionForm'
+import './moderation.css'
 
 const PAGE_SIZE = 20
 
@@ -219,7 +220,7 @@ export const ModerationQueuePage = ({
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl py-8">
+    <div className="moderation-queue mx-auto w-full max-w-4xl py-8">
       <Breadcrumb
         items={[{ label: 'Inicio', to: '/ecommerce' }, { label: 'Moderación de comentarios' }]}
       />
@@ -239,7 +240,7 @@ export const ModerationQueuePage = ({
           role={banner.kind === 'success' ? 'status' : 'alert'}
           className={
             banner.kind === 'success'
-              ? 'mb-4 rounded-lg border border-brand bg-brand/10 p-3 text-sm text-ink'
+              ? 'moderation-queue__success-banner mb-4 rounded-lg border border-brand bg-brand/10 p-3 text-sm text-ink'
               : 'mb-4 rounded-lg border border-danger bg-danger/10 p-3 text-sm text-danger'
           }
         >
@@ -259,7 +260,7 @@ export const ModerationQueuePage = ({
 
             return (
               <li key={comment.id}>
-                <Card className="rounded-[10px] p-3.5 sm:p-4">
+                <Card className="moderation-queue__comment-card rounded-[10px] p-3.5 sm:p-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                       <p className="min-w-0 flex-1 break-all text-[13px] font-semibold text-ink">
@@ -270,6 +271,7 @@ export const ModerationQueuePage = ({
                         {entry.sources.map((source) => (
                           <span
                             key={source}
+                            data-moderation-source={source}
                             className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${sourceClassName(source)}`}
                           >
                             {sourceLabelFor(entry, source)}
@@ -293,6 +295,7 @@ export const ModerationQueuePage = ({
                         key={kind}
                         type="button"
                         variant={variant}
+                        data-moderation-action={kind}
                         className={`rounded-md px-[8px] py-[5px] text-[11px] leading-4 ${ACTION_CLASS_NAMES[kind]}`}
                         aria-expanded={
                           activeAction?.commentId === comment.id && activeAction.action === kind
