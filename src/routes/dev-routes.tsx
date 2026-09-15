@@ -59,6 +59,13 @@ if (import.meta.env.DEV) {
       default: module.BannerManagementDevPreview,
     })),
   )
+  const EquipmentBattleLockDevPreviewLazy = lazy(() =>
+    import('@/features/player-inventory/equipment/dev/EquipmentBattleLockDevPreview').then(
+      (module) => ({
+        default: module.EquipmentBattleLockDevPreview,
+      }),
+    ),
+  )
 
   resolvedDevRoutes = [
     {
@@ -142,6 +149,17 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <BannerManagementDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-29: usa el configurador real de HU-28 y sustituye solo su frontera
+    // HTTP para contrastar rechazo 409 + battle_lock contra el flujo permitido
+    // despues de finalizar la batalla. No monta ni simula una UI de combate.
+    {
+      path: '__dev/hu29/equipment-lock',
+      element: (
+        <Suspense fallback={null}>
+          <EquipmentBattleLockDevPreviewLazy />
         </Suspense>
       ),
     },

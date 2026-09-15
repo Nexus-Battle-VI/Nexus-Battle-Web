@@ -19,7 +19,8 @@ describe('devRoutes', () => {
     // Son las pantallas que viven tras una sesion que el entorno local no
     // puede establecer: "Mi cuenta" (HU-05.4), el alta de producto (HU-33), la
     // seleccion de heroe (HU-07), la cola de moderacion (HU-41.4) y las
-    // novedades/banner de catalogo (HU-38, Task #181/#185).
+    // novedades/banner de catalogo (HU-38, Task #181/#185) y el rechazo de
+    // cambios de equipamiento durante batalla (HU-29).
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/account',
       '__dev/admin/products/new',
@@ -27,6 +28,7 @@ describe('devRoutes', () => {
       '__dev/admin/comments/moderation',
       '__dev/hu38/notifications',
       '__dev/hu38/admin-banners',
+      '__dev/hu29/equipment-lock',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 

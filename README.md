@@ -20,6 +20,10 @@ navegador  ->  /api/v1/catalog/products  ->  proxy  ->  Catalog
 
 Esa indirección es lo que permite que la demo corra en una sola máquina y que la arquitectura objetivo viva detrás de un balanceador **sin cambiar una línea del frontend**. Ningún componente construye una URL de servicio a mano: todo pasa por `src/lib/http.ts`.
 
+El rechazo de cambios de equipamiento durante una batalla activa (HU-29) se
+presenta sin duplicar la regla del backend. Consulta el
+[contrato y la evidencia del feedback de bloqueo](docs/frontend/hu-29-battle-lock-feedback.md).
+
 ## Recursos visuales de Producto
 
 La administración carga la imagen principal de Producto mediante una intención
