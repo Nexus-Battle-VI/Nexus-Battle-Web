@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
@@ -272,6 +273,13 @@ export const ModerationQueuePage = ({
                         {label}
                       </Button>
                     ))}
+                    <Link
+                      to="/admin/sanctions/apply"
+                      state={{ sanctionTarget: { targetAccountId: comment.authorId } }}
+                      className="inline-flex items-center justify-center rounded-md border border-border bg-surface-raised px-4 py-2 text-sm font-medium text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      Sancionar autor
+                    </Link>
                   </div>
 
                   {activeAction?.commentId === comment.id &&

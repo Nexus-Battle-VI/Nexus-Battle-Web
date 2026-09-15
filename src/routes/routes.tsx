@@ -26,6 +26,7 @@ import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
+import { ApplySanctionPage } from '@/features/admin/sanctions/ApplySanctionPage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 
@@ -113,6 +114,11 @@ export const NAVIGATION: readonly NavigationItem[] = [
   {
     path: '/admin/comments/moderation',
     label: 'Moderación de comentarios',
+    requiredPrimaryRole: 'MODERATOR',
+  },
+  {
+    path: '/admin/sanctions/apply',
+    label: 'Aplicar sanción',
     requiredPrimaryRole: 'MODERATOR',
   },
 ]
@@ -284,6 +290,14 @@ export const routes: RouteObject[] = [
         element: (
           <RequireModerator>
             <ModerationQueuePage />
+          </RequireModerator>
+        ),
+      },
+      {
+        path: 'admin/sanctions/apply',
+        element: (
+          <RequireModerator>
+            <ApplySanctionPage />
           </RequireModerator>
         ),
       },

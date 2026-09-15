@@ -45,6 +45,8 @@ describe('NAVIGATION', () => {
       // HU-41.10: acceso visible a la cola de moderacion de comentarios para
       // Moderador, Administrador y Super Administrador.
       '/admin/comments/moderation',
+      // HU-42: acceso a la aplicación de sanciones progresivas.
+      '/admin/sanctions/apply',
     ])
     expect(paths).not.toContain('/account')
     expect(new Set(paths).size).toBe(paths.length)
@@ -105,6 +107,7 @@ describe('NAVIGATION', () => {
       const paths = navigationForPrimaryRole(role).map((item) => item.path)
 
       expect(paths).toContain('/admin/comments/moderation')
+      expect(paths).toContain('/admin/sanctions/apply')
     },
   )
 
@@ -112,6 +115,7 @@ describe('NAVIGATION', () => {
     const paths = navigationForPrimaryRole('PLAYER').map((item) => item.path)
 
     expect(paths).not.toContain('/admin/comments/moderation')
+    expect(paths).not.toContain('/admin/sanctions/apply')
   })
 })
 

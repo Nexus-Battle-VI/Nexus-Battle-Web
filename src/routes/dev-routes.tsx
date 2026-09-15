@@ -49,6 +49,11 @@ if (import.meta.env.DEV) {
       default: module.ModerationQueueDevPreview,
     })),
   )
+  const ApplySanctionDevPreviewLazy = lazy(() =>
+    import('@/features/admin/sanctions/dev/ApplySanctionDevPreview').then((module) => ({
+      default: module.ApplySanctionDevPreview,
+    })),
+  )
   const CatalogNotificationsDevPreviewLazy = lazy(() =>
     import('@/features/notifications/dev/CatalogNotificationsDevPreview').then((module) => ({
       default: module.CatalogNotificationsDevPreview,
@@ -119,6 +124,14 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <ModerationQueueDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/admin/sanctions/apply',
+      element: (
+        <Suspense fallback={null}>
+          <ApplySanctionDevPreviewLazy />
         </Suspense>
       ),
     },

@@ -1,4 +1,5 @@
 import { useState, type SyntheticEvent } from 'react'
+import { Link } from 'react-router'
 
 import { Button } from '@/components/ui/Button'
 import { Download } from '@/components/ui/icons'
@@ -95,7 +96,7 @@ const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): Re
   const role = primaryRole(account.roles)
 
   return (
-    <li className="grid min-w-0 gap-3 border-b border-border bg-surface p-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+    <li className="grid min-w-0 gap-3 border-b border-border bg-surface p-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
       <div className="min-w-0">
         <p className="break-words text-sm font-semibold text-ink">{account.displayName}</p>
         <p className="mt-1 break-all text-xs text-muted">ID: {account.id}</p>
@@ -109,6 +110,15 @@ const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): Re
         {role === null ? 'Sin rol' : roleLabel(role)}
       </span>
       <StatusBadge status={account.status} />
+      <Link
+        to="/admin/sanctions/apply"
+        state={{
+          sanctionTarget: { targetAccountId: account.id, displayName: account.displayName },
+        }}
+        className="text-sm font-medium text-brand underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
+        Aplicar sanción
+      </Link>
     </li>
   )
 }
