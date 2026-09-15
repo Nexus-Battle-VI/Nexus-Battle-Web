@@ -48,6 +48,18 @@ export const queryKeys = {
   community: {
     threads: ['community', 'threads'] as const,
     thread: (threadId: string) => ['community', 'thread', threadId] as const,
+    /** Comentarios de un producto (HU-40, `GET /api/products/:productId/comments`). */
+    productComments: (productId: string) => ['community', 'product-comments', productId] as const,
+    /** Promedio y conteo de calificaciones (HU-40, CA-03). */
+    productReviewSummary: (productId: string) =>
+      ['community', 'product-review-summary', productId] as const,
+    /**
+     * Cola de moderacion (HU-41.1, `GET /api/comments/moderation-queue`).
+     * Lleva pagina en la clave porque cada combinacion es una consulta
+     * distinta, mismo criterio que `inventory.mine`.
+     */
+    moderationQueue: (params: { readonly limit: number; readonly offset: number }) =>
+      ['community', 'moderation-queue', params] as const,
   },
   commerce: {
     byCustomer: (customerId: string) => ['commerce', 'orders', customerId] as const,
@@ -82,5 +94,21 @@ export const queryKeys = {
     privacy: ['account', 'me', 'privacy'] as const,
     /** Panel administrativo de usuarios filtrado por criterios serializados. */
     adminUsers: (criteriaKey: string) => ['account', 'admin-users', criteriaKey] as const,
+  },
+  notifications: {
+    /**
+     * Novedades de catálogo pendientes de presentar (HU-38,
+     * `GET /api/v1/notifications/me/pending`). La identidad en cache evita
+     * reutilizar datos privados de otra sesion, mismo criterio que
+     * `commerce.cart`. El servicio deduce el jugador del testimonio; el
+     * subject NUNCA viaja en la peticion HTTP.
+     */
+    pending: (subject: string | null) => ['notifications', 'catalog', 'pending', subject] as const,
+    /** Historial completo (`GET /api/v1/notifications/me/history`). */
+    history: (subject: string | null) => ['notifications', 'catalog', 'history', subject] as const,
+    /** Banners vigentes, ya filtrados por el backend (`GET /api/v1/banners`). Publico: sin subject. */
+    banners: ['notifications', 'banners', 'active'] as const,
+    /** Listado administrativo (`GET /api/v1/admin/banners`). */
+    adminBanners: ['notifications', 'banners', 'admin'] as const,
   },
 } as const

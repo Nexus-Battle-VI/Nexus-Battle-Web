@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpError } from '@/lib/http'
-import { login, completeSecondFactor } from './api'
+import { login, completeSecondFactor, refreshSession } from './api'
 
 const jsonResponse = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -300,5 +300,92 @@ describe('completeSecondFactor', () => {
 
     expect(outcome.session.subject).toBe('sub-cognito-admin')
     expect(outcome.session.expiresAt).toBe(2_000_000 + 3_600_000)
+  })
+})
+
+describe('refreshSession', () => {
+  it('llama a POST /api/sessions/refresh sin cuerpo, la cookie viaja sola', async () => {
+    const fetchImpl = stubFetch(
+      jsonResponse(200, {
+        status: 'AUTHENTICATED',
+        accessToken: 'token-renovado',
+        expiresIn: 900,
+        account: {
+          id: 'acc-1',
+          subject: 'sub-1',
+          email: 'ana@nexus.test',
+          displayName: 'Ana',
+          roles: ['PLAYER'],
+        },
+      }),
+    )
+
+    await refreshSession()
+
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
+
+    expect(url).toBe('/api/sessions/refresh')
+    expect(init.method).toBe('POST')
+    expect(init.body).toBeUndefined()
+  })
+
+  it('devuelve la sesion restablecida cuando Account renueva el testimonio', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(1_000_000)
+
+    stubFetch(
+      jsonResponse(200, {
+        status: 'AUTHENTICATED',
+        accessToken: 'token-renovado',
+        expiresIn: 900,
+        account: {
+          id: 'acc-1',
+          subject: 'sub-cognito-1',
+          email: 'ana@nexus.test',
+          displayName: 'Ana',
+          roles: ['PLAYER'],
+        },
+      }),
+    )
+
+    const session = await refreshSession()
+
+    expect(session).toEqual({
+      subject: 'sub-cognito-1',
+      email: 'ana@nexus.test',
+      displayName: 'Ana',
+      roles: ['PLAYER'],
+      accessToken: 'token-renovado',
+      expiresAt: 1_000_000 + 900_000,
+    })
+  })
+
+  /**
+   * Sin cookie que renovar, Account responde 401 (vease sessions.controller.ts).
+   * No es un error que la aplicacion deba mostrar: es "todavia no ha iniciado
+   * sesion", el mismo estado que si nunca hubiera existido una cookie.
+   */
+  it('devuelve null sin lanzar cuando no hay sesion que renovar (401)', async () => {
+    stubFetch(jsonResponse(401, { message: 'No hay una sesion que renovar.' }))
+
+    const session = await refreshSession()
+
+    expect(session).toBeNull()
+  })
+
+  it('devuelve null sin lanzar cuando el proveedor de identidad no esta disponible (503)', async () => {
+    stubFetch(jsonResponse(503, { message: 'El proveedor de identidad no esta disponible.' }))
+
+    const session = await refreshSession()
+
+    expect(session).toBeNull()
+  })
+
+  it('devuelve null sin lanzar ante un fallo de red', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+
+    const session = await refreshSession()
+
+    expect(session).toBeNull()
   })
 })

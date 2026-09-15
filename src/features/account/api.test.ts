@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpError, httpClient, type HttpDownload } from '@/lib/http'
+import { useSession } from '@/shared/session'
 import {
   downloadOwnPersonalData,
   fetchOwnAccount,
@@ -39,6 +40,7 @@ const jsonResponse = (status: number, body: unknown): Response =>
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
+  useSession.setState({ subject: null, accessToken: null, expiresAt: null })
 })
 
 describe('fetchOwnAccount', () => {
@@ -118,6 +120,38 @@ describe('exportacion de datos personales', () => {
       expect(path).not.toMatch(/^https?:\/\//u)
       expect(path).not.toMatch(/accountId|ownerId|customerId|subject|userId/iu)
       expect(result).toBe(expected)
+    },
+  )
+
+  it.each(['json', 'xml', 'pdf'] as const)(
+    'envia GET al endpoint real de %s con el testimonio y sin body ni selector de titular',
+    async (format) => {
+      useSession.setState({
+        subject: 'sujeto-valeria',
+        accessToken: 'testimonio-valeria',
+        expiresAt: Date.now() + 60_000,
+      })
+      const fetchImpl = vi.fn().mockResolvedValue(
+        new Response(format, {
+          status: 200,
+          headers: {
+            'content-type': 'application/octet-stream',
+            'content-disposition': `attachment; filename="datos.${format}"`,
+          },
+        }),
+      )
+      vi.stubGlobal('fetch', fetchImpl)
+
+      await downloadOwnPersonalData(format)
+
+      expect(fetchImpl).toHaveBeenCalledOnce()
+      const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
+      expect(url).toBe(`/api/accounts/me/privacy/export?format=${format}`)
+      expect(url).not.toMatch(/accountId|ownerId|customerId|subject|userId/iu)
+      expect(init).toEqual({
+        method: 'GET',
+        headers: { authorization: 'Bearer testimonio-valeria' },
+      })
     },
   )
 

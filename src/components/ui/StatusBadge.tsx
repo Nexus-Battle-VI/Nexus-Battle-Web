@@ -14,6 +14,12 @@ const TONE: Readonly<Record<string, string>> = {
   CANCELLED: 'bg-danger/15 text-danger',
   SUSPENDED: 'bg-danger/15 text-danger',
   ARCHIVED: 'bg-danger/15 text-danger',
+  // Estado de moderacion de un comentario (HU-41).
+  APPROVED: 'bg-success/15 text-success',
+  DELETED: 'bg-danger/15 text-danger',
+  HIDDEN: 'bg-danger/15 text-danger',
+  PENDING: 'bg-warning/15 text-warning',
+  MARKED: 'bg-warning/15 text-warning',
 }
 
 export const StatusBadge = ({ status }: StatusBadgeProps): React.JSX.Element => (

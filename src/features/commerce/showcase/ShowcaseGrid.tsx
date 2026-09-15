@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/Button'
 import { ProductImage } from '@/features/commerce/ProductImage'
 import { PRODUCT_TYPE_LABELS, type ShowcaseProduct } from './api'
-import { ProductAttributes } from './ProductAttributes'
 import { ProductPrice } from './ProductPrice'
 
 export interface ShowcaseGridProps {
@@ -31,10 +30,7 @@ export const ShowcaseGrid = ({
   wishBusySku = null,
   wishlistUnavailable = false,
 }: ShowcaseGridProps): React.JSX.Element => (
-  <ul
-    aria-label="Productos"
-    className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-4"
-  >
+  <ul aria-label="Productos" className="commerce-product-grid">
     {products.map((product) => {
       const wished = isWished?.(product.productId) ?? false
       const owned = isOwned?.(product.productId) ?? false
@@ -47,11 +43,18 @@ export const ShowcaseGrid = ({
         product.realMoneyPrice === null ||
         product.availableUnits === 0 ||
         product.lifecycleStatus !== 'ACTIVE'
+      const reason = otherCurrency
+        ? `Tu carrito está en ${cartCurrency}. Vacíalo antes de elegir otra moneda.`
+        : !product.premium
+          ? 'La compra con dinero está disponible para productos premium.'
+          : unavailable
+            ? 'Este producto no está disponible para comprar.'
+            : undefined
       return (
-        <li key={product.productId}>
+        <li key={product.productId} className="min-h-0 min-w-0">
           <article
             data-testid={`product-${product.sku}`}
-            className="flex h-full min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4 transition-colors hover:border-brand focus-within:border-brand"
+            className="commerce-product-card rounded-xl border border-border bg-surface-raised transition-colors hover:border-brand focus-within:border-brand"
           >
             <button
               type="button"
@@ -59,74 +62,95 @@ export const ShowcaseGrid = ({
               onClick={() => {
                 onOpenDetail(product.productId)
               }}
-              className="text-left focus-visible:outline-2 focus-visible:outline-brand"
+              className="commerce-product-heading text-left focus-visible:outline-2 focus-visible:outline-brand"
             >
-              <ProductImage source={product.imageUrl} name={product.name} />
-              <h3 className="mt-3 text-base font-semibold text-ink">{product.name}</h3>
-              <p className="text-xs text-muted">{PRODUCT_TYPE_LABELS[product.type]}</p>
+              <ProductImage
+                source={product.imageUrl}
+                name={product.name}
+                className="commerce-product-image rounded-lg bg-surface object-contain"
+              />
+              <span className="min-w-0">
+                <span
+                  className="commerce-product-name text-sm font-semibold text-ink"
+                  title={product.name}
+                >
+                  {product.name}
+                </span>
+                <span className="block text-xs text-muted">
+                  {PRODUCT_TYPE_LABELS[product.type]}
+                </span>
+              </span>
             </button>
-            <p className="whitespace-pre-wrap break-words text-sm text-muted">
+            {onToggleWish !== undefined && (
+              <button
+                type="button"
+                onClick={() => {
+                  onToggleWish(product.productId)
+                }}
+                disabled={wishlistUnavailable || wishBusySku === product.productId}
+                aria-pressed={wished}
+                aria-label={
+                  wished
+                    ? `Quitar ${product.name} de la lista de deseos`
+                    : `Anadir ${product.name} a la lista de deseos`
+                }
+                data-testid={`wish-${product.sku}`}
+                className="commerce-wish rounded-full text-xl text-brand disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-brand"
+              >
+                <span aria-hidden="true">{wished ? '♥' : '♡'}</span>
+              </button>
+            )}
+            <p
+              className="commerce-product-description text-xs text-muted"
+              title={product.description}
+            >
               {product.description}
             </p>
-            <ProductAttributes values={product.attributes.values} />
-            <ProductPrice product={product} />
-            <div className="flex flex-wrap items-center gap-2">
-              {product.premium && <span className="text-xs font-medium text-brand">Premium</span>}
-              {product.availableUnits === 0 && <span className="text-xs text-muted">Agotado</span>}
-              {wished && (
-                <span
-                  data-testid={`badge-deseos-${product.sku}`}
-                  className="rounded-full border border-brand px-2 py-0.5 text-xs text-brand"
-                >
-                  En deseos
-                </span>
-              )}
-              {owned && (
-                <span
-                  data-testid={`badge-propio-${product.sku}`}
-                  className="rounded-full border border-border px-2 py-0.5 text-xs text-muted"
-                >
-                  Propio
-                </span>
-              )}
-              {onToggleWish !== undefined && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onToggleWish(product.productId)
-                  }}
-                  disabled={wishlistUnavailable || wishBusySku === product.productId}
-                  aria-pressed={wished}
-                  aria-label={
-                    wished
-                      ? `Quitar ${product.name} de la lista de deseos`
-                      : `Anadir ${product.name} a la lista de deseos`
-                  }
-                  data-testid={`wish-${product.sku}`}
-                  className="rounded p-2 text-lg disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-brand"
-                >
-                  <span aria-hidden="true">{wished ? '♥' : '♡'}</span>
-                </button>
-              )}
+            <div className="commerce-product-meta">
+              <div className="commerce-product-price">
+                <ProductPrice product={product} />
+              </div>
+              <div className="flex items-center gap-1 text-[10px] font-medium">
+                {product.premium && <span className="text-brand">Premium</span>}
+                {wished && (
+                  <span
+                    data-testid={`badge-deseos-${product.sku}`}
+                    className="rounded bg-brand/10 px-1 text-brand"
+                  >
+                    En deseos
+                  </span>
+                )}
+                {owned && (
+                  <span
+                    data-testid={`badge-propio-${product.sku}`}
+                    className="rounded bg-surface px-1 text-muted"
+                  >
+                    Propio
+                  </span>
+                )}
+              </div>
             </div>
             <Button
-              className="mt-auto"
+              className="commerce-add"
               onClick={() => {
                 onAddToCart(product)
               }}
               disabled={disabled || busySku === product.productId || unavailable || otherCurrency}
               aria-label={`Anadir ${product.name} al carrito`}
+              aria-describedby={reason === undefined ? undefined : `reason-${product.productId}`}
+              title={reason}
             >
-              Anadir al carrito
+              {otherCurrency
+                ? 'Otra moneda'
+                : product.availableUnits === 0
+                  ? 'Agotado'
+                  : unavailable
+                    ? 'No disponible'
+                    : 'Añadir al carrito'}
             </Button>
-            {!product.premium && (
-              <p className="text-xs text-muted">
-                La compra con dinero está disponible para productos premium.
-              </p>
-            )}
-            {otherCurrency && (
-              <p className="text-xs text-muted">
-                Tu carrito está en {cartCurrency}. Vacíalo antes de elegir otra moneda.
+            {reason !== undefined && (
+              <p id={`reason-${product.productId}`} className="sr-only">
+                {reason}
               </p>
             )}
           </article>

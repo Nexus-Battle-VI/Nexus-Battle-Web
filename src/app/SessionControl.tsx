@@ -18,7 +18,7 @@ import { ChevronDown, LogOut, Package, User } from '@/components/ui/icons'
  * desenfoque. La etiqueta "Mi perfil" pasa a "Mi cuenta" (misma ruta `/account`).
  * Al cerrar con Escape, el foco vuelve al disparador.
  */
-export const SessionControl = (): React.JSX.Element => {
+export const SessionControl = (): React.JSX.Element | null => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -59,12 +59,11 @@ export const SessionControl = (): React.JSX.Element => {
     }
   }, [isOpen])
 
+  // Sin proveedor de identidad configurado no hay sesion posible: un boton de
+  // "Iniciar sesion" aqui no podria funcionar. En vez de ofrecer algo roto, o
+  // un aviso que le resta espacio a la navegacion, no se renderiza nada.
   if (!available) {
-    return (
-      <p className="ml-auto text-xs text-muted" data-testid="auth-unavailable">
-        Sin proveedor de identidad: nadie verifica quien realiza las peticiones
-      </p>
-    )
+    return null
   }
 
   if (subject === null) {

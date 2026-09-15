@@ -6,6 +6,7 @@ import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
 import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
+import { RequireModerator } from '@/app/RequireModerator'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
@@ -14,15 +15,17 @@ import { RegistrationPage } from '@/features/account/registration/RegistrationPa
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
+import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
-import { LandingPage } from '@/features/landing/LandingPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
+import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
+import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
@@ -61,14 +64,14 @@ export const ACCOUNT_PATH = '/account'
  * siguen montadas mas abajo -no se elimino ninguna pantalla ya implementada-,
  * simplemente ya no aparecen en esta lista.
  *
- * Tambien la reutiliza `LandingPage`: son los mismos destinos, solo que quien
- * los ve sin sesion recibe el aviso "Para continuar" de `RequireSession` en
- * lugar del contenido real.
+ * Quien navega sin sesion ve la misma lista en la cabecera; para lo que no
+ * es E-commerce, `RequireSession` muestra ahi mismo el aviso "Para continuar"
+ * en lugar del contenido real.
  */
 export interface NavigationItem {
   readonly path: string
   readonly label: string
-  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR' | 'ADMINISTRATOR'
+  readonly requiredPrimaryRole?: 'SUPER_ADMINISTRATOR' | 'ADMINISTRATOR' | 'MODERATOR'
 }
 
 export const NAVIGATION: readonly NavigationItem[] = [
@@ -90,10 +93,26 @@ export const NAVIGATION: readonly NavigationItem[] = [
     label: 'Crear producto',
     requiredPrimaryRole: 'ADMINISTRATOR',
   },
+  // HU-38 (Task #181): gestion del banner informativo. No depende de un
+  // identificador concreto -a diferencia del ajuste de tiraje-, asi que un
+  // acceso de menu si lleva a alguna parte.
+  {
+    path: '/admin/banners',
+    label: 'Gestionar banner',
+    requiredPrimaryRole: 'ADMINISTRATOR',
+  },
   {
     path: '/admin/roles',
     label: 'Gestionar roles',
     requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
+  },
+  // HU-41.10 (Management#312): acceso visible a la cola de moderacion para
+  // Moderador, Administrador y Super Administrador -nunca Jugador-. Antes
+  // solo se llegaba escribiendo la URL a mano.
+  {
+    path: '/admin/comments/moderation',
+    label: 'Moderación de comentarios',
+    requiredPrimaryRole: 'MODERATOR',
   },
 ]
 
@@ -104,10 +123,16 @@ export const NAVIGATION: readonly NavigationItem[] = [
  * Super Administrador. Comparar por igualdad -como se hacia cuando el unico
  * acceso restringido era el suyo- se lo ocultaria, y el sintoma seria confuso:
  * la ruta funciona si se escribe a mano, pero no aparece en la navegacion.
+ *
+ * `MODERATOR` entra por debajo de `ADMINISTRATOR` (HU-41.10): Community
+ * tambien acepta Administrador y Super Administrador en las rutas de
+ * moderacion, asi que un acceso que exige `MODERATOR` debe ser visible para
+ * los tres, no solo para quien tiene exactamente ese rol.
  */
 const ADMINISTRATIVE_RANK: Readonly<Record<string, number>> = {
-  SUPER_ADMINISTRATOR: 2,
-  ADMINISTRATOR: 1,
+  SUPER_ADMINISTRATOR: 3,
+  ADMINISTRATOR: 2,
+  MODERATOR: 1,
 }
 
 export const navigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
@@ -122,18 +147,15 @@ export const navigationForPrimaryRole = (role: string | null): readonly Navigati
   })
 
 export const routes: RouteObject[] = [
-  // Publicas: alcanzables sin sesion. `/` y `/login` se protegen al reves (si
-  // ya hay sesion, no tiene sentido volver a mostrarlas). `/register` no se
-  // protege: HU-01 no exige cerrar sesion antes de registrar una cuenta
-  // nueva, y esta rama no inventa esa regla.
-  {
-    path: '/',
-    element: (
-      <PublicOnlyRoute>
-        <LandingPage />
-      </PublicOnlyRoute>
-    ),
-  },
+  // La raiz ya no es un menu propio de "elige iniciar sesion o crear cuenta":
+  // E-commerce ES el punto de entrada, con o sin cuenta (ver la ruta
+  // `ecommerce` mas abajo). Redirige ahi directo, con o sin sesion, en vez de
+  // mostrar una pantalla intermedia que solo repetia los mismos dos enlaces
+  // que ya ofrece la cabecera.
+  { path: '/', element: <Navigate to={ECOMMERCE_PATH} replace /> },
+  // `/login` se protege al reves (si ya hay sesion, no tiene sentido volver a
+  // mostrarlo). `/register` no se protege: HU-01 no exige cerrar sesion antes
+  // de registrar una cuenta nueva, y esta rama no inventa esa regla.
   {
     path: '/login',
     element: (
@@ -173,9 +195,22 @@ export const routes: RouteObject[] = [
   // `import.meta.env.DEV` (ver `./dev-routes`). Vacio en produccion.
   ...publicDevRoutes,
 
+  // E-commerce es la ÚNICA pantalla del shell que se ve SIN sesion: navegar
+  // la vitrina y abrir el detalle de un producto no exige cuenta, solo
+  // comprar la exige (el carrito vive en Commerce, por cuenta). Vive en su
+  // propio `AppLayout` -sin `RequireSession`- para que quien visita sin
+  // identificarse vea la vitrina real, no el aviso "Para continuar".
+  // `SessionControl` en la cabecera ya distingue autenticado/anonimo por su
+  // cuenta; `CommercePage` gestiona el aviso de "inicia sesion o crea una
+  // cuenta" en el punto exacto donde hace falta (anadir al carrito).
+  {
+    element: <AppLayout />,
+    children: [{ path: 'ecommerce', element: <CommercePage /> }],
+  },
+
   // Ruta de layout SIN `path`: no consume ningun segmento de la URL, asi que
-  // sus hijos siguen resolviendo a las mismas rutas absolutas (`/ecommerce`,
-  // `/inventory`, ...). Es el shell autenticado; `RequireSession` decide si
+  // sus hijos siguen resolviendo a las mismas rutas absolutas (`/inventory`,
+  // `/catalog`, ...). Es el shell autenticado; `RequireSession` decide si
   // se muestra o si en su lugar aparece el aviso "Para continuar".
   {
     element: (
@@ -184,7 +219,6 @@ export const routes: RouteObject[] = [
       </RequireSession>
     ),
     children: [
-      { path: 'ecommerce', element: <CommercePage /> },
       { path: 'play', element: <ModuleUnavailable title="Jugar Online" /> },
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
@@ -226,10 +260,37 @@ export const routes: RouteObject[] = [
           </RequireAdministrator>
         ),
       },
+      // Gestion del banner informativo (HU-38, Task #181). Misma guarda que el
+      // resto de superficies administrativas: el backend tambien valida el
+      // testimonio y responde 403 aunque alguien escriba la URL a mano.
+      {
+        path: 'admin/banners',
+        element: (
+          <RequireAdministrator>
+            <BannerManagementPage />
+          </RequireAdministrator>
+        ),
+      },
+      // Cola de moderacion de comentarios (HU-41.4). Entra en `NAVIGATION`
+      // desde HU-41.10: a diferencia del ajuste de tiraje, esta pantalla no
+      // depende de un producto concreto, asi que un enlace de menu si lleva a
+      // alguna parte.
+      {
+        path: 'admin/comments/moderation',
+        element: (
+          <RequireModerator>
+            <ModerationQueuePage />
+          </RequireModerator>
+        ),
+      },
       // Pantallas de HUs anteriores. Se mantienen montadas y accesibles por
       // URL directa; solo se retiraron de `NAVIGATION` porque HU-02 exige que
       // la navegacion principal no nombre bounded contexts.
       { path: 'catalog', element: <CatalogPage /> },
+      // Ficha de producto con comentarios y calificación (HU-40, HU-40.4).
+      // NO entra en `NAVIGATION`: se llega con un producto concreto en la
+      // mano, mismo criterio que `admin/products/:productId/inventory`.
+      { path: 'catalog/:productId', element: <ProductDetailPage /> },
       { path: 'community', element: <CommunityPage /> },
       { path: 'orders', element: <Navigate to={ECOMMERCE_PATH} replace /> },
       { path: 'notifications', element: <NotificationsPage /> },

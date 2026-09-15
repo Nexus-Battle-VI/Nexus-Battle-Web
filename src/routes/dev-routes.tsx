@@ -44,6 +44,21 @@ if (import.meta.env.DEV) {
       default: module.HeroSelectionDevPreview,
     })),
   )
+  const ModerationQueueDevPreviewLazy = lazy(() =>
+    import('@/features/admin/comments/dev/ModerationQueueDevPreview').then((module) => ({
+      default: module.ModerationQueueDevPreview,
+    })),
+  )
+  const CatalogNotificationsDevPreviewLazy = lazy(() =>
+    import('@/features/notifications/dev/CatalogNotificationsDevPreview').then((module) => ({
+      default: module.CatalogNotificationsDevPreview,
+    })),
+  )
+  const BannerManagementDevPreviewLazy = lazy(() =>
+    import('@/features/notifications/dev/BannerManagementDevPreview').then((module) => ({
+      default: module.BannerManagementDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -92,6 +107,41 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <HeroSelectionDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-41.4: la cola de moderacion vive tras `RequireSession` y
+    // `RequireModerator`, y necesita Community respondiendo de verdad. El
+    // preview intercepta `fetch` para `/api/comments/*` y monta el componente
+    // de produccion sin guardas, igual que el resto de este bloque.
+    {
+      path: '__dev/admin/comments/moderation',
+      element: (
+        <Suspense fallback={null}>
+          <ModerationQueueDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-38 (Task #185): el resumen de novedades y el banner viven en
+    // `CommercePage`, tras `RequireSession`, y necesitan Notifications
+    // respondiendo de verdad. El preview intercepta `fetch` para
+    // `/api/v1/notifications/*` y `/api/v1/banners`.
+    {
+      path: '__dev/hu38/notifications',
+      element: (
+        <Suspense fallback={null}>
+          <CatalogNotificationsDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-38 (Task #181): la gestion del banner vive tras `RequireSession` y
+    // `RequireAdministrator`. El preview intercepta `fetch` para
+    // `/api/v1/admin/banners`.
+    {
+      path: '__dev/hu38/admin-banners',
+      element: (
+        <Suspense fallback={null}>
+          <BannerManagementDevPreviewLazy />
         </Suspense>
       ),
     },

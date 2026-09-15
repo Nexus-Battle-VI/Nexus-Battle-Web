@@ -128,9 +128,10 @@ describe('RegistrationPage', () => {
   })
 
   it('la raiz publica ya no sirve el formulario de registro directamente', async () => {
-    // Hasta esta correccion, `/` renderizaba `RegistrationPage`. Ahora `/` es
-    // el menu publico de Nexus (`LandingPage`) y HU-01 real vive unicamente
-    // en `/register`; ver `routes.test.tsx` para el contenido esperado de `/`.
+    // Hasta esta correccion, `/` renderizaba `RegistrationPage`. Ahora `/`
+    // redirige a E-commerce (el punto de entrada, con o sin cuenta) y HU-01
+    // real vive unicamente en `/register`; ver `routes.test.tsx` para el
+    // contenido esperado de `/`.
     const router = createMemoryRouter(routes, { initialEntries: ['/'] })
 
     render(
@@ -139,7 +140,7 @@ describe('RegistrationPage', () => {
       </QueryClientProvider>,
     )
 
-    await screen.findByRole('link', { name: 'Crear cuenta' })
+    await screen.findByRole('heading', { name: 'E-commerce' })
 
     expect(
       screen.queryByRole('heading', { level: 1, name: 'Crear cuenta' }),

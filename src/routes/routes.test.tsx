@@ -13,7 +13,6 @@ import { useSession } from '@/shared/session'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
-import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 
 describe('NAVIGATION', () => {
   /**
@@ -40,7 +39,12 @@ describe('NAVIGATION', () => {
       // HU-33: catalogo administrativo. Solo lo ven los roles administrativos;
       // el filtro se comprueba mas abajo.
       '/admin/products/new',
+      // HU-38 (Task #181): gestion del banner informativo.
+      '/admin/banners',
       '/admin/roles',
+      // HU-41.10: acceso visible a la cola de moderacion de comentarios para
+      // Moderador, Administrador y Super Administrador.
+      '/admin/comments/moderation',
     ])
     expect(paths).not.toContain('/account')
     expect(new Set(paths).size).toBe(paths.length)
@@ -69,10 +73,11 @@ describe('NAVIGATION', () => {
    * NO ve la gestion de roles. Sin el segundo caso, «hay jerarquia» podria
    * cumplirse dandoselo todo a cualquier rol administrativo.
    */
-  it('un Administrador ve el catalogo administrativo pero no la gestion de roles', () => {
+  it('un Administrador ve el catalogo administrativo y el banner, pero no la gestion de roles', () => {
     const paths = navigationForPrimaryRole('ADMINISTRATOR').map((item) => item.path)
 
     expect(paths).toContain('/admin/products/new')
+    expect(paths).toContain('/admin/banners')
     expect(paths).not.toContain('/admin/roles')
   })
 
@@ -80,6 +85,7 @@ describe('NAVIGATION', () => {
     const paths = navigationForPrimaryRole('SUPER_ADMINISTRATOR').map((item) => item.path)
 
     expect(paths).toContain('/admin/products/new')
+    expect(paths).toContain('/admin/banners')
     expect(paths).toContain('/admin/roles')
   })
 
@@ -88,7 +94,28 @@ describe('NAVIGATION', () => {
 
     expect(paths.some((path) => path.startsWith('/admin/'))).toBe(false)
   })
+
+  /**
+   * HU-41.10 (Management#312): Moderador, Administrador y Super Administrador
+   * deben ver el acceso a la cola de moderacion; Jugador nunca.
+   */
+  it.each(['MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
+    'el rol %s ve el acceso a la cola de moderacion de comentarios',
+    (role) => {
+      const paths = navigationForPrimaryRole(role).map((item) => item.path)
+
+      expect(paths).toContain('/admin/comments/moderation')
+    },
+  )
+
+  it('un jugador no ve el acceso a la cola de moderacion de comentarios', () => {
+    const paths = navigationForPrimaryRole('PLAYER').map((item) => item.path)
+
+    expect(paths).not.toContain('/admin/comments/moderation')
+  })
 })
+
+const PRODUCT_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 
 const renderRoute = (path: string) => {
   const router = createMemoryRouter(routes, { initialEntries: [path] })
@@ -130,26 +157,17 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     useSession.setState(ANONYMOUS_STATE)
   })
 
-  it('sin sesion, la raiz muestra el menu publico, no el formulario de login', async () => {
+  /**
+   * E-commerce es el punto de entrada, con o sin cuenta: la raiz ya no
+   * muestra una pantalla intermedia de "elige iniciar sesion o crear
+   * cuenta" (esa invitacion ya vive en la cabecera de la propia vitrina).
+   */
+  it('sin sesion, la raiz redirige a E-commerce y muestra la vitrina real', async () => {
     useSession.setState(ANONYMOUS_STATE)
-    renderRoute('/')
+    const { router } = renderRoute('/')
 
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Bienvenido al universo Nexus' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', { level: 1, name: 'Iniciar sesión' }),
-    ).not.toBeInTheDocument()
-  })
-
-  it('desde el menu publico se puede ir a iniciar sesion o a crear cuenta', async () => {
-    useSession.setState(ANONYMOUS_STATE)
-    renderRoute('/')
-
-    await screen.findByRole('heading', { level: 1, name: 'Bienvenido al universo Nexus' })
-
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register')
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(ECOMMERCE_PATH)
   })
 
   /**
@@ -177,17 +195,57 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(router.state.location.pathname).toBe('/register')
   })
 
-  it('sin sesion, una ruta autenticada muestra el aviso "Para continuar" en el mismo sitio, sin redirigir a /login', async () => {
+  /**
+   * E-commerce es la unica pantalla del shell que se ve SIN sesion: la
+   * vitrina y el detalle de un producto no exigen cuenta, solo comprar la
+   * exige (ver `CommercePage`, que gestiona ese aviso en el punto exacto
+   * donde hace falta). Por eso, a diferencia de cualquier otra ruta
+   * autenticada, `/ecommerce` NO muestra "Para continuar" sin sesion.
+   */
+  it('sin sesion, E-commerce muestra la vitrina real, no el aviso "Para continuar"', async () => {
     useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/ecommerce')
+
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 1, name: 'Para continuar' }),
+    ).not.toBeInTheDocument()
+    // No hubo redireccion: la URL sigue siendo la que la persona pidio.
+    expect(router.state.location.pathname).toBe('/ecommerce')
+  })
+
+  /**
+   * Con proveedor configurado (a diferencia de `ANONYMOUS_STATE`, que
+   * describe "sin proveedor" y no "sin sesion"), la cabecera SI ofrece los
+   * dos caminos para identificarse, sin bloquear la vitrina que hay detras.
+   */
+  it('sin sesion pero con proveedor configurado, la cabecera invita a iniciar sesion o crear cuenta sin tapar la vitrina', async () => {
+    useSession.setState({ ...ANONYMOUS_STATE, authenticationAvailable: true })
+    renderRoute('/ecommerce')
+
+    expect(await screen.findByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
+    // `SessionControl` (la cabecera autenticada) escribe "Iniciar sesion" sin
+    // tilde -copy propio de ese componente, distinto del de `SignInPrompt"-,
+    // asi que se busca por el testid en vez de por el texto exacto.
+    expect(screen.getByTestId('sign-in')).toHaveAttribute('href', '/login')
+    expect(screen.getByTestId('sign-up')).toHaveAttribute('href', '/register')
+  })
+
+  it('sin sesion, /account/privacy no monta el portal ni realiza consultas o exportaciones', async () => {
+    const fetchImpl = vi.fn()
+    vi.stubGlobal('fetch', fetchImpl)
+    useSession.setState(ANONYMOUS_STATE)
+    const { router } = renderRoute('/account/privacy')
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
     ).toBeInTheDocument()
-    // No hubo redireccion: la URL sigue siendo la que la persona pidio.
-    expect(router.state.location.pathname).toBe('/ecommerce')
-    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute('href', '/login')
-    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute('href', '/register')
+    expect(router.state.location.pathname).toBe('/account/privacy')
+    expect(screen.queryByRole('heading', { name: 'Mis datos personales' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Solicitar exportacion/iu }),
+    ).not.toBeInTheDocument()
+    expect(fetchImpl).not.toHaveBeenCalled()
   })
 
   it('con sesion, la raiz lleva a E-commerce y no a una pantalla distinta', async () => {
@@ -301,6 +359,68 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByRole('link', { name: 'Gestionar roles' })).toBeInTheDocument()
   })
 
+  /**
+   * HU-38 (Task #181): gestion del banner informativo. Misma guarda que el
+   * resto de superficies administrativas (`RequireAdministrator`): Jugador
+   * queda fuera, Administrador y Super Administrador entran.
+   */
+  it('un jugador recibe 403 visual al intentar la gestion del banner', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ items: [] })))
+
+    try {
+      renderRoute('/admin/banners')
+
+      expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent(/403/)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('un Administrador ve el acceso y abre la gestion del banner', async () => {
+    useSession.setState({ ...AUTHENTICATED_STATE, roles: ['PLAYER', 'ADMINISTRATOR'] })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ items: [] })))
+
+    try {
+      renderRoute('/admin/banners')
+
+      expect(await screen.findByRole('heading', { name: 'Banner informativo' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Gestionar banner' })).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  /**
+   * HU-35 (Management#43): la suspension/reactivacion vive en la MISMA ruta
+   * administrativa que HU-34 (`admin/products/:productId/inventory`), asi que
+   * su guarda es la ya existente de `RequireAdministrator` -no una nueva-.
+   * `RequireAdministrator.test.tsx` ya cubre la jerarquia de roles en
+   * aislamiento; esto solo confirma que la ruta real esta conectada a ella.
+   */
+  it('un jugador no accede a la ruta administrativa de estado del producto', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute(`/admin/products/${PRODUCT_ID}/inventory`)
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(/403/)
+  })
+
+  it('un Super Administrador accede a la ruta administrativa de estado del producto', async () => {
+    useSession.setState({
+      ...AUTHENTICATED_STATE,
+      roles: ['PLAYER', 'SUPER_ADMINISTRATOR'],
+    })
+    renderRoute(`/admin/products/${PRODUCT_ID}/inventory`)
+
+    // La guarda deja pasar la pantalla real, que arranca pidiendo el producto:
+    // suficiente para probar que RequireAdministrator no la bloqueo, sin
+    // necesitar un servidor que responda la peticion.
+    expect(await screen.findByText('Cargando el producto…')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Acceso denegado' })).not.toBeInTheDocument()
+  })
+
   it('cerrar sesion elimina la sesion y vuelve al estado publico esperado', async () => {
     useSession.setState(AUTHENTICATED_STATE)
     const user = userEvent.setup()
@@ -327,16 +447,16 @@ describe('Pantallas todavia no implementadas', () => {
    * responsable, en lugar de mostrar datos inventados que las harian
    * indistinguibles de una pantalla terminada.
    */
-  it.each([
-    ['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />],
-    ['Notificaciones', 'Nexus-Battle-Notifications', <NotificationsPage key="notifications" />],
-  ])('%s declara su estado y nombra el servicio %s', (title, service, element) => {
-    renderWithProviders(element)
+  it.each([['Comunidad', 'Nexus-Battle-Community', <CommunityPage key="community" />]])(
+    '%s declara su estado y nombra el servicio %s',
+    (title, service, element) => {
+      renderWithProviders(element)
 
-    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
-    expect(screen.getByText(/todavia no esta implementada/u)).toBeInTheDocument()
-    expect(screen.getByText(service)).toBeInTheDocument()
-  })
+      expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+      expect(screen.getByText(/todavia no esta implementada/u)).toBeInTheDocument()
+      expect(screen.getByText(service)).toBeInTheDocument()
+    },
+  )
 
   /**
    * "Mi Inventario" salio de esta lista con HU-27: ya no es un marcador de
@@ -384,13 +504,17 @@ describe('Pantallas todavia no implementadas', () => {
                   enDeseos: false,
                   adquirido: false,
                 })
-              : jsonResponse({ message: 'No hay carrito.' }, 404),
+              : url.includes('/v1/notifications/me/pending') || url.includes('/v1/banners')
+                ? jsonResponse({ items: [] })
+                : jsonResponse({ message: 'No hay carrito.' }, 404),
         ),
       ),
     )
     try {
       renderWithProviders(<CommercePage />)
       expect(screen.getByRole('heading', { name: 'Vitrina' })).toBeInTheDocument()
+      expect(screen.queryByText('Tu carrito esta vacio.')).not.toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: 'Carrito, 0 productos' }))
       expect(await screen.findByText('Tu carrito esta vacio.')).toBeInTheDocument()
       expect(await screen.findByText('Espada de hierro')).toBeInTheDocument()
       expect(
