@@ -128,6 +128,31 @@ describe('ModerationActionForm', () => {
     )
   })
 
+  it('presenta una falla del servicio con la opción de reintentar', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn().mockRejectedValue(new HttpError(503, 'Unavailable', null))
+    renderWithProviders(
+      <ModerationActionForm
+        commentId={COMMENT_ID}
+        action="hide"
+        actionLabel="Ocultar"
+        onSubmit={onSubmit}
+        onSuccess={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    )
+
+    await user.type(screen.getByRole('textbox', { name: 'Motivo de la acción' }), 'Motivo.')
+    await user.click(screen.getByRole('button', { name: 'Ocultar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'El comentario no fue modificado. Intenta nuevamente.',
+    )
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }))
+
+    expect(onSubmit).toHaveBeenCalledTimes(2)
+  })
+
   it('llama a onCancel sin enviar nada', async () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()

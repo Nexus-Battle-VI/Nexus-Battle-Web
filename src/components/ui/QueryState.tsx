@@ -7,6 +7,7 @@ export interface QueryStateProps {
   readonly error: unknown
   readonly isEmpty?: boolean
   readonly emptyMessage?: string
+  readonly emptyContent?: ReactNode
   readonly children: ReactNode
 }
 
@@ -34,6 +35,7 @@ export const QueryState = ({
   error,
   isEmpty = false,
   emptyMessage = 'No hay elementos para mostrar.',
+  emptyContent,
   children,
 }: QueryStateProps): React.JSX.Element => {
   if (isLoading) {
@@ -53,7 +55,7 @@ export const QueryState = ({
   }
 
   if (isEmpty) {
-    return <p className="text-sm text-muted">{emptyMessage}</p>
+    return <>{emptyContent ?? <p className="text-sm text-muted">{emptyMessage}</p>}</>
   }
 
   return <>{children}</>

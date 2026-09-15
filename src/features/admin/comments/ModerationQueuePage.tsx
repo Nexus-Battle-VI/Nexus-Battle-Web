@@ -43,15 +43,49 @@ const ACTIONS: readonly {
 }[] = [
   { kind: 'approve', label: 'Aprobar', variant: 'primary' },
   { kind: 'hide', label: 'Ocultar', variant: 'secondary' },
-  { kind: 'delete', label: 'Eliminar', variant: 'danger' },
-  { kind: 'mark', label: 'Marcar', variant: 'secondary' },
   { kind: 'edit', label: 'Editar', variant: 'secondary' },
+  { kind: 'mark', label: 'Marcar', variant: 'secondary' },
+  { kind: 'delete', label: 'Eliminar', variant: 'danger' },
 ]
 
-const SOURCE_LABELS: Readonly<Record<ModerationQueueEntrySource, string>> = {
-  USER_REPORT: 'Reportado por usuarios',
-  AUTOMATIC_FILTER: 'Detectado automáticamente',
+const ACTION_CLASS_NAMES: Readonly<Record<ModerationActionKind, string>> = {
+  approve: 'border border-success bg-surface-raised text-success hover:bg-success/10',
+  hide: 'border border-brand bg-surface-raised text-brand hover:bg-brand/10',
+  edit: 'border border-border bg-surface-raised text-muted hover:bg-surface',
+  mark: 'border border-brand/60 bg-brand/5 text-brand hover:bg-brand/10',
+  delete: 'border border-danger bg-surface-raised text-danger hover:bg-danger/10',
 }
+
+const sourceLabelFor = (entry: ModerationQueueEntry, source: ModerationQueueEntrySource): string =>
+  source === 'USER_REPORT' ? `Reportado ×${String(entry.reportCount)}` : 'Auto-filtrado'
+
+const sourceClassName = (source: ModerationQueueEntrySource): string =>
+  source === 'USER_REPORT'
+    ? 'border-danger/30 bg-danger/10 text-danger'
+    : 'border-brand/30 bg-brand/10 text-brand'
+
+const ACTION_SUCCESS_MESSAGES: Readonly<Record<ModerationActionKind, string>> = {
+  approve: 'Comentario aprobado correctamente.',
+  hide: 'Comentario ocultado correctamente.',
+  delete: 'Comentario eliminado correctamente.',
+  mark: 'Comentario marcado correctamente.',
+  edit: 'Comentario editado correctamente.',
+}
+
+const ModerationQueueEmptyState = (): React.JSX.Element => (
+  <section className="rounded-xl border border-border bg-surface-raised px-5 py-10 text-center">
+    <div
+      aria-hidden="true"
+      className="mx-auto grid size-14 place-items-center rounded-full bg-success/15 text-success"
+    >
+      <span className="text-2xl font-bold leading-none">✓</span>
+    </div>
+    <h2 className="mt-3 text-sm font-semibold text-ink">No hay comentarios pendientes</h2>
+    <p className="mx-auto mt-2 max-w-sm text-xs text-muted">
+      Todos los reportes y comentarios filtrados fueron gestionados.
+    </p>
+  </section>
+)
 
 /**
  * Texto de origen de una fila (HU-41.10): reportes, detecciones automaticas
@@ -161,10 +195,10 @@ export const ModerationQueuePage = ({
   }
 
   const handleSuccess =
-    (actionLabel: string) =>
+    (action: ModerationActionKind) =>
     (updated: ProductComment): void => {
       setOverrides((current) => ({ ...current, [updated.id]: updated }))
-      setBanner({ kind: 'success', message: `${actionLabel}: comentario actualizado.` })
+      setBanner({ kind: 'success', message: ACTION_SUCCESS_MESSAGES[action] })
       closeAction()
     }
 
@@ -179,13 +213,13 @@ export const ModerationQueuePage = ({
     setOverrides((current) =>
       Object.fromEntries(Object.entries(current).filter(([id]) => id !== commentId)),
     )
-    setBanner({ kind: 'success', message: 'Eliminar: comentario eliminado permanentemente.' })
+    setBanner({ kind: 'success', message: ACTION_SUCCESS_MESSAGES.delete })
     closeAction()
     void queryClient.invalidateQueries({ queryKey: ['community', 'moderation-queue'] })
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-10">
+    <div className="mx-auto w-full max-w-4xl py-8">
       <Breadcrumb
         items={[{ label: 'Inicio', to: '/ecommerce' }, { label: 'Moderación de comentarios' }]}
       />
@@ -217,46 +251,49 @@ export const ModerationQueuePage = ({
         isLoading={query.isPending}
         error={query.error}
         isEmpty={total === 0}
-        emptyMessage="No hay comentarios reportados ni detectados pendientes de revisión."
+        emptyContent={<ModerationQueueEmptyState />}
       >
-        <ul className="space-y-4">
+        <ul className="space-y-3">
           {items.map((entry) => {
             const comment = commentFor(entry.comment)
 
             return (
               <li key={comment.id}>
-                <Card>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm text-ink">{comment.content}</p>
-                      <p className="mt-1 text-xs text-muted">
-                        Autor {comment.authorId} · Producto {comment.productId} ·{' '}
-                        {formatDateTime(comment.createdAt)}
+                <Card className="rounded-[10px] p-3.5 sm:p-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                      <p className="min-w-0 flex-1 break-all text-[13px] font-semibold text-ink">
+                        Autor {comment.authorId}
                       </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <StatusBadge status={comment.moderationStatus} />
-                      <div className="flex flex-wrap justify-end gap-1">
+                      <div className="flex max-w-full flex-wrap items-center justify-end gap-1.5">
+                        <StatusBadge status={comment.moderationStatus} />
                         {entry.sources.map((source) => (
                           <span
                             key={source}
-                            className="inline-flex rounded-full border border-border px-2 py-0.5 text-[11px] text-muted"
+                            className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${sourceClassName(source)}`}
                           >
-                            {SOURCE_LABELS[source]}
+                            {sourceLabelFor(entry, source)}
                           </span>
                         ))}
                       </div>
                     </div>
+
+                    <p className="mt-2 line-clamp-2 break-words text-[13px] leading-5 text-muted">
+                      {comment.content}
+                    </p>
+                    <p className="mt-2 text-[11px] text-muted">
+                      Producto {comment.productId} · {formatDateTime(comment.createdAt)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted">{originSummary(entry)}</p>
                   </div>
 
-                  <p className="mt-3 text-xs text-muted">{originSummary(entry)}</p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
                     {ACTIONS.map(({ kind, label, variant }) => (
                       <Button
                         key={kind}
                         type="button"
                         variant={variant}
+                        className={`rounded-md px-[8px] py-[5px] text-[11px] leading-4 ${ACTION_CLASS_NAMES[kind]}`}
                         aria-expanded={
                           activeAction?.commentId === comment.id && activeAction.action === kind
                         }
@@ -284,6 +321,8 @@ export const ModerationQueuePage = ({
                       return (
                         <ModerationActionForm
                           commentId={comment.id}
+                          authorId={comment.authorId}
+                          commentContent={comment.content}
                           action={activeAction.action}
                           actionLabel={actionLabel}
                           variant={meta?.variant ?? 'primary'}
@@ -294,7 +333,7 @@ export const ModerationQueuePage = ({
                               ? () => {
                                   handleDeleteSuccess(comment.id)
                                 }
-                              : handleSuccess(actionLabel)
+                              : handleSuccess(activeAction.action)
                           }
                           onCancel={closeAction}
                         />

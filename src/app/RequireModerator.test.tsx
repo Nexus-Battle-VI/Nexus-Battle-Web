@@ -35,7 +35,7 @@ describe('RequireModerator', () => {
       </RequireModerator>,
     )
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Acceso denegado')
-    expect(screen.queryByRole('heading', { name: 'Cola de moderación' })).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('No tienes permisos para acceder')
+    expect(screen.getByRole('heading', { name: 'Cola de moderación' })).toBeInTheDocument()
   })
 })

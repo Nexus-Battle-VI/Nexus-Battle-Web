@@ -7,13 +7,16 @@ import { HttpError } from '@/lib/http'
 import type { ProductComment } from '@/features/product-reviews/api'
 import type { EditCommentInput, ModerationActionInput } from './api'
 
-const GENERIC_ERROR = 'No se pudo completar la operación. Inténtalo nuevamente más tarde.'
+const GENERIC_ERROR =
+  'Ocurrió un problema al procesar tu solicitud. El comentario no fue modificado. Intenta nuevamente.'
 const REASON_MAX_LENGTH = 500
 
 export type ModerationActionKind = 'approve' | 'hide' | 'delete' | 'mark' | 'edit'
 
 export interface ModerationActionFormProps {
   readonly commentId: string
+  readonly authorId?: string
+  readonly commentContent?: string
   readonly action: ModerationActionKind
   readonly actionLabel: string
   readonly variant?: ButtonVariant
@@ -48,6 +51,8 @@ type Outcome =
  */
 export const ModerationActionForm = ({
   commentId,
+  authorId,
+  commentContent,
   action,
   actionLabel,
   variant = 'primary',
@@ -109,8 +114,26 @@ export const ModerationActionForm = ({
     <form
       onSubmit={handleSubmit}
       aria-label={`${actionLabel} comentario ${commentId}`}
-      className="mt-2 space-y-3 rounded-lg border border-border bg-surface p-3"
+      className="mt-3 space-y-3 rounded-lg border border-border bg-surface p-3 sm:p-4"
     >
+      <h3 className="text-sm font-semibold text-ink">{actionLabel} comentario</h3>
+
+      {action === 'delete' && (
+        <div className="rounded-lg border-l-2 border-danger bg-danger/5 px-3.5 py-3 text-[13px]">
+          <p className="font-semibold text-ink">Esta acción es irreversible</p>
+          <p className="mt-1 text-muted">
+            El comentario será eliminado permanentemente y no podrá restaurarse.
+          </p>
+        </div>
+      )}
+
+      {authorId !== undefined && commentContent !== undefined && (
+        <blockquote className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5">
+          <p className="text-xs font-semibold text-muted">Autor {authorId}</p>
+          <p className="mt-1 break-words text-[13px] text-ink">{commentContent}</p>
+        </blockquote>
+      )}
+
       {mutation.isPending && (
         <p role="status" className="text-sm text-muted">
           Enviando…
@@ -157,6 +180,7 @@ export const ModerationActionForm = ({
         <TextareaField
           label="Nuevo contenido"
           required
+          rows={3}
           value={content}
           disabled={mutation.isPending}
           maxLength={2000}
@@ -171,6 +195,7 @@ export const ModerationActionForm = ({
         required
         value={reason}
         disabled={mutation.isPending}
+        rows={3}
         maxLength={REASON_MAX_LENGTH}
         error={reasonError}
         placeholder="Explica por qué se toma esta acción…"
@@ -180,12 +205,23 @@ export const ModerationActionForm = ({
         }}
       />
 
-      <div className="flex gap-2">
-        <Button type="submit" variant={variant} loading={mutation.isPending}>
-          {actionLabel}
-        </Button>
-        <Button type="button" variant="secondary" disabled={mutation.isPending} onClick={onCancel}>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          className="min-h-12 w-full rounded-lg"
+          disabled={mutation.isPending}
+          onClick={onCancel}
+        >
           Cancelar
+        </Button>
+        <Button
+          type="submit"
+          variant={variant}
+          className="min-h-12 w-full rounded-lg"
+          loading={mutation.isPending}
+        >
+          {outcome?.kind === 'error' ? 'Reintentar' : actionLabel}
         </Button>
       </div>
     </form>

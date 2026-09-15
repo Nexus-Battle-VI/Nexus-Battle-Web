@@ -64,9 +64,10 @@ describe('ModerationQueuePage', () => {
     renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
 
     expect(
-      await screen.findByText(
-        'No hay comentarios reportados ni detectados pendientes de revisión.',
-      ),
+      await screen.findByRole('heading', { name: 'No hay comentarios pendientes' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Todos los reportes y comentarios filtrados fueron gestionados.'),
     ).toBeInTheDocument()
   })
 
@@ -90,7 +91,9 @@ describe('ModerationQueuePage', () => {
     )
     await user.click(within(form).getByRole('button', { name: 'Aprobar' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent('comentario actualizado')
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Comentario aprobado correctamente.',
+    )
     expect(screen.getByText('Aprobado')).toBeInTheDocument()
     expect(approve).toHaveBeenCalledWith('comment-1', {
       reason: 'Comentario legítimo tras revisión.',
@@ -163,8 +166,8 @@ describe('ModerationQueuePage', () => {
 
     renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
 
-    expect(await screen.findByText('Reportado por usuarios')).toBeInTheDocument()
-    expect(screen.queryByText('Detectado automáticamente')).not.toBeInTheDocument()
+    expect(await screen.findByText('Reportado ×3')).toBeInTheDocument()
+    expect(screen.queryByText('Auto-filtrado')).not.toBeInTheDocument()
   })
 
   it('muestra el origen "deteccion automatica" para una fila solo detectada por el filtro', async () => {
@@ -182,8 +185,8 @@ describe('ModerationQueuePage', () => {
 
     renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
 
-    expect(await screen.findByText('Detectado automáticamente')).toBeInTheDocument()
-    expect(screen.queryByText('Reportado por usuarios')).not.toBeInTheDocument()
+    expect(await screen.findByText('Auto-filtrado')).toBeInTheDocument()
+    expect(screen.queryByText('Reportado ×3')).not.toBeInTheDocument()
     expect(
       screen.getByText('2 detecciones automáticas · última detección', { exact: false }),
     ).toBeInTheDocument()
@@ -202,8 +205,8 @@ describe('ModerationQueuePage', () => {
 
     renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
 
-    expect(await screen.findAllByText('Reportado por usuarios')).toHaveLength(1)
-    expect(screen.getAllByText('Detectado automáticamente')).toHaveLength(1)
+    expect(await screen.findAllByText('Reportado ×3')).toHaveLength(1)
+    expect(screen.getAllByText('Auto-filtrado')).toHaveLength(1)
   })
 
   /**
@@ -224,10 +227,19 @@ describe('ModerationQueuePage', () => {
     await user.click(screen.getByRole('button', { name: 'Eliminar' }))
 
     const form = screen.getByRole('form', { name: /Eliminar comentario/ })
+    expect(within(form).getByText('Autor acc-1')).toBeInTheDocument()
+    expect(within(form).getByText('Esta acción es irreversible')).toBeInTheDocument()
+    expect(
+      within(form).getByText(
+        'El comentario será eliminado permanentemente y no podrá restaurarse.',
+      ),
+    ).toBeInTheDocument()
     await user.type(within(form).getByRole('textbox', { name: 'Motivo de la acción' }), 'Infringe.')
     await user.click(within(form).getByRole('button', { name: 'Eliminar' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent('eliminado permanentemente')
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Comentario eliminado correctamente.',
+    )
     expect(
       screen.queryByText('Contenido publicitario repetido en varios productos.'),
     ).not.toBeInTheDocument()
