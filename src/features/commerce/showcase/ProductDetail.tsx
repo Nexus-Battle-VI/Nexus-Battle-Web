@@ -15,7 +15,9 @@ import { ProductPrice } from './ProductPrice'
  * es un volcado generico del esquema y no sabe que esos strings son claves
  * foraneas. Se resuelven aqui, una vez, a su nombre visible.
  */
-const heroAbilityIds = (values: Readonly<Record<string, unknown>> | undefined): readonly string[] => {
+const heroAbilityIds = (
+  values: Readonly<Record<string, unknown>> | undefined,
+): readonly string[] => {
   if (values?.kind !== 'HEROE' || !Array.isArray(values.abilities)) return []
   return values.abilities.filter((entry): entry is string => typeof entry === 'string')
 }
