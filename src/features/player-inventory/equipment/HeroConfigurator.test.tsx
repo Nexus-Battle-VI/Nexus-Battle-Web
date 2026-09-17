@@ -185,6 +185,41 @@ describe('HeroConfigurator (HU-28)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('ya esta ocupada')
   })
 
+  it('explica battle_lock y mantiene intacto el equipamiento visible tras el rechazo', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method === 'PUT') {
+        return Promise.resolve(
+          json(
+            {
+              reason: 'battle_lock',
+              message:
+                'No se puede modificar el equipamiento porque el héroe participa en una batalla activa.',
+            },
+            409,
+          ),
+        )
+      }
+      return Promise.resolve(json(EQUIPPED))
+    })
+
+    renderWithProviders(<Harness productReference="espada-de-hielo" productType="ARMA" />)
+    await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(
+      await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
+    ).toBeInTheDocument()
+    await user.click(screen.getByTestId('slot-WEAPON_2'))
+    await user.click(await screen.findByRole('button', { name: 'Equipar' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Equipamiento protegido durante la batalla')
+    expect(alert).toHaveTextContent('participa en una batalla activa')
+    expect(alert).toHaveTextContent('se mantienen sin cambios')
+    expect(within(screen.getByTestId('slot-WEAPON_1')).getByText('Espada de Fuego')).toBeVisible()
+    expect(within(screen.getByTestId('slot-WEAPON_2')).queryByText('Espada de Hielo')).toBeNull()
+  })
+
   it('propaga el 503 de Catalog al consultar el equipamiento', async () => {
     const user = userEvent.setup()
     fetchMock.mockResolvedValue(json({ message: 'Catalog no disponible.' }, 503))
