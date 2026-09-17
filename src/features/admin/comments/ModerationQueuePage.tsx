@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
@@ -8,11 +8,13 @@ import { QueryState } from '@/components/ui/QueryState'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { formatDateTime } from '@/lib/format'
 import { queryKeys } from '@/shared/query-keys'
+import { fetchProduct } from '@/features/commerce/showcase/api'
 import type { ProductComment } from '@/features/product-reviews/api'
 import {
   approveComment,
   deleteCommentByModeration,
   editComment,
+  fetchAccountDisplayName,
   fetchModerationQueue,
   hideComment,
   markComment,
@@ -156,6 +158,39 @@ export const ModerationQueuePage = ({
 
   const commentFor = (comment: ProductComment): ProductComment => overrides[comment.id] ?? comment
 
+  /**
+   * `authorId`/`productId` son referencias, no nombres (mismo motivo que las
+   * habilidades de un heroe en `ProductDetail`): se resuelven aqui, no las
+   * cambia ninguna accion de moderacion, asi que se leen de `entry.comment`
+   * directo, sin pasar por `commentFor`/`overrides`.
+   */
+  const authorIds = [...new Set(items.map((entry) => entry.comment.authorId))]
+  const productIds = [...new Set(items.map((entry) => entry.comment.productId))]
+
+  const authorQueries = useQueries({
+    queries: authorIds.map((id) => ({
+      queryKey: queryKeys.account.displayName(id),
+      queryFn: () => fetchAccountDisplayName(id),
+      retry: false,
+    })),
+  })
+  const productQueries = useQueries({
+    queries: productIds.map((id) => ({
+      queryKey: queryKeys.commerce.product(id),
+      queryFn: ({ signal }: { signal?: AbortSignal }) => fetchProduct(id, signal),
+      retry: false,
+    })),
+  })
+
+  const authorNameOf = (authorId: string): string => {
+    const index = authorIds.indexOf(authorId)
+    return authorQueries[index]?.data?.displayName ?? authorId
+  }
+  const productNameOf = (productId: string): string => {
+    const index = productIds.indexOf(productId)
+    return productQueries[index]?.data?.name ?? productId
+  }
+
   const closeAction = (): void => {
     setActiveAction(null)
   }
@@ -230,8 +265,8 @@ export const ModerationQueuePage = ({
                     <div className="min-w-0">
                       <p className="text-sm text-ink">{comment.content}</p>
                       <p className="mt-1 text-xs text-muted">
-                        Autor {comment.authorId} · Producto {comment.productId} ·{' '}
-                        {formatDateTime(comment.createdAt)}
+                        Autor {authorNameOf(comment.authorId)} · Producto{' '}
+                        {productNameOf(comment.productId)} · {formatDateTime(comment.createdAt)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
