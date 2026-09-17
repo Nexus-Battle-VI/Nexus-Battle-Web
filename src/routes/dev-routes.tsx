@@ -44,6 +44,11 @@ if (import.meta.env.DEV) {
       default: module.HeroSelectionDevPreview,
     })),
   )
+  const HeroPowerDevPreviewLazy = lazy(() =>
+    import('@/features/player-inventory/dev/HeroPowerDevPreview').then((module) => ({
+      default: module.HeroPowerDevPreview,
+    })),
+  )
   const ModerationQueueDevPreviewLazy = lazy(() =>
     import('@/features/admin/comments/dev/ModerationQueueDevPreview').then((module) => ({
       default: module.ModerationQueueDevPreview,
@@ -107,6 +112,17 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <HeroSelectionDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-11: la TASK de implementación excluye una pantalla productiva y el
+    // contexto de combate aún no publica API. Este harness presenta snapshots
+    // contractuales sin duplicar las reglas del módulo Node.js en React.
+    {
+      path: '__dev/hu11/power',
+      element: (
+        <Suspense fallback={null}>
+          <HeroPowerDevPreviewLazy />
         </Suspense>
       ),
     },
