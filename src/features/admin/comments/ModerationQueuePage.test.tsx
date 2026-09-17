@@ -8,6 +8,7 @@ import { ModerationQueuePage } from './ModerationQueuePage'
 import * as api from './api'
 import type { ModerationQueueEntry, ModerationQueuePage as ModerationQueuePageDto } from './api'
 import type { ProductComment } from '@/features/product-reviews/api'
+import * as showcaseApi from '@/features/commerce/showcase/api'
 
 const PRODUCT_ID = '3f2a1e4c-6b7d-4a8e-9c1f-2d3e4f5a6b7c'
 
@@ -67,6 +68,49 @@ describe('ModerationQueuePage', () => {
       await screen.findByText(
         'No hay comentarios reportados ni detectados pendientes de revisión.',
       ),
+    ).toBeInTheDocument()
+  })
+
+  it('resuelve autor y producto a su nombre visible, no al identificador crudo', async () => {
+    const listQueue = vi.fn().mockResolvedValue(page([entry()]))
+    vi.spyOn(api, 'fetchAccountDisplayName').mockResolvedValue({ displayName: 'Ana Ramirez' })
+    vi.spyOn(showcaseApi, 'fetchProduct').mockResolvedValue({
+      productId: PRODUCT_ID,
+      sku: 'chaman-3e1a5a81',
+      name: 'Chamán',
+      imageUrl: '',
+      description: '',
+      type: 'HEROE',
+      attributes: { schemaVersion: '1', values: {} },
+      printRun: -1,
+      printRunMode: 'INFINITE',
+      availableUnits: null,
+      lifecycleStatus: 'ACTIVE',
+      creditsPrice: 0,
+      premium: true,
+      realMoneyPrice: null,
+      createdAt: '2026-09-03T10:00:00.000Z',
+      updatedAt: '2026-09-03T10:00:00.000Z',
+      version: 0,
+    })
+
+    renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
+
+    expect(
+      await screen.findByText('Autor Ana Ramirez · Producto Chamán ·', { exact: false }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('acc-1', { exact: false })).not.toBeInTheDocument()
+  })
+
+  it('cae al identificador crudo si Account o Catalog no resuelven la referencia (404)', async () => {
+    const listQueue = vi.fn().mockResolvedValue(page([entry()]))
+    vi.spyOn(api, 'fetchAccountDisplayName').mockRejectedValue(new HttpError(404, 'no existe', {}))
+    vi.spyOn(showcaseApi, 'fetchProduct').mockRejectedValue(new HttpError(404, 'no existe', {}))
+
+    renderWithProviders(<ModerationQueuePage listQueue={listQueue} />)
+
+    expect(
+      await screen.findByText(`Autor acc-1 · Producto ${PRODUCT_ID} ·`, { exact: false }),
     ).toBeInTheDocument()
   })
 

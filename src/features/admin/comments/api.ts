@@ -108,3 +108,11 @@ export const markComment = (
 /** `POST /api/comments/:commentId/edits`: edita el contenido por moderacion. */
 export const editComment = (commentId: string, input: EditCommentInput): Promise<ProductComment> =>
   moderate(commentId, 'edits', input)
+
+/**
+ * `GET /api/accounts/:id/display-name` (Account, HU-41): solo el nombre
+ * visible del autor de un comentario, sin correo, nombre legal, estado ni
+ * roles -esta pantalla exige MODERATOR, no ADMINISTRATOR-.
+ */
+export const fetchAccountDisplayName = (accountId: string): Promise<{ displayName: string }> =>
+  httpClient.get<{ displayName: string }>(`/accounts/${encodeURIComponent(accountId)}/display-name`)

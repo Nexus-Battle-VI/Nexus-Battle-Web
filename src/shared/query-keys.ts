@@ -94,6 +94,8 @@ export const queryKeys = {
     privacy: ['account', 'me', 'privacy'] as const,
     /** Panel administrativo de usuarios filtrado por criterios serializados. */
     adminUsers: (criteriaKey: string) => ['account', 'admin-users', criteriaKey] as const,
+    /** Solo el nombre visible (HU-41, `GET /accounts/:id/display-name`), no `detail`. */
+    displayName: (accountId: string) => ['account', accountId, 'display-name'] as const,
   },
   notifications: {
     /**
