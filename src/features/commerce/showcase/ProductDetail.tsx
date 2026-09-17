@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
 import { queryKeys } from '@/shared/query-keys'
 import { ProductImage } from '@/features/commerce/ProductImage'
+import { ProductCommentsAndRating } from '@/features/product-reviews/ProductCommentsAndRating'
+import { ProductCommentsList } from '@/features/product-reviews/ProductCommentsList'
 import { fetchProduct, PRODUCT_TYPE_LABELS } from './api'
 import { ProductAttributes } from './ProductAttributes'
 import { ProductPrice } from './ProductPrice'
@@ -87,6 +89,10 @@ export const ProductDetail = ({
             <div className="rounded-lg border border-border bg-surface p-4">
               <h4 className="mb-3 text-sm font-semibold text-ink">Atributos</h4>
               <ProductAttributes values={displayedValues ?? query.data.attributes.values} />
+            </div>
+            <div className="space-y-6 rounded-lg border border-border bg-surface p-4">
+              <ProductCommentsList productId={query.data.productId} />
+              <ProductCommentsAndRating productId={query.data.productId} />
             </div>
           </>
         )}
