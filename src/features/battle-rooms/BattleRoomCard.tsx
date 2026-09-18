@@ -50,7 +50,9 @@ export const BattleRoomCard = ({
           <span className="text-sm font-medium text-ink">{modeLabel(room.mode)}</span>
         </div>
         <p className="flex items-center gap-1.5 text-sm text-muted">
-          <span>{filled}/{total} jugadores</span>
+          <span>
+            {filled}/{total} jugadores
+          </span>
           <span aria-hidden="true">·</span>
           <Coins aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
           <span>{room.reward.amount.toLocaleString('es-CO')}</span>

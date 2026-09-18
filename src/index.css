@@ -371,9 +371,7 @@ body {
  * `.nb-nav-pill` arriba: azul en Light, violeta Nexus en Dark, sin hex propio.
  */
 .nb-logo-glow {
-  filter: drop-shadow(
-    0 0 8px color-mix(in oklab, var(--color-brand) 45%, transparent)
-  );
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--color-brand) 45%, transparent));
 }
 
 @media (prefers-reduced-motion: no-preference) {

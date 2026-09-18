@@ -28,12 +28,14 @@ const aiOpponentTeam = (capacity: number): CreateTeamConfigInput => ({
   initialParticipants: Array.from({ length: capacity }, () => ({ kind: 'AI' as const })),
 })
 
-const buildPayload = (mode: BattleRoomMode, capacity: number, amount: number): CreateBattleRoomInput => ({
+const buildPayload = (
+  mode: BattleRoomMode,
+  capacity: number,
+  amount: number,
+): CreateBattleRoomInput => ({
   mode,
   teamConfigs:
-    mode === 'PVE'
-      ? [{ capacity }, aiOpponentTeam(capacity)]
-      : [{ capacity }, { capacity }],
+    mode === 'PVE' ? [{ capacity }, aiOpponentTeam(capacity)] : [{ capacity }, { capacity }],
   reward: { amount },
 })
 
@@ -144,7 +146,9 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
               inputMode="numeric"
               value={rewardInput}
               aria-invalid={rewardError !== undefined}
-              aria-describedby={rewardError === undefined ? 'battle-room-reward-hint' : 'battle-room-reward-error'}
+              aria-describedby={
+                rewardError === undefined ? 'battle-room-reward-hint' : 'battle-room-reward-error'
+              }
               onChange={(event) => {
                 setRewardInput(event.target.value)
               }}

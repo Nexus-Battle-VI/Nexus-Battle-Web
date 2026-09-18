@@ -85,12 +85,11 @@ describe('BattleRoomsPage — consulta (GET)', () => {
   it('pinta varias salas', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse(200, [
-          room({ id: 'sala-1' }),
-          room({ id: 'sala-2', mode: 'PVE' }),
-        ]),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          jsonResponse(200, [room({ id: 'sala-1' }), room({ id: 'sala-2', mode: 'PVE' })]),
+        ),
     )
 
     renderWithProviders(<BattleRoomsPage />)
@@ -102,7 +101,12 @@ describe('BattleRoomsPage — consulta (GET)', () => {
   it('filtra client-side por modalidad sin lanzar una peticion nueva', async () => {
     const fetchImpl = vi
       .fn()
-      .mockResolvedValue(jsonResponse(200, [room({ id: 'sala-pvp', mode: 'PVP' }), room({ id: 'sala-pve', mode: 'PVE' })]))
+      .mockResolvedValue(
+        jsonResponse(200, [
+          room({ id: 'sala-pvp', mode: 'PVP' }),
+          room({ id: 'sala-pve', mode: 'PVE' }),
+        ]),
+      )
     vi.stubGlobal('fetch', fetchImpl)
     const user = userEvent.setup()
 
@@ -126,7 +130,9 @@ describe('BattleRoomsPage — consulta (GET)', () => {
   it('busca client-side por ID de sala', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse(200, [room({ id: 'sala-uno' }), room({ id: 'sala-dos' })])),
+      vi
+        .fn()
+        .mockResolvedValue(jsonResponse(200, [room({ id: 'sala-uno' }), room({ id: 'sala-dos' })])),
     )
     const user = userEvent.setup()
 
@@ -140,7 +146,10 @@ describe('BattleRoomsPage — consulta (GET)', () => {
   })
 
   it('muestra un mensaje comprensible ante un 401, sin redireccion automatica', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(401, { message: 'Sin testimonio' })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(401, { message: 'Sin testimonio' })),
+    )
 
     renderWithProviders(<BattleRoomsPage />)
 
@@ -266,7 +275,10 @@ describe('BattleRoomsPage — creacion (POST)', () => {
     const postCall = fetchImpl.mock.calls.find(([, init]) => init?.method === 'POST')
     const sentBody = JSON.parse(postCall![1]!.body as string) as {
       mode: string
-      teamConfigs: readonly { capacity: number; initialParticipants?: readonly { kind: string }[] }[]
+      teamConfigs: readonly {
+        capacity: number
+        initialParticipants?: readonly { kind: string }[]
+      }[]
     }
 
     expect(sentBody.mode).toBe('PVE')
@@ -373,12 +385,14 @@ describe('BattleRoomsPage — cancelacion', () => {
   it('solo muestra "Cancelar" en la sala propia', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse(200, [
-          room({ id: 'sala-propia', createdBy: 'sujeto-ana' }),
-          room({ id: 'sala-ajena', createdBy: 'sujeto-otro' }),
-        ]),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          jsonResponse(200, [
+            room({ id: 'sala-propia', createdBy: 'sujeto-ana' }),
+            room({ id: 'sala-ajena', createdBy: 'sujeto-otro' }),
+          ]),
+        ),
     )
 
     renderWithProviders(<BattleRoomsPage />)
@@ -401,15 +415,21 @@ describe('BattleRoomsPage — cancelacion', () => {
    * capacidad de cancelar, sin importar cuantas salas haya en el listado.
    */
   it('sin sesion coincidente, ninguna sala ofrece "Cancelar" (ownership real, no de UI)', async () => {
-    useSession.setState({ subject: 'sujeto-otra-persona', accessToken: 'token', expiresAt: Date.now() + 900_000 })
+    useSession.setState({
+      subject: 'sujeto-otra-persona',
+      accessToken: 'token',
+      expiresAt: Date.now() + 900_000,
+    })
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse(200, [
-          room({ id: 'sala-de-ana', createdBy: 'sujeto-ana' }),
-          room({ id: 'sala-de-otro', createdBy: 'sujeto-tercero' }),
-        ]),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          jsonResponse(200, [
+            room({ id: 'sala-de-ana', createdBy: 'sujeto-ana' }),
+            room({ id: 'sala-de-otro', createdBy: 'sujeto-tercero' }),
+          ]),
+        ),
     )
 
     renderWithProviders(<BattleRoomsPage />)
@@ -453,7 +473,9 @@ describe('BattleRoomsPage — cancelacion', () => {
         return Promise.resolve(jsonResponse(403, { message: 'Solo el creador puede cancelarla.' }))
       }
 
-      return Promise.resolve(jsonResponse(200, [room({ id: 'sala-propia', createdBy: 'sujeto-ana' })]))
+      return Promise.resolve(
+        jsonResponse(200, [room({ id: 'sala-propia', createdBy: 'sujeto-ana' })]),
+      )
     })
     vi.stubGlobal('fetch', fetchImpl)
     const user = userEvent.setup()
@@ -473,7 +495,9 @@ describe('BattleRoomsPage — cancelacion', () => {
         return Promise.resolve(jsonResponse(404, { message: 'Sala no encontrada.' }))
       }
 
-      return Promise.resolve(jsonResponse(200, [room({ id: 'sala-propia', createdBy: 'sujeto-ana' })]))
+      return Promise.resolve(
+        jsonResponse(200, [room({ id: 'sala-propia', createdBy: 'sujeto-ana' })]),
+      )
     })
     vi.stubGlobal('fetch', fetchImpl)
     const user = userEvent.setup()
@@ -493,7 +517,9 @@ describe('BattleRoomsPage — cancelacion', () => {
         return Promise.resolve(jsonResponse(409, { message: 'La sala ya no se puede cancelar.' }))
       }
 
-      return Promise.resolve(jsonResponse(200, [room({ id: 'sala-propia', createdBy: 'sujeto-ana' })]))
+      return Promise.resolve(
+        jsonResponse(200, [room({ id: 'sala-propia', createdBy: 'sujeto-ana' })]),
+      )
     })
     vi.stubGlobal('fetch', fetchImpl)
     const user = userEvent.setup()

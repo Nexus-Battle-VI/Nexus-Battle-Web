@@ -49,7 +49,10 @@ describe('fetchBattleRooms', () => {
   })
 
   it('propaga un 401 como HttpError no autorizado', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(401, { message: 'Sin testimonio' })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(401, { message: 'Sin testimonio' })),
+    )
 
     await expect(fetchBattleRooms()).rejects.toSatisfy(
       (error: unknown) => error instanceof HttpError && error.isUnauthorized,
@@ -84,11 +87,11 @@ describe('createBattleRoom', () => {
   it('propaga un 422 de regla de negocio con el mensaje real del dominio', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          jsonResponse(422, { message: 'La recompensa debe ser un número mayor o igual a 0. Se recibió -10.' }),
-        ),
+      vi.fn().mockResolvedValue(
+        jsonResponse(422, {
+          message: 'La recompensa debe ser un número mayor o igual a 0. Se recibió -10.',
+        }),
+      ),
     )
 
     await expect(createBattleRoom({ ...input, reward: { amount: -10 } })).rejects.toMatchObject({
@@ -98,7 +101,10 @@ describe('createBattleRoom', () => {
   })
 
   it('propaga un 400 de formato invalido', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(400, { message: 'mode invalido' })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(400, { message: 'mode invalido' })),
+    )
 
     await expect(createBattleRoom(input)).rejects.toMatchObject({ status: 400 })
   })
@@ -126,7 +132,11 @@ describe('cancelBattleRoom', () => {
   it('propaga un 403 cuando quien cancela no es el creador', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse(403, { message: `Solo el creador de la sala "${ROOM.id}" puede cancelarla.` })),
+      vi.fn().mockResolvedValue(
+        jsonResponse(403, {
+          message: `Solo el creador de la sala "${ROOM.id}" puede cancelarla.`,
+        }),
+      ),
     )
 
     await expect(cancelBattleRoom(ROOM.id)).rejects.toSatisfy(
@@ -135,7 +145,10 @@ describe('cancelBattleRoom', () => {
   })
 
   it('propaga un 404 cuando la sala no existe', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(404, { message: 'No encontrada' })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(404, { message: 'No encontrada' })),
+    )
 
     await expect(cancelBattleRoom(ROOM.id)).rejects.toSatisfy(
       (error: unknown) => error instanceof HttpError && error.isNotFound,

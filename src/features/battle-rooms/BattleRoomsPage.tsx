@@ -23,7 +23,9 @@ export const BattleRoomsPage = (): React.JSX.Element => (
       </span>
       <div>
         <h1 className="text-2xl font-semibold text-ink">Jugar Online</h1>
-        <p className="text-sm text-muted">Lobby de combate: crea una sala o unete a una existente.</p>
+        <p className="text-sm text-muted">
+          Lobby de combate: crea una sala o unete a una existente.
+        </p>
       </div>
     </header>
 

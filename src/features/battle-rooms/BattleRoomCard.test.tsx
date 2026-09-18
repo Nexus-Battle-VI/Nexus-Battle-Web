@@ -9,7 +9,11 @@ const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
   mode: 'PVP',
   status: 'WAITING_FOR_PLAYERS',
   teams: [
-    { label: 'A', capacity: 2, participants: [{ kind: 'HUMAN', playerId: 'p1', heroId: null, joinedAt: '2026-01-01' }] },
+    {
+      label: 'A',
+      capacity: 2,
+      participants: [{ kind: 'HUMAN', playerId: 'p1', heroId: null, joinedAt: '2026-01-01' }],
+    },
     { label: 'B', capacity: 2, participants: [] },
   ],
   reward: { amount: 2_000 },

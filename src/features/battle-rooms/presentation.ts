@@ -28,7 +28,9 @@ export const TEAM_FORMATS: readonly { readonly capacity: number; readonly label:
 ]
 
 /** Cupos ocupados / capacidad total, sumando ambos equipos de la sala. */
-export const occupancyOf = (room: BattleRoom): { readonly filled: number; readonly total: number } =>
+export const occupancyOf = (
+  room: BattleRoom,
+): { readonly filled: number; readonly total: number } =>
   room.teams.reduce(
     (acc, team) => ({
       filled: acc.filled + team.participants.length,
