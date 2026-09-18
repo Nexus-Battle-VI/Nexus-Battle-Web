@@ -50,7 +50,7 @@ export const AppHeader = (): React.JSX.Element => {
             alt="Nexus Battles VI"
             width={1600}
             height={600}
-            className="h-8 w-auto"
+            className="nb-logo-glow h-8 w-auto"
           />
         </Link>
 

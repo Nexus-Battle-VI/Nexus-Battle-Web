@@ -12,6 +12,7 @@ import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
+import { BattleRoomsPage } from '@/features/battle-rooms/BattleRoomsPage'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
@@ -219,7 +220,10 @@ export const routes: RouteObject[] = [
       </RequireSession>
     ),
     children: [
-      { path: 'play', element: <ModuleUnavailable title="Jugar Online" /> },
+      // Jugar Online (HU-14): creacion y consulta de salas de batalla contra
+      // el contrato real de Combat. Unirse a una sala es HU-15 y todavia no
+      // esta implementado aqui.
+      { path: 'play', element: <BattleRoomsPage /> },
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },

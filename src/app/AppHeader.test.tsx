@@ -30,6 +30,16 @@ describe('AppHeader', () => {
     expect(screen.getByRole('img', { name: 'Nexus Battles VI' })).toBeInTheDocument()
   })
 
+  it('el logo conserva alt, dimensiones y fallback, y suma el halo de marca sin cambiarlos', () => {
+    renderHeader()
+
+    const logo = screen.getByRole('img', { name: 'Nexus Battles VI' })
+    expect(logo).toHaveAttribute('src', '/assets/logo.png')
+    expect(logo).toHaveAttribute('width', '1600')
+    expect(logo).toHaveAttribute('height', '600')
+    expect(logo).toHaveClass('nb-logo-glow')
+  })
+
   it('incluye la navegacion principal y el conmutador de tema', () => {
     renderHeader()
 
