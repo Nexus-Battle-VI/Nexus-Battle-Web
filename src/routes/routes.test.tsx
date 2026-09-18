@@ -282,6 +282,47 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
   })
 
+  /**
+   * HU-14.4: `/missions` y `/auction` NO se tocan por esta task y deben
+   * seguir mostrando el mismo marcador que `/tournament` ya prueba arriba.
+   */
+  it.each(['/missions', '/auction'])(
+    '%s sigue mostrando el modulo no disponible (sin regresion de HU-14.4)',
+    async (path) => {
+      useSession.setState(AUTHENTICATED_STATE)
+      renderRoute(path)
+
+      expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
+    },
+  )
+
+  /**
+   * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un
+   * `fetch` real stubbeado (no un mock manual) porque la pantalla real hace
+   * una consulta GET al montar.
+   */
+  it('/play ya no muestra el modulo no disponible: renderiza la pantalla real de salas de batalla', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+
+    try {
+      renderRoute('/play')
+
+      expect(await screen.findByRole('heading', { name: 'Jugar Online' })).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('un visitante que intenta Mi Inventario sin sesion recibe el gate, no el inventario', async () => {
     useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/inventory')

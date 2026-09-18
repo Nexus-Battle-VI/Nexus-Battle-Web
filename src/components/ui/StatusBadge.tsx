@@ -20,6 +20,8 @@ const TONE: Readonly<Record<string, string>> = {
   HIDDEN: 'bg-danger/15 text-danger',
   PENDING: 'bg-warning/15 text-warning',
   MARKED: 'bg-warning/15 text-warning',
+  // Sala de batalla esperando jugadores (HU-14).
+  WAITING_FOR_PLAYERS: 'bg-success/15 text-success',
 }
 
 export const StatusBadge = ({ status }: StatusBadgeProps): React.JSX.Element => (

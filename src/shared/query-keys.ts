@@ -97,6 +97,15 @@ export const queryKeys = {
     /** Solo el nombre visible (HU-41, `GET /accounts/:id/display-name`), no `detail`. */
     displayName: (accountId: string) => ['account', accountId, 'display-name'] as const,
   },
+  battleRooms: {
+    /**
+     * Listado de salas esperando jugadores (HU-14,
+     * `GET /api/v1/combat/rooms`). Sin parametros: el servicio no acepta
+     * filtros server-side (ver `features/battle-rooms/api.ts`); cualquier
+     * filtro de la UI se aplica client-side sobre este mismo resultado.
+     */
+    list: ['battle-rooms', 'list'] as const,
+  },
   notifications: {
     /**
      * Novedades de catálogo pendientes de presentar (HU-38,

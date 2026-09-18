@@ -364,6 +364,22 @@ body {
     width 200ms ease-out;
 }
 
+/*
+ * Halo sutil del logotipo real (header/nav, `AppHeader.tsx`). `drop-shadow`
+ * -no `box-shadow`- respeta la silueta transparente del PNG en vez de dibujar
+ * un rectangulo detras. Sale de `--color-brand` con `color-mix`, igual que
+ * `.nb-nav-pill` arriba: azul en Light, violeta Nexus en Dark, sin hex propio.
+ */
+.nb-logo-glow {
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--color-brand) 45%, transparent));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nb-logo-glow {
+    transition: filter 300ms ease-out;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nb-nav-pill {
     transition-duration: 0.01ms;
