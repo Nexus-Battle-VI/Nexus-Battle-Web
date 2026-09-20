@@ -32,6 +32,15 @@ export interface OwnAccount {
   /** Uno de los tres estados del contrato; se muestra siempre via `statusLabel`. */
   readonly status: AccountStatus
   readonly roles: readonly string[]
+  /**
+   * Ruta relativa al avatar real (HU-15.3), servida por Account tras el JWT:
+   * `GET /accounts/{id}/avatar`. `null` cuando la cuenta no tiene avatar
+   * persistido — no hay imagen que mostrar, y la UI cae a la inicial. Es
+   * opcional en el tipo (no en el contrato) unicamente para que una cuenta
+   * de Account sin desplegar todavia esta rama no rompa la aplicacion: si el
+   * campo falta, se trata igual que `null`.
+   */
+  readonly avatarUrl?: string | null
 }
 
 export const fetchOwnAccount = async (signal?: AbortSignal): Promise<OwnAccount> =>

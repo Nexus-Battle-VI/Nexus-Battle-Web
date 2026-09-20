@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
 
-import { BattleRoomCard } from './BattleRoomCard'
+import { BattleRoomCard, type BattleRoomCardProps } from './BattleRoomCard'
 import type { BattleRoom } from './types'
 
 const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
@@ -12,7 +13,9 @@ const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
     {
       label: 'A',
       capacity: 2,
-      participants: [{ kind: 'HUMAN', playerId: 'p1', heroId: null, joinedAt: '2026-01-01' }],
+      participants: [
+        { kind: 'HUMAN', playerId: 'p1', heroId: null, joinedAt: '2026-01-01', displayName: 'Ana' },
+      ],
     },
     { label: 'B', capacity: 2, participants: [] },
   ],
@@ -23,13 +26,28 @@ const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
   ...overrides,
 })
 
+const defaultProps: Omit<BattleRoomCardProps, 'room'> = {
+  isOwn: false,
+  isParticipant: false,
+  cancelling: false,
+  onCancel: vi.fn(),
+  onJoin: vi.fn(),
+  joiningTeam: null,
+  joinError: null,
+}
+
+const renderCard = (room: BattleRoom, props: Partial<Omit<BattleRoomCardProps, 'room'>> = {}) =>
+  render(
+    <MemoryRouter>
+      <ul>
+        <BattleRoomCard room={room} {...defaultProps} {...props} />
+      </ul>
+    </MemoryRouter>,
+  )
+
 describe('BattleRoomCard', () => {
   it('NO renderiza el UUID tecnico como texto visible', () => {
-    render(
-      <ul>
-        <BattleRoomCard room={room()} isOwn={false} cancelling={false} onCancel={vi.fn()} />
-      </ul>,
-    )
+    renderCard(room())
 
     expect(screen.queryByText(room().id, { exact: false })).not.toBeInTheDocument()
     expect(screen.queryByText(/^Sala /u)).not.toBeInTheDocument()
@@ -43,11 +61,7 @@ describe('BattleRoomCard', () => {
    * `title`/tooltip, ademas de por texto.
    */
   it('NO expone el UUID como tooltip/title en ningun elemento de la tarjeta', () => {
-    const { container } = render(
-      <ul>
-        <BattleRoomCard room={room()} isOwn={false} cancelling={false} onCancel={vi.fn()} />
-      </ul>,
-    )
+    const { container } = renderCard(room())
 
     expect(screen.queryByTitle(room().id)).not.toBeInTheDocument()
 
@@ -64,21 +78,13 @@ describe('BattleRoomCard', () => {
    * depender de contenido visible que puede repetirse entre salas distintas.
    */
   it('conserva el id tecnico en data-testid, invisible para quien usa la pantalla', () => {
-    render(
-      <ul>
-        <BattleRoomCard room={room()} isOwn={false} cancelling={false} onCancel={vi.fn()} />
-      </ul>,
-    )
+    renderCard(room())
 
     expect(screen.getByTestId(`battle-room-${room().id}`)).toBeInTheDocument()
   })
 
   it('conserva modalidad, estado, ocupacion y recompensa reales', () => {
-    render(
-      <ul>
-        <BattleRoomCard room={room()} isOwn={false} cancelling={false} onCancel={vi.fn()} />
-      </ul>,
-    )
+    renderCard(room())
 
     expect(screen.getByText(/Jugador vs Jugador/u)).toBeInTheDocument()
     expect(screen.getByText('Esperando jugadores')).toBeInTheDocument()
@@ -86,26 +92,85 @@ describe('BattleRoomCard', () => {
     expect(screen.getByText('2.000')).toBeInTheDocument()
   })
 
+  it('traduce el estado PREPARING (HU-15.3)', () => {
+    renderCard(room({ status: 'PREPARING' }))
+
+    expect(screen.getByText('Preparando batalla')).toBeInTheDocument()
+  })
+
   it('usa el id real de la sala al pedir la cancelacion, aunque no se muestre visualmente', () => {
     const onCancel = vi.fn()
-    render(
-      <ul>
-        <BattleRoomCard room={room()} isOwn onCancel={onCancel} cancelling={false} />
-      </ul>,
-    )
+    renderCard(room(), { isOwn: true, onCancel })
 
     screen.getByRole('button', { name: 'Cancelar' }).click()
 
     expect(onCancel).toHaveBeenCalledWith(room().id)
   })
 
-  it('"Unirse" permanece deshabilitado (HU-15 fuera de alcance)', () => {
-    render(
-      <ul>
-        <BattleRoomCard room={room()} isOwn={false} cancelling={false} onCancel={vi.fn()} />
-      </ul>,
+  it('permite unirse al Equipo A con capacidad disponible', () => {
+    const onJoin = vi.fn()
+    renderCard(room(), { onJoin })
+
+    screen.getByRole('button', { name: /Equipo A/u }).click()
+
+    expect(onJoin).toHaveBeenCalledWith(room().id, 'A')
+  })
+
+  it('permite unirse al Equipo B con capacidad disponible', () => {
+    const onJoin = vi.fn()
+    renderCard(room(), { onJoin })
+
+    screen.getByRole('button', { name: /Equipo B/u }).click()
+
+    expect(onJoin).toHaveBeenCalledWith(room().id, 'B')
+  })
+
+  it('deshabilita visualmente el boton de un equipo lleno', () => {
+    renderCard(
+      room({
+        teams: [
+          {
+            label: 'A',
+            capacity: 1,
+            participants: [{ kind: 'HUMAN', playerId: 'p1', heroId: null, joinedAt: '2026-01-01' }],
+          },
+          { label: 'B', capacity: 2, participants: [] },
+        ],
+      }),
     )
 
-    expect(screen.getByRole('button', { name: /Unirse/u })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Equipo A/u })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Equipo B/u })).toBeEnabled()
+  })
+
+  it('deshabilita ambos botones de union cuando la sala no admite union (PREPARING)', () => {
+    renderCard(room({ status: 'PREPARING' }))
+
+    expect(screen.getByRole('button', { name: /Equipo A/u })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Equipo B/u })).toBeDisabled()
+  })
+
+  it('muestra el mensaje de union en curso solo en el equipo que se esta uniendo', () => {
+    renderCard(room(), { joiningTeam: 'B' })
+
+    expect(screen.getByRole('button', { name: /Equipo A/u })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Procesando...' })).toBeInTheDocument()
+  })
+
+  it('muestra el mensaje de error de union cuando existe', () => {
+    renderCard(room(), { joinError: 'La sala ya está llena.' })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('La sala ya está llena.')
+  })
+
+  it('quien ya es participante ve un enlace a la sala en vez de los botones de union', () => {
+    renderCard(room(), { isParticipant: true })
+
+    expect(screen.getByRole('link', { name: 'Ver sala' })).toHaveAttribute(
+      'href',
+      `/play/rooms/${room().id}`,
+    )
+    expect(screen.queryByRole('button', { name: /Equipo A/u })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Equipo B/u })).not.toBeInTheDocument()
   })
 })

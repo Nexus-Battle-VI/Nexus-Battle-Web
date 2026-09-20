@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { screen } from '@testing-library/react'
 
 import { AppHeader } from './AppHeader'
 import { useSession } from '@/shared/session'
 import { initTheme, useTheme } from '@/shared/theme'
+import { renderWithProviders } from '@/test/render'
 
-const renderHeader = (route = '/ecommerce') =>
-  render(
-    <MemoryRouter initialEntries={[route]}>
-      <AppHeader />
-    </MemoryRouter>,
-  )
+/**
+ * Desde HU-15.3, `SessionControl` consulta `useOwnAccount` (React Query) para
+ * el avatar real: renderizar `AppHeader` exige un `QueryClientProvider`, igual
+ * que cualquier otra pantalla que use consultas del servidor.
+ */
+const renderHeader = (route = '/ecommerce') => renderWithProviders(<AppHeader />, { route })
 
 afterEach(() => {
   useSession.setState({

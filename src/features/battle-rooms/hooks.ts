@@ -8,8 +8,8 @@ import {
 
 import { queryKeys } from '@/shared/query-keys'
 
-import { cancelBattleRoom, createBattleRoom, fetchBattleRooms } from './api'
-import type { BattleRoom, CreateBattleRoomInput } from './types'
+import { cancelBattleRoom, createBattleRoom, fetchBattleRooms, joinBattleRoom } from './api'
+import type { BattleRoom, CreateBattleRoomInput, TeamLetter } from './types'
 
 export const useBattleRooms = (): UseQueryResult<readonly BattleRoom[]> =>
   useQuery({
@@ -45,6 +45,35 @@ export const useCancelBattleRoom = (): UseMutationResult<BattleRoom, unknown, st
 
   return useMutation({
     mutationFn: (roomId: string) => cancelBattleRoom(roomId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+    },
+  })
+}
+
+export interface JoinBattleRoomVariables {
+  readonly roomId: string
+  readonly team?: TeamLetter
+}
+
+/**
+ * Unirse a una sala (HU-15.3). Misma politica que crear/cancelar: sin
+ * actualizacion optimista -la ocupacion real, el `displayName` resuelto y el
+ * `status`/`version` los decide Combat, no hay nada valido que adivinar
+ * mientras se espera la respuesta- y se invalida el listado (unica consulta
+ * GET real disponible hoy; la pantalla de lobby deriva la sala concreta de
+ * ese mismo listado, ver `BattleRoomLobbyPage`).
+ */
+export const useJoinBattleRoom = (): UseMutationResult<
+  BattleRoom,
+  unknown,
+  JoinBattleRoomVariables
+> => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ roomId, team }: JoinBattleRoomVariables) =>
+      joinBattleRoom(roomId, team === undefined ? {} : { team }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
     },
