@@ -98,14 +98,37 @@ describe('describeJoinBattleRoomFailure', () => {
     }
   })
 
-  it('reenvia el mensaje real de un 409 (sala llena, duplicado, version...)', () => {
-    const error = new HttpError(409, 'La sala ya está llena.', null)
-    expect(describeJoinBattleRoomFailure(error)).toBe('La sala ya está llena.')
+  it('NUNCA reenvia el mensaje crudo de un 409, aunque Combat interpole roomId/playerId', () => {
+    // UUID realista de sala + playerId, tal como los interpolan
+    // RoomFullError/RoomNotJoinableError/DuplicateDisplayNameError en
+    // Nexus-Battle-Combat (BattleRoomErrors.ts).
+    const roomId = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
+    const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/iu
+
+    const messages = [
+      `El equipo "B" de la sala "${roomId}" no tiene cupo disponible.`, // RoomFullError
+      `El jugador "a1b2c3d4-e5f6-4789-a012-b3c4d5e6f789" ya es participante de la sala "${roomId}".`, // PlayerAlreadyJoinedError
+      `La sala "${roomId}" no admite nuevos jugadores porque su estado es PREPARING.`, // RoomNotJoinableError
+      `El nombre "ana" ya lo usa otro jugador de la sala "${roomId}".`, // DuplicateDisplayNameError
+    ]
+
+    for (const message of messages) {
+      const described = describeJoinBattleRoomFailure(new HttpError(409, message, null))
+
+      expect(described).not.toMatch(uuidPattern)
+      expect(described).not.toContain(roomId)
+      expect(described).not.toBe(message)
+    }
   })
 
-  it('da un mensaje de respaldo si el 409 llega sin cuerpo', () => {
-    const error = new HttpError(409, '', null)
-    expect(describeJoinBattleRoomFailure(error)).toContain('no está disponible')
+  it('da el mismo mensaje generico fijo para cualquier 409 de union, sin cuerpo o vacio', () => {
+    const withBody = describeJoinBattleRoomFailure(
+      new HttpError(409, 'El equipo "B" de la sala "sala-xyz" no tiene cupo disponible.', null),
+    )
+    const withoutBody = describeJoinBattleRoomFailure(new HttpError(409, '', null))
+
+    expect(withBody).toBe(withoutBody)
+    expect(withBody).toContain('No fue posible unirte a la sala')
   })
 
   it('reenvia el mensaje real ante un codigo no contemplado explicitamente', () => {
