@@ -13,6 +13,18 @@ import {
 
 export type RealtimeConnectionState = 'connecting' | 'open' | 'reconnecting' | 'disabled'
 
+export interface BattleRoomRealtimeStatus {
+  readonly connection: RealtimeConnectionState
+  /**
+   * `status` del ultimo `battle-room.updated` recibido PARA LA SALA
+   * VIGILADA (HU-15.3: distinguir "cancelada" de "se lleno normalmente" en
+   * el lobby, ambos casos indistinguibles solo con `GET /rooms`, que excluye
+   * cualquier sala que no este `WAITING_FOR_PLAYERS`). `null` mientras no
+   * llega ningun evento para esta sala en esta conexion.
+   */
+  readonly lastRoomStatus: string | null
+}
+
 const RECONNECT_BASE_MS = 1_000
 const RECONNECT_MAX_MS = 10_000
 
@@ -40,12 +52,25 @@ const RECONNECT_MAX_MS = 10_000
 export const useBattleRoomRealtime = (
   roomId: string | null,
   socketFactory: SocketFactory = defaultSocketFactory,
-): RealtimeConnectionState => {
+): BattleRoomRealtimeStatus => {
   const queryClient = useQueryClient()
   // `roomId === null` se deriva al final del hook, sin guardarlo en el
   // estado: evita un `setState` sincrono al inicio del efecto solo para
   // reflejar algo que ya se puede calcular directamente de la prop.
   const [state, setState] = useState<RealtimeConnectionState>('connecting')
+  const [lastRoomStatus, setLastRoomStatus] = useState<string | null>(null)
+  // Patron recomendado por React para "ajustar estado cuando cambia una
+  // prop" (ver https://react.dev/learn/you-might-not-need-an-effect):
+  // `setState` durante el render, NUNCA dentro de un efecto -- evita el
+  // render en cascada de resetear en un `useEffect` separado. Sin esto, un
+  // `lastRoomStatus` de la sala anterior sobreviviria a un cambio de
+  // `roomId` dentro de la misma instancia del hook.
+  const [watchedRoomId, setWatchedRoomId] = useState(roomId)
+
+  if (roomId !== watchedRoomId) {
+    setWatchedRoomId(roomId)
+    setLastRoomStatus(null)
+  }
 
   useEffect(() => {
     if (roomId === null) {
@@ -96,6 +121,7 @@ export const useBattleRoomRealtime = (
         const message = parseRealtimeMessage(event.data)
 
         if (message?.type === 'battle-room.updated' && message.roomId === roomId) {
+          setLastRoomStatus(message.status ?? null)
           void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
         }
       })
@@ -131,5 +157,8 @@ export const useBattleRoomRealtime = (
     }
   }, [roomId, queryClient, socketFactory])
 
-  return roomId === null ? 'disabled' : state
+  return {
+    connection: roomId === null ? 'disabled' : state,
+    lastRoomStatus: roomId === null ? null : lastRoomStatus,
+  }
 }

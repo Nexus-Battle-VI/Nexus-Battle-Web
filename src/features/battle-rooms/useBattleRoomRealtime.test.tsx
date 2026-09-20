@@ -155,12 +155,12 @@ describe('useBattleRoomRealtime', () => {
     act(() => {
       sockets[0]!.open()
     })
-    expect(result.current).toBe('open')
+    expect(result.current.connection).toBe('open')
 
     act(() => {
       sockets[0]!.close()
     })
-    expect(result.current).toBe('reconnecting')
+    expect(result.current.connection).toBe('reconnecting')
     // Todavia no paso el primer retraso: no debe haber intentado un segundo socket.
     expect(sockets).toHaveLength(1)
 
@@ -200,7 +200,7 @@ describe('useBattleRoomRealtime', () => {
     const { result } = renderHook(() => useBattleRoomRealtime(null, factory), { wrapper })
 
     expect(factory).not.toHaveBeenCalled()
-    expect(result.current).toBe('disabled')
+    expect(result.current.connection).toBe('disabled')
   })
 
   it('no conecta sin testimonio vigente', () => {
@@ -211,6 +211,50 @@ describe('useBattleRoomRealtime', () => {
     const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
 
     expect(factory).not.toHaveBeenCalled()
-    expect(result.current).toBe('disabled')
+    expect(result.current.connection).toBe('disabled')
+  })
+
+  it('expone el status del ultimo battle-room.updated de la sala vigilada (HU-15.3: distinguir cancelada de llena)', () => {
+    const sockets: FakeSocket[] = []
+    const factory: SocketFactory = (url) => {
+      const socket = new FakeSocket(url)
+      sockets.push(socket)
+      return socket as unknown as WebSocket
+    }
+    const { wrapper } = setup()
+
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
+    expect(result.current.lastRoomStatus).toBeNull()
+
+    act(() => {
+      sockets[0]!.open()
+      sockets[0]!.message({
+        type: 'battle-room.updated',
+        roomId: 'room-1',
+        status: 'CANCELLED',
+        version: 3,
+      })
+    })
+
+    expect(result.current.lastRoomStatus).toBe('CANCELLED')
+  })
+
+  it('IGNORA para lastRoomStatus un battle-room.updated de otra sala', () => {
+    const sockets: FakeSocket[] = []
+    const factory: SocketFactory = (url) => {
+      const socket = new FakeSocket(url)
+      sockets.push(socket)
+      return socket as unknown as WebSocket
+    }
+    const { wrapper } = setup()
+
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
+
+    act(() => {
+      sockets[0]!.open()
+      sockets[0]!.message({ type: 'battle-room.updated', roomId: 'otra-sala', status: 'CANCELLED' })
+    })
+
+    expect(result.current.lastRoomStatus).toBeNull()
   })
 })
