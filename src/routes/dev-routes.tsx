@@ -70,6 +70,11 @@ if (import.meta.env.DEV) {
       default: module.BattleRoomLobbyDevPreview,
     })),
   )
+  const PowerMeterDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/PowerMeterDevPreview').then((module) => ({
+      default: module.PowerMeterDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -172,6 +177,19 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <BattleRoomLobbyDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-11: el medidor de Poder aun no esta montado en ninguna pantalla del
+    // producto (no existe el inicio de batalla ni un evento de Combat que lleve
+    // el Poder). El preview monta el componente de produccion con datos de
+    // ejemplo y sin red, para revisar su diseno y como se ve el valor
+    // actualizado.
+    {
+      path: '__dev/hu11/poder',
+      element: (
+        <Suspense fallback={null}>
+          <PowerMeterDevPreviewLazy />
         </Suspense>
       ),
     },
