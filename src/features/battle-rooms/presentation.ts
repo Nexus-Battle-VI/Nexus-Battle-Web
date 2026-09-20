@@ -106,6 +106,26 @@ export const teamByLetter = (room: BattleRoom, letter: TeamLetter): Team | undef
 const JOIN_CONFLICT_MESSAGE =
   'No fue posible unirte a la sala: puede que ya no haya cupo, ya seas participante, o la sala haya cambiado de estado. Actualiza e inténtalo de nuevo.'
 
+/**
+ * Mensaje para el 422 de union causado por `ACCOUNT_PROFILE_NOT_FOUND`
+ * (HU-15.4, Nexus-Battle-Combat `AccountProfileMissingError`): el testimonio
+ * es valido, pero Account no tiene una cuenta asociada a ese sujeto todavia.
+ * Distinto del 422 por falta de heroe equipado -- ambos comparten status
+ * 422, asi que se distinguen por el `code` estructurado del cuerpo
+ * (`error.body`), NO por texto libre (mismo criterio que la nota sobre el
+ * 409 mas abajo: nunca adivinar la variante por el contenido del mensaje).
+ */
+const ACCOUNT_PROFILE_NOT_FOUND_MESSAGE =
+  'No encontramos una cuenta asociada a tu sesión. Cierra sesión y vuelve a iniciar sesión; si el problema persiste, contacta a soporte.'
+
+const MISSING_HERO_MESSAGE = 'Debes preparar un héroe antes de unirte a una sala de batalla.'
+
+const hasAccountProfileNotFoundCode = (body: unknown): boolean =>
+  typeof body === 'object' &&
+  body !== null &&
+  'code' in body &&
+  (body as { code?: unknown }).code === 'ACCOUNT_PROFILE_NOT_FOUND'
+
 export const describeJoinBattleRoomFailure = (error: unknown): string => {
   if (error instanceof HttpError) {
     switch (error.status) {
@@ -118,7 +138,9 @@ export const describeJoinBattleRoomFailure = (error: unknown): string => {
       case 409:
         return JOIN_CONFLICT_MESSAGE
       case 422:
-        return 'Debes preparar un héroe antes de unirte a una sala de batalla.'
+        return hasAccountProfileNotFoundCode(error.body)
+          ? ACCOUNT_PROFILE_NOT_FOUND_MESSAGE
+          : MISSING_HERO_MESSAGE
       case 503:
         return 'El servicio de combate no está disponible en este momento. Inténtalo de nuevo en unos segundos.'
       default:

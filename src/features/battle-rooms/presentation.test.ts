@@ -131,6 +131,30 @@ describe('describeJoinBattleRoomFailure', () => {
     expect(withBody).toContain('No fue posible unirte a la sala')
   })
 
+  it('422 con code ACCOUNT_PROFILE_NOT_FOUND (HU-15.4, Account no encontro cuenta para el sujeto) da un mensaje distinto al de heroe faltante, y NUNCA el 503 generico', () => {
+    const described = describeJoinBattleRoomFailure(
+      new HttpError(422, 'No encontramos una cuenta asociada a tu sesion.', {
+        statusCode: 422,
+        message: 'No encontramos una cuenta asociada a tu sesion.',
+        code: 'ACCOUNT_PROFILE_NOT_FOUND',
+      }),
+    )
+
+    expect(described).toContain('cuenta asociada')
+    expect(described).not.toContain('héroe')
+    expect(described).not.toContain('no está disponible')
+  })
+
+  it('422 sin code (o con otro code) sigue siendo el mensaje de heroe faltante, comportamiento previo intacto', () => {
+    const withoutBody = describeJoinBattleRoomFailure(new HttpError(422, 'texto crudo', null))
+    const withOtherCode = describeJoinBattleRoomFailure(
+      new HttpError(422, 'texto crudo', { statusCode: 422, message: 'texto crudo' }),
+    )
+
+    expect(withoutBody).toContain('héroe')
+    expect(withOtherCode).toContain('héroe')
+  })
+
   it('reenvia el mensaje real ante un codigo no contemplado explicitamente', () => {
     const error = new HttpError(500, 'Fallo interno del servicio.', null)
     expect(describeJoinBattleRoomFailure(error)).toBe('Fallo interno del servicio.')
