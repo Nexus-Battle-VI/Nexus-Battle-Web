@@ -110,6 +110,57 @@ describe('BattleRoomLobbyPage', () => {
     expect(screen.getAllByText('Esperando jugador…').length).toBeGreaterThan(0)
   })
 
+  it('marca visualmente al propietario en la lista de participantes, y a nadie mas (BAJO-01, auditoria HU-15.4)', async () => {
+    useSession.setState(AUTHENTICATED_NO_SOCKET)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(200, [
+          room({
+            teams: [
+              {
+                label: 'A',
+                capacity: 2,
+                participants: [
+                  {
+                    kind: 'HUMAN',
+                    playerId: 'sujeto-ana',
+                    heroId: 'heroe-1',
+                    joinedAt: '2026-01-01T00:00:00.000Z',
+                    displayName: 'Ana',
+                  },
+                ],
+              },
+              {
+                label: 'B',
+                capacity: 2,
+                participants: [
+                  {
+                    kind: 'HUMAN',
+                    playerId: 'sujeto-bruno',
+                    heroId: 'heroe-2',
+                    joinedAt: '2026-01-01T00:01:00.000Z',
+                    displayName: 'Bruno',
+                  },
+                ],
+              },
+            ],
+          }),
+        ]),
+      ),
+    )
+
+    montar()
+
+    const ownerRow = (await screen.findByText('Ana')).closest('li')
+    const guestRow = screen.getByText('Bruno').closest('li')
+
+    expect(ownerRow).not.toBeNull()
+    expect(guestRow).not.toBeNull()
+    expect(ownerRow).toHaveTextContent('Propietario')
+    expect(guestRow).not.toHaveTextContent('Propietario')
+  })
+
   it('traduce el estado PREPARING', async () => {
     useSession.setState(AUTHENTICATED_NO_SOCKET)
     vi.stubGlobal(

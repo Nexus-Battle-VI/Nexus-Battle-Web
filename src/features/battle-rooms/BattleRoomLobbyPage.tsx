@@ -24,6 +24,14 @@ const participantLabel = (participant: Participant): string =>
 interface TeamColumnProps {
   readonly letter: string
   readonly team: Team | undefined
+  /**
+   * `room.createdBy` (HU-15.4, hallazgo BAJO-01): permite marcar visualmente
+   * quien es el propietario dentro de la lista de participantes SIN ampliar
+   * el contrato de Combat -- `Participant.playerId` y `room.createdBy` ya
+   * son datos del contrato existente, solo faltaba compararlos aqui. Se
+   * compara por `playerId`, nunca se muestra el valor crudo en pantalla.
+   */
+  readonly ownerPlayerId: string
 }
 
 /**
@@ -33,7 +41,7 @@ interface TeamColumnProps {
  * cupos vacios se representan como una fila propia, visualmente distinta de
  * un participante real.
  */
-const TeamColumn = ({ letter, team }: TeamColumnProps): React.JSX.Element => {
+const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX.Element => {
   const capacity = team?.capacity ?? 0
   const participants = team?.participants ?? []
   const emptySlots = Math.max(capacity - participants.length, 0)
@@ -50,6 +58,8 @@ const TeamColumn = ({ letter, team }: TeamColumnProps): React.JSX.Element => {
       <ul className="flex flex-col gap-2">
         {participants.map((participant, index) => {
           const label = participantLabel(participant)
+          const isRoomOwner =
+            participant.playerId !== null && participant.playerId === ownerPlayerId
 
           return (
             // Combat no expone un id estable por participante en la
@@ -62,6 +72,11 @@ const TeamColumn = ({ letter, team }: TeamColumnProps): React.JSX.Element => {
                 size="sm"
               />
               <span className="truncate text-sm text-ink">{label}</span>
+              {isRoomOwner && (
+                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
+                  Propietario
+                </span>
+              )}
             </li>
           )
         })}
@@ -210,8 +225,8 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <TeamColumn letter="A" team={teamByLetter(room, 'A')} />
-            <TeamColumn letter="B" team={teamByLetter(room, 'B')} />
+            <TeamColumn letter="A" team={teamByLetter(room, 'A')} ownerPlayerId={room.createdBy} />
+            <TeamColumn letter="B" team={teamByLetter(room, 'B')} ownerPlayerId={room.createdBy} />
           </div>
 
           <Button
