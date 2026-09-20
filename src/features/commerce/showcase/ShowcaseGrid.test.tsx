@@ -143,6 +143,39 @@ describe('Anadir y retirar de la lista de deseos', () => {
   })
 })
 
+describe('Un heroe ya adquirido no se puede volver a comprar', () => {
+  const hero = (sku: string, name: string): ShowcaseProduct =>
+    showcaseProduct({ productId: sku, sku, name, type: 'HEROE' })
+  const HERO_PRODUCTS = [hero('guerrero-tanque', 'Guerrero Tanque')]
+
+  it('deshabilita "Añadir al carrito" y dice "Ya lo tienes" cuando el heroe ya es propio', () => {
+    renderWithProviders(
+      <ShowcaseGrid
+        products={HERO_PRODUCTS}
+        onAddToCart={vi.fn()}
+        onOpenDetail={vi.fn()}
+        isOwned={() => true}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: 'Anadir Guerrero Tanque al carrito' })
+    expect(button).toBeDisabled()
+    expect(button).toHaveTextContent('Ya lo tienes')
+  })
+
+  /**
+   * "Propio" es informativo para cualquier producto (CA-03); solo un heroe
+   * ademas bloquea la compra, porque solo el es unico por jugador.
+   */
+  it('un producto que no es heroe sigue siendo comprable aunque ya sea propio', () => {
+    renderGrid({ isOwned: () => true })
+
+    const button = screen.getByRole('button', { name: 'Anadir Espada de hierro al carrito' })
+    expect(button).toBeEnabled()
+    expect(button).toHaveTextContent('Añadir al carrito')
+  })
+})
+
 describe('La vitrina funciona sin lista de deseos', () => {
   /** Si no se pasan las props de HU-56, la tarjeta no inventa marcadores. */
   it('no muestra corazon ni marcas', () => {
