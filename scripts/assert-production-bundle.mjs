@@ -12,6 +12,13 @@ const FORBIDDEN_MARKERS = [
   'DEV_STATISTICS_FIXTURE',
   'dev-fixture-achievement',
   'StatisticsDevPreview',
+  // Artefactos exclusivamente DEV del lobby de preparación de sala (HU-15.3).
+  // El bundle productivo nunca debe contener las rutas `__dev/hu15/lobby(/:roomId)`
+  // ni el componente de preview asociado (hallazgo MEDIO-01, auditoría HU-15.4:
+  // hoy Vite los elimina por tree-shaking, pero sin este guard explícito una
+  // futura regresión no seria detectada por `build:verify`).
+  '__dev/hu15',
+  'BattleRoomLobbyDevPreview',
 ]
 
 /**
