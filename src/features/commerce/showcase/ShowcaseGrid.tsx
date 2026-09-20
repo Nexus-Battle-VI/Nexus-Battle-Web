@@ -34,22 +34,29 @@ export const ShowcaseGrid = ({
     {products.map((product) => {
       const wished = isWished?.(product.productId) ?? false
       const owned = isOwned?.(product.productId) ?? false
+      // Un heroe no se puede poseer dos veces (Commerce lo rechaza igual del
+      // lado del servidor); el resto de categorias si admite mas de una
+      // unidad, asi que "Propio" ahi es solo informativo, no bloquea.
+      const ownedUnique = owned && product.type === 'HEROE'
       const otherCurrency =
         cartCurrency !== null &&
         product.realMoneyPrice !== null &&
         product.realMoneyPrice.currency !== cartCurrency
       const unavailable =
+        ownedUnique ||
         !product.premium ||
         product.realMoneyPrice === null ||
         product.availableUnits === 0 ||
         product.lifecycleStatus !== 'ACTIVE'
-      const reason = otherCurrency
-        ? `Tu carrito está en ${cartCurrency}. Vacíalo antes de elegir otra moneda.`
-        : !product.premium
-          ? 'La compra con dinero está disponible para productos premium.'
-          : unavailable
-            ? 'Este producto no está disponible para comprar.'
-            : undefined
+      const reason = ownedUnique
+        ? 'Ya tienes este héroe.'
+        : otherCurrency
+          ? `Tu carrito está en ${cartCurrency}. Vacíalo antes de elegir otra moneda.`
+          : !product.premium
+            ? 'La compra con dinero está disponible para productos premium.'
+            : unavailable
+              ? 'Este producto no está disponible para comprar.'
+              : undefined
       return (
         <li key={product.productId} className="min-h-0 min-w-0">
           <article
@@ -140,13 +147,15 @@ export const ShowcaseGrid = ({
               aria-describedby={reason === undefined ? undefined : `reason-${product.productId}`}
               title={reason}
             >
-              {otherCurrency
-                ? 'Otra moneda'
-                : product.availableUnits === 0
-                  ? 'Agotado'
-                  : unavailable
-                    ? 'No disponible'
-                    : 'Añadir al carrito'}
+              {ownedUnique
+                ? 'Ya lo tienes'
+                : otherCurrency
+                  ? 'Otra moneda'
+                  : product.availableUnits === 0
+                    ? 'Agotado'
+                    : unavailable
+                      ? 'No disponible'
+                      : 'Añadir al carrito'}
             </Button>
             {reason !== undefined && (
               <p id={`reason-${product.productId}`} className="sr-only">
