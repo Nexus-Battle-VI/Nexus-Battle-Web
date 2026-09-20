@@ -55,6 +55,8 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   MARKED: 'Marcado',
   // Sala de batalla esperando jugadores (HU-14).
   WAITING_FOR_PLAYERS: 'Esperando jugadores',
+  // Sala de batalla en preparacion, tras llenarse (HU-15).
+  PREPARING: 'Preparando batalla',
 }
 
 export const statusLabel = (status: string): string => STATUS_LABELS[status] ?? status

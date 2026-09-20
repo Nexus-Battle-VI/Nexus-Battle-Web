@@ -1,6 +1,6 @@
 import { httpClient } from '@/lib/http'
 
-import type { BattleRoom, CreateBattleRoomInput } from './types'
+import type { BattleRoom, CreateBattleRoomInput, JoinBattleRoomInput } from './types'
 
 /**
  * `GET /v1/combat/rooms` (tras el gateway, `/api/v1/combat/rooms`).
@@ -30,3 +30,16 @@ export const createBattleRoom = (input: CreateBattleRoomInput): Promise<BattleRo
  */
 export const cancelBattleRoom = (roomId: string): Promise<BattleRoom> =>
   httpClient.post<BattleRoom>(`/v1/combat/rooms/${encodeURIComponent(roomId)}/cancel`)
+
+/**
+ * `POST /v1/combat/rooms/:roomId/join` (HU-15.2/15.3). `team` viaja solo
+ * cuando la persona eligio uno explicito; la autoridad real sobre si la
+ * union es valida (sala llena, ya es participante, version en conflicto,
+ * sin heroe equipado...) es siempre el backend — esta funcion no valida nada,
+ * solo transporta la solicitud.
+ */
+export const joinBattleRoom = (
+  roomId: string,
+  input: JoinBattleRoomInput = {},
+): Promise<BattleRoom> =>
+  httpClient.post<BattleRoom>(`/v1/combat/rooms/${encodeURIComponent(roomId)}/join`, input)

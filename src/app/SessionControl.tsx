@@ -4,6 +4,8 @@ import { Link, useNavigate } from 'react-router'
 import { useSession } from '@/shared/session'
 import { primaryRole, roleLabel } from '@/shared/rbac'
 import { ChevronDown, LogOut, Package, User } from '@/components/ui/icons'
+import { Avatar } from '@/components/ui/Avatar'
+import { useOwnAccount } from '@/features/account/useOwnAccount'
 
 /**
  * Control de sesion de la cabecera (HU-02, HU-03, HU-05.4).
@@ -31,6 +33,9 @@ export const SessionControl = (): React.JSX.Element | null => {
   const roles = useSession((state) => state.roles)
   const signOut = useSession((state) => state.signOut)
   const role = primaryRole(roles)
+  // Sin sesion no hay testimonio: la consulta se desactiva en lugar de
+  // producir un 401 predecible (ver `useOwnAccount`).
+  const account = useOwnAccount({ enabled: subject !== null })
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -87,7 +92,12 @@ export const SessionControl = (): React.JSX.Element | null => {
     )
   }
 
-  const initial = (displayName ?? email ?? subject).charAt(0).toUpperCase()
+  // Misma regla de siempre (una letra, del nombre visible o, en su defecto,
+  // del correo o del sujeto): HU-15.3 solo anade la imagen real por encima,
+  // no cambia como se deriva la inicial de respaldo.
+  const initials = (displayName ?? email ?? subject).charAt(0).toUpperCase()
+  const avatarUrl = account.data?.avatarUrl ?? null
+  const avatarAlt = displayName ?? email ?? subject
   const userHandle =
     email !== null
       ? `@${email.split('@')[0] ?? ''}`
@@ -113,12 +123,7 @@ export const SessionControl = (): React.JSX.Element | null => {
         className="flex items-center gap-2 rounded-lg border border-brand/60 bg-brand/12 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-brand/20"
         data-testid="user-menu-trigger"
       >
-        <span
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-ink"
-          aria-hidden="true"
-        >
-          {initial}
-        </span>
+        <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="sm" />
         <span className="text-sm font-medium text-ink">Mi cuenta</span>
         <ChevronDown
           className={`h-4 w-4 text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
@@ -135,12 +140,7 @@ export const SessionControl = (): React.JSX.Element | null => {
         >
           {/* Cabecera del usuario */}
           <div className="flex items-center gap-3 border-b border-border p-3">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand/70 text-sm font-bold text-brand-ink shadow-inner"
-              aria-hidden="true"
-            >
-              {initial}
-            </div>
+            <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="md" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink">
                 {displayName ?? 'Jugador Nexus'}

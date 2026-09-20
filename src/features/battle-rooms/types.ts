@@ -9,10 +9,15 @@
 export type BattleRoomMode = 'PVP' | 'PVE'
 
 /**
- * Unicos dos estados que HU-14 modela. `PREPARING` pertenece a HU-15 y no se
- * declara aqui a proposito: no es responsabilidad de esta feature.
+ * `PREPARING` se suma en HU-15.3: Combat la usa cuando la sala se llena y
+ * pasa a preparar el combate. El resto de la feature (crear, cancelar,
+ * listar) sigue viendo indistintamente cualquier estado, sin asumir que solo
+ * existen los dos originales de HU-14.
  */
-export type BattleRoomStatus = 'WAITING_FOR_PLAYERS' | 'CANCELLED'
+export type BattleRoomStatus = 'WAITING_FOR_PLAYERS' | 'PREPARING' | 'CANCELLED'
+
+/** Los dos unicos equipos que declara el contrato de creacion (HU-14). */
+export type TeamLetter = 'A' | 'B'
 
 export type ParticipantKind = 'HUMAN' | 'AI'
 
@@ -21,6 +26,11 @@ export interface Participant {
   readonly playerId: string | null
   readonly heroId: string | null
   readonly joinedAt: string
+  /**
+   * Nombre visible resuelto por el servicio (HU-15.3, nunca lo envia el
+   * cliente). `null` para un participante `AI` o si Combat aun no lo resolvio.
+   */
+  readonly displayName?: string | null
 }
 
 export interface Team {
@@ -70,4 +80,13 @@ export interface CreateBattleRoomInput {
   readonly mode: BattleRoomMode
   readonly teamConfigs: readonly [CreateTeamConfigInput, CreateTeamConfigInput]
   readonly reward: Reward
+}
+
+/**
+ * Body real de `POST /v1/combat/rooms/:roomId/join` (HU-15.2/15.3). `team` es
+ * opcional en el contrato: se envia solo cuando la persona eligio un equipo
+ * explicito en la UI.
+ */
+export interface JoinBattleRoomInput {
+  readonly team?: TeamLetter
 }

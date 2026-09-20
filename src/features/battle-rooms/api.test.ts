@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpError } from '@/lib/http'
-import { cancelBattleRoom, createBattleRoom, fetchBattleRooms } from './api'
+import { cancelBattleRoom, createBattleRoom, fetchBattleRooms, joinBattleRoom } from './api'
 import type { BattleRoom, CreateBattleRoomInput } from './types'
 
 const jsonResponse = (status: number, body: unknown): Response =>
@@ -162,5 +162,91 @@ describe('cancelBattleRoom', () => {
     )
 
     await expect(cancelBattleRoom(ROOM.id)).rejects.toMatchObject({ status: 409 })
+  })
+})
+
+describe('joinBattleRoom', () => {
+  it('pide POST /api/v1/combat/rooms/:roomId/join con el equipo elegido', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, ROOM))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    const result = await joinBattleRoom(ROOM.id, { team: 'A' })
+
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe(`/api/v1/combat/rooms/${ROOM.id}/join`)
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body as string)).toEqual({ team: 'A' })
+    expect(result).toEqual(ROOM)
+  })
+
+  it('envia un body vacio cuando no se elige equipo explicito', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, ROOM))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    await joinBattleRoom(ROOM.id)
+
+    const [, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toEqual({})
+  })
+
+  it('propaga un 400 de UUID invalido o campo no permitido', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(400, { message: 'roomId invalido' })),
+    )
+
+    await expect(joinBattleRoom('no-es-un-uuid')).rejects.toMatchObject({ status: 400 })
+  })
+
+  it('propaga un 401 sin testimonio', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(401, { message: 'Sin testimonio' })),
+    )
+
+    await expect(joinBattleRoom(ROOM.id)).rejects.toSatisfy(
+      (error: unknown) => error instanceof HttpError && error.isUnauthorized,
+    )
+  })
+
+  it('propaga un 404 cuando la sala no existe', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(404, { message: 'No encontrada' })),
+    )
+
+    await expect(joinBattleRoom(ROOM.id)).rejects.toSatisfy(
+      (error: unknown) => error instanceof HttpError && error.isNotFound,
+    )
+  })
+
+  it('propaga un 409 cuando la sala esta llena, duplicada o en conflicto de version', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(409, { message: 'La sala ya está llena.' })),
+    )
+
+    await expect(joinBattleRoom(ROOM.id, { team: 'B' })).rejects.toMatchObject({
+      status: 409,
+      message: 'La sala ya está llena.',
+    })
+  })
+
+  it('propaga un 422 cuando el jugador no tiene heroe equipado', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(422, { message: 'Debes equipar un heroe.' })),
+    )
+
+    await expect(joinBattleRoom(ROOM.id)).rejects.toMatchObject({ status: 422 })
+  })
+
+  it('propaga un 503 cuando una dependencia externa falla', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(503, { message: 'Servicio no disponible' })),
+    )
+
+    await expect(joinBattleRoom(ROOM.id)).rejects.toMatchObject({ status: 503 })
   })
 })

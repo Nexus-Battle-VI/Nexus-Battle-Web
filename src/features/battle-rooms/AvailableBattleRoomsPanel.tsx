@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import clsx from 'clsx'
+import { useNavigate } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
@@ -11,8 +12,9 @@ import { useSession } from '@/shared/session'
 
 import { BattleRoomCard } from './BattleRoomCard'
 import { BattleRoomFilters, type BattleRoomModeFilter } from './BattleRoomFilters'
-import { useBattleRooms, useCancelBattleRoom } from './hooks'
-import { describeBattleRoomFailure } from './presentation'
+import { useBattleRooms, useCancelBattleRoom, useJoinBattleRoom } from './hooks'
+import { describeBattleRoomFailure, describeJoinBattleRoomFailure } from './presentation'
+import type { TeamLetter } from './types'
 
 /**
  * `QueryState` muestra `error.message` tal cual (patron compartido, ver
@@ -27,17 +29,28 @@ const displayErrorOf = (error: unknown): unknown =>
 
 /**
  * Panel derecho de "Jugar Online": listado real de `GET /v1/combat/rooms`
- * con filtro de modalidad y busqueda por ID (ambos client-side) y
- * cancelacion de una sala propia. Scroll interno propio para que la pagina
- * completa no crezca sin limite si hay muchas salas (seccion 11/16).
+ * con filtro de modalidad y busqueda por ID (ambos client-side), cancelacion
+ * de una sala propia y union a un equipo (HU-15.3).
+ *
+ * La union NO usa actualizacion optimista y, ante un fallo, refresca el
+ * listado antes de mostrar el mensaje: si otra persona ocupo el ultimo cupo
+ * justo antes de que la solicitud llegara al backend, el 409 real se muestra
+ * (nunca se oculta) y la tarjeta que se vuelve a pintar ya refleja la
+ * ocupacion real, no la que habia cuando se pulso el boton.
  */
 export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
   const [modeFilter, setModeFilter] = useState<BattleRoomModeFilter>('ALL')
   const [search, setSearch] = useState('')
   const subject = useSession((state) => state.subject)
+  const navigate = useNavigate()
 
   const rooms = useBattleRooms()
   const cancelRoom = useCancelBattleRoom()
+  const joinRoom = useJoinBattleRoom()
+
+  const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null)
+  const [joiningTeam, setJoiningTeam] = useState<TeamLetter | null>(null)
+  const [joinErrorByRoom, setJoinErrorByRoom] = useState<Readonly<Record<string, string>>>({})
 
   const visibleRooms = useMemo(() => {
     const all = rooms.data ?? []
@@ -48,6 +61,42 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
       ? byMode
       : byMode.filter((room) => room.id.toLowerCase().includes(normalizedSearch))
   }, [rooms.data, modeFilter, search])
+
+  const handleJoin = (roomId: string, team: TeamLetter): void => {
+    setJoiningRoomId(roomId)
+    setJoiningTeam(team)
+    setJoinErrorByRoom((previous) => {
+      if (!(roomId in previous)) {
+        return previous
+      }
+
+      const next = Object.fromEntries(Object.entries(previous).filter(([id]) => id !== roomId))
+      return next
+    })
+
+    joinRoom.mutate(
+      { roomId, team },
+      {
+        onSuccess: () => {
+          setJoiningRoomId(null)
+          setJoiningTeam(null)
+          void navigate(`/play/rooms/${roomId}`)
+        },
+        onError: (error) => {
+          setJoiningRoomId(null)
+          setJoiningTeam(null)
+          // Un 409 real (sala llena, version en conflicto...) no se oculta:
+          // se refresca el listado para reflejar el estado real y el mensaje
+          // sigue siendo el que describe exactamente que paso.
+          void rooms.refetch()
+          setJoinErrorByRoom((previous) => ({
+            ...previous,
+            [roomId]: describeJoinBattleRoomFailure(error),
+          }))
+        },
+      },
+    )
+  }
 
   return (
     <Card
@@ -101,10 +150,19 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
                   key={room.id}
                   room={room}
                   isOwn={subject !== null && subject === room.createdBy}
+                  isParticipant={
+                    subject !== null &&
+                    room.teams.some((team) =>
+                      team.participants.some((participant) => participant.playerId === subject),
+                    )
+                  }
                   cancelling={cancelRoom.isPending && cancelRoom.variables === room.id}
                   onCancel={(roomId) => {
                     cancelRoom.mutate(roomId)
                   }}
+                  onJoin={handleJoin}
+                  joiningTeam={joiningRoomId === room.id ? joiningTeam : null}
+                  joinError={joinErrorByRoom[room.id] ?? null}
                 />
               ))}
             </ul>

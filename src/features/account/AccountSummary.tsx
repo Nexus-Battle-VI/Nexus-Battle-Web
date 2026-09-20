@@ -1,13 +1,16 @@
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Avatar } from '@/components/ui/Avatar'
 import type { OwnAccount } from './api'
 
 /**
- * Resumen visual de la cuenta (HU-05.4).
+ * Resumen visual de la cuenta (HU-05.4, avatar real desde HU-15.3).
  *
  * Solo muestra informacion REAL de `GET /api/accounts/me`: apodo, correo,
- * estado y roles. El "avatar" es la inicial derivada del apodo -no una imagen
- * persistida-: Account no expone avatar self-service, asi que no se ofrece
- * "cambiar foto" ni se finge que hay una.
+ * estado, roles y ahora el avatar (`avatarUrl`, servido por Account tras JWT
+ * en `GET /accounts/:id/avatar`). Sin avatar persistido (`avatarUrl === null`
+ * o ausente), `Avatar` cae a la inicial derivada del apodo -mismo
+ * comportamiento que existia antes de HU-15.3-; no se ofrece "cambiar foto"
+ * porque Account todavia no expone esa mutacion self-service.
  */
 
 const ROLE_LABELS: Readonly<Record<string, string>> = {
@@ -33,12 +36,12 @@ export interface AccountSummaryProps {
 
 export const AccountSummary = ({ account }: AccountSummaryProps): React.JSX.Element => (
   <div className="flex flex-col items-center gap-3 text-center">
-    <span
-      aria-hidden="true"
-      className="flex h-16 w-16 items-center justify-center rounded-full bg-brand/15 text-xl font-semibold text-brand"
-    >
-      {initialsOf(account)}
-    </span>
+    <Avatar
+      avatarUrl={account.avatarUrl ?? null}
+      alt={account.displayName}
+      initials={initialsOf(account)}
+      size="lg"
+    />
 
     <div className="min-w-0">
       <p className="truncate text-base font-semibold text-ink" title={account.displayName}>
