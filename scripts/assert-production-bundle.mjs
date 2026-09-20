@@ -19,6 +19,12 @@ const FORBIDDEN_MARKERS = [
   // futura regresión no seria detectada por `build:verify`).
   '__dev/hu15',
   'BattleRoomLobbyDevPreview',
+  // Artefactos exclusivamente DEV del medidor de Poder (HU-11): la ruta
+  // `__dev/hu11/poder` y su preview, con el recorrido de ejemplo. El bundle
+  // productivo no debe llevarlos; el componente `PowerMeter` en si si puede
+  // llegar cuando una pantalla lo monte.
+  '__dev/hu11',
+  'PowerMeterDevPreview',
 ]
 
 /**
