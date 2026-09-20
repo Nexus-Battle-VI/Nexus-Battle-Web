@@ -43,3 +43,13 @@ export const joinBattleRoom = (
   input: JoinBattleRoomInput = {},
 ): Promise<BattleRoom> =>
   httpClient.post<BattleRoom>(`/v1/combat/rooms/${encodeURIComponent(roomId)}/join`, input)
+
+/**
+ * `POST /v1/combat/rooms/:roomId/leave` (ciclo de vida del lobby). Cualquier
+ * participante -incluido el propietario- puede abandonar; distinto de
+ * `cancelBattleRoom`, que es exclusivo del creador y afecta a la sala
+ * entera. 409 si quien pide no es participante, o si la sala ya esta
+ * CANCELLED -- la autoridad real es siempre el backend.
+ */
+export const leaveBattleRoom = (roomId: string): Promise<BattleRoom> =>
+  httpClient.post<BattleRoom>(`/v1/combat/rooms/${encodeURIComponent(roomId)}/leave`)

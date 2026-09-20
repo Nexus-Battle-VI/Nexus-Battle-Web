@@ -8,7 +8,13 @@ import {
 
 import { queryKeys } from '@/shared/query-keys'
 
-import { cancelBattleRoom, createBattleRoom, fetchBattleRooms, joinBattleRoom } from './api'
+import {
+  cancelBattleRoom,
+  createBattleRoom,
+  fetchBattleRooms,
+  joinBattleRoom,
+  leaveBattleRoom,
+} from './api'
 import type { BattleRoom, CreateBattleRoomInput, TeamLetter } from './types'
 
 export const useBattleRooms = (): UseQueryResult<readonly BattleRoom[]> =>
@@ -45,6 +51,18 @@ export const useCancelBattleRoom = (): UseMutationResult<BattleRoom, unknown, st
 
   return useMutation({
     mutationFn: (roomId: string) => cancelBattleRoom(roomId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+    },
+  })
+}
+
+/** Abandonar una sala propia (ciclo de vida del lobby). Misma invalidacion que cancelar/unirse. */
+export const useLeaveBattleRoom = (): UseMutationResult<BattleRoom, unknown, string> => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (roomId: string) => leaveBattleRoom(roomId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
     },

@@ -1,14 +1,16 @@
-import { useParams } from 'react-router'
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
+import { Coins } from '@/components/ui/icons'
 import { useSession } from '@/shared/session'
 
-import { useBattleRooms } from './hooks'
+import { useBattleRooms, useCancelBattleRoom, useLeaveBattleRoom } from './hooks'
 import { useBattleRoomRealtime } from './useBattleRoomRealtime'
-import { describeBattleRoomFailure, teamByLetter } from './presentation'
+import { describeBattleRoomFailure, modeLabel, teamByLetter } from './presentation'
 import type { Participant, Team } from './types'
 
 const initialsOfDisplayName = (name: string): string => {
@@ -88,12 +90,28 @@ const TeamColumn = ({ letter, team }: TeamColumnProps): React.JSX.Element => {
  *
  * NO se muestra el UUID de la sala, ni `playerId`/`subject` de nadie: solo
  * `displayName` y avatar, que son publicos segun el contrato.
+ *
+ * LIMITACION DE CONTRATO, documentada explicitamente: `GET /v1/combat/rooms`
+ * solo devuelve salas `WAITING_FOR_PLAYERS` (`ListAvailableBattleRooms`,
+ * Combat) -- en cuanto la sala pasa a `PREPARING` (se lleno normalmente) o a
+ * `CANCELLED`, desaparece de esa lista por igual y esta pantalla deja de
+ * tener datos de equipos/participantes para mostrar (no existe un
+ * `GET /rooms/:id` que los reponga, y esta pantalla no inventa uno). Lo
+ * unico que SI se puede distinguir sin un endpoint nuevo es el `status` del
+ * ultimo evento `battle-room.updated` recibido por WebSocket
+ * (`useBattleRoomRealtime`): se usa solo para elegir el MENSAJE correcto
+ * ("cancelada por su propietario" vs. "se llenó, preparando"), nunca para
+ * reconstruir datos de participantes que el contrato ya no expone.
  */
 export const BattleRoomLobbyPage = (): React.JSX.Element => {
   const { roomId = null } = useParams<{ roomId: string }>()
   const subject = useSession((state) => state.subject)
+  const navigate = useNavigate()
   const rooms = useBattleRooms()
   const realtime = useBattleRoomRealtime(roomId)
+  const cancelRoom = useCancelBattleRoom()
+  const leaveRoom = useLeaveBattleRoom()
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const room = rooms.data?.find((candidate) => candidate.id === roomId) ?? null
 
@@ -114,14 +132,48 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   }
 
   if (room === null) {
+    if (realtime.lastRoomStatus === 'CANCELLED') {
+      return (
+        <p role="alert" className="text-sm text-danger">
+          La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
+        </p>
+      )
+    }
+
+    if (realtime.lastRoomStatus === 'PREPARING') {
+      return <p className="text-sm text-muted">La sala se llenó y ya está lista para comenzar.</p>
+    }
+
     return <p className="text-sm text-muted">Esta sala ya no está disponible.</p>
   }
 
+  const isOwner = subject !== null && subject === room.createdBy
   const isParticipant =
     subject !== null &&
     room.teams.some((team) =>
       team.participants.some((participant) => participant.playerId === subject),
     )
+
+  const handleCancel = (): void => {
+    setActionError(null)
+    cancelRoom.mutate(room.id, {
+      onError: (error) => {
+        setActionError(describeBattleRoomFailure(error))
+      },
+    })
+  }
+
+  const handleLeave = (): void => {
+    setActionError(null)
+    leaveRoom.mutate(room.id, {
+      onSuccess: () => {
+        void navigate('/play')
+      },
+      onError: (error) => {
+        setActionError(describeBattleRoomFailure(error))
+      },
+    })
+  }
 
   return (
     <section aria-label="Sala de batalla" className="flex flex-col gap-6">
@@ -136,7 +188,21 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={room.status} />
-            {realtime === 'reconnecting' && (
+            <span className="text-sm font-medium text-ink">{modeLabel(room.mode)}</span>
+            <span aria-hidden="true" className="text-muted">
+              ·
+            </span>
+            <span className="text-sm text-muted">
+              {room.teams[0]?.capacity ?? 0} vs {room.teams[1]?.capacity ?? 0}
+            </span>
+            <span aria-hidden="true" className="text-muted">
+              ·
+            </span>
+            <span className="flex items-center gap-1 text-sm text-muted">
+              <Coins aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
+              {room.reward.amount.toLocaleString('es-CO')}
+            </span>
+            {realtime.connection === 'reconnecting' && (
               <span role="status" className="text-xs text-muted">
                 Reconectando en tiempo real…
               </span>
@@ -155,6 +221,26 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
           >
             Empezar partida — Próximamente
           </Button>
+
+          {actionError !== null && (
+            <p role="alert" className="text-xs text-danger">
+              {actionError}
+            </p>
+          )}
+
+          {isParticipant && (
+            <div className="flex flex-wrap items-center gap-2">
+              {isOwner ? (
+                <Button variant="danger" loading={cancelRoom.isPending} onClick={handleCancel}>
+                  Cancelar sala
+                </Button>
+              ) : (
+                <Button variant="secondary" loading={leaveRoom.isPending} onClick={handleLeave}>
+                  Abandonar sala
+                </Button>
+              )}
+            </div>
+          )}
 
           {!isParticipant && (
             <p className="text-xs text-muted">Aún no eres participante de esta sala.</p>
