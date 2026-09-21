@@ -169,3 +169,31 @@ describe('el ataque basico no se decide en Web (HU-18)', () => {
     expect(panel?.code).toMatch(/if \(availability\.enabled && selected !== null\)/u)
   })
 })
+
+/**
+ * Arena (HU-18): la pantalla es UN solo DOM y su orden logico es el orden de lectura y de teclado
+ * (estado, arena, resultado, acciones, turnos). El CSS solo cambia la composicion visual: nunca
+ * reordena (`order-*`, `*-reverse`) ni saca los bloques del flujo (`absolute`/`fixed`), porque eso
+ * desincroniza el foco y los lectores de pantalla del orden visual.
+ */
+describe('la arena no reordena ni saca del flujo los bloques (HU-18)', () => {
+  const ARENA = ['BattleScreen.tsx', 'BattleArena.tsx', 'TurnOrderStrip.tsx', 'AttackPanel.tsx']
+
+  it('recorre los archivos de la arena', () => {
+    const files = productionSources().map((source) => source.file)
+
+    expect(files).toEqual(expect.arrayContaining(ARENA))
+  })
+
+  it.each([
+    ['order-* de Tailwind', /(^|[\s"'`:])-?order-(first|last|none|\d+|\[)/u],
+    ['flex-row-reverse / flex-col-reverse', /(row|col)-reverse/u],
+    ['posicion absolute o fixed', /(^|[\s"'`:])(absolute|fixed)(?=[\s"'`])/u],
+  ])('ningun bloque de la arena usa %s', (_name, pattern) => {
+    for (const { file, code } of productionSources().filter((source) =>
+      ARENA.includes(source.file),
+    )) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+})

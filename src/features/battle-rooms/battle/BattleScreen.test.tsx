@@ -38,7 +38,8 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
     pintar()
 
     expect(screen.getByRole('heading', { name: 'Rival' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Tu equipo' })).toBeInTheDocument()
+    // En 1 contra 1 el lado propio es «Tu héroe»; con equipos, «Tu equipo».
+    expect(screen.getByRole('heading', { name: 'Tu héroe' })).toBeInTheDocument()
     expect(screen.getByLabelText('Ana (tú), equipo A')).toBeInTheDocument()
     expect(screen.getByLabelText('Bruno, equipo B, turno actual')).toBeInTheDocument()
   })
@@ -61,8 +62,11 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
   it('el turno actual se distingue por texto ("Turno actual"), no solo por color', () => {
     pintar()
 
-    // Una vez en la tarjeta del combatiente y otra en la cola.
-    expect(screen.getAllByText('Turno actual')).toHaveLength(2)
+    // En la tarjeta del combatiente («Turno actual») y en la franja de turnos («Actual»).
+    expect(screen.getAllByText('Turno actual')).toHaveLength(1)
+    expect(
+      within(screen.getByRole('list', { name: 'Orden de turnos' })).getByText('Actual'),
+    ).toBeInTheDocument()
   })
 
   it('tras avanzar el turno (el servidor publica turnsCompleted=1) el turno pasa a Ana', () => {
@@ -79,12 +83,13 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
     const cola = screen.getByRole('list', { name: 'Orden de turnos' })
     const filas = within(cola).getAllByRole('listitem')
 
-    expect(filas[0]).toHaveTextContent('1.')
+    expect(filas).toHaveLength(2)
+    expect(filas[0]).toHaveTextContent('1')
     expect(filas[0]).toHaveTextContent('Bruno')
-    expect(filas[0]).toHaveTextContent('Equipo B')
-    expect(filas[1]).toHaveTextContent('2.')
+    expect(filas[0]).toHaveTextContent('Actual')
+    expect(filas[1]).toHaveTextContent('2')
     expect(filas[1]).toHaveTextContent('Ana (tú)')
-    expect(filas[1]).toHaveTextContent('Equipo A')
+    expect(filas[1]).not.toHaveTextContent('Actual')
   })
 
   it('un oponente IA se muestra con un marcador (sin heroe conocido) y sin identificadores', () => {
@@ -131,7 +136,8 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
     const cola = within(screen.getByRole('list', { name: 'Orden de turnos' }))
 
     expect(cola.getAllByRole('listitem')).toHaveLength(4)
-    expect(screen.getAllByText('Turno actual')).toHaveLength(2)
+    expect(screen.getAllByText('Turno actual')).toHaveLength(1)
+    expect(cola.getAllByText('Actual')).toHaveLength(1)
     expect(screen.getByText('Tu turno')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Rival' })).toBeInTheDocument()
   })
@@ -347,5 +353,149 @@ describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones',
     for (const lista of container.querySelectorAll('ul')) {
       expect(lista.className).toContain('grid-cols-1')
     }
+  })
+})
+
+/** 3 contra 3: equipo B (posiciones pares) y equipo A (impares), con la Vida publicada por el servidor. */
+const tresContraTres = (turnsCompleted = 1): ReturnType<typeof battle> =>
+  withCombatants(
+    battle(turnsCompleted, [
+      entry(0, { teamLabel: 'B', seat: 0, displayName: 'B1', playerId: 'b1' }),
+      entry(1, { teamLabel: 'A', seat: 0, displayName: 'A1', playerId: ANA }),
+      entry(2, { teamLabel: 'B', seat: 1, displayName: 'B2', playerId: 'b2' }),
+      entry(3, { teamLabel: 'A', seat: 1, displayName: 'A2', playerId: 'a2' }),
+      entry(4, { teamLabel: 'B', seat: 2, displayName: 'B3', playerId: 'b3' }),
+      entry(5, { teamLabel: 'A', seat: 2, displayName: 'A3', playerId: 'a3' }),
+    ]),
+    [
+      [44, 44],
+      [44, 44],
+      [30, 30],
+      [52, 52],
+      [36, 36],
+      [40, 40],
+    ],
+  )
+
+describe('BattleScreen — arena: una sola pantalla para 1v1, 2v2 y 3v3, con el orden de lectura del DOM', () => {
+  it('el orden del DOM es: estado, arena (rival y luego mi lado), resultado, acciones y turnos', () => {
+    pintar({ battle: combatBattle(1), lastAttack: lastAttack(), combat: controles() })
+
+    const estado = screen.getByRole('status', { name: '' })
+    const rival = screen.getByRole('heading', { name: 'Rival' })
+    const propio = screen.getByRole('heading', { name: 'Tu héroe' })
+    const resultado = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const acciones = screen.getByRole('heading', { name: 'Acciones de combate' })
+    const turnos = screen.getByRole('heading', { name: 'Turnos' })
+    const enOrden = [estado, rival, propio, resultado, acciones, turnos]
+
+    for (let i = 0; i < enOrden.length - 1; i += 1) {
+      const actual = enOrden[i]
+      const siguiente = enOrden[i + 1]
+
+      expect(
+        (actual?.compareDocumentPosition(siguiente as Node) ?? 0) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
+  })
+
+  it('un solo arbol de DOM: una sola lista de turnos y un medidor por combatiente (nada duplicado)', () => {
+    pintar({ battle: tresContraTres(), combat: controles() })
+
+    expect(screen.getAllByRole('list', { name: 'Orden de turnos' })).toHaveLength(1)
+    expect(screen.getAllByRole('meter')).toHaveLength(6)
+    expect(screen.getAllByRole('region', { name: 'Batalla' })).toHaveLength(1)
+  })
+
+  it('3v3: tres tarjetas por lado, cada una con su Vida, sin lista gigante de tarjetas de ancho completo', () => {
+    pintar({ battle: tresContraTres(), combat: controles() })
+
+    const rival = within(screen.getByRole('region', { name: 'Rival' }))
+    const propio = within(screen.getByRole('region', { name: 'Tu equipo' }))
+
+    expect(rival.getAllByRole('listitem')).toHaveLength(3)
+    expect(propio.getAllByRole('listitem')).toHaveLength(3)
+    expect(rival.getAllByRole('meter')).toHaveLength(3)
+    expect(propio.getByLabelText('A1 (tú), equipo A, turno actual')).toBeInTheDocument()
+  })
+
+  it('2v2: dos tarjetas por lado y el titulo del lado propio pasa a «Tu equipo»', () => {
+    const view = withCombatants(
+      battle(1, [
+        entry(0, { teamLabel: 'B', seat: 0, displayName: 'B1', playerId: 'b1' }),
+        entry(1, { teamLabel: 'A', seat: 0, displayName: 'A1', playerId: ANA }),
+        entry(2, { teamLabel: 'B', seat: 1, displayName: 'B2', playerId: 'b2' }),
+        entry(3, { teamLabel: 'A', seat: 1, displayName: 'A2', playerId: 'a2' }),
+      ]),
+      [
+        [44, 44],
+        [44, 44],
+        [30, 30],
+        [52, 52],
+      ],
+    )
+    pintar({ battle: view, combat: controles() })
+
+    expect(
+      within(screen.getByRole('region', { name: 'Rival' })).getAllByRole('listitem'),
+    ).toHaveLength(2)
+    expect(
+      within(screen.getByRole('region', { name: 'Tu equipo' })).getAllByRole('listitem'),
+    ).toHaveLength(2)
+  })
+
+  it('en 1 contra 1 no repite ruido: ni «Tu oponente» ni «Equipo B» como texto visible (el equipo sigue en el nombre accesible)', () => {
+    const { container } = pintar({ battle: combatBattle(1), combat: controles() })
+
+    expect(screen.queryByText('Tu oponente')).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Equipo [AB]$/u)).not.toBeInTheDocument()
+    expect(container.textContent).not.toMatch(/sujeto-|heroe-/u)
+    expect(screen.getByLabelText('Bruno, equipo B')).toBeInTheDocument()
+  })
+
+  it('la franja de turnos muestra `battle.turnOrder` tal cual llega, sin reordenar ni recalcular', () => {
+    pintar({ battle: tresContraTres(3), combat: controles() })
+
+    const nombres = within(screen.getByRole('list', { name: 'Orden de turnos' }))
+      .getAllByRole('listitem')
+      .map((fila) => fila.textContent)
+
+    expect(nombres).toHaveLength(6)
+    expect(nombres[0]).toContain('B1')
+    expect(nombres[1]).toContain('A1 (tú)')
+    expect(nombres[5]).toContain('A3')
+    // Turno 3 completado: el actual es la posicion 3 (A2), tal como lo publico el servidor.
+    expect(nombres[3]).toContain('Actual')
+    expect(nombres.filter((fila) => fila.includes('Actual'))).toHaveLength(1)
+  })
+
+  it('el HUD dice la conexion en texto: «Conectado» y, al perderla, «Reconectando…»', () => {
+    const { unmount } = pintar()
+
+    expect(screen.getByText('Conectado')).toBeInTheDocument()
+
+    unmount()
+    pintar({ connection: 'reconnecting', synced: false })
+
+    expect(screen.getByText('Reconectando…')).toBeInTheDocument()
+    expect(screen.queryByText('Conectado')).not.toBeInTheDocument()
+  })
+
+  it('sin ataque previo la region de resultado existe pero vacia (no reserva altura ni texto)', () => {
+    pintar({ combat: controles() })
+
+    expect(
+      screen.getByRole('status', { name: 'Resultado del último ataque' }),
+    ).toBeEmptyDOMElement()
+  })
+
+  it('el objetivo, la Vida de ambos y «Ataque básico» estan a la vez en 1 contra 1 (mi turno)', () => {
+    pintar({ battle: combatBattle(1), combat: controles() })
+
+    expect(screen.getByRole('radio', { name: /Bruno/u })).toBeChecked()
+    expect(screen.getByRole('meter', { name: 'Vida de Bruno' })).toBeInTheDocument()
+    expect(screen.getByRole('meter', { name: 'Vida de Ana' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Ataque básico' })).toBeInTheDocument()
   })
 })

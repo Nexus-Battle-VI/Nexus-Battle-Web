@@ -50,7 +50,7 @@ import type { RealtimeConnectionState } from '../realtime'
  * Solo se alcanza con `import.meta.env.DEV` (ver `src/routes/dev-routes.tsx`) y sus marcadores
  * estan vetados del bundle productivo (`build:verify`).
  */
-type Mode = '1v1' | '2v2' | 'ia'
+type Mode = '1v1' | '2v2' | '3v3' | 'ia'
 type Perspective = 'sujeto-ana' | 'sujeto-bruno'
 
 const ORDERS: Readonly<Record<Mode, readonly TurnOrderEntry[]>> = {
@@ -71,6 +71,38 @@ const ORDERS: Readonly<Record<Mode, readonly TurnOrderEntry[]>> = {
       displayName: 'Diego',
       playerId: 'sujeto-diego',
       heroSubtype: 'GUERRERO_TANQUE',
+    }),
+  ],
+  '3v3': [
+    entry(0, { teamLabel: 'B', seat: 0, displayName: 'Bruno', playerId: 'sujeto-bruno' }),
+    entry(1, { teamLabel: 'A', seat: 0, displayName: 'Ana', playerId: 'sujeto-ana' }),
+    entry(2, {
+      teamLabel: 'B',
+      seat: 1,
+      displayName: 'Carla',
+      playerId: 'sujeto-carla',
+      heroSubtype: 'MEDICO',
+    }),
+    entry(3, {
+      teamLabel: 'A',
+      seat: 1,
+      displayName: 'Diego',
+      playerId: 'sujeto-diego',
+      heroSubtype: 'GUERRERO_TANQUE',
+    }),
+    entry(4, {
+      teamLabel: 'B',
+      seat: 2,
+      displayName: 'Elena',
+      playerId: 'sujeto-elena',
+      heroSubtype: 'MAGO_HIELO',
+    }),
+    entry(5, {
+      teamLabel: 'A',
+      seat: 2,
+      displayName: 'Felipe',
+      playerId: 'sujeto-felipe',
+      heroSubtype: 'CHAMAN',
     }),
   ],
   ia: [
@@ -97,6 +129,14 @@ const STARTING_HEALTH: Readonly<Record<Mode, HealthByPosition>> = {
     [44, 44],
     [30, 30],
     [52, 52],
+  ],
+  '3v3': [
+    [44, 44],
+    [44, 44],
+    [30, 30],
+    [52, 52],
+    [36, 36],
+    [40, 40],
   ],
   ia: [null, [44, 44]],
 }
@@ -282,199 +322,221 @@ export const BattleScreenDevPreview = (): React.JSX.Element => {
   }
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-ink">
-          Vista previa de la batalla (HU-17, HU-18)
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          Vista de desarrollo: no hay Combat detrás. Los eventos pasan por los reductores reales.
-        </p>
-      </header>
-
-      <Card title="Controles" description="Simulan lo que en producción publica el servidor.">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => {
-              dispatch({
-                type: 'event',
-                message: advancedEvent(
-                  mode,
-                  (state.battle?.turnsCompleted ?? 0) + 1,
-                  state.lastSeq + 1,
-                  state.battle === null || legacy ? null : healthOfView(state.battle),
-                ),
-              })
-            }}
-          >
-            Simular turnAdvanced
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              restart(mode)
-            }}
-          >
-            Reiniciar
-          </Button>
-        </div>
-
-        <fieldset className="mt-4 flex flex-wrap gap-2">
-          <legend className="mb-1 text-xs font-medium text-muted">Formato</legend>
-          {(['1v1', '2v2', 'ia'] as const).map((option) => (
-            <Button
-              key={option}
-              variant={mode === option ? 'primary' : 'secondary'}
-              aria-pressed={mode === option}
-              onClick={() => {
-                restart(option)
-              }}
-            >
-              {option === 'ia' ? '1 vs IA' : option}
-            </Button>
-          ))}
-        </fieldset>
-
-        <fieldset className="mt-4 flex flex-wrap gap-2">
-          <legend className="mb-1 text-xs font-medium text-muted">Quién mira</legend>
-          {(
-            [
-              ['sujeto-ana', 'Ana'],
-              ['sujeto-bruno', 'Bruno'],
-            ] as const
-          ).map(([subject, label]) => (
-            <Button
-              key={subject}
-              variant={perspective === subject ? 'primary' : 'secondary'}
-              aria-pressed={perspective === subject}
-              onClick={() => {
-                setPerspective(subject)
-              }}
-            >
-              {label}
-            </Button>
-          ))}
-        </fieldset>
-
-        <fieldset className="mt-4 flex flex-wrap gap-2">
-          <legend className="mb-1 text-xs font-medium text-muted">Conexión</legend>
-          {CONNECTIONS.map((option) => (
-            <Button
-              key={option.value}
-              variant={connection === option.value ? 'primary' : 'secondary'}
-              aria-pressed={connection === option.value}
-              onClick={() => {
-                setConnection(option.value)
-                if (option.value !== 'open') {
-                  attackDispatch({ type: 'connectionLost' })
-                }
-              }}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </fieldset>
-
-        <fieldset className="mt-4 flex flex-wrap gap-2">
-          <legend className="mb-1 text-xs font-medium text-muted">Vida (desde el servidor)</legend>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setHealthOf(1, 22)
-            }}
-          >
-            Ana 22/44 (amarillo)
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setHealthOf(1, 12)
-            }}
-          >
-            Ana 12/44 (rojo)
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setHealthOf(0, 0)
-            }}
-          >
-            Rival sin Vida
-          </Button>
-          <Button
-            variant={legacy ? 'primary' : 'secondary'}
-            aria-pressed={legacy}
-            onClick={() => {
-              setLegacy(!legacy)
-              restart(mode, !legacy)
-            }}
-          >
-            Batalla anterior a HU-18
-          </Button>
-        </fieldset>
-      </Card>
-
-      <Card
-        title="Servidor simulado (vista previa)"
-        description="Responde al ataque pendiente como lo haría Combat. Primero pulsa «Ataque básico»."
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-4 sm:px-6">
+      {/*
+       * CONTROLES DE DESARROLLO: herramientas de esta vista previa, NO parte del producto.
+       * Van en un panel plegable con borde discontinuo para que, al plegarlo, una captura de la
+       * pantalla de batalla no los muestre ni parezcan formar parte del juego.
+       */}
+      <details
+        open
+        className="rounded-xl border-2 border-dashed border-warning bg-surface p-3 sm:p-4"
       >
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(REPLIES) as Reply[]).map((kind) => (
-            <Button
-              key={kind}
-              variant="secondary"
-              onClick={() => {
-                reply(kind)
-              }}
-            >
-              {REPLIES[kind].label}
-            </Button>
-          ))}
-          <Button
-            variant="secondary"
-            onClick={() => {
-              attackDispatch({
-                type: 'rejected',
-                code: 'NOT_YOUR_TURN',
-                ...(attack.intent === null ? {} : { commandId: attack.intent.commandId }),
-              })
-            }}
-          >
-            Rechaza: NOT_YOUR_TURN
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              attackDispatch({
-                type: 'rejected',
-                code: 'COMMAND_CONFLICT',
-                ...(attack.intent === null ? {} : { commandId: attack.intent.commandId }),
-              })
-            }}
-          >
-            Pide reintentar: COMMAND_CONFLICT
-          </Button>
-        </div>
-        <p className="mt-3 text-xs text-muted">
-          Ataque pendiente:{' '}
-          {attack.intent === null
-            ? 'ninguno'
-            : `sí (${attack.intent.target.teamLabel}/${String(attack.intent.target.seat)})`}
-          . Atacantes de referencia: Bruno {BRUNO.teamLabel}/{BRUNO.seat}, Ana {ANA.teamLabel}/
-          {ANA.seat}.
-        </p>
-      </Card>
+        <summary className="cursor-pointer text-sm font-semibold text-ink">
+          Controles de desarrollo — no forman parte del producto
+        </summary>
+        <div className="mt-3 flex flex-col gap-4">
+          <header>
+            <h1 className="text-xl font-semibold text-ink">
+              Vista previa de la batalla (HU-17, HU-18)
+            </h1>
+            <p className="mt-1 text-sm text-muted">
+              Vista de desarrollo: no hay Combat detrás (no es evidencia de extremo a extremo). Los
+              eventos pasan por los reductores reales. Pliega este panel para capturar solo la
+              pantalla de batalla.
+            </p>
+          </header>
 
-      {state.battle !== null && (
-        <BattleScreen
-          battle={state.battle}
-          subject={perspective}
-          connection={connection}
-          synced={connection === 'open'}
-          lastAttack={state.lastAttack}
-          combat={controls}
-        />
-      )}
-    </main>
+          <Card title="Controles" description="Simulan lo que en producción publica el servidor.">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => {
+                  dispatch({
+                    type: 'event',
+                    message: advancedEvent(
+                      mode,
+                      (state.battle?.turnsCompleted ?? 0) + 1,
+                      state.lastSeq + 1,
+                      state.battle === null || legacy ? null : healthOfView(state.battle),
+                    ),
+                  })
+                }}
+              >
+                Simular turnAdvanced
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  restart(mode)
+                }}
+              >
+                Reiniciar
+              </Button>
+            </div>
+
+            <fieldset className="mt-4 flex flex-wrap gap-2">
+              <legend className="mb-1 text-xs font-medium text-muted">Formato</legend>
+              {(['1v1', '2v2', '3v3', 'ia'] as const).map((option) => (
+                <Button
+                  key={option}
+                  variant={mode === option ? 'primary' : 'secondary'}
+                  aria-pressed={mode === option}
+                  onClick={() => {
+                    restart(option)
+                  }}
+                >
+                  {option === 'ia' ? '1 vs IA' : option}
+                </Button>
+              ))}
+            </fieldset>
+
+            <fieldset className="mt-4 flex flex-wrap gap-2">
+              <legend className="mb-1 text-xs font-medium text-muted">Quién mira</legend>
+              {(
+                [
+                  ['sujeto-ana', 'Ana'],
+                  ['sujeto-bruno', 'Bruno'],
+                ] as const
+              ).map(([subject, label]) => (
+                <Button
+                  key={subject}
+                  variant={perspective === subject ? 'primary' : 'secondary'}
+                  aria-pressed={perspective === subject}
+                  onClick={() => {
+                    setPerspective(subject)
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </fieldset>
+
+            <fieldset className="mt-4 flex flex-wrap gap-2">
+              <legend className="mb-1 text-xs font-medium text-muted">Conexión</legend>
+              {CONNECTIONS.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={connection === option.value ? 'primary' : 'secondary'}
+                  aria-pressed={connection === option.value}
+                  onClick={() => {
+                    setConnection(option.value)
+                    if (option.value !== 'open') {
+                      attackDispatch({ type: 'connectionLost' })
+                    }
+                  }}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </fieldset>
+
+            <fieldset className="mt-4 flex flex-wrap gap-2">
+              <legend className="mb-1 text-xs font-medium text-muted">
+                Vida (desde el servidor)
+              </legend>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setHealthOf(1, 22)
+                }}
+              >
+                Ana 22/44 (amarillo)
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setHealthOf(1, 12)
+                }}
+              >
+                Ana 12/44 (rojo)
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setHealthOf(0, 0)
+                }}
+              >
+                Rival sin Vida
+              </Button>
+              <Button
+                variant={legacy ? 'primary' : 'secondary'}
+                aria-pressed={legacy}
+                onClick={() => {
+                  setLegacy(!legacy)
+                  restart(mode, !legacy)
+                }}
+              >
+                Batalla anterior a HU-18
+              </Button>
+            </fieldset>
+          </Card>
+
+          <Card
+            title="Servidor simulado (vista previa)"
+            description="Responde al ataque pendiente como lo haría Combat. Primero pulsa «Ataque básico»."
+          >
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(REPLIES) as Reply[]).map((kind) => (
+                <Button
+                  key={kind}
+                  variant="secondary"
+                  onClick={() => {
+                    reply(kind)
+                  }}
+                >
+                  {REPLIES[kind].label}
+                </Button>
+              ))}
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  attackDispatch({
+                    type: 'rejected',
+                    code: 'NOT_YOUR_TURN',
+                    ...(attack.intent === null ? {} : { commandId: attack.intent.commandId }),
+                  })
+                }}
+              >
+                Rechaza: NOT_YOUR_TURN
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  attackDispatch({
+                    type: 'rejected',
+                    code: 'COMMAND_CONFLICT',
+                    ...(attack.intent === null ? {} : { commandId: attack.intent.commandId }),
+                  })
+                }}
+              >
+                Pide reintentar: COMMAND_CONFLICT
+              </Button>
+            </div>
+            <p className="mt-3 text-xs text-muted">
+              Ataque pendiente:{' '}
+              {attack.intent === null
+                ? 'ninguno'
+                : `sí (${attack.intent.target.teamLabel}/${String(attack.intent.target.seat)})`}
+              . Atacantes de referencia: Bruno {BRUNO.teamLabel}/{BRUNO.seat}, Ana {ANA.teamLabel}/
+              {ANA.seat}.
+            </p>
+          </Card>
+        </div>
+      </details>
+
+      {/* PANTALLA DE BATALLA: el componente de produccion, con el mismo contenedor que la app. */}
+      <main aria-label="Pantalla de batalla (componente de producción)" className="w-full">
+        {state.battle !== null && (
+          <BattleScreen
+            battle={state.battle}
+            subject={perspective}
+            connection={connection}
+            synced={connection === 'open'}
+            lastAttack={state.lastAttack}
+            combat={controls}
+          />
+        )}
+      </main>
+    </div>
   )
 }

@@ -149,3 +149,38 @@ describe('BattleScreenDevPreview — HU-18: monta los componentes y reductores r
     expect(within(grupo).queryByRole('radio', { name: /Diego|Ana/u })).not.toBeInTheDocument()
   })
 })
+
+describe('BattleScreenDevPreview — arena: controles de desarrollo separados de la pantalla de batalla', () => {
+  it('los controles viven en un panel rotulado «no forman parte del producto», FUERA de la pantalla de batalla', () => {
+    render(<BattleScreenDevPreview />)
+
+    const panel = screen.getByText('Controles de desarrollo — no forman parte del producto')
+    const batalla = screen.getByRole('region', { name: 'Batalla' })
+    const simular = screen.getByRole('button', { name: 'Simular turnAdvanced' })
+
+    expect(panel.closest('details')).toContainElement(simular)
+    expect(batalla).not.toContainElement(simular)
+    expect(
+      within(batalla).queryByText(/Servidor simulado|Simular turnAdvanced/u),
+    ).not.toBeInTheDocument()
+  })
+
+  it('3v3: la misma pantalla muestra tres por lado, seis en la franja de turnos y un medidor por cada uno', async () => {
+    render(<BattleScreenDevPreview />)
+
+    await userEvent.click(screen.getByRole('button', { name: '3v3' }))
+
+    const batalla = within(screen.getByRole('region', { name: 'Batalla' }))
+
+    expect(batalla.getAllByRole('meter')).toHaveLength(6)
+    expect(
+      within(batalla.getByRole('region', { name: 'Rival' })).getAllByRole('listitem'),
+    ).toHaveLength(3)
+    expect(
+      within(batalla.getByRole('region', { name: 'Tu equipo' })).getAllByRole('listitem'),
+    ).toHaveLength(3)
+    expect(
+      within(batalla.getByRole('list', { name: 'Orden de turnos' })).getAllByRole('listitem'),
+    ).toHaveLength(6)
+  })
+})

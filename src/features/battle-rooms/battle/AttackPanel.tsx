@@ -90,70 +90,84 @@ export const AttackPanel = ({
   return (
     <section
       aria-labelledby={headingId}
-      className="flex flex-col gap-4 rounded-lg border border-border bg-surface-raised p-5"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3 sm:p-4"
     >
-      <h2 id={headingId} className="text-lg font-semibold text-ink">
+      {/* El titulo existe para los lectores de pantalla; a la vista, la barra ya es evidente. */}
+      <h2 id={headingId} className="sr-only">
         Acciones de combate
       </h2>
 
+      {/*
+       * La accion principal va primero y las demas (habilidades y epica, HU-19) podran
+       * sumarse como hermanas de este bloque sin tocar el resto. Hoy no hay botones falsos.
+       */}
       {availability.visible && (
-        <>
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium text-ink">Objetivo del ataque</legend>
-            {targets.map((entry) => {
-              const health = combatantHealth(battle, entry)
-              const key = keyOf(entry)
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-6">
+          <fieldset className="min-w-0 flex-1">
+            <legend className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-muted">
+              Objetivo del ataque
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {targets.map((entry) => {
+                const health = combatantHealth(battle, entry)
+                const key = keyOf(entry)
 
-              return (
-                <label
-                  key={key}
-                  className={clsx(
-                    'flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3',
-                    'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
-                    key === selectedKey ? 'border-brand bg-brand/10' : 'border-border',
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name={`${headingId}-objetivo`}
-                    value={key}
-                    checked={key === selectedKey}
-                    disabled={pending}
-                    onChange={() => {
-                      setChosen(key)
-                    }}
-                    className="size-4 accent-brand"
-                  />
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
-                    {combatantName(entry)}
-                  </span>
-                  <span className="text-xs tabular-nums text-muted">
-                    {health === null
-                      ? ''
-                      : `Vida ${String(health.current)} / ${String(health.max)}`}
-                  </span>
-                </label>
-              )
-            })}
+                return (
+                  <label
+                    key={key}
+                    className={clsx(
+                      'flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2',
+                      'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
+                      key === selectedKey ? 'border-brand bg-brand/10' : 'border-border',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name={`${headingId}-objetivo`}
+                      value={key}
+                      checked={key === selectedKey}
+                      disabled={pending}
+                      onChange={() => {
+                        setChosen(key)
+                      }}
+                      className="size-4 accent-brand"
+                    />
+                    <span className="min-w-0 truncate text-sm font-medium text-ink">
+                      {combatantName(entry)}
+                    </span>
+                    <span className="text-xs tabular-nums text-muted">
+                      {health === null
+                        ? ''
+                        : `Vida ${String(health.current)} / ${String(health.max)}`}
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
           </fieldset>
 
           <Button
             aria-disabled={!availability.enabled}
             aria-busy={pending}
             aria-describedby={availability.hint === null ? undefined : hintId}
-            className="min-h-11 w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50 sm:w-auto"
+            className="min-h-12 w-full px-8 text-base font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50 md:w-auto md:min-w-52"
             onClick={submit}
           >
             {pending ? 'Atacando…' : 'Ataque básico'}
           </Button>
-        </>
+        </div>
       )}
 
-      {availability.hint !== null && (
-        <p id={hintId} className="text-sm text-muted">
-          {availability.hint}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        {availability.hint !== null && (
+          <p id={hintId} className="text-sm text-muted">
+            {availability.hint}
+          </p>
+        )}
+        <p className="text-xs text-muted">
+          Las habilidades y la épica llegarán con las siguientes historias de Jugar Online.
         </p>
-      )}
+      </div>
 
       {attack.unconfirmed && attack.intent !== null && (
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
@@ -184,10 +198,6 @@ export const AttackPanel = ({
           </Button>
         </div>
       )}
-
-      <p className="text-xs text-muted">
-        Las habilidades y la épica llegarán con las siguientes historias de Jugar Online.
-      </p>
     </section>
   )
 }
