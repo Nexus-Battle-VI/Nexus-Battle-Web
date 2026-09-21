@@ -227,6 +227,27 @@ describe('BattlePage — HU-17: la batalla solo se pinta cuando Combat la public
     })
   })
 
+  it('equipos de distinto tamano (422 UNSUPPORTED_TEAM_COMPOSITION): lo explica y NO pinta ninguna batalla', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse(422, {
+          statusCode: 422,
+          message: 'Los equipos tienen distinto tamano (1 contra 3)',
+          code: 'UNSUPPORTED_TEAM_COMPOSITION',
+        }),
+      ),
+    )
+    const { sockets } = montar(ANA)
+    const socket = await connect(sockets)
+
+    deliver(socket, snapshot(0, 'PREPARING', null), ready(0))
+
+    expect(await screen.findByText('La batalla no pudo comenzar.')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('distinto tamaño')
+    expect(screen.queryByText(/Turno de/u)).not.toBeInTheDocument()
+  })
+
   it('sala cancelada: mensaje claro y vuelta a Jugar Online', async () => {
     const { sockets } = montar(ANA)
     const socket = await connect(sockets)

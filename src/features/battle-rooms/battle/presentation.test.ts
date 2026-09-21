@@ -140,6 +140,27 @@ describe('describeStartBattleFailure: textos propios por codigo, sin filtrar el 
     expect(message).not.toContain('detalle tecnico')
   })
 
+  it('422 por equipos de distinto tamano: mensaje propio (por el code, no por el texto), sin filtrar el crudo', () => {
+    const message = describeStartBattleFailure(
+      new HttpError(422, 'Los equipos tienen distinto tamano (1 contra 3)', {
+        code: 'UNSUPPORTED_TEAM_COMPOSITION',
+      }),
+    )
+
+    expect(message).toContain('distinto tamaño')
+    expect(message).toContain('La batalla no comenzó')
+    expect(message).not.toContain('1 contra 3')
+    expect(message).not.toContain('ya no cumple los requisitos')
+  })
+
+  it('un 422 con otro code (o sin cuerpo) sigue siendo el de requisitos de un participante', () => {
+    for (const body of [null, {}, { code: 'OTRO' }, 'texto']) {
+      expect(describeStartBattleFailure(new HttpError(422, 'x', body))).toContain(
+        'ya no cumple los requisitos para combatir',
+      )
+    }
+  })
+
   it('un error que no es HttpError (red caida) tambien es legible', () => {
     expect(describeStartBattleFailure(new TypeError('Failed to fetch'))).toBe(
       'No fue posible iniciar la batalla. Inténtalo de nuevo.',

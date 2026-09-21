@@ -78,48 +78,98 @@ export interface CommandRejectedMessage {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 
+const isNonNegativeInteger = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0
+
+const isStringOrNull = (value: unknown): value is string | null =>
+  value === null || typeof value === 'string'
+
+/** Instante ISO valido: un texto cualquiera no es una fecha. */
+const isTimestamp = (value: unknown): value is string =>
+  typeof value === 'string' && !Number.isNaN(Date.parse(value))
+
+/**
+ * Un participante completo, campo por campo. Un `HUMAN` siempre trae su `playerId`;
+ * un `AI` nunca (el contrato lo declara `null` para la IA).
+ */
 const isEntry = (value: unknown): value is TurnOrderEntry =>
   isRecord(value) &&
-  typeof value.position === 'number' &&
-  typeof value.teamLabel === 'string' &&
-  typeof value.seat === 'number' &&
-  (value.kind === 'HUMAN' || value.kind === 'AI')
+  isNonNegativeInteger(value.position) &&
+  isNonEmptyString(value.teamLabel) &&
+  isNonNegativeInteger(value.seat) &&
+  (value.kind === 'HUMAN' ? isNonEmptyString(value.playerId) : value.kind === 'AI') &&
+  (value.kind === 'HUMAN' || value.playerId === null) &&
+  isStringOrNull(value.displayName) &&
+  isStringOrNull(value.heroId) &&
+  isStringOrNull(value.heroSubtype)
 
-/** Valida la FORMA de una vista de batalla: un mensaje malformado se ignora, nunca se pinta. */
-export const isBattleView = (value: unknown): value is BattleView =>
-  isRecord(value) &&
-  typeof value.battleId === 'string' &&
-  typeof value.turnsCompleted === 'number' &&
-  typeof value.round === 'number' &&
-  Array.isArray(value.turnOrder) &&
-  value.turnOrder.length > 0 &&
-  value.turnOrder.every(isEntry) &&
-  isEntry(value.currentTurn)
+/** Mismo participante: la identidad de una entrada de la cola, sin depender de campos de presentacion. */
+const isSameEntry = (a: TurnOrderEntry, b: TurnOrderEntry): boolean =>
+  a.position === b.position &&
+  a.teamLabel === b.teamLabel &&
+  a.seat === b.seat &&
+  a.kind === b.kind &&
+  a.playerId === b.playerId
+
+/**
+ * Valida una vista de batalla: la FORMA de cada campo y la coherencia entre ellos.
+ * Un mensaje malformado se ignora, nunca se pinta.
+ *
+ * Coherencia (sin calcular nada del turno): las posiciones de la cola son 0, 1, 2...
+ * en orden, y `currentTurn` es ese mismo participante dentro de `turnOrder`.
+ */
+export const isBattleView = (value: unknown): value is BattleView => {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.battleId) ||
+    !isTimestamp(value.startedAt) ||
+    !isNonNegativeInteger(value.turnsCompleted) ||
+    !isNonNegativeInteger(value.round) ||
+    value.round < 1 ||
+    !Array.isArray(value.turnOrder) ||
+    value.turnOrder.length === 0 ||
+    !value.turnOrder.every(isEntry) ||
+    !isEntry(value.currentTurn)
+  ) {
+    return false
+  }
+
+  const order: readonly TurnOrderEntry[] = value.turnOrder
+  const current = value.currentTurn
+
+  return (
+    order.every((entry, index) => entry.position === index) &&
+    order.some((entry) => isSameEntry(entry, current))
+  )
+}
 
 export const isBattleEventMessage = (value: unknown): value is BattleEventMessage =>
   isRecord(value) &&
-  (value.type === 'battleStarted' || value.type === 'turnAdvanced') &&
+  (value.type === 'battleStarted' ||
+    (value.type === 'turnAdvanced' && isNonNegativeInteger(value.completedPosition))) &&
   typeof value.seq === 'number' &&
   Number.isInteger(value.seq) &&
   value.seq >= 1 &&
-  typeof value.roomId === 'string' &&
+  isNonEmptyString(value.roomId) &&
+  isTimestamp(value.occurredAt) &&
   isBattleView(value.battle)
 
 export const isSnapshotMessage = (value: unknown): value is SnapshotMessage =>
   isRecord(value) &&
   value.type === 'snapshot' &&
-  typeof value.roomId === 'string' &&
-  typeof value.seq === 'number' &&
-  Number.isInteger(value.seq) &&
-  value.seq >= 0 &&
-  typeof value.status === 'string' &&
+  isNonEmptyString(value.roomId) &&
+  isNonNegativeInteger(value.seq) &&
+  isNonEmptyString(value.status) &&
   (value.battle === null || isBattleView(value.battle))
 
 export const isResumeOkMessage = (value: unknown): value is ResumeOkMessage =>
   isRecord(value) &&
   value.type === 'resume.ok' &&
-  typeof value.roomId === 'string' &&
-  typeof value.seq === 'number'
+  isNonEmptyString(value.roomId) &&
+  isNonNegativeInteger(value.seq)
 
 export const isCommandRejectedMessage = (value: unknown): value is CommandRejectedMessage =>
-  isRecord(value) && value.type === 'command.rejected' && typeof value.code === 'string'
+  isRecord(value) && value.type === 'command.rejected' && isNonEmptyString(value.code)

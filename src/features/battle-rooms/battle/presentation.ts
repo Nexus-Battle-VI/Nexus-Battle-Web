@@ -61,6 +61,15 @@ export const describeTurn = (battle: BattleView, subject: string | null): TurnDe
   }
 }
 
+/** Codigo estable del 422 de Combat cuando los equipos tienen distinto tamano. */
+const UNSUPPORTED_TEAM_COMPOSITION = 'UNSUPPORTED_TEAM_COMPOSITION'
+
+const isUnsupportedTeamComposition = (body: unknown): boolean =>
+  typeof body === 'object' &&
+  body !== null &&
+  'code' in body &&
+  body.code === UNSUPPORTED_TEAM_COMPOSITION
+
 /**
  * Mensaje legible para un fallo al iniciar la batalla. Textos propios por codigo,
  * nunca el texto crudo de Combat: los 409 interpolan el `roomId` y los 422 pueden
@@ -78,6 +87,10 @@ export const describeStartBattleFailure = (error: unknown): string => {
       case 409:
         return 'La sala no está lista para comenzar o cambió de estado. Vuelve a la lista de salas e inténtalo de nuevo.'
       case 422:
+        if (isUnsupportedTeamComposition(error.body)) {
+          return 'Los equipos de esta sala tienen distinto tamaño y el orden de turnos solo está definido para equipos con el mismo número de participantes. La batalla no comenzó; vuelve a la lista de salas.'
+        }
+
         return 'Un participante ya no cumple los requisitos para combatir: su héroe o su equipamiento cambió. La batalla no comenzó; revisa tu héroe y vuelve a la sala.'
       case 503:
         return 'El servicio no pudo validar a los participantes en este momento. Inténtalo de nuevo en unos segundos.'
