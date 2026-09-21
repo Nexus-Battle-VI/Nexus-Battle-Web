@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { Coins } from '@/components/ui/icons'
+import { ChatPanel } from './ChatPanel'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 
@@ -283,6 +284,14 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
           )}
         </div>
       </Card>
+
+      {isParticipant && (
+        <ChatPanel
+          channel={{ kind: 'room', roomId: room.id }}
+          title="Chat de la sala"
+          description="Solo lo ven los participantes de esta sala."
+        />
+      )}
     </section>
   )
 }

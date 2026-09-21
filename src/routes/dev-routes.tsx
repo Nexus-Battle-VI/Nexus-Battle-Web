@@ -80,6 +80,11 @@ if (import.meta.env.DEV) {
       default: module.BattleScreenDevPreview,
     })),
   )
+  const ChatPanelDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/ChatPanelDevPreview').then((module) => ({
+      default: module.ChatPanelDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -206,6 +211,18 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <BattleScreenDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-13: el chat real necesita una sesion de Cognito y a Combat respondiendo
+    // por WebSocket. El preview monta el componente de produccion contra un
+    // servidor FALSO que habla el protocolo del contrato, con un ticket y una
+    // sesion de ejemplo inyectados solo en sus paneles. No prueba el servidor.
+    {
+      path: '__dev/hu13/chat',
+      element: (
+        <Suspense fallback={null}>
+          <ChatPanelDevPreviewLazy />
         </Suspense>
       ),
     },

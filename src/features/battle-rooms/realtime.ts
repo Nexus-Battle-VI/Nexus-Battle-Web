@@ -78,11 +78,20 @@ export interface RealtimeConnectionOptions {
   readonly onStateChange: (state: RealtimeConnectionState) => void
   /** Se invoca al perder la conexion ya autenticada (para dejar de considerar el estado sincronizado). */
   readonly onConnectionLost?: () => void
+  /**
+   * Solo para pruebas y vistas previas: sustituye la comprobacion de que hay sesion
+   * (por defecto, un testimonio vigente en el almacen de sesion). Debe ser estable
+   * entre llamadas.
+   */
+  readonly hasSession?: () => boolean
 }
 
 export interface RealtimeConnection {
   readonly close: () => void
 }
+
+/** Hay un testimonio vigente con el que pedir un ticket. */
+const hasActiveSession = (): boolean => currentAccessToken() !== null
 
 const RECONNECT_BASE_MS = 1_000
 const RECONNECT_MAX_MS = 10_000
@@ -132,7 +141,7 @@ export const openRealtimeConnection = (options: RealtimeConnectionOptions): Real
       return
     }
 
-    if (currentAccessToken() === null) {
+    if (!(options.hasSession ?? hasActiveSession)()) {
       // Sin testimonio vigente no se puede pedir un ticket: se deja de intentar.
       options.onStateChange('disabled')
       return

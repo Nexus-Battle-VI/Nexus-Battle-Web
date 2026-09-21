@@ -313,3 +313,41 @@ describe('BattleRoomLobbyPage — deteccion de cancelacion vs. sala llena (HU-15
     expect(await screen.findByText('Esta sala ya no está disponible.')).toBeInTheDocument()
   })
 })
+
+describe('BattleRoomLobbyPage — chat de la sala (HU-13)', () => {
+  // Al llenarse la sala (PREPARING) HU-17 lleva a la persona a la pantalla de batalla; el chat de
+  // la sala sigue alli (`BattleWithChat.test.tsx`). Aqui solo queda la sala de espera.
+  it('un participante ve el chat de SU sala', async () => {
+    useSession.setState({ subject: GUEST, accessToken: null, expiresAt: null })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    expect(await screen.findByRole('heading', { name: 'Chat de la sala' })).toBeInTheDocument()
+    expect(screen.getByRole('log')).toBeInTheDocument()
+  })
+
+  it('quien no es participante NO ve el chat de la sala', async () => {
+    useSession.setState({ subject: 'sujeto-ajeno', accessToken: null, expiresAt: null })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    await screen.findByText('Equipo A')
+    expect(screen.queryByRole('heading', { name: 'Chat de la sala' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('log')).not.toBeInTheDocument()
+  })
+
+  it('una sala cancelada no ofrece chat: su chat esta cerrado', async () => {
+    useSession.setState({ subject: OWNER, accessToken: null, expiresAt: null })
+    mockedRealtime.mockReturnValue({ connection: 'open', lastRoomStatus: 'CANCELLED' })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [])))
+
+    montar()
+
+    await screen.findByText(
+      'La sala fue cancelada por su propietario. Selecciona otra sala para continuar.',
+    )
+    expect(screen.queryByRole('heading', { name: 'Chat de la sala' })).not.toBeInTheDocument()
+  })
+})
