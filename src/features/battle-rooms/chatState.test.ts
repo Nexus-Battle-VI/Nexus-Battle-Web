@@ -7,7 +7,7 @@ import {
   type ChatAction,
   type ChatState,
 } from './chatState'
-import { LOBBY_CHANNEL, type ChatMessage, type ServerFrame } from './protocol'
+import { LOBBY_CHANNEL, type ChatMessage, type ServerFrame } from './chatProtocol'
 
 const message = (seq: number, over: Partial<ChatMessage> = {}): ChatMessage => ({
   messageId: `m-${String(seq)}`,
@@ -322,11 +322,5 @@ describe('mensajes propios y pendientes', () => {
 
     expect(state.closedReason).toBeNull()
     expect(state.pending[0]?.status).toBe('sending')
-  })
-})
-
-describe('auth.ok', () => {
-  it('no cambia el estado', () => {
-    expect(run([frame({ type: 'auth.ok' })])).toBe(initialChatState)
   })
 })

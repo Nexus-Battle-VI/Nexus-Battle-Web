@@ -1,0 +1,156 @@
+import { useEffect } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { Link, useParams } from 'react-router'
+
+import { Button } from '@/components/ui/Button'
+import { useSession } from '@/shared/session'
+import type { SocketFactory, TicketProvider } from '../realtime'
+
+import { startBattle } from './api'
+import { BattleScreen } from './BattleScreen'
+import { describeRejection, describeStartBattleFailure } from './presentation'
+import { useBattleRealtime } from './useBattleRealtime'
+
+export interface BattlePageProps {
+  /** Inyectables para pruebas (mismo patron que `useBattleRoomRealtime`). */
+  readonly socketFactory?: SocketFactory
+  readonly ticketProvider?: TicketProvider
+}
+
+const BackToRooms = (): React.JSX.Element => (
+  <Link
+    to="/play"
+    className="inline-flex min-h-11 items-center text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+  >
+    Volver a Jugar Online
+  </Link>
+)
+
+const Notice = ({
+  children,
+  alert = false,
+}: {
+  readonly children: React.ReactNode
+  readonly alert?: boolean
+}): React.JSX.Element => (
+  <section aria-label="Batalla" className="flex flex-col items-start gap-3">
+    <p
+      role={alert ? 'alert' : 'status'}
+      className={alert ? 'text-sm text-danger' : 'text-sm text-muted'}
+    >
+      {children}
+    </p>
+    <BackToRooms />
+  </section>
+)
+
+/**
+ * Pantalla de batalla de una sala (HU-17). Continua el MISMO flujo de Jugar Online
+ * (`/play` -> lobby -> batalla), sin una entrada paralela.
+ *
+ * La transicion a la batalla depende SIEMPRE del servidor:
+ *
+ *  - `PREPARING`: la sala se lleno y todavia no hay cola. Esta pantalla pide el
+ *    inicio (`POST .../start`, sin cuerpo e idempotente: puede pedirlo cualquiera de
+ *    los dos clientes a la vez) y espera el `battleStarted` por WebSocket. Nunca
+ *    muestra una batalla antes.
+ *  - `IN_BATTLE`: pinta la cola y el turno que Combat publica.
+ *
+ * El heroe y el nombre que se ven salen del estado real autorizado (la cola), no
+ * de datos fijos del cliente.
+ */
+export const BattlePage = ({
+  socketFactory,
+  ticketProvider,
+}: BattlePageProps): React.JSX.Element => {
+  const { roomId = null } = useParams<{ roomId: string }>()
+  const subject = useSession((state) => state.subject)
+  const realtime = useBattleRealtime(roomId, socketFactory, ticketProvider)
+  const start = useMutation({ mutationFn: (id: string) => startBattle(id) })
+  const { mutate: requestStart, isIdle: startIdle } = start
+
+  useEffect(() => {
+    if (roomId !== null && realtime.synced && realtime.roomStatus === 'PREPARING' && startIdle) {
+      requestStart(roomId)
+    }
+  }, [roomId, realtime.synced, realtime.roomStatus, startIdle, requestStart])
+
+  if (roomId === null) {
+    return <Notice alert>No se indicó ninguna batalla.</Notice>
+  }
+
+  if (realtime.connection === 'disabled') {
+    return <Notice alert>Tu sesión expiró. Vuelve a iniciar sesión para ver la batalla.</Notice>
+  }
+
+  if (realtime.rejected !== null) {
+    return <Notice alert>{describeRejection(realtime.rejected)}</Notice>
+  }
+
+  if (realtime.battle !== null) {
+    return (
+      <BattleScreen
+        battle={realtime.battle}
+        subject={subject}
+        connection={realtime.connection}
+        synced={realtime.synced}
+      />
+    )
+  }
+
+  if (realtime.roomStatus === 'CANCELLED') {
+    return <Notice alert>La sala fue cancelada. Elige otra sala para continuar.</Notice>
+  }
+
+  if (realtime.roomStatus === 'WAITING_FOR_PLAYERS') {
+    return (
+      <Notice>
+        La sala todavía espera jugadores.{' '}
+        <Link to={`/play/rooms/${encodeURIComponent(roomId)}`} className="underline">
+          Volver a la sala
+        </Link>
+      </Notice>
+    )
+  }
+
+  if (realtime.roomStatus === 'PREPARING') {
+    return (
+      <section aria-label="Batalla" className="flex flex-col items-start gap-3">
+        <p role="status" className="text-sm text-muted">
+          {start.isError ? 'La batalla no pudo comenzar.' : 'Preparando la batalla…'}
+        </p>
+        {start.isError && (
+          <>
+            <p role="alert" className="text-sm text-danger">
+              {describeStartBattleFailure(start.error)}
+            </p>
+            <Button
+              variant="secondary"
+              className="min-h-11"
+              onClick={() => {
+                start.reset()
+              }}
+            >
+              Reintentar
+            </Button>
+          </>
+        )}
+        <BackToRooms />
+      </section>
+    )
+  }
+
+  if (realtime.connection === 'failed') {
+    return (
+      <Notice alert>
+        No se pudo autenticar la conexión en tiempo real. Vuelve a entrar a la batalla.
+      </Notice>
+    )
+  }
+
+  return (
+    <p role="status" className="text-sm text-muted">
+      {realtime.connection === 'reconnecting' ? 'Reconectando…' : 'Conectando con la batalla…'}
+    </p>
+  )
+}

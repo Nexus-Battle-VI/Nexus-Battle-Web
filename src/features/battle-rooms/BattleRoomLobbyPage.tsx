@@ -1,14 +1,17 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { Navigate, useNavigate, useParams } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { Coins } from '@/components/ui/icons'
-import { ChatPanel } from '@/features/chat/ChatPanel'
+import { ChatPanel } from './ChatPanel'
+import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 
+import { fetchBattleRoom } from './battle/api'
 import { useBattleRooms, useCancelBattleRoom, useLeaveBattleRoom } from './hooks'
 import { useBattleRoomRealtime } from './useBattleRoomRealtime'
 import { describeBattleRoomFailure, modeLabel, teamByLetter } from './presentation'
@@ -131,6 +134,17 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
 
   const room = rooms.data?.find((candidate) => candidate.id === roomId) ?? null
 
+  // HU-17: `GET /rooms` solo lista salas esperando jugadores. Cuando la sala deja
+  // de estar en esa lista (se lleno, esta en batalla o se cancelo) se lee por
+  // `GET /rooms/:roomId` (solo participantes) para saber a donde llevar a la
+  // persona, en lugar de quedarse sin datos.
+  const detail = useQuery({
+    queryKey: queryKeys.battleRooms.detail(roomId ?? ''),
+    queryFn: ({ signal }) => fetchBattleRoom(roomId ?? '', signal),
+    enabled: roomId !== null && rooms.isSuccess && room === null,
+    retry: false,
+  })
+
   if (rooms.isPending) {
     return (
       <p role="status" className="text-sm text-muted">
@@ -148,28 +162,25 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   }
 
   if (room === null) {
-    if (realtime.lastRoomStatus === 'CANCELLED') {
+    if (detail.data?.status === 'PREPARING' || detail.data?.status === 'IN_BATTLE') {
+      // La sala se lleno: la batalla continua en su propia pantalla. El servidor
+      // decide cuando empieza; esta pantalla solo lleva a quien participa.
+      return <Navigate to={`/play/rooms/${encodeURIComponent(roomId ?? '')}/battle`} replace />
+    }
+
+    if (detail.isLoading) {
       return (
-        <p role="alert" className="text-sm text-danger">
-          La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
+        <p role="status" className="text-sm text-muted">
+          Cargando...
         </p>
       )
     }
 
-    if (realtime.lastRoomStatus === 'PREPARING') {
-      // HU-13: el chat de la sala sigue abierto en PREPARING. Combat es quien decide
-      // si esta persona es participante: si no lo es, el panel lo explica.
+    if (detail.data?.status === 'CANCELLED' || realtime.lastRoomStatus === 'CANCELLED') {
       return (
-        <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted">La sala se llenó y ya está lista para comenzar.</p>
-          {roomId !== null && subject !== null && (
-            <ChatPanel
-              channel={{ kind: 'room', roomId }}
-              title="Chat de la sala"
-              description="Solo lo ven los participantes de esta sala."
-            />
-          )}
-        </div>
+        <p role="alert" className="text-sm text-danger">
+          La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
+        </p>
       )
     }
 
@@ -243,13 +254,10 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             <TeamColumn letter="B" team={teamByLetter(room, 'B')} ownerPlayerId={room.createdBy} />
           </div>
 
-          <Button
-            variant="secondary"
-            disabled
-            title="Disponible en una futura HU de inicio de combate"
-          >
-            Empezar partida — Próximamente
-          </Button>
+          <p className="text-xs text-muted">
+            La batalla comienza cuando la sala se llena: Combat valida a los participantes y decide
+            el orden de los turnos.
+          </p>
 
           {actionError !== null && (
             <p role="alert" className="text-xs text-danger">

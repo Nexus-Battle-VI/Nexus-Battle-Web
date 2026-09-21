@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 
-import { buildRealtimeUrl, type SocketFactory } from '@/features/battle-rooms/realtime'
-import { currentAccessToken } from '@/shared/session'
+import type { SocketFactory, TicketProvider } from './realtime'
 
 import { ChatSession, type ChatSnapshot, type SendOutcome } from './ChatSession'
-import { channelFromKey, channelKey, type ChatChannel } from './protocol'
+import { channelFromKey, channelKey, type ChatChannel } from './chatProtocol'
 
 export interface UseChatResult extends ChatSnapshot {
   readonly send: (text: string) => SendOutcome
@@ -15,13 +14,15 @@ export interface UseChatResult extends ChatSnapshot {
 const randomCommandId = (): string => globalThis.crypto.randomUUID()
 
 export interface UseChatOptions {
-  /** Solo para pruebas y vistas previas: sustituye el WebSocket real. Debe ser estable entre renders. */
-  readonly socketFactory?: SocketFactory
   /**
-   * Solo para pruebas y vistas previas: sustituye el testimonio de la sesion.
-   * Debe ser estable entre renders: una funcion nueva en cada render reabriria la conexion.
+   * Solo para pruebas y vistas previas; los tres deben ser estables entre renders
+   * (una funcion nueva en cada render reabriria la conexion). Sustituyen el
+   * WebSocket real, el `POST /v1/combat/realtime/tickets` y la comprobacion de
+   * que hay sesion.
    */
-  readonly getToken?: () => string | null
+  readonly socketFactory?: SocketFactory
+  readonly ticketProvider?: TicketProvider
+  readonly hasSession?: () => boolean
 }
 
 /**
@@ -33,18 +34,18 @@ export interface UseChatOptions {
  */
 export const useChat = (channel: ChatChannel, options: UseChatOptions = {}): UseChatResult => {
   const key = channelKey(channel)
-  const { socketFactory, getToken = currentAccessToken } = options
+  const { socketFactory, ticketProvider, hasSession } = options
 
   const session = useMemo(
     () =>
       new ChatSession({
         channel: channelFromKey(key),
-        url: buildRealtimeUrl(),
-        getToken,
         newCommandId: randomCommandId,
         ...(socketFactory === undefined ? {} : { socketFactory }),
+        ...(ticketProvider === undefined ? {} : { ticketProvider }),
+        ...(hasSession === undefined ? {} : { hasSession }),
       }),
-    [key, socketFactory, getToken],
+    [key, socketFactory, ticketProvider, hasSession],
   )
 
   useEffect(() => {

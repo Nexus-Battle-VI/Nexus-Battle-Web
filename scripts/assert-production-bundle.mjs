@@ -25,11 +25,16 @@ const FORBIDDEN_MARKERS = [
   // llegar cuando una pantalla lo monte.
   '__dev/hu11',
   'PowerMeterDevPreview',
+  // Artefactos exclusivamente DEV de la pantalla de batalla (HU-17): la ruta
+  // `__dev/hu17/battle` y su preview con eventos de ejemplo. La pantalla
+  // `BattleScreen` en si es de produccion.
+  '__dev/hu17',
+  'BattleScreenDevPreview',
   // Artefactos exclusivamente DEV de la vista previa del chat (HU-13): la ruta
-  // `__dev/hu13/chat`, su servidor falso y la sesion que falsea.
+  // `__dev/hu13/chat`, su servidor falso y el ticket de ejemplo que le inyecta.
   '__dev/hu13',
   'ChatPanelDevPreview',
-  'token-de-vista-previa',
+  'ticket-de-vista-previa',
 ]
 
 /**

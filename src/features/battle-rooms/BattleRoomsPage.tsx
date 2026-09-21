@@ -1,6 +1,6 @@
 import { Swords } from '@/components/ui/icons'
-import { ChatPanel } from '@/features/chat/ChatPanel'
-import { LOBBY_CHANNEL } from '@/features/chat/protocol'
+import { ChatPanel } from './ChatPanel'
+import { LOBBY_CHANNEL } from './chatProtocol'
 
 import { AvailableBattleRoomsPanel } from './AvailableBattleRoomsPanel'
 import { CreateBattleRoomPanel } from './CreateBattleRoomPanel'

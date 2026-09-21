@@ -1,15 +1,26 @@
-import { defaultSocketFactory, type SocketFactory } from '@/features/battle-rooms/realtime'
+import { issueRealtimeTicket } from './battle/api'
+import {
+  defaultSocketFactory,
+  openRealtimeConnection,
+  type RealtimeConnection,
+  type RealtimeConnectionState,
+  type SocketFactory,
+  type TicketProvider,
+} from './realtime'
 
 import { initialChatState, reduceChat, type ChatAction, type ChatState } from './chatState'
 import {
-  authFrame,
-  parseServerFrame,
   sendFrame,
   subscribeFrame,
   unsubscribeFrame,
+  validateServerFrame,
   type ChatChannel,
-} from './protocol'
+} from './chatProtocol'
 
+/**
+ * Estado de la conexion del chat tal como lo ve la persona. `open` significa que
+ * el canal esta CONFIRMADO (`chat.subscribed`), no solo que el socket se autentico.
+ */
 export type ChatConnection = 'connecting' | 'open' | 'reconnecting' | 'disabled'
 
 export interface ChatSnapshot {
@@ -21,47 +32,45 @@ export type SendOutcome = 'sent' | 'empty'
 
 export interface ChatSessionOptions {
   readonly channel: ChatChannel
-  readonly url: string
-  /** Testimonio vigente, o `null` si no hay sesion. Se pide en CADA conexion. */
-  readonly getToken: () => string | null
   /** UUID de un comando nuevo. Se inyecta: `crypto.randomUUID` no existe en todos los entornos de prueba. */
   readonly newCommandId: () => string
+  /** Solo para pruebas y vistas previas: sustituye el WebSocket real. */
   readonly socketFactory?: SocketFactory
+  /** Solo para pruebas y vistas previas: sustituye el `POST /v1/combat/realtime/tickets`. */
+  readonly ticketProvider?: TicketProvider
+  /** Solo para pruebas y vistas previas: sustituye la comprobacion de que hay sesion. */
+  readonly hasSession?: () => boolean
 }
 
-const RECONNECT_BASE_MS = 1_000
-const RECONNECT_MAX_MS = 10_000
-
-/** Cierre del servidor por falta de autenticacion (ADR-020): reintentar con el mismo testimonio no sirve. */
-const CLOSE_UNAUTHENTICATED = 4401
-
 /**
- * Sesion de chat de UN canal (HU-13, RF-13): posee el socket, el estado y la
- * reconexion. Es una clase sin React para poder probar el protocolo completo
- * (autenticar, suscribirse, enviar, recuperar tras una caida) con un socket
- * falso; `useChat` solo la conecta a un componente.
+ * Sesion de chat de UN canal (HU-13, RF-13): posee el estado y el ciclo de vida de
+ * la suscripcion. La conexion (ticket, `auth`, reconexion con espera exponencial)
+ * NO es suya: es la conexion compartida de HU-17 (`openRealtimeConnection`), para
+ * que exista UNA sola implementacion del protocolo de ADR-020.
+ *
+ * Es una clase sin React para poder probar el protocolo completo (suscribirse,
+ * enviar, recuperar tras una caida) con un socket falso; `useChat` solo la conecta
+ * a un componente.
  *
  * Flujo:
- * 1. Al abrir el socket envia `auth`. **Espera `auth.ok`** antes de suscribirse:
- *    no depende de que el servidor ordene mensajes enviados seguidos (Combat lo
- *    hace desde HU-13, pero un cliente correcto no lo supone).
+ * 1. La conexion compartida pide un ticket, abre el socket, envia `auth` y espera
+ *    `auth.ok`. Solo entonces avisa (`onAuthenticated`): el chat nunca se suscribe
+ *    antes.
  * 2. `chat.subscribe` con el `lastSeq` ya aplicado: tras una caida recupera solo
  *    lo que le falto.
  * 3. Al llegar `chat.subscribed`, reenvia lo pendiente con el MISMO `commandId`
  *    (el servidor deduplica: entrega sin duplicados).
  * 4. Un salto de `seq` (`resync`) repite `chat.subscribe`.
  *
- * Reconexion con espera exponencial acotada (1 s, 2 s, ... 10 s), igual que
- * `useBattleRoomRealtime`. Sin testimonio vigente no se conecta (`disabled`).
+ * Sin testimonio vigente, o tras tres rechazos `4401` seguidos, la conexion
+ * compartida se detiene y el chat queda `disabled`.
  */
 export class ChatSession {
   private snapshot: ChatSnapshot = { state: initialChatState, connection: 'connecting' }
   private readonly listeners = new Set<() => void>()
-  private readonly socketFactory: SocketFactory
-  private socket: WebSocket | null = null
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  private attempt = 0
-  private stopped = true
+  private link: RealtimeConnection | null = null
+  /** Envia por el socket autenticado vigente; `null` mientras no hay uno. */
+  private transport: ((payload: unknown) => void) | null = null
   /** La suscripcion vigente esta confirmada: ya se puede escribir en el canal. */
   private subscribed = false
   /** Hay un `chat.subscribe` de resincronizacion en vuelo: no se repite. */
@@ -71,7 +80,6 @@ export class ChatSession {
 
   constructor(options: ChatSessionOptions) {
     this.options = options
-    this.socketFactory = options.socketFactory ?? defaultSocketFactory
   }
 
   /** Para `useSyncExternalStore`. */
@@ -86,35 +94,46 @@ export class ChatSession {
   }
 
   start(): void {
-    if (!this.stopped) {
+    if (this.link !== null) {
       return
     }
 
-    this.stopped = false
-    this.connect()
+    const { socketFactory, ticketProvider, hasSession } = this.options
+
+    this.link = openRealtimeConnection({
+      socketFactory: socketFactory ?? defaultSocketFactory,
+      ticketProvider: ticketProvider ?? issueRealtimeTicket,
+      ...(hasSession === undefined ? {} : { hasSession }),
+      onStateChange: (state) => {
+        this.handleConnectionState(state)
+      },
+      onAuthenticated: (send) => {
+        this.handleAuthenticated(send)
+      },
+      onMessage: (message) => {
+        this.handleMessage(message)
+      },
+      onConnectionLost: () => {
+        this.transport = null
+        this.subscribed = false
+      },
+    })
   }
 
   stop(): void {
-    this.stopped = true
+    const link = this.link
 
-    if (this.reconnectTimer !== null) {
-      clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
+    if (link === null) {
+      return
     }
 
-    const socket = this.socket
+    this.link = null
 
-    this.socket = null
+    // Salida ordenada: el servidor da de baja la suscripcion sin esperar al cierre.
+    this.transport?.(unsubscribeFrame(this.options.channel))
+    this.transport = null
     this.subscribed = false
-
-    if (socket !== null) {
-      // Salida ordenada: el servidor da de baja la suscripcion sin esperar al cierre.
-      if (socket.readyState === 1) {
-        socket.send(unsubscribeFrame(this.options.channel))
-      }
-
-      socket.close()
-    }
+    link.close()
   }
 
   /**
@@ -155,8 +174,8 @@ export class ChatSession {
   }
 
   private transmit(commandId: string, text: string): void {
-    if (this.subscribed && this.socket?.readyState === 1) {
-      this.socket.send(sendFrame(this.options.channel, commandId, text))
+    if (this.subscribed) {
+      this.transport?.(sendFrame(this.options.channel, commandId, text))
     }
     // Si no: queda pendiente y `flushPending` lo envia al confirmarse la suscripcion.
   }
@@ -169,86 +188,34 @@ export class ChatSession {
     }
   }
 
-  private connect(): void {
-    if (this.stopped) {
-      return
-    }
-
-    const token = this.options.getToken()
-
-    if (token === null) {
-      // Sin testimonio vigente no se puede completar el primer mensaje del protocolo.
-      this.update(undefined, 'disabled')
-
-      return
-    }
-
-    this.update(undefined, this.attempt === 0 ? 'connecting' : 'reconnecting')
-    this.subscribed = false
-    this.resyncing = false
-
-    const socket = this.socketFactory(this.options.url)
-
-    this.socket = socket
-
-    socket.addEventListener('open', () => {
-      if (this.socket === socket) {
-        socket.send(authFrame(token))
-      }
-    })
-
-    socket.addEventListener('message', (event: MessageEvent) => {
-      if (this.socket === socket) {
-        this.handleFrame(socket, event.data)
-      }
-    })
-
-    socket.addEventListener('close', (event: CloseEvent) => {
-      if (this.socket !== socket) {
+  private handleConnectionState(state: RealtimeConnectionState): void {
+    switch (state) {
+      case 'connecting':
+      case 'reconnecting':
+        this.update(undefined, state)
         return
-      }
-
-      this.socket = null
-      this.subscribed = false
-
-      if (this.stopped) {
+      case 'open':
+        // Autenticado, pero el canal aun no esta confirmado: `open` llega con `chat.subscribed`.
         return
-      }
-
-      if (event.code === CLOSE_UNAUTHENTICATED) {
+      case 'failed':
+      case 'disabled':
+        // Sin testimonio, o el servidor rechaza los tickets: no hay chat hasta volver a entrar.
         this.update(undefined, 'disabled')
-
-        return
-      }
-
-      this.update(undefined, 'reconnecting')
-
-      const delay = Math.min(RECONNECT_BASE_MS * 2 ** this.attempt, RECONNECT_MAX_MS)
-
-      this.attempt += 1
-      this.reconnectTimer = setTimeout(() => {
-        this.reconnectTimer = null
-        this.connect()
-      }, delay)
-    })
-
-    socket.addEventListener('error', () => {
-      // El `close` que sigue a un `error` ya dispara la reconexion.
-      socket.close()
-    })
+    }
   }
 
-  private handleFrame(socket: WebSocket, raw: unknown): void {
-    const frame = parseServerFrame(raw)
+  private handleAuthenticated(send: (payload: unknown) => void): void {
+    this.transport = send
+    this.subscribed = false
+    this.resyncing = false
+    send(subscribeFrame(this.options.channel, this.snapshot.state.lastSeq))
+  }
+
+  private handleMessage(message: unknown): void {
+    const frame = validateServerFrame(message)
 
     if (frame === null) {
       // Un mensaje que no cumple el contrato se ignora: no rompe la conexion.
-      return
-    }
-
-    if (frame.type === 'auth.ok') {
-      socket.send(subscribeFrame(this.options.channel, this.snapshot.state.lastSeq))
-
       return
     }
 
@@ -257,7 +224,6 @@ export class ChatSession {
     if (frame.type === 'chat.subscribed') {
       this.subscribed = true
       this.resyncing = false
-      this.attempt = 0
       this.update(undefined, 'open')
       this.flushPending()
 
@@ -266,7 +232,7 @@ export class ChatSession {
 
     if (this.snapshot.state.resync && !this.resyncing) {
       this.resyncing = true
-      socket.send(subscribeFrame(this.options.channel, this.snapshot.state.lastSeq))
+      this.transport?.(subscribeFrame(this.options.channel, this.snapshot.state.lastSeq))
     }
   }
 

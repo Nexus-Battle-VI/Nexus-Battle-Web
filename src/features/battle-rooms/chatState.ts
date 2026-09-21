@@ -1,4 +1,4 @@
-import type { ChatMessage, ServerFrame } from './protocol'
+import type { ChatMessage, ServerFrame } from './chatProtocol'
 
 /**
  * Estado del chat de un canal y su reductor (HU-13, RF-13). Es logica pura:
@@ -113,9 +113,6 @@ export const reduceChat = (state: ChatState, action: ChatAction): ChatState => {
 
 const reduceFrame = (state: ChatState, frame: ServerFrame): ChatState => {
   switch (frame.type) {
-    case 'auth.ok':
-      return state
-
     case 'chat.subscribed': {
       const fresh = frame.messages
         .filter((message) => message.seq > state.lastSeq)

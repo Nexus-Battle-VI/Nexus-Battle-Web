@@ -1,23 +1,26 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 
-import type { SocketFactory } from '@/features/battle-rooms/realtime'
+import type { SocketFactory, TicketProvider } from './realtime'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 
-import type { ChatMessage } from './protocol'
-import type { ChatChannel } from './protocol'
-import { CHAT_MAX_LENGTH_HINT, describeChatFailure, describeClosedReason } from './descriptions'
+import type { ChatMessage } from './chatProtocol'
+import type { ChatChannel } from './chatProtocol'
+import { CHAT_MAX_LENGTH_HINT, describeChatFailure, describeClosedReason } from './chatDescriptions'
 import { useChat } from './useChat'
 
 export interface ChatPanelProps {
   readonly channel: ChatChannel
   readonly title: string
   readonly description?: string
-  /** Solo para pruebas y vistas previas: sustituye el WebSocket real. */
+  /**
+   * Solo para pruebas y vistas previas (estables entre renders): sustituyen el
+   * WebSocket real, el ticket de un solo uso y la comprobacion de que hay sesion.
+   */
   readonly socketFactory?: SocketFactory
-  /** Solo para pruebas y vistas previas: sustituye el testimonio de la sesion. */
-  readonly getToken?: () => string | null
+  readonly ticketProvider?: TicketProvider
+  readonly hasSession?: () => boolean
 }
 
 const formatTime = (iso: string): string => {
@@ -63,11 +66,13 @@ export const ChatPanel = ({
   title,
   description,
   socketFactory,
-  getToken,
+  ticketProvider,
+  hasSession,
 }: ChatPanelProps): React.JSX.Element => {
   const chat = useChat(channel, {
     ...(socketFactory === undefined ? {} : { socketFactory }),
-    ...(getToken === undefined ? {} : { getToken }),
+    ...(ticketProvider === undefined ? {} : { ticketProvider }),
+    ...(hasSession === undefined ? {} : { hasSession }),
   })
   const { state, connection } = chat
   const [draft, setDraft] = useState('')

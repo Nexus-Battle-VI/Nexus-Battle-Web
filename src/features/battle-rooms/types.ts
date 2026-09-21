@@ -4,6 +4,8 @@
  * `Nexus-Battle-Combat` — no se inventa ningun campo ni se renombra ninguno.
  */
 
+import type { BattleView } from './battle/types'
+
 /** Valores reales del contrato. La UI puede traducirlos para mostrarlos, pero
  * lo que viaja al backend es siempre uno de estos dos literales. */
 export type BattleRoomMode = 'PVP' | 'PVE'
@@ -14,7 +16,7 @@ export type BattleRoomMode = 'PVP' | 'PVE'
  * listar) sigue viendo indistintamente cualquier estado, sin asumir que solo
  * existen los dos originales de HU-14.
  */
-export type BattleRoomStatus = 'WAITING_FOR_PLAYERS' | 'PREPARING' | 'CANCELLED'
+export type BattleRoomStatus = 'WAITING_FOR_PLAYERS' | 'PREPARING' | 'IN_BATTLE' | 'CANCELLED'
 
 /** Los dos unicos equipos que declara el contrato de creacion (HU-14). */
 export type TeamLetter = 'A' | 'B'
@@ -54,6 +56,10 @@ export interface BattleRoom {
   readonly createdBy: string
   readonly createdAt: string
   readonly version: number
+  /** HU-17 (aditivo): `seq` del ultimo evento de batalla. Ausente en salas anteriores. */
+  readonly lastSeq?: number
+  /** HU-17 (aditivo): batalla en curso; `null` hasta `IN_BATTLE`. */
+  readonly battle?: BattleView | null
 }
 
 /**

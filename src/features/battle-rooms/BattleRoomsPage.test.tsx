@@ -11,9 +11,9 @@ import type { BattleRoom } from './types'
  * HU-13: la pantalla incluye el chat del lobby. Aqui se sustituye por un doble:
  * estas pruebas tienen una sesion con testimonio y el panel real abriria un
  * WebSocket de verdad contra un servidor que no existe. El panel, su sesion y
- * su protocolo tienen su propia cobertura en `features/chat`.
+ * su protocolo tienen su propia cobertura en `ChatPanel.test.tsx`, `ChatSession.test.ts` y `chatState.test.ts`.
  */
-vi.mock('@/features/chat/ChatPanel', () => ({
+vi.mock('./ChatPanel', () => ({
   ChatPanel: (props: { channel: unknown; title: string }): React.JSX.Element => (
     <div data-testid="chat-panel" data-channel={JSON.stringify(props.channel)}>
       {props.title}

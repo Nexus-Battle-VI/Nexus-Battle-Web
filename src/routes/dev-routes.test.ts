@@ -21,8 +21,8 @@ describe('devRoutes', () => {
     // seleccion de heroe (HU-07), la cola de moderacion (HU-41.4), las
     // novedades/banner de catalogo (HU-38, Task #181/#185) y el lobby de
     // preparacion de sala de batalla (HU-15.3), el medidor de Poder (HU-11),
-    // que aun no esta montado en ninguna pantalla del producto, y el chat
-    // (HU-13), que necesita a Combat respondiendo por WebSocket.
+    // que aun no esta montado en ninguna pantalla del producto, la pantalla de
+    // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/account',
       '__dev/admin/products/new',
@@ -33,6 +33,7 @@ describe('devRoutes', () => {
       '__dev/hu15/lobby',
       '__dev/hu15/lobby/:roomId',
       '__dev/hu11/poder',
+      '__dev/hu17/battle',
       '__dev/hu13/chat',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)

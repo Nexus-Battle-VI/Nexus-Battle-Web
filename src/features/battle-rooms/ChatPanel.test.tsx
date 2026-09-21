@@ -1,12 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { act, render, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
+import type { TicketProvider } from './realtime'
 import { useSession } from '@/shared/session'
 import { recordingSocketFactory, type FakeWebSocket } from '@/test/fake-websocket'
 
 import { ChatPanel } from './ChatPanel'
-import { LOBBY_CHANNEL, type ChatChannel } from './protocol'
+import { LOBBY_CHANNEL, type ChatChannel } from './chatProtocol'
 
 const ROOM = '11111111-1111-4111-8111-111111111111'
 
@@ -33,7 +34,11 @@ const subscribed = (
   messages,
 })
 
+/** Estable entre renders (una funcion nueva reabriria la conexion). El ticket real lo pide `issueRealtimeTicket`. */
+const ticketProvider = vi.fn<TicketProvider>(() => Promise.resolve('ticket-de-prueba'))
+
 beforeEach(() => {
+  ticketProvider.mockClear()
   useSession.setState({
     subject: 'sujeto-ana',
     accessToken: 'jwt-vigente',
@@ -45,7 +50,14 @@ afterEach(() => {
   useSession.setState({ subject: null, accessToken: null, expiresAt: null })
 })
 
-const setup = (channel: ChatChannel = LOBBY_CHANNEL) => {
+/**
+ * Monta el panel y, por defecto, espera a que se cree el socket: el ticket se pide
+ * de forma asincrona antes de abrirlo (conexion compartida de HU-17).
+ */
+const setup = async (
+  channel: ChatChannel = LOBBY_CHANNEL,
+  { expectSocket = true }: { readonly expectSocket?: boolean } = {},
+) => {
   const { factory, sockets } = recordingSocketFactory()
 
   render(
@@ -54,8 +66,15 @@ const setup = (channel: ChatChannel = LOBBY_CHANNEL) => {
       title="Chat del lobby"
       description="Organiza partidas."
       socketFactory={factory}
+      ticketProvider={ticketProvider}
     />,
   )
+
+  if (expectSocket) {
+    await waitFor(() => {
+      expect(sockets).toHaveLength(1)
+    })
+  }
 
   return { sockets }
 }
@@ -82,14 +101,14 @@ const connect = (
 
 describe('ChatPanel', () => {
   describe('conexion', () => {
-    it('muestra «Conectando…» hasta que el canal esta confirmado', () => {
-      setup()
+    it('muestra «Conectando…» hasta que el canal esta confirmado', async () => {
+      await setup()
 
       expect(screen.getByRole('status')).toHaveTextContent('Conectando al chat')
     })
 
-    it('confirmado el canal, avisa de que aun no hay mensajes', () => {
-      const { sockets } = setup()
+    it('confirmado el canal, avisa de que aun no hay mensajes', async () => {
+      const { sockets } = await setup()
 
       connect(sockets[0])
 
@@ -97,18 +116,19 @@ describe('ChatPanel', () => {
       expect(screen.getByText('Todavía no hay mensajes.')).toBeInTheDocument()
     })
 
-    it('sin sesion no abre ningun socket y lo explica', () => {
+    it('sin sesion no abre ningun socket y lo explica', async () => {
       useSession.setState({ subject: null, accessToken: null, expiresAt: null })
-      const { sockets } = setup()
+      const { sockets } = await setup(LOBBY_CHANNEL, { expectSocket: false })
 
+      expect(ticketProvider).not.toHaveBeenCalled()
       expect(sockets).toHaveLength(0)
       expect(screen.getByRole('status')).toHaveTextContent('Inicia sesión para usar el chat')
       expect(screen.getByRole('textbox', { name: 'Mensaje' })).toBeDisabled()
       expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
     })
 
-    it('si se cae la conexion muestra «Reconectando…»', () => {
-      const { sockets } = setup()
+    it('si se cae la conexion muestra «Reconectando…»', async () => {
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
 
       act(() => {
@@ -118,11 +138,21 @@ describe('ChatPanel', () => {
       expect(screen.getByRole('status')).toHaveTextContent('Reconectando al chat')
     })
 
-    it('al desmontar sale del canal y cierra el socket', () => {
+    it('al desmontar sale del canal y cierra el socket', async () => {
       const { factory, sockets } = recordingSocketFactory()
       const { unmount } = render(
-        <ChatPanel channel={LOBBY_CHANNEL} title="Chat del lobby" socketFactory={factory} />,
+        <ChatPanel
+          channel={LOBBY_CHANNEL}
+          title="Chat del lobby"
+          socketFactory={factory}
+          ticketProvider={ticketProvider}
+        />,
       )
+
+      await waitFor(() => {
+        expect(sockets).toHaveLength(1)
+      })
+
       const socket = connect(sockets[0])
 
       unmount()
@@ -133,8 +163,8 @@ describe('ChatPanel', () => {
   })
 
   describe('mensajes', () => {
-    it('muestra el historial con remitente, hora y texto', () => {
-      const { sockets } = setup()
+    it('muestra el historial con remitente, hora y texto', async () => {
+      const { sockets } = await setup()
 
       connect(sockets[0], [wire(1, { sender: { displayName: 'Ana' }, text: 'quien juega?' })], 1)
 
@@ -145,8 +175,8 @@ describe('ChatPanel', () => {
       expect(log.querySelector('time')).toHaveAttribute('datetime', '2026-09-20T12:00:00.000Z')
     })
 
-    it('un mensaje en vivo aparece sin recargar', () => {
-      const { sockets } = setup()
+    it('un mensaje en vivo aparece sin recargar', async () => {
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
 
       act(() => {
@@ -156,8 +186,8 @@ describe('ChatPanel', () => {
       expect(within(screen.getByRole('log')).getByText('en vivo')).toBeInTheDocument()
     })
 
-    it('el texto se pinta como TEXTO: el HTML de un mensaje no se interpreta', () => {
-      const { sockets } = setup()
+    it('el texto se pinta como TEXTO: el HTML de un mensaje no se interpreta', async () => {
+      const { sockets } = await setup()
       const attack = '<img src=x onerror="alert(1)"><b>negrita</b>'
       const socket = connect(sockets[0])
 
@@ -172,24 +202,24 @@ describe('ChatPanel', () => {
       expect(log.querySelector('b')).toBeNull()
     })
 
-    it('avisa cuando habia mas mensajes de los que caben', () => {
-      const { sockets } = setup()
+    it('avisa cuando habia mas mensajes de los que caben', async () => {
+      const { sockets } = await setup()
 
       connect(sockets[0], [wire(9)], 9, true)
 
       expect(screen.getByText('Hay mensajes anteriores que no se muestran.')).toBeInTheDocument()
     })
 
-    it('es un registro accesible que anuncia lo nuevo con cortesia', () => {
-      setup()
+    it('es un registro accesible que anuncia lo nuevo con cortesia', async () => {
+      await setup()
 
       const log = screen.getByRole('log', { name: /mensajes de chat del lobby/i })
 
       expect(log).toHaveAttribute('aria-live', 'polite')
     })
 
-    it('muestra mensajes de una sala con el mismo panel', () => {
-      const { sockets } = setup({ kind: 'room', roomId: ROOM })
+    it('muestra mensajes de una sala con el mismo panel', async () => {
+      const { sockets } = await setup({ kind: 'room', roomId: ROOM })
       const socket = connect(sockets[0])
 
       act(() => {
@@ -209,8 +239,8 @@ describe('ChatPanel', () => {
   })
 
   describe('escribir', () => {
-    it('el campo tiene su etiqueta y una pista de longitud de 500', () => {
-      setup()
+    it('el campo tiene su etiqueta y una pista de longitud de 500', async () => {
+      await setup()
 
       const input = screen.getByRole('textbox', { name: 'Mensaje' })
 
@@ -220,7 +250,7 @@ describe('ChatPanel', () => {
 
     it('«Enviar» esta deshabilitado con el campo vacio o solo con espacios', async () => {
       const user = userEvent.setup()
-      const { sockets } = setup()
+      const { sockets } = await setup()
 
       connect(sockets[0])
 
@@ -237,7 +267,7 @@ describe('ChatPanel', () => {
 
     it('enviar manda el comando, vacia el campo y deja el mensaje «Enviando…»', async () => {
       const user = userEvent.setup()
-      const { sockets } = setup()
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
 
       await user.type(screen.getByRole('textbox', { name: 'Mensaje' }), 'hola a todos')
@@ -253,7 +283,7 @@ describe('ChatPanel', () => {
 
     it('Enter envia el mensaje', async () => {
       const user = userEvent.setup()
-      const { sockets } = setup()
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
 
       await user.type(screen.getByRole('textbox', { name: 'Mensaje' }), 'con enter{Enter}')
@@ -263,7 +293,7 @@ describe('ChatPanel', () => {
 
     it('llega el mensaje propio: desaparece «Enviando…» y se marca «(tú)»', async () => {
       const user = userEvent.setup()
-      const { sockets } = setup()
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
 
       await user.type(screen.getByRole('textbox', { name: 'Mensaje' }), 'hola')
@@ -290,8 +320,8 @@ describe('ChatPanel', () => {
       expect(within(screen.getByRole('log')).getAllByText('hola')).toHaveLength(1)
     })
 
-    it('un mensaje de otra persona NO se marca como propio', () => {
-      const { sockets } = setup()
+    it('un mensaje de otra persona NO se marca como propio', async () => {
+      const { sockets } = await setup()
 
       connect(sockets[0], [wire(1)], 1)
 
@@ -310,7 +340,7 @@ describe('ChatPanel', () => {
     }
 
     it('exceso de frecuencia: explica cuanto esperar y ofrece reintentar o descartar', async () => {
-      const { sockets } = setup()
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
       const commandId = await sendOne(socket)
 
@@ -333,7 +363,7 @@ describe('ChatPanel', () => {
 
     it('reintentar reenvia el mismo comando', async () => {
       const user = userEvent.setup()
-      const { sockets } = setup()
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
       const commandId = await sendOne(socket)
 
@@ -355,7 +385,7 @@ describe('ChatPanel', () => {
 
     it('descartar quita el mensaje fallido', async () => {
       const user = userEvent.setup()
-      const { sockets } = setup()
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
       const commandId = await sendOne(socket)
 
@@ -379,7 +409,7 @@ describe('ChatPanel', () => {
       ['CHAT_UNAVAILABLE', 'El chat no está disponible en este momento. Inténtalo de nuevo.'],
       ['ALGO_NUEVO', 'No se pudo enviar el mensaje.'],
     ])('%s se explica en castellano', async (code, expected) => {
-      const { sockets } = setup()
+      const { sockets } = await setup()
       const socket = connect(sockets[0])
       const commandId = await sendOne(socket)
 
@@ -398,8 +428,8 @@ describe('ChatPanel', () => {
   })
 
   describe('acceso al canal', () => {
-    it('si el servidor expulsa (sale de la sala), lo explica y bloquea el campo', () => {
-      const { sockets } = setup({ kind: 'room', roomId: ROOM })
+    it('si el servidor expulsa (sale de la sala), lo explica y bloquea el campo', async () => {
+      const { sockets } = await setup({ kind: 'room', roomId: ROOM })
       const socket = connect(sockets[0])
 
       act(() => {
@@ -415,8 +445,8 @@ describe('ChatPanel', () => {
       expect(screen.getByRole('textbox', { name: 'Mensaje' })).toBeDisabled()
     })
 
-    it('si la suscripcion se rechaza porque no es participante, lo dice', () => {
-      const { sockets } = setup({ kind: 'room', roomId: ROOM })
+    it('si la suscripcion se rechaza porque no es participante, lo dice', async () => {
+      const { sockets } = await setup({ kind: 'room', roomId: ROOM })
       const socket = sockets[0]
 
       act(() => {
@@ -434,19 +464,21 @@ describe('ChatPanel', () => {
     })
   })
 
-  it('el titulo y la descripcion se muestran', () => {
-    setup()
+  it('el titulo y la descripcion se muestran', async () => {
+    await setup()
 
     expect(screen.getByRole('heading', { name: 'Chat del lobby' })).toBeInTheDocument()
     expect(screen.getByText('Organiza partidas.')).toBeInTheDocument()
   })
 
-  it('no filtra el testimonio a la interfaz', () => {
-    const { sockets } = setup()
+  it('no filtra el testimonio ni el ticket a la interfaz ni a la URL', async () => {
+    const { sockets } = await setup()
 
     connect(sockets[0])
 
     expect(document.body.textContent).not.toContain('jwt-vigente')
+    expect(document.body.textContent).not.toContain('ticket-de-prueba')
     expect(sockets[0]?.url).not.toContain('jwt-vigente')
+    expect(sockets[0]?.url).not.toContain('ticket-de-prueba')
   })
 })

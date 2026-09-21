@@ -186,13 +186,16 @@ describe('BattleRoomLobbyPage', () => {
     expect(container.innerHTML).not.toContain(ROOM_ID)
   })
 
-  it('muestra "Empezar partida — Próximamente" deshabilitado, sin handler', async () => {
+  it('no ofrece un boton para iniciar: la batalla comienza cuando la sala se llena y decide Combat (HU-17)', async () => {
     useSession.setState(AUTHENTICATED_NO_SOCKET)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
 
     montar()
 
-    expect(await screen.findByRole('button', { name: /Empezar partida/u })).toBeDisabled()
+    expect(
+      await screen.findByText(/La batalla comienza cuando la sala se llena/u),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Empezar partida/u })).not.toBeInTheDocument()
   })
 
   it('representa un oponente IA sin depender de displayName', async () => {

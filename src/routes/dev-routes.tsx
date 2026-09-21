@@ -75,8 +75,13 @@ if (import.meta.env.DEV) {
       default: module.PowerMeterDevPreview,
     })),
   )
+  const BattleScreenDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/BattleScreenDevPreview').then((module) => ({
+      default: module.BattleScreenDevPreview,
+    })),
+  )
   const ChatPanelDevPreviewLazy = lazy(() =>
-    import('@/features/chat/dev/ChatPanelDevPreview').then((module) => ({
+    import('@/features/battle-rooms/dev/ChatPanelDevPreview').then((module) => ({
       default: module.ChatPanelDevPreview,
     })),
   )
@@ -198,10 +203,21 @@ if (import.meta.env.DEV) {
         </Suspense>
       ),
     },
+    // HU-17: la batalla vive tras `RequireSession` y necesita Combat publicando
+    // por WebSocket. El preview monta la pantalla y el reductor de produccion con
+    // eventos de la forma del contrato v1, sin red. NO es evidencia E2E.
+    {
+      path: '__dev/hu17/battle',
+      element: (
+        <Suspense fallback={null}>
+          <BattleScreenDevPreviewLazy />
+        </Suspense>
+      ),
+    },
     // HU-13: el chat real necesita una sesion de Cognito y a Combat respondiendo
     // por WebSocket. El preview monta el componente de produccion contra un
-    // servidor FALSO que habla el protocolo del contrato y falsea una sesion
-    // mientras esta montado. No prueba el servidor.
+    // servidor FALSO que habla el protocolo del contrato, con un ticket y una
+    // sesion de ejemplo inyectados solo en sus paneles. No prueba el servidor.
     {
       path: '__dev/hu13/chat',
       element: (

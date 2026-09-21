@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import type { SocketFactory } from '@/features/battle-rooms/realtime'
+import type { SocketFactory, TicketProvider } from '../realtime'
 
 import { ChatPanel } from '../ChatPanel'
 
@@ -16,8 +16,10 @@ import { ChatPanel } from '../ChatPanel'
  * mensajes, rechaza por frecuencia y expulsa de una sala.
  *
  * NO ES UNA PUERTA TRASERA: solo existe con `import.meta.env.DEV`, no llega a
- * ningun servicio y NO toca la sesion global: el testimonio de ejemplo se inyecta
- * solo en estos paneles. NO prueba el servidor: eso lo hacen las pruebas de Combat.
+ * ningun servicio y NO toca la sesion global: el ticket y la sesion de ejemplo se
+ * inyectan solo en estos paneles (la conexion es la compartida de HU-17, que en
+ * produccion pide el ticket por HTTP). NO prueba el servidor: eso lo hacen las
+ * pruebas de Combat.
  *
  * Como probarlo a mano: escribe un mensaje (se acepta a los ~0,3 s); escribe
  * «demasiado» para ver el rechazo por frecuencia, con «Reintentar» y
@@ -62,10 +64,11 @@ class ScriptedSocket extends EventTarget {
 }
 
 const ROOM_ID = '11111111-1111-4111-8111-111111111111'
-const PREVIEW_TOKEN = 'token-de-vista-previa'
+const PREVIEW_TICKET = 'ticket-de-vista-previa'
 
-/** Estable entre renders (el panel abre una conexion por cada identidad de esta funcion). */
-const previewToken = (): string => PREVIEW_TOKEN
+/** Estables entre renders (el panel abre una conexion por cada identidad de estas funciones). */
+const previewTicket: TicketProvider = () => Promise.resolve(PREVIEW_TICKET)
+const previewHasSession = (): boolean => true
 
 const wire = (
   seq: number,
@@ -204,14 +207,16 @@ export const ChatPanelDevPreview = (): React.JSX.Element => {
           title="Chat del lobby"
           description="Organiza partidas con otros jugadores."
           socketFactory={lobbyFactory}
-          getToken={previewToken}
+          ticketProvider={previewTicket}
+          hasSession={previewHasSession}
         />
         <ChatPanel
           channel={{ kind: 'room', roomId: ROOM_ID }}
           title="Chat de la sala"
           description="Solo lo ven los participantes de esta sala. Aquí la sala se cancela a los 2 s."
           socketFactory={roomFactory}
-          getToken={previewToken}
+          ticketProvider={previewTicket}
+          hasSession={previewHasSession}
         />
       </div>
     </main>

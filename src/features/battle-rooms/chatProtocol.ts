@@ -35,7 +35,6 @@ export interface ChatMessage {
 }
 
 export type ServerFrame =
-  | { readonly type: 'auth.ok' }
   | {
       readonly type: 'chat.subscribed'
       readonly channel: ChatChannel
@@ -111,28 +110,17 @@ const parseMessage = (value: unknown): ChatMessage | null => {
   return { messageId, seq: value.seq, commandId, senderName, text: value.text, sentAt }
 }
 
-/** Analiza un mensaje del servidor. `null` si no es JSON o no tiene la forma del contrato. */
-export const parseServerFrame = (raw: unknown): ServerFrame | null => {
-  if (typeof raw !== 'string') {
-    return null
-  }
-
-  let parsed: unknown
-
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return null
-  }
-
+/**
+ * Valida un mensaje del servidor ya leido como JSON. `null` si no tiene la forma
+ * del contrato de chat. `auth.ok` NO es un mensaje de chat: lo consume la conexion
+ * compartida (`openRealtimeConnection`) antes de que nada llegue aqui.
+ */
+export const validateServerFrame = (parsed: unknown): ServerFrame | null => {
   if (!isRecord(parsed) || typeof parsed.type !== 'string') {
     return null
   }
 
   switch (parsed.type) {
-    case 'auth.ok':
-      return { type: 'auth.ok' }
-
     case 'chat.subscribed': {
       const channel = parseChannel(parsed)
 
@@ -231,22 +219,42 @@ export const parseServerFrame = (raw: unknown): ServerFrame | null => {
   }
 }
 
+/** Analiza un mensaje del servidor. `null` si no es JSON o no tiene la forma del contrato. */
+export const parseServerFrame = (raw: unknown): ServerFrame | null => {
+  if (typeof raw !== 'string') {
+    return null
+  }
+
+  try {
+    return validateServerFrame(JSON.parse(raw))
+  } catch {
+    return null
+  }
+}
+
 const channelFields = (channel: ChatChannel): Record<string, string> =>
   channel.kind === 'lobby' ? { channel: 'lobby' } : { channel: 'room', roomId: channel.roomId }
 
-/** Primer mensaje de la conexion: el testimonio viaja aqui, nunca en la URL. */
-export const authFrame = (token: string): string => JSON.stringify({ type: 'auth', token })
+/**
+ * Mensajes del cliente. Son OBJETOS: la conexion compartida (`onAuthenticated`)
+ * los serializa. El primer mensaje del socket (`auth` con el ticket) lo envia ella;
+ * el chat nunca maneja credenciales.
+ */
 
 /** `lastSeq` solo se envia si el cliente ya aplico algun mensaje del canal. */
-export const subscribeFrame = (channel: ChatChannel, lastSeq: number): string =>
-  JSON.stringify({
-    type: 'chat.subscribe',
-    ...channelFields(channel),
-    ...(lastSeq > 0 ? { lastSeq } : {}),
-  })
+export const subscribeFrame = (channel: ChatChannel, lastSeq: number): Record<string, unknown> => ({
+  type: 'chat.subscribe',
+  ...channelFields(channel),
+  ...(lastSeq > 0 ? { lastSeq } : {}),
+})
 
-export const sendFrame = (channel: ChatChannel, commandId: string, text: string): string =>
-  JSON.stringify({ type: 'chat.send', ...channelFields(channel), commandId, text })
+export const sendFrame = (
+  channel: ChatChannel,
+  commandId: string,
+  text: string,
+): Record<string, unknown> => ({ type: 'chat.send', ...channelFields(channel), commandId, text })
 
-export const unsubscribeFrame = (channel: ChatChannel): string =>
-  JSON.stringify({ type: 'chat.unsubscribe', ...channelFields(channel) })
+export const unsubscribeFrame = (channel: ChatChannel): Record<string, unknown> => ({
+  type: 'chat.unsubscribe',
+  ...channelFields(channel),
+})

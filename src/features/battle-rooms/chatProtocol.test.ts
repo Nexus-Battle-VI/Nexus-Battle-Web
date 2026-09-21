@@ -2,14 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import {
   LOBBY_CHANNEL,
-  authFrame,
   channelFromKey,
   channelKey,
   parseServerFrame,
   sendFrame,
   subscribeFrame,
   unsubscribeFrame,
-} from './protocol'
+} from './chatProtocol'
 
 const ROOM = '11111111-1111-4111-8111-111111111111'
 
@@ -39,19 +38,15 @@ describe('canal', () => {
 })
 
 describe('mensajes del cliente', () => {
-  it('auth lleva el testimonio en el cuerpo, no en la URL', () => {
-    expect(JSON.parse(authFrame('jwt-1'))).toEqual({ type: 'auth', token: 'jwt-1' })
-  })
-
   it('subscribe al lobby sin lastSeq cuando aun no se aplico nada', () => {
-    expect(JSON.parse(subscribeFrame(LOBBY_CHANNEL, 0))).toEqual({
+    expect(subscribeFrame(LOBBY_CHANNEL, 0)).toEqual({
       type: 'chat.subscribe',
       channel: 'lobby',
     })
   })
 
   it('subscribe a una sala con lastSeq cuando ya se aplico algo', () => {
-    expect(JSON.parse(subscribeFrame({ kind: 'room', roomId: ROOM }, 7))).toEqual({
+    expect(subscribeFrame({ kind: 'room', roomId: ROOM }, 7)).toEqual({
       type: 'chat.subscribe',
       channel: 'room',
       roomId: ROOM,
@@ -60,7 +55,7 @@ describe('mensajes del cliente', () => {
   })
 
   it('send lleva el canal, el commandId y el texto', () => {
-    expect(JSON.parse(sendFrame({ kind: 'room', roomId: ROOM }, 'c-9', 'hola'))).toEqual({
+    expect(sendFrame({ kind: 'room', roomId: ROOM }, 'c-9', 'hola')).toEqual({
       type: 'chat.send',
       channel: 'room',
       roomId: ROOM,
@@ -70,7 +65,7 @@ describe('mensajes del cliente', () => {
   })
 
   it('unsubscribe del lobby no lleva roomId', () => {
-    expect(JSON.parse(unsubscribeFrame(LOBBY_CHANNEL))).toEqual({
+    expect(unsubscribeFrame(LOBBY_CHANNEL)).toEqual({
       type: 'chat.unsubscribe',
       channel: 'lobby',
     })
@@ -78,8 +73,8 @@ describe('mensajes del cliente', () => {
 })
 
 describe('parseServerFrame', () => {
-  it('auth.ok', () => {
-    expect(parse({ type: 'auth.ok' })).toEqual({ type: 'auth.ok' })
+  it('auth.ok no es un mensaje de chat: lo consume la conexion compartida', () => {
+    expect(parse({ type: 'auth.ok' })).toBeNull()
   })
 
   it('chat.message del lobby', () => {
