@@ -25,6 +25,11 @@ const FORBIDDEN_MARKERS = [
   // llegar cuando una pantalla lo monte.
   '__dev/hu11',
   'PowerMeterDevPreview',
+  // Artefactos exclusivamente DEV de la pantalla de batalla (HU-17): la ruta
+  // `__dev/hu17/battle` y su preview con eventos de ejemplo. La pantalla
+  // `BattleScreen` en si es de produccion.
+  '__dev/hu17',
+  'BattleScreenDevPreview',
 ]
 
 /**
