@@ -40,6 +40,9 @@ describe('la pantalla de batalla no decide nada (HU-17)', () => {
         'presentation.ts',
         'useBattleRealtime.ts',
         'realtime.ts',
+        'AttackPanel.tsx',
+        'HealthBar.tsx',
+        'attackIntent.ts',
       ]),
     )
     expect(files).not.toContain('fixtures.ts')
@@ -85,5 +88,84 @@ describe('la pantalla de batalla no decide nada (HU-17)', () => {
     const realtime = productionSources().find((source) => source.file === 'realtime.ts')
 
     expect(realtime?.code).not.toMatch(/searchParams|\?token=|access_token|accessToken\s*\}/u)
+  })
+})
+
+/**
+ * HU-18: Combat decide el resultado del ataque basico, el dano, la Vida y el turno. Web solo
+ * envia la intencion (a quien atacar) y pinta lo que llega. Estas guardas recorren el codigo
+ * de PRODUCCION de la batalla y fallan si aparece un calculo de combate en el cliente.
+ */
+describe('el ataque basico no se decide en Web (HU-18)', () => {
+  it('recorre los archivos nuevos de HU-18', () => {
+    const files = productionSources().map((source) => source.file)
+
+    expect(files).toEqual(
+      expect.arrayContaining(['AttackPanel.tsx', 'HealthBar.tsx', 'attackIntent.ts']),
+    )
+  })
+
+  it.each([
+    [
+      'Math.floor / ceil / round / trunc / min / max (no hay redondeo ni acotacion de dano en Web)',
+      /Math\.(floor|ceil|round|trunc|min|max)\(/u,
+    ],
+    [
+      'aritmetica sobre Ataque, Defensa o dano (la resolucion se muestra, no se recalcula)',
+      /\b(attackValue|defenseValue|baseDamage|calculatedDamage|appliedDamage)\b\s*[-+*/](?!=)/u,
+    ],
+    [
+      'aritmetica sobre el resultado (Ataque o Defensa a la derecha de un operador)',
+      /[-+*/]\s*\b(attackValue|defenseValue|baseDamage|calculatedDamage|appliedDamage)\b/u,
+    ],
+    [
+      'restar Vida (`current - ...` o `health -=`)',
+      /\b(current|before|after)\s*-[^>]|\bhealth\b[^;\n]*-=/u,
+    ],
+  ])('no hay %s', (_name, pattern) => {
+    // `realtime.ts` es la conexion compartida (su backoff usa `Math.min`): no es combate.
+    for (const { file, code } of productionSources().filter(
+      (source) => source.file !== 'realtime.ts',
+    )) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('el ataque basico NO depende del Poder: ni la interfaz ni la disponibilidad lo mencionan', () => {
+    const ui = productionSources().filter((source) =>
+      [
+        'AttackPanel.tsx',
+        'HealthBar.tsx',
+        'attackIntent.ts',
+        'BattleScreen.tsx',
+        'presentation.ts',
+      ].includes(source.file),
+    )
+
+    expect(ui).toHaveLength(5)
+
+    for (const { file, code } of ui) {
+      expect({ file, found: /\b(power|poder)\b/iu.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('el commandId sale de un modulo aislado e inyectable: `useBattleRealtime` no usa randomUUID', () => {
+    const hook = productionSources().find((source) => source.file === 'useBattleRealtime.ts')
+
+    expect(hook?.code).toMatch(/from '\.\.\/commandId'/u)
+    expect(hook?.code).not.toMatch(/randomUUID|crypto/u)
+  })
+
+  it('no hay reenvio automatico: el hook no usa temporizadores ni bucles de reintento', () => {
+    const hook = productionSources().find((source) => source.file === 'useBattleRealtime.ts')
+
+    expect(hook?.code).not.toMatch(/setTimeout|setInterval|requestAnimationFrame/u)
+  })
+
+  it('el boton ataca con `aria-disabled` y solo envia si esta habilitado (no hay atajo que lo salte)', () => {
+    const panel = productionSources().find((source) => source.file === 'AttackPanel.tsx')
+
+    expect(panel?.code).toMatch(/aria-disabled=\{!availability\.enabled\}/u)
+    expect(panel?.code).toMatch(/if \(availability\.enabled && selected !== null\)/u)
   })
 })

@@ -1,8 +1,20 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import type { CombatControls } from './AttackPanel'
+import { initialAttackIntentState } from './attackIntent'
+import type { LastAttack } from './battleReducer'
 import { BattleScreen, type BattleScreenProps } from './BattleScreen'
-import { battle, entry } from './fixtures'
+import {
+  ANA as ANA_REF,
+  battle,
+  BRUNO as BRUNO_REF,
+  combatBattle,
+  entry,
+  MISS,
+  RESOLUTION,
+  withCombatants,
+} from './fixtures'
 
 const ANA = 'sujeto-ana'
 const BRUNO = 'sujeto-bruno'
@@ -156,5 +168,184 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
     const region = screen.getByRole('status', { name: '' })
 
     expect(region).toHaveAttribute('aria-live', 'polite')
+  })
+})
+
+const lastAttack = (resolution = RESOLUTION, before = 44, after = 38): LastAttack => ({
+  seq: 2,
+  commandId: 'cmd-1',
+  attacker: BRUNO_REF,
+  target: ANA_REF,
+  resolution,
+  targetHealth: { before, after },
+})
+
+const controles = (): CombatControls => ({
+  attack: initialAttackIntentState,
+  onAttack: vi.fn(),
+  onRetry: vi.fn(),
+  onDismissRejection: vi.fn(),
+})
+
+describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones', () => {
+  it('cada tarjeta muestra la Vida como texto y como medidor accesible', () => {
+    pintar({
+      battle: combatBattle(0, [
+        [44, 44],
+        [32, 44],
+      ]),
+    })
+
+    expect(screen.getByText('32 / 44')).toBeInTheDocument()
+    expect(screen.getByText('44 / 44')).toBeInTheDocument()
+    expect(screen.getByRole('meter', { name: 'Vida de Ana' })).toHaveAttribute(
+      'aria-valuenow',
+      '32',
+    )
+    expect(screen.getByRole('meter', { name: 'Vida de Bruno' })).toHaveAttribute(
+      'aria-valuenow',
+      '44',
+    )
+  })
+
+  it('la Vida sale SOLO de lo que publica el servidor: otra vista, otra Vida (nada calculado)', () => {
+    const { rerender } = pintar({
+      battle: combatBattle(1, [
+        [44, 44],
+        [38, 44],
+      ]),
+    })
+
+    expect(screen.getByText('38 / 44')).toBeInTheDocument()
+
+    rerender(
+      <BattleScreen
+        battle={combatBattle(2, [
+          [44, 44],
+          [7, 44],
+        ])}
+        subject={ANA}
+        connection="open"
+        synced
+      />,
+    )
+
+    expect(screen.getByText('7 / 44')).toBeInTheDocument()
+    expect(screen.queryByText('38 / 44')).not.toBeInTheDocument()
+  })
+
+  it('un combatiente sin Vida se marca en texto («Sin Vida»)', () => {
+    pintar({
+      battle: combatBattle(0, [
+        [44, 44],
+        [0, 44],
+      ]),
+    })
+
+    expect(screen.getByText('Sin Vida')).toBeInTheDocument()
+    expect(screen.getByText('0 / 44')).toBeInTheDocument()
+  })
+
+  it('una batalla anterior a HU-18 (sin Vida) no pinta barras ni inventa valores', () => {
+    pintar()
+
+    expect(screen.queryByRole('meter')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Vida/u)).not.toBeInTheDocument()
+  })
+
+  it('un oponente IA sin perfil dice que su Vida no esta disponible, sin inventarla', () => {
+    const view = withCombatants(
+      battle(0, [
+        entry(0, {
+          kind: 'AI',
+          playerId: null,
+          displayName: null,
+          heroId: null,
+          heroSubtype: null,
+        }),
+        entry(1),
+      ]),
+      [null, [44, 44]],
+    )
+    pintar({ battle: view })
+
+    expect(screen.getByText('Vida no disponible')).toBeInTheDocument()
+    expect(screen.getAllByRole('meter')).toHaveLength(1)
+  })
+
+  it('sin `combat` la pantalla es de solo lectura: se ve la Vida pero no hay ningun boton', () => {
+    pintar({ battle: combatBattle(1), subject: ANA })
+
+    expect(screen.queryAllByRole('button')).toHaveLength(0)
+  })
+
+  it('con `combat`, en mi turno aparece «Ataque básico»; fuera de mi turno no', () => {
+    const { unmount } = pintar({ battle: combatBattle(1), subject: ANA, combat: controles() })
+
+    expect(screen.getByRole('button', { name: 'Ataque básico' })).toBeInTheDocument()
+
+    unmount()
+    pintar({ battle: combatBattle(0), subject: ANA, combat: controles() })
+
+    expect(screen.queryByRole('button', { name: 'Ataque básico' })).not.toBeInTheDocument()
+  })
+
+  it('el resultado del ultimo ataque va en una region viva con nombre, SIEMPRE presente', () => {
+    pintar()
+
+    const region = screen.getByRole('status', { name: 'Resultado del último ataque' })
+
+    expect(region).toHaveAttribute('aria-live', 'polite')
+    expect(region).toBeEmptyDOMElement()
+  })
+
+  it('golpe efectivo: describe el efecto, el porcentaje, el dano y la Vida con los datos del servidor', () => {
+    pintar({ battle: combatBattle(1), lastAttack: lastAttack() })
+
+    const region = screen.getByRole('status', { name: 'Resultado del último ataque' })
+
+    expect(region).toHaveTextContent('Bruno atacó a Ana: Golpe crítico (137 %)')
+    expect(region).toHaveTextContent('El Ataque (14) superó la Defensa (11)')
+    expect(region).toHaveTextContent('Daño aplicado: 6')
+    expect(region).toHaveTextContent('Vida de Ana: 44 → 38')
+  })
+
+  it('golpe que no supera la Defensa: «sin efecto» con los dos valores comparados', () => {
+    pintar({ battle: combatBattle(1), lastAttack: lastAttack(MISS, 44, 44) })
+
+    const region = screen.getByRole('status', { name: 'Resultado del último ataque' })
+
+    expect(region).toHaveTextContent('sin efecto')
+    expect(region).toHaveTextContent('El Ataque (11) no superó la Defensa (11)')
+  })
+
+  it('ambos jugadores ven el mismo resultado (lo pinta cualquier perspectiva)', () => {
+    const { unmount } = pintar({ battle: combatBattle(1), subject: ANA, lastAttack: lastAttack() })
+    const ana = screen.getByRole('status', { name: 'Resultado del último ataque' }).textContent
+
+    unmount()
+    pintar({ battle: combatBattle(1), subject: BRUNO, lastAttack: lastAttack() })
+
+    expect(screen.getByRole('status', { name: 'Resultado del último ataque' }).textContent).toBe(
+      ana,
+    )
+  })
+
+  it('no filtra identificadores tecnicos ni el commandId', () => {
+    const { container } = pintar({
+      battle: combatBattle(1),
+      lastAttack: lastAttack(),
+      combat: controles(),
+    })
+
+    expect(container.textContent).not.toMatch(/sujeto-|heroe-|cmd-1/u)
+  })
+
+  it('tarjetas en una sola columna en movil: la rejilla parte de `grid-cols-1` (320 px)', () => {
+    const { container } = pintar({ battle: combatBattle(0) })
+
+    for (const lista of container.querySelectorAll('ul')) {
+      expect(lista.className).toContain('grid-cols-1')
+    }
   })
 })

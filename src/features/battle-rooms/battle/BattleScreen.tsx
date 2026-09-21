@@ -5,21 +5,39 @@ import { heroIdFromSubtype } from '@/features/player-inventory/equipment/heroSub
 import { Hero3D } from '@/shared/visual-library/heroes'
 import type { RealtimeConnectionState } from '../realtime'
 
-import { combatantName, describeTurn, findSelf, groupCombatants } from './presentation'
-import type { BattleView, TurnOrderEntry } from './types'
+import { AttackPanel, type CombatControls } from './AttackPanel'
+import type { LastAttack } from './battleReducer'
+import { HealthBar } from './HealthBar'
+import {
+  combatantHealth,
+  combatantName,
+  describeLastAttack,
+  describeTurn,
+  findSelf,
+  groupCombatants,
+  hasCombatState,
+} from './presentation'
+import type { BattleView, HealthView, TurnOrderEntry } from './types'
 
 interface CombatantCardProps {
   readonly entry: TurnOrderEntry
   readonly isSelf: boolean
   readonly isActive: boolean
+  /** `undefined` si la batalla no trae Vida (iniciada antes de HU-18): no se pinta la barra. */
+  readonly health: HealthView | null | undefined
 }
 
 /**
  * Un combatiente: su heroe (modelo real de la biblioteca visual, o un marcador
- * cuando no hay heroe conocido -- p. ej. un oponente IA), su nombre y su equipo.
+ * cuando no hay heroe conocido -- p. ej. un oponente IA), su nombre, su equipo y su Vida.
  * NUNCA muestra `playerId`, `heroId` ni ningun identificador tecnico.
  */
-const CombatantCard = ({ entry, isSelf, isActive }: CombatantCardProps): React.JSX.Element => {
+const CombatantCard = ({
+  entry,
+  isSelf,
+  isActive,
+  health,
+}: CombatantCardProps): React.JSX.Element => {
   const modelId = entry.heroSubtype === null ? null : heroIdFromSubtype(entry.heroSubtype)
   const name = combatantName(entry)
 
@@ -58,6 +76,7 @@ const CombatantCard = ({ entry, isSelf, isActive }: CombatantCardProps): React.J
         )}
       </div>
       <p className="text-center text-xs text-muted">Equipo {entry.teamLabel}</p>
+      {health !== undefined && <HealthBar name={name} health={health} />}
     </li>
   )
 }
@@ -69,23 +88,30 @@ export interface BattleScreenProps {
   readonly connection: RealtimeConnectionState
   /** `false` mientras se recupera el estado tras una reconexion. */
   readonly synced: boolean
+  /** El ultimo ataque basico que publico el servidor (HU-18); `null` si aun no hubo ninguno. */
+  readonly lastAttack?: LastAttack | null
+  /**
+   * Acciones de combate (HU-18). Sin ellas la pantalla es de solo lectura: se ve la Vida y
+   * el turno, pero no se ofrece ningun boton.
+   */
+  readonly combat?: CombatControls
 }
 
 /**
- * Pantalla de batalla (HU-17): rival, "VS", tu equipo, quien tiene el turno y el
- * orden de turnos. Solo LEE lo que publica Combat: no calcula turnos, no decide
- * resultados y no genera aleatoriedad.
+ * Pantalla de batalla (HU-17, HU-18): rival, "VS", tu equipo con la Vida de cada uno, quien
+ * tiene el turno, el resultado del ultimo ataque, las acciones y el orden de turnos. Solo LEE lo
+ * que publica Combat: no calcula turnos, no decide resultados ni dano y no genera aleatoriedad.
  *
  * Todo lo importante es TEXTO (no solo color): "Tu turno" / "Turno de <nombre>",
- * "Turno actual", "Tú". La zona de acciones queda como marcador estructural: los
- * botones de ataque, habilidad y epica no existen todavia (HU-18/HU-19) y no se
- * muestra ninguno deshabilitado que aparente funcionar.
+ * "Turno actual", "Tú", `32 / 44` de Vida, "Sin efecto"/"Golpe crítico"...
  */
 export const BattleScreen = ({
   battle,
   subject,
   connection,
   synced,
+  lastAttack = null,
+  combat,
 }: BattleScreenProps): React.JSX.Element => {
   const turn = describeTurn(battle, subject)
   const self = findSelf(battle, subject)
@@ -95,6 +121,10 @@ export const BattleScreen = ({
   const isSelf = (entry: TurnOrderEntry): boolean =>
     self !== null && entry.position === self.position
   const reconnecting = connection === 'reconnecting' || (connection === 'open' && !synced)
+  const withHealth = hasCombatState(battle)
+  const healthOf = (entry: TurnOrderEntry): HealthView | null | undefined =>
+    withHealth ? combatantHealth(battle, entry) : undefined
+  const feedback = lastAttack === null ? null : describeLastAttack(lastAttack, battle)
 
   return (
     <section aria-label="Batalla" className="flex flex-col gap-6">
@@ -122,6 +152,24 @@ export const BattleScreen = ({
         </p>
       )}
 
+      {/* La region viva existe siempre: los lectores de pantalla anuncian los cambios de una
+          region que ya estaba en la pagina, no la que aparece con su contenido. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-label="Resultado del último ataque"
+        className={clsx(
+          feedback !== null && 'rounded-lg border border-border bg-surface-raised p-4 text-center',
+        )}
+      >
+        {feedback !== null && (
+          <>
+            <p className="text-base font-semibold text-ink">{feedback.headline}</p>
+            <p className="text-sm text-muted">{feedback.detail}</p>
+          </>
+        )}
+      </div>
+
       <Card title="Rival" description={opponents.length > 1 ? 'Equipo rival' : 'Tu oponente'}>
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {opponents.map((entry) => (
@@ -130,6 +178,7 @@ export const BattleScreen = ({
               entry={entry}
               isSelf={isSelf(entry)}
               isActive={isCurrent(entry)}
+              health={healthOf(entry)}
             />
           ))}
         </ul>
@@ -147,10 +196,28 @@ export const BattleScreen = ({
               entry={entry}
               isSelf={isSelf(entry)}
               isActive={isCurrent(entry)}
+              health={healthOf(entry)}
             />
           ))}
         </ul>
       </Card>
+
+      {combat === undefined ? (
+        <p
+          aria-label="Acciones de combate"
+          className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted"
+        >
+          Las habilidades y la épica llegarán con las siguientes historias de Jugar Online.
+        </p>
+      ) : (
+        <AttackPanel
+          battle={battle}
+          subject={subject}
+          connection={connection}
+          synced={synced}
+          combat={combat}
+        />
+      )}
 
       <Card title="Orden de turnos" description="Fijo durante toda la batalla">
         <ol aria-label="Orden de turnos" className="flex flex-col gap-2">
@@ -175,14 +242,6 @@ export const BattleScreen = ({
           ))}
         </ol>
       </Card>
-
-      <p
-        aria-label="Acciones de combate"
-        className="rounded-md border border-dashed border-border p-4 text-center text-xs text-muted"
-      >
-        Las acciones de combate (ataque, habilidades y épica) llegarán con las siguientes historias
-        de Jugar Online.
-      </p>
     </section>
   )
 }

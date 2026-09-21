@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router'
 
 import { Button } from '@/components/ui/Button'
 import { useSession } from '@/shared/session'
+import type { CommandIdFactory } from '../commandId'
 import type { SocketFactory, TicketProvider } from '../realtime'
 
 import { startBattle } from './api'
@@ -15,6 +16,8 @@ export interface BattlePageProps {
   /** Inyectables para pruebas (mismo patron que `useBattleRoomRealtime`). */
   readonly socketFactory?: SocketFactory
   readonly ticketProvider?: TicketProvider
+  /** Fija el `commandId` del ataque en las pruebas; en produccion es un UUID nuevo por intencion. */
+  readonly createCommandId?: CommandIdFactory
 }
 
 const BackToRooms = (): React.JSX.Element => (
@@ -57,15 +60,17 @@ const Notice = ({
  *  - `IN_BATTLE`: pinta la cola y el turno que Combat publica.
  *
  * El heroe y el nombre que se ven salen del estado real autorizado (la cola), no
- * de datos fijos del cliente.
+ * de datos fijos del cliente. La Vida, el resultado del ultimo ataque y el turno
+ * tambien: los publica Combat (HU-18) y aqui solo se pintan.
  */
 export const BattlePage = ({
   socketFactory,
   ticketProvider,
+  createCommandId,
 }: BattlePageProps): React.JSX.Element => {
   const { roomId = null } = useParams<{ roomId: string }>()
   const subject = useSession((state) => state.subject)
-  const realtime = useBattleRealtime(roomId, socketFactory, ticketProvider)
+  const realtime = useBattleRealtime(roomId, socketFactory, ticketProvider, createCommandId)
   const start = useMutation({ mutationFn: (id: string) => startBattle(id) })
   const { mutate: requestStart, isIdle: startIdle } = start
 
@@ -94,6 +99,13 @@ export const BattlePage = ({
         subject={subject}
         connection={realtime.connection}
         synced={realtime.synced}
+        lastAttack={realtime.lastAttack}
+        combat={{
+          attack: realtime.attack,
+          onAttack: realtime.sendAttack,
+          onRetry: realtime.retryAttack,
+          onDismissRejection: realtime.dismissAttackRejection,
+        }}
       />
     )
   }
