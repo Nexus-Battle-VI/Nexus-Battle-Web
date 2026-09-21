@@ -1,4 +1,4 @@
-import type { BattleView, TurnOrderEntry } from './types'
+import type { BasicAttackResolution, BattleView, TargetRef, TurnOrderEntry } from './types'
 
 /**
  * Fixtures de la batalla con la FORMA EXACTA del contrato v1 de Combat (vease
@@ -69,3 +69,94 @@ export const snapshot = (
   status: string,
   view: BattleView | null,
 ): Record<string, unknown> => ({ type: 'snapshot', roomId: ROOM_ID, seq, status, battle: view })
+
+/** Vida por posicion de la cola: `[actual, maxima]`, o `null` si el participante no tiene perfil. */
+export type HealthByPosition = readonly (readonly [number, number] | null)[]
+
+/** La misma vista con `combatants` (HU-18): mismo orden que la cola, como en el contrato v1. */
+export const withCombatants = (view: BattleView, health: HealthByPosition): BattleView => ({
+  ...view,
+  combatants: view.turnOrder.map((member, index) => {
+    const value = health[index] ?? null
+
+    return {
+      teamLabel: member.teamLabel,
+      seat: member.seat,
+      health: value === null ? null : { current: value[0], max: value[1] },
+    }
+  }),
+})
+
+/** 1v1 con Vida: Bruno (equipo B, posicion 0) y Ana (equipo A, posicion 1), 44 de Vida cada uno. */
+export const combatBattle = (
+  turnsCompleted = 0,
+  health: HealthByPosition = [
+    [44, 44],
+    [44, 44],
+  ],
+  order: readonly TurnOrderEntry[] = [entry(0), entry(1)],
+): BattleView => withCombatants(battle(turnsCompleted, order), health)
+
+/** Identidades estables del 1v1 de los fixtures. */
+export const BRUNO: TargetRef = { teamLabel: 'B', seat: 0 }
+export const ANA: TargetRef = { teamLabel: 'A', seat: 0 }
+
+/** Una resolucion efectiva (critico 137 %) con la forma del contrato v1. */
+export const RESOLUTION: BasicAttackResolution = {
+  attackValue: 14,
+  defenseValue: 11,
+  effective: true,
+  effect: 'CRITICAL_DAMAGE',
+  percent: 137,
+  baseDamage: 5,
+  calculatedDamage: 6,
+  appliedDamage: 6,
+}
+
+/** Un golpe que no supero la Defensa: sin efecto, porcentaje ni dano. */
+export const MISS: BasicAttackResolution = {
+  attackValue: 11,
+  defenseValue: 11,
+  effective: false,
+  effect: null,
+  percent: null,
+  baseDamage: null,
+  calculatedDamage: 0,
+  appliedDamage: 0,
+}
+
+export interface AttackEventInput {
+  readonly seq: number
+  readonly commandId: string
+  readonly attacker: TargetRef
+  readonly target: TargetRef
+  readonly resolution?: BasicAttackResolution
+  readonly before: number
+  readonly after: number
+  /** Vista POSTERIOR al ataque (Vida actualizada y turno ya avanzado). */
+  readonly view: BattleView
+  readonly completedPosition?: number
+}
+
+/** `basicAttackResolved` con la forma EXACTA del contrato v1 (seccion 6). */
+export const basicAttackResolved = (input: AttackEventInput): Record<string, unknown> => ({
+  type: 'basicAttackResolved',
+  seq: input.seq,
+  roomId: ROOM_ID,
+  occurredAt: '2026-09-21T10:01:00.000Z',
+  commandId: input.commandId,
+  completedPosition: input.completedPosition ?? 0,
+  attacker: input.attacker,
+  target: input.target,
+  resolution: input.resolution ?? RESOLUTION,
+  targetHealth: { before: input.before, after: input.after },
+  battle: input.view,
+})
+
+/** Rechazo de un ataque: llega solo al remitente, con `command` y el codigo estable. */
+export const attackRejected = (code: string, commandId?: string): Record<string, unknown> => ({
+  type: 'command.rejected',
+  command: 'attack',
+  ...(commandId === undefined ? {} : { commandId }),
+  code,
+})

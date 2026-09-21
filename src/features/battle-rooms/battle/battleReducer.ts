@@ -1,11 +1,31 @@
-import type { BattleEventMessage, BattleView, SnapshotMessage } from './types'
+import type {
+  BasicAttackResolution,
+  BattleEventMessage,
+  BattleView,
+  SnapshotMessage,
+  TargetRef,
+} from './types'
+
+/**
+ * El ultimo ataque basico que el servidor publico (HU-18), tal cual llego: alimenta el
+ * mensaje de resultado. NO se deriva nada de el (ni dano, ni Vida, ni turno).
+ */
+export interface LastAttack {
+  readonly seq: number
+  readonly commandId: string
+  readonly attacker: TargetRef
+  readonly target: TargetRef
+  readonly resolution: BasicAttackResolution
+  readonly targetHealth: { readonly before: number; readonly after: number }
+}
 
 /**
  * Estado del cliente de la batalla: SOLO lo que el servidor ha publicado.
  *
  * No hay un segundo estado autoritativo: `battle` es la ultima vista recibida
- * (cada evento lleva la vista completa) y `lastSeq` el ultimo `seq` aplicado.
- * El cliente nunca deriva el turno (`+ 1`): pinta `battle.currentTurn`.
+ * (cada evento lleva la vista completa, con la Vida y el turno YA actualizados) y
+ * `lastSeq` el ultimo `seq` aplicado. El cliente nunca deriva el turno (`+ 1`) ni
+ * la Vida: pinta `battle`.
  */
 export interface BattleClientState {
   /** Estado de la sala segun la ultima instantanea (`PREPARING`, `IN_BATTLE`...); `null` sin datos. */
@@ -17,6 +37,8 @@ export interface BattleClientState {
   readonly synced: boolean
   /** Se detecto un salto de `seq`: hay que pedir `resume` en lugar de inventar el estado. */
   readonly needsResync: boolean
+  /** El ultimo ataque basico aplicado en vivo o por replay; `null` tras una instantanea. */
+  readonly lastAttack: LastAttack | null
 }
 
 export const initialBattleState: BattleClientState = {
@@ -25,6 +47,7 @@ export const initialBattleState: BattleClientState = {
   lastSeq: 0,
   synced: false,
   needsResync: false,
+  lastAttack: null,
 }
 
 export type BattleAction =
@@ -34,14 +57,31 @@ export type BattleAction =
   | { readonly type: 'connectionLost' }
   | { readonly type: 'resyncRequested' }
 
+const lastAttackOf = (
+  message: BattleEventMessage,
+  previous: LastAttack | null,
+): LastAttack | null =>
+  message.type === 'basicAttackResolved'
+    ? {
+        seq: message.seq,
+        commandId: message.commandId,
+        attacker: message.attacker,
+        target: message.target,
+        resolution: message.resolution,
+        targetHealth: message.targetHealth,
+      }
+    : previous
+
 /**
- * Reductor PURO de la batalla (HU-17):
+ * Reductor PURO de la batalla (HU-17, HU-18):
  *
- *  - `snapshot`: reemplaza el estado por el visible del servidor.
+ *  - `snapshot`: reemplaza el estado por el visible del servidor. Una instantanea no
+ *    trae acciones, asi que el ultimo ataque (que quedaria viejo) se descarta.
  *  - `event`: aplica SOLO si `seq === lastSeq + 1`. Un `seq` repetido o anterior
- *    (duplicado, evento viejo) se IGNORA -- no duplica efectos ni retrocede el
- *    turno -- y un salto (`seq > lastSeq + 1`) NO se aplica: marca `needsResync`
- *    para recuperar con `resume`, sin reconstruir mensajes perdidos.
+ *    (duplicado, evento viejo) se IGNORA -- no duplica efectos, no repite el resultado,
+ *    no resta Vida dos veces y no retrocede el turno -- y un salto (`seq > lastSeq + 1`)
+ *    NO se aplica: marca `needsResync` para recuperar con `resume`, sin reconstruir
+ *    mensajes perdidos.
  *  - `connectionLost`: deja de considerarse sincronizado; conserva lo ultimo que
  *    dijo el servidor (no inventa nada mientras dura la desconexion).
  */
@@ -57,6 +97,7 @@ export const battleReducer = (
         battle: action.message.battle,
         lastSeq: action.message.seq,
         needsResync: false,
+        lastAttack: null,
       }
     case 'event': {
       const { message } = action
@@ -74,6 +115,7 @@ export const battleReducer = (
         roomStatus: 'IN_BATTLE',
         battle: message.battle,
         lastSeq: message.seq,
+        lastAttack: lastAttackOf(message, state.lastAttack),
       }
     }
     case 'synced':

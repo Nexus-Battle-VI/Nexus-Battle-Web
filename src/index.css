@@ -17,6 +17,9 @@
   --color-brand-ink: oklch(0.98 0.01 265);
   --color-danger: oklch(0.55 0.2 25);
   --color-success: oklch(0.6 0.15 150);
+  /* Ambar de la barra de Vida entre el 40 % y el 60 % (HU-18, §7.6). Un unico valor para
+     ambos temas, como `--color-success`; el texto de la Vida nunca depende del color. */
+  --color-warning: oklch(0.64 0.14 80);
 }
 
 /*
