@@ -158,9 +158,26 @@ describe('BattleRoomCard', () => {
   })
 
   it('muestra el mensaje de error de union cuando existe', () => {
-    renderCard(room(), { joinError: 'La sala ya está llena.' })
+    renderCard(room(), { joinError: { message: 'La sala ya está llena.', action: null } })
 
     expect(screen.getByRole('alert')).toHaveTextContent('La sala ya está llena.')
+  })
+
+  it('muestra la accion correctiva del error de union cuando existe, con una ruta ya existente', () => {
+    renderCard(room(), {
+      joinError: {
+        message: 'El equipamiento de tu héroe ya no es válido.',
+        action: { label: 'Revisar inventario', to: '/inventory' },
+      },
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'El equipamiento de tu héroe ya no es válido.',
+    )
+    expect(screen.getByRole('link', { name: 'Revisar inventario' })).toHaveAttribute(
+      'href',
+      '/inventory',
+    )
   })
 
   it('quien ya es participante ve un enlace a la sala en vez de los botones de union', () => {

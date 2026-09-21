@@ -13,7 +13,8 @@ import { useSession } from '@/shared/session'
 import { BattleRoomCard } from './BattleRoomCard'
 import { BattleRoomFilters, type BattleRoomModeFilter } from './BattleRoomFilters'
 import { useBattleRooms, useCancelBattleRoom, useJoinBattleRoom } from './hooks'
-import { describeBattleRoomFailure, describeJoinBattleRoomFailure } from './presentation'
+import { describeBattleRoomFailure, joinBattleRoomFailure } from './presentation'
+import type { JoinBattleRoomFailure } from './presentation'
 import type { TeamLetter } from './types'
 
 /**
@@ -50,7 +51,9 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
 
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null)
   const [joiningTeam, setJoiningTeam] = useState<TeamLetter | null>(null)
-  const [joinErrorByRoom, setJoinErrorByRoom] = useState<Readonly<Record<string, string>>>({})
+  const [joinErrorByRoom, setJoinErrorByRoom] = useState<
+    Readonly<Record<string, JoinBattleRoomFailure>>
+  >({})
 
   const visibleRooms = useMemo(() => {
     const all = rooms.data ?? []
@@ -91,7 +94,7 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
           void rooms.refetch()
           setJoinErrorByRoom((previous) => ({
             ...previous,
-            [roomId]: describeJoinBattleRoomFailure(error),
+            [roomId]: joinBattleRoomFailure(error),
           }))
         },
       },

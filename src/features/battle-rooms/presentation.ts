@@ -120,35 +120,196 @@ const ACCOUNT_PROFILE_NOT_FOUND_MESSAGE =
 
 const MISSING_HERO_MESSAGE = 'Debes preparar un héroe antes de unirte a una sala de batalla.'
 
-const hasAccountProfileNotFoundCode = (body: unknown): boolean =>
-  typeof body === 'object' &&
-  body !== null &&
-  'code' in body &&
-  (body as { code?: unknown }).code === 'ACCOUNT_PROFILE_NOT_FOUND'
+/**
+ * Ruta de accion opcional que acompana un mensaje de fallo de union: siempre
+ * una de las rutas ya existentes de React Router (`routes.tsx`), NUNCA una
+ * pantalla nueva creada para HU-16.3.
+ */
+export interface JoinBattleRoomFailureAction {
+  readonly label: string
+  readonly to: string
+}
 
-export const describeJoinBattleRoomFailure = (error: unknown): string => {
-  if (error instanceof HttpError) {
-    switch (error.status) {
-      case 400:
-        return 'La solicitud de unión no es válida. Actualiza la sala e inténtalo de nuevo.'
-      case 401:
-        return 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.'
-      case 404:
-        return 'Esta sala ya no existe o fue eliminada.'
-      case 409:
-        return JOIN_CONFLICT_MESSAGE
-      case 422:
-        return hasAccountProfileNotFoundCode(error.body)
-          ? ACCOUNT_PROFILE_NOT_FOUND_MESSAGE
-          : MISSING_HERO_MESSAGE
-      case 503:
-        return 'El servicio de combate no está disponible en este momento. Inténtalo de nuevo en unos segundos.'
-      default:
-        return error.message.length > 0
-          ? error.message
-          : 'Ocurrió un error inesperado al intentar unirte a la sala.'
+export interface JoinBattleRoomFailure {
+  readonly message: string
+  readonly action: JoinBattleRoomFailureAction | null
+}
+
+const HEROES_ACTION: JoinBattleRoomFailureAction = { label: 'Revisar Mi Héroe', to: '/heroes' }
+const INVENTORY_ACTION: JoinBattleRoomFailureAction = {
+  label: 'Revisar inventario',
+  to: '/inventory',
+}
+
+/**
+ * HU-16.3 (RF-16, Management#25/#401/#402/#403). Rechazos de elegibilidad
+ * precombate de Nexus-Battle-Combat (`PrecombatEligibilityBlockedError`,
+ * HU-16.2): el heroe equipado SI existe, pero `blockers[]` declara por que
+ * no puede usarse en ESTA sala. Los codigos vienen de dos fuentes distintas,
+ * reenviadas TAL CUAL por Combat (nunca reinterpretadas):
+ *
+ *  - `HeroReadinessPolicy` de Player-Inventory (deriva post-equipar):
+ *    `HERO_NOT_ACTIVE`, `EQUIPPED_PRODUCT_NOT_OWNED`,
+ *    `EQUIPPED_PRODUCT_NOT_ACTIVE`.
+ *  - `PrecombatEligibilityPolicy` de Combat (propia de la sala, DP-5):
+ *    `HERO_CLASS_NOT_ALLOWED_FOR_FORMAT`.
+ *  - `HERO_NOT_READY` es el codigo de reserva de Combat cuando
+ *    `ready=false` sin ningun motivo declarado (defensa en profundidad).
+ *
+ * Pueden concurrir varios `blockers` a la vez; se elige un unico mensaje por
+ * prioridad, del mas especifico y accionable al mas generico. Nunca se
+ * interpolan `detail`/`reference`/`slot` del backend en el mensaje: esos
+ * campos pueden llevar el id interno del producto (`EQUIPPED_PRODUCT_*`), y
+ * la TASK exige no filtrar identificadores internos en la UI.
+ *
+ * NIVEL DE HEROE, NIVEL MINIMO DE SALA Y MISION ACTIVA NO SE MAPEAN AQUI:
+ * `PrecombatEligibilityPolicy` (Combat) documenta explicitamente que ningun
+ * servicio tiene hoy una fuente autoritativa para esos tres (ver
+ * `docs/hu-16-precombat-eligibility.md` en Nexus-Battle-Combat). Inventar un
+ * codigo o un mensaje para ellos aqui violaria la prohibicion expresa de la
+ * TASK HU-16.3 de fingir datos que el backend todavia no produce.
+ */
+const HERO_CLASS_NOT_ALLOWED_FOR_FORMAT_MESSAGE =
+  'La clase de tu héroe equipado no puede participar en esta modalidad de sala (por ejemplo, Chamán o Médico no juegan en formato 1 contra 1). Elige otro héroe o busca una sala de equipo.'
+
+const EQUIPMENT_INVALID_MESSAGE =
+  'El equipamiento de tu héroe ya no es válido: revísalo antes de unirte a una sala.'
+
+const HERO_NOT_ACTIVE_MESSAGE =
+  'Tu héroe equipado ya no está disponible. Selecciona otro héroe antes de unirte a una sala.'
+
+const HERO_NOT_READY_MESSAGE =
+  'Tu héroe equipado no está listo para combate. Revisa tu héroe y tu equipamiento antes de unirte a una sala.'
+
+/**
+ * Fallback seguro para un `code` de bloqueo que esta UI todavia no
+ * reconoce (nuevo codigo de Combat/Player-Inventory no contemplado aqui):
+ * ningun detalle tecnico del backend, ningun id, solo una accion generica.
+ */
+const UNKNOWN_ELIGIBILITY_MESSAGE =
+  'Tu héroe no cumple los requisitos para unirte a esta sala. Revisa tu héroe y tu equipamiento e inténtalo de nuevo.'
+
+interface PrecombatEligibilityBlockerLike {
+  readonly code?: unknown
+}
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
+
+const stringCodeOf = (body: unknown): string | null => {
+  const code = asRecord(body)?.code
+  return typeof code === 'string' ? code : null
+}
+
+/** Codigos de `blockers[].code` presentes en el cuerpo, ignorando cualquier entrada mal formada. */
+const blockerCodesOf = (body: unknown): readonly string[] => {
+  const blockers = asRecord(body)?.blockers
+
+  if (!Array.isArray(blockers)) {
+    return []
+  }
+
+  return (blockers as readonly unknown[])
+    .map((blocker) =>
+      typeof blocker === 'object' && blocker !== null
+        ? (blocker as PrecombatEligibilityBlockerLike).code
+        : undefined,
+    )
+    .filter((code): code is string => typeof code === 'string')
+}
+
+/**
+ * Un unico mensaje/accion para el conjunto de `blockers[]` de
+ * `PrecombatEligibilityBlockedError`. Orden de prioridad deliberado: primero
+ * lo que NO se arregla revisando equipamiento (restriccion de clase/formato,
+ * heroe suspendido), luego lo que si (producto no poseido/no activo),
+ * despues el generico sin detalle, y por ultimo el fallback seguro.
+ */
+const eligibilityBlockerFailure = (codes: readonly string[]): JoinBattleRoomFailure => {
+  if (codes.includes('HERO_CLASS_NOT_ALLOWED_FOR_FORMAT')) {
+    return { message: HERO_CLASS_NOT_ALLOWED_FOR_FORMAT_MESSAGE, action: HEROES_ACTION }
+  }
+
+  if (codes.includes('HERO_NOT_ACTIVE')) {
+    return { message: HERO_NOT_ACTIVE_MESSAGE, action: HEROES_ACTION }
+  }
+
+  if (
+    codes.includes('EQUIPPED_PRODUCT_NOT_OWNED') ||
+    codes.includes('EQUIPPED_PRODUCT_NOT_ACTIVE')
+  ) {
+    return { message: EQUIPMENT_INVALID_MESSAGE, action: INVENTORY_ACTION }
+  }
+
+  if (codes.includes('HERO_NOT_READY')) {
+    return { message: HERO_NOT_READY_MESSAGE, action: HEROES_ACTION }
+  }
+
+  return { message: UNKNOWN_ELIGIBILITY_MESSAGE, action: null }
+}
+
+/**
+ * Mapper centralizado del fallo de union a sala (HU-15.3 + HU-16.3). Unico
+ * punto que interpreta `error.body`; todo componente consume su salida, sin
+ * volver a mirar `code`/`blockers` por su cuenta.
+ */
+export const joinBattleRoomFailure = (error: unknown): JoinBattleRoomFailure => {
+  if (!(error instanceof HttpError)) {
+    return {
+      message: 'Ocurrió un error inesperado al comunicarse con el servicio de combate.',
+      action: null,
     }
   }
 
-  return 'Ocurrió un error inesperado al comunicarse con el servicio de combate.'
+  switch (error.status) {
+    case 400:
+      return {
+        message: 'La solicitud de unión no es válida. Actualiza la sala e inténtalo de nuevo.',
+        action: null,
+      }
+    case 401:
+      return { message: 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.', action: null }
+    case 404:
+      return { message: 'Esta sala ya no existe o fue eliminada.', action: null }
+    case 409:
+      return { message: JOIN_CONFLICT_MESSAGE, action: null }
+    case 422: {
+      const code = stringCodeOf(error.body)
+
+      if (code === 'ACCOUNT_PROFILE_NOT_FOUND') {
+        return { message: ACCOUNT_PROFILE_NOT_FOUND_MESSAGE, action: null }
+      }
+
+      if (code === 'HERO_NOT_SELECTED') {
+        return { message: MISSING_HERO_MESSAGE, action: HEROES_ACTION }
+      }
+
+      const blockerCodes = blockerCodesOf(error.body)
+
+      if (blockerCodes.length > 0) {
+        return eligibilityBlockerFailure(blockerCodes)
+      }
+
+      // 422 sin `code` reconocido y sin `blockers`: comportamiento previo a
+      // HU-16.3 intacto (p. ej. un cuerpo vacio o de forma desconocida).
+      return { message: MISSING_HERO_MESSAGE, action: HEROES_ACTION }
+    }
+    case 503:
+      return {
+        message:
+          'El servicio de combate no está disponible en este momento. Inténtalo de nuevo en unos segundos.',
+        action: null,
+      }
+    default:
+      return {
+        message:
+          error.message.length > 0
+            ? error.message
+            : 'Ocurrió un error inesperado al intentar unirte a la sala.',
+        action: null,
+      }
+  }
 }
+
+export const describeJoinBattleRoomFailure = (error: unknown): string =>
+  joinBattleRoomFailure(error).message
