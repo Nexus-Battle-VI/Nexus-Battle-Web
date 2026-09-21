@@ -30,6 +30,7 @@ import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPa
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
+import { AuctionPage } from '@/features/auction/AuctionPage'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
   ? await import('./dev-routes')
@@ -237,7 +238,7 @@ export const routes: RouteObject[] = [
       // Seleccion y preparacion del heroe (HU-07). Equipar sigue viviendo en
       // `/inventory`: esta pantalla elige el heroe y enseña con que entraria.
       { path: 'heroes', element: <HeroSelectionPage /> },
-      { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
+      { path: 'auction', element: <AuctionPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.

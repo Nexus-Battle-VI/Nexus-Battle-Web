@@ -282,19 +282,20 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
   })
 
-  /**
-   * HU-14.4: `/missions` y `/auction` NO se tocan por esta task y deben
-   * seguir mostrando el mismo marcador que `/tournament` ya prueba arriba.
-   */
-  it.each(['/missions', '/auction'])(
-    '%s sigue mostrando el modulo no disponible (sin regresion de HU-14.4)',
-    async (path) => {
-      useSession.setState(AUTHENTICATED_STATE)
-      renderRoute(path)
+  it('/missions sigue mostrando el modulo no disponible', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/missions')
 
-      expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
-    },
-  )
+    expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
+  })
+
+  it('/auction monta el flujo real de publicación de HU-62.5', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/auction')
+
+    expect(await screen.findByRole('heading', { name: 'Publicar en subasta' })).toBeInTheDocument()
+    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
 
   /**
    * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un
