@@ -20,8 +20,9 @@ describe('devRoutes', () => {
     // puede establecer: "Mi cuenta" (HU-05.4), el alta de producto (HU-33), la
     // seleccion de heroe (HU-07), la cola de moderacion (HU-41.4), las
     // novedades/banner de catalogo (HU-38, Task #181/#185) y el lobby de
-    // preparacion de sala de batalla (HU-15.3) y el medidor de Poder (HU-11),
-    // que aun no esta montado en ninguna pantalla del producto.
+    // preparacion de sala de batalla (HU-15.3), el medidor de Poder (HU-11),
+    // que aun no esta montado en ninguna pantalla del producto, y la pantalla
+    // de batalla (HU-17), que necesita Combat publicando por WebSocket.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/account',
       '__dev/admin/products/new',
@@ -32,6 +33,7 @@ describe('devRoutes', () => {
       '__dev/hu15/lobby',
       '__dev/hu15/lobby/:roomId',
       '__dev/hu11/poder',
+      '__dev/hu17/battle',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 

@@ -81,6 +81,7 @@ const montar = (): ReturnType<typeof renderWithProviders> =>
   renderWithProviders(
     <Routes>
       <Route path="/play/rooms/:roomId" element={<BattleRoomLobbyPage />} />
+      <Route path="/play/rooms/:roomId/battle" element={<p>Pantalla de batalla</p>} />
       <Route path="/play" element={<p>Listado de salas</p>} />
     </Routes>,
     { route: `/play/rooms/${ROOM_ID}` },
@@ -248,21 +249,59 @@ describe('BattleRoomLobbyPage — deteccion de cancelacion vs. sala llena (HU-15
     expect(screen.queryByText('Esta sala ya no está disponible.')).not.toBeInTheDocument()
   })
 
-  it('sala llena (lastRoomStatus PREPARING via realtime): mensaje distinto del de cancelacion', async () => {
+  /** `GET /rooms` (listado) devuelve `[]`; `GET /rooms/:id` devuelve la sala en el estado dado. */
+  const urlOf = (input: RequestInfo | URL): string =>
+    typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+  const fetchWithDetail = (detail: Response): typeof fetch =>
+    vi.fn((input: RequestInfo | URL) =>
+      Promise.resolve(urlOf(input).endsWith(`/rooms/${ROOM_ID}`) ? detail : jsonResponse(200, [])),
+    )
+
+  it('sala llena (PREPARING): el participante pasa a la pantalla de batalla, decide el servidor (HU-17)', async () => {
     useSession.setState({ subject: GUEST, accessToken: null, expiresAt: null })
     mockedRealtime.mockReturnValue({ connection: 'disabled', lastRoomStatus: 'PREPARING' })
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [])))
+    vi.stubGlobal('fetch', fetchWithDetail(jsonResponse(200, room({ status: 'PREPARING' }))))
 
     montar()
 
-    expect(
-      await screen.findByText('La sala se llenó y ya está lista para comenzar.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Pantalla de batalla')).toBeInTheDocument()
     expect(
       screen.queryByText(
         'La sala fue cancelada por su propietario. Selecciona otra sala para continuar.',
       ),
     ).not.toBeInTheDocument()
+  })
+
+  it('sala ya en batalla (IN_BATTLE): tambien lleva a la pantalla de batalla', async () => {
+    useSession.setState({ subject: GUEST, accessToken: null, expiresAt: null })
+    vi.stubGlobal('fetch', fetchWithDetail(jsonResponse(200, room({ status: 'IN_BATTLE' }))))
+
+    montar()
+
+    expect(await screen.findByText('Pantalla de batalla')).toBeInTheDocument()
+  })
+
+  it('un no participante (403 al leer la sala) NO es llevado a la batalla: sala no disponible', async () => {
+    useSession.setState({ subject: 'sujeto-ajeno', accessToken: null, expiresAt: null })
+    vi.stubGlobal('fetch', fetchWithDetail(jsonResponse(403, { message: 'No eres participante' })))
+
+    montar()
+
+    expect(await screen.findByText('Esta sala ya no está disponible.')).toBeInTheDocument()
+    expect(screen.queryByText('Pantalla de batalla')).not.toBeInTheDocument()
+  })
+
+  it('sala cancelada segun el servidor (CANCELLED): mensaje de cancelacion', async () => {
+    useSession.setState({ subject: GUEST, accessToken: null, expiresAt: null })
+    vi.stubGlobal('fetch', fetchWithDetail(jsonResponse(200, room({ status: 'CANCELLED' }))))
+
+    montar()
+
+    expect(
+      await screen.findByText(
+        'La sala fue cancelada por su propietario. Selecciona otra sala para continuar.',
+      ),
+    ).toBeInTheDocument()
   })
 
   it('sin ningun evento realtime todavia, se mantiene el mensaje generico previo', async () => {

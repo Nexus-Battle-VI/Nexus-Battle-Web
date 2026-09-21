@@ -75,6 +75,11 @@ if (import.meta.env.DEV) {
       default: module.PowerMeterDevPreview,
     })),
   )
+  const BattleScreenDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/BattleScreenDevPreview').then((module) => ({
+      default: module.BattleScreenDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -190,6 +195,17 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <PowerMeterDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-17: la batalla vive tras `RequireSession` y necesita Combat publicando
+    // por WebSocket. El preview monta la pantalla y el reductor de produccion con
+    // eventos de la forma del contrato v1, sin red. NO es evidencia E2E.
+    {
+      path: '__dev/hu17/battle',
+      element: (
+        <Suspense fallback={null}>
+          <BattleScreenDevPreviewLazy />
         </Suspense>
       ),
     },
