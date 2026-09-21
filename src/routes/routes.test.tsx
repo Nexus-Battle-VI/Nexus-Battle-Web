@@ -323,6 +323,57 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     }
   })
 
+  /**
+   * HU-17: la batalla de una sala cuelga de `/play/rooms/:roomId/battle`, dentro
+   * del mismo flujo protegido de Jugar Online (sin entrada paralela). Un 401 al
+   * pedir el ticket evita abrir un WebSocket real en jsdom.
+   */
+  it('/play/rooms/:roomId/battle renderiza la pantalla de batalla (no un marcador) para una sesion valida', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    // Respuestas NUEVAS por peticion: un `Response` solo se puede leer una vez y el
+    // layout tambien consulta al montar.
+    const urlOf = (input: RequestInfo | URL): string =>
+      typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          urlOf(input).endsWith('/realtime/tickets')
+            ? new Response(JSON.stringify({ message: 'Sesion vencida' }), {
+                status: 401,
+                headers: { 'content-type': 'application/json' },
+              })
+            : new Response(JSON.stringify([]), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+              }),
+        ),
+      ),
+    )
+
+    try {
+      renderRoute('/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle')
+
+      expect(await screen.findByLabelText('Batalla')).toHaveTextContent('Tu sesión expiró')
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('un visitante sin sesion que abre la batalla recibe el gate, no la batalla', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    const { router } = renderRoute('/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(
+      '/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle',
+    )
+    expect(screen.queryByLabelText('Batalla')).not.toBeInTheDocument()
+  })
+
   it('un visitante que intenta Mi Inventario sin sesion recibe el gate, no el inventario', async () => {
     useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/inventory')
