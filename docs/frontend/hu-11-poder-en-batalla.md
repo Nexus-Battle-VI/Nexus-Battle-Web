@@ -40,21 +40,20 @@ de Player/Inventory.
 
 ## Contrato de datos
 
-`{ current: number, max: number }` por héroe, con enteros y `0 ≤ current ≤ max`. Es una **propuesta**
-para Team Alfa: el protocolo de eventos lo define ADR-020 y Combat todavía no envía el Poder. Ver
-`docs/hu-11-hero-power.md` en Combat.
+`{ current: number, max: number }` por héroe, con enteros y `0 ≤ current ≤ max`. Desde HU-19 lo
+publica Combat en `battle.combatants[].power` (ver
+[`docs/frontend/hu-19-habilidades.md`](./hu-19-habilidades.md) y el contrato `hu-19-skills-v1` de
+Infrastructure). Ver también `docs/hu-11-hero-power.md` en Combat.
 
-## Lo que falta para verlo en una batalla real
+## Dónde está montado
 
-`PowerMeter` **no está montado en ninguna pantalla del producto**, porque las piezas de las que
-depende no existen todavía:
+Desde HU-19, `PowerMeter` está **montado en la arena de batalla**: `BattleArena` pinta uno por
+tarjeta de combatiente con el Poder de **ese** participante, y se actualiza con cada `battle` que
+llega (`battleStarted`, `basicAttackResolved`, `skillUsed`, `snapshot`). Si la batalla no trae
+`power` (Combat anterior a HU-19) no se pinta ningún medidor.
 
-1. El inicio de batalla y el agregado de batalla en Combat (HU-17 en adelante), que guarden el Poder
-   de cada participante.
-2. Un evento de Combat que lleve el Poder de cada participante en el mismo mensaje que lo cambia
-   (ADR-020).
-3. Una pantalla de batalla en Web que monte un `PowerMeter` por participante y lo alimente con ese
-   evento. Hoy solo existe el lobby de preparación.
+Sigue sin verificarse contra el sistema desplegado ni en un navegador real (Task #416 de HU-19
+pendiente).
 
 ## Cómo verlo
 
