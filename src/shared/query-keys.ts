@@ -105,6 +105,8 @@ export const queryKeys = {
      * filtro de la UI se aplica client-side sobre este mismo resultado.
      */
     list: ['battle-rooms', 'list'] as const,
+    /** Una sala concreta para sus participantes (HU-17, `GET /api/v1/combat/rooms/:roomId`). */
+    detail: (roomId: string) => ['battle-rooms', 'detail', roomId] as const,
   },
   notifications: {
     /**

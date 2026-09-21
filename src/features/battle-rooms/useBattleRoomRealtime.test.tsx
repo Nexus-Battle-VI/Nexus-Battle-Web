@@ -3,13 +3,14 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
+import { HttpError } from '@/lib/http'
 import { createTestQueryClient } from '@/test/render'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { useBattleRoomRealtime } from './useBattleRoomRealtime'
-import type { SocketFactory } from './realtime'
+import type { SocketFactory, TicketProvider } from './realtime'
 
-/** Doble minimo de `WebSocket`: suficiente para lo que el hook usa. */
+/** Doble minimo de `WebSocket`: suficiente para lo que la conexion usa. */
 class FakeSocket extends EventTarget {
   readonly url: string
   readonly sent: string[] = []
@@ -29,6 +30,11 @@ class FakeSocket extends EventTarget {
     this.dispatchEvent(new Event('close'))
   }
 
+  /** Cierre iniciado por el servidor con un codigo (p. ej. 4401). */
+  remoteClose(code: number): void {
+    this.dispatchEvent(new CloseEvent('close', { code }))
+  }
+
   open(): void {
     this.dispatchEvent(new Event('open'))
   }
@@ -38,9 +44,11 @@ class FakeSocket extends EventTarget {
   }
 }
 
+const JWT = 'token-vigente'
+
 const AUTHENTICATED = {
   subject: 'sujeto-ana',
-  accessToken: 'token-vigente',
+  accessToken: JWT,
   expiresAt: Date.now() + 900_000,
 }
 
@@ -50,7 +58,32 @@ const setup = () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
-  return { queryClient, invalidateSpy, wrapper }
+  const sockets: FakeSocket[] = []
+  const factory: SocketFactory = (url) => {
+    const socket = new FakeSocket(url)
+    sockets.push(socket)
+    return socket as unknown as WebSocket
+  }
+  let issued = 0
+  const tickets = vi.fn<TicketProvider>(() => Promise.resolve(`ticket-${String((issued += 1))}`))
+
+  return { queryClient, invalidateSpy, wrapper, sockets, factory, tickets }
+}
+
+/** Espera a que la conexion pida su ticket y abra el socket N-esimo. */
+const socketNumber = async (sockets: FakeSocket[], count: number): Promise<FakeSocket> => {
+  await waitFor(() => {
+    expect(sockets).toHaveLength(count)
+  })
+  return sockets[count - 1]!
+}
+
+/** Abre el socket y lo autentica (`auth.ok`), como haria Combat con un ticket valido. */
+const authenticate = (socket: FakeSocket): void => {
+  act(() => {
+    socket.open()
+    socket.message({ type: 'auth.ok' })
+  })
 }
 
 beforeEach(() => {
@@ -62,173 +95,228 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('useBattleRoomRealtime', () => {
-  it('autentica y se suscribe a la sala apenas el socket abre', () => {
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
-    }
-    const { wrapper } = setup()
+describe('useBattleRoomRealtime — ADR-020: ticket de un solo uso, nunca el JWT en el socket', () => {
+  it('pide un ticket, abre el socket SIN credenciales en la URL y autentica con el ticket como primer mensaje', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
 
-    renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
+    renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), { wrapper })
+    const socket = await socketNumber(sockets, 1)
 
-    expect(sockets).toHaveLength(1)
-    sockets[0]!.open()
+    expect(tickets).toHaveBeenCalledTimes(1)
+    expect(new URL(socket.url).search).toBe('')
+    expect(socket.url).not.toContain(JWT)
+    expect(socket.url).not.toContain('ticket')
 
-    expect(sockets[0]!.sent).toEqual([
-      JSON.stringify({ type: 'auth', token: 'token-vigente' }),
-      JSON.stringify({ type: 'subscribe', roomId: 'room-1' }),
-    ])
+    act(() => {
+      socket.open()
+    })
+
+    expect(socket.sent).toEqual([JSON.stringify({ type: 'auth', ticket: 'ticket-1' })])
   })
 
-  it('invalida el listado de salas al recibir battle-room.updated de la sala vigilada', async () => {
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
-    }
-    const { wrapper, invalidateSpy } = setup()
+  it('se suscribe a la sala SOLO tras auth.ok, y el JWT nunca viaja por el socket', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
 
-    renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
-    sockets[0]!.open()
-    sockets[0]!.message({
-      type: 'battle-room.updated',
-      roomId: 'room-1',
-      status: 'PREPARING',
-      version: 2,
+    renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), { wrapper })
+    const socket = await socketNumber(sockets, 1)
+
+    act(() => {
+      socket.open()
+    })
+    expect(socket.sent).toHaveLength(1)
+
+    act(() => {
+      socket.message({ type: 'auth.ok' })
+    })
+
+    expect(socket.sent).toEqual([
+      JSON.stringify({ type: 'auth', ticket: 'ticket-1' }),
+      JSON.stringify({ type: 'subscribe', roomId: 'room-1' }),
+    ])
+    expect(socket.sent.join('')).not.toContain(JWT)
+  })
+
+  it('invalida el listado y la sala al recibir battle-room.updated de la sala vigilada', async () => {
+    const { wrapper, invalidateSpy, sockets, factory, tickets } = setup()
+
+    renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), { wrapper })
+    const socket = await socketNumber(sockets, 1)
+
+    authenticate(socket)
+    act(() => {
+      socket.message({
+        type: 'battle-room.updated',
+        roomId: 'room-1',
+        status: 'PREPARING',
+        version: 2,
+      })
     })
 
     await waitFor(() => {
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.battleRooms.list })
     })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.battleRooms.detail('room-1') })
   })
 
-  it('IGNORA un battle-room.updated de otra sala', () => {
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
-    }
-    const { wrapper, invalidateSpy } = setup()
+  it('IGNORA un battle-room.updated de otra sala', async () => {
+    const { wrapper, invalidateSpy, sockets, factory, tickets } = setup()
 
-    renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
-    sockets[0]!.open()
-    sockets[0]!.message({ type: 'battle-room.updated', roomId: 'otra-sala', status: 'PREPARING' })
+    renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), { wrapper })
+    const socket = await socketNumber(sockets, 1)
+
+    authenticate(socket)
+    act(() => {
+      socket.message({ type: 'battle-room.updated', roomId: 'otra-sala', status: 'PREPARING' })
+    })
 
     expect(invalidateSpy).not.toHaveBeenCalled()
   })
 
-  it('ignora un mensaje que no es JSON valido, sin lanzar', () => {
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
-    }
-    const { wrapper } = setup()
+  it('ignora un mensaje que no es JSON valido, sin lanzar', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
 
-    renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
-    sockets[0]!.open()
+    renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), { wrapper })
+    const socket = await socketNumber(sockets, 1)
+
+    authenticate(socket)
 
     expect(() => {
-      sockets[0]!.dispatchEvent(new MessageEvent('message', { data: 'no-es-json' }))
+      socket.dispatchEvent(new MessageEvent('message', { data: 'no-es-json' }))
     }).not.toThrow()
   })
 
-  it('reconecta con backoff acotado tras un cierre inesperado, sin bucle agresivo', () => {
-    vi.useFakeTimers()
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
-    }
-    const { wrapper } = setup()
+  it('reconecta con backoff acotado y un ticket NUEVO cada vez (un ticket es de un solo uso)', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
 
-    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
-    expect(sockets).toHaveLength(1)
-
-    act(() => {
-      sockets[0]!.open()
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), {
+      wrapper,
     })
+    const first = await socketNumber(sockets, 1)
+
+    authenticate(first)
     expect(result.current.connection).toBe('open')
 
+    vi.useFakeTimers()
     act(() => {
-      sockets[0]!.close()
+      first.close()
     })
     expect(result.current.connection).toBe('reconnecting')
-    // Todavia no paso el primer retraso: no debe haber intentado un segundo socket.
-    expect(sockets).toHaveLength(1)
+    // Todavia no paso el primer retraso: no debe haber intentado un segundo ticket.
+    expect(tickets).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    vi.useRealTimers()
+
+    const second = await socketNumber(sockets, 2)
 
     act(() => {
-      vi.advanceTimersByTime(1_000)
+      second.open()
     })
-    expect(sockets).toHaveLength(2)
+
+    expect(tickets).toHaveBeenCalledTimes(2)
+    expect(second.sent[0]).toBe(JSON.stringify({ type: 'auth', ticket: 'ticket-2' }))
   })
 
-  it('limpia la conexion al desmontar: cierra el socket y cancela la reconexion pendiente', () => {
-    vi.useFakeTimers()
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
+  it('tres rechazos 4401 consecutivos detienen los intentos (failed) en lugar de reintentar sin fin', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
+
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), {
+      wrapper,
+    })
+
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const socket = await socketNumber(sockets, attempt)
+
+      act(() => {
+        socket.open()
+        socket.remoteClose(4401)
+      })
+
+      if (attempt < 3) {
+        await waitFor(
+          () => {
+            expect(sockets).toHaveLength(attempt + 1)
+          },
+          { timeout: 5_000 },
+        )
+      }
     }
-    const { wrapper } = setup()
 
-    const { unmount } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
-    sockets[0]!.open()
+    expect(result.current.connection).toBe('failed')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(sockets).toHaveLength(3)
+  }, 15_000)
 
+  it('un 401 al pedir el ticket (sesion vencida) deshabilita la conexion, sin socket', async () => {
+    const { wrapper, sockets, factory } = setup()
+    const tickets = vi.fn<TicketProvider>(() =>
+      Promise.reject(new HttpError(401, 'Sesion vencida', null)),
+    )
+
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), {
+      wrapper,
+    })
+
+    await waitFor(() => {
+      expect(result.current.connection).toBe('disabled')
+    })
+    expect(sockets).toHaveLength(0)
+  })
+
+  it('limpia la conexion al desmontar: cierra el socket y cancela la reconexion pendiente', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
+
+    const { unmount } = renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), {
+      wrapper,
+    })
+    const socket = await socketNumber(sockets, 1)
+
+    authenticate(socket)
     unmount()
 
-    expect(sockets[0]!.closed).toBe(true)
+    expect(socket.closed).toBe(true)
 
-    // El `close` disparado arriba en principio programaria una reconexion;
-    // tras desmontar, avanzar el reloj NO debe abrir un segundo socket.
-    vi.advanceTimersByTime(15_000)
+    // Tras desmontar, ninguna reconexion pendiente debe abrir otro socket.
+    await new Promise((resolve) => setTimeout(resolve, 60))
     expect(sockets).toHaveLength(1)
+    expect(tickets).toHaveBeenCalledTimes(1)
   })
 
   it('no conecta cuando no hay sala vigilada (roomId null)', () => {
-    const factory = vi.fn()
-    const { wrapper } = setup()
+    const { wrapper, factory, tickets } = setup()
 
-    const { result } = renderHook(() => useBattleRoomRealtime(null, factory), { wrapper })
+    const { result } = renderHook(() => useBattleRoomRealtime(null, factory, tickets), { wrapper })
 
-    expect(factory).not.toHaveBeenCalled()
+    expect(tickets).not.toHaveBeenCalled()
     expect(result.current.connection).toBe('disabled')
   })
 
-  it('no conecta sin testimonio vigente', () => {
+  it('no conecta sin testimonio vigente: ni pide ticket ni abre socket', () => {
     useSession.setState({ subject: null, accessToken: null, expiresAt: null })
-    const factory = vi.fn()
-    const { wrapper } = setup()
+    const { wrapper, factory, tickets } = setup()
 
-    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), {
+      wrapper,
+    })
 
-    expect(factory).not.toHaveBeenCalled()
+    expect(tickets).not.toHaveBeenCalled()
     expect(result.current.connection).toBe('disabled')
   })
 
-  it('expone el status del ultimo battle-room.updated de la sala vigilada (HU-15.3: distinguir cancelada de llena)', () => {
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
-    }
-    const { wrapper } = setup()
+  it('expone el status del ultimo battle-room.updated de la sala vigilada (HU-15.3: distinguir cancelada de llena)', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
 
-    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), {
+      wrapper,
+    })
     expect(result.current.lastRoomStatus).toBeNull()
+    const socket = await socketNumber(sockets, 1)
 
+    authenticate(socket)
     act(() => {
-      sockets[0]!.open()
-      sockets[0]!.message({
+      socket.message({
         type: 'battle-room.updated',
         roomId: 'room-1',
         status: 'CANCELLED',
@@ -239,20 +327,17 @@ describe('useBattleRoomRealtime', () => {
     expect(result.current.lastRoomStatus).toBe('CANCELLED')
   })
 
-  it('IGNORA para lastRoomStatus un battle-room.updated de otra sala', () => {
-    const sockets: FakeSocket[] = []
-    const factory: SocketFactory = (url) => {
-      const socket = new FakeSocket(url)
-      sockets.push(socket)
-      return socket as unknown as WebSocket
-    }
-    const { wrapper } = setup()
+  it('IGNORA para lastRoomStatus un battle-room.updated de otra sala', async () => {
+    const { wrapper, sockets, factory, tickets } = setup()
 
-    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory), { wrapper })
+    const { result } = renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), {
+      wrapper,
+    })
+    const socket = await socketNumber(sockets, 1)
 
+    authenticate(socket)
     act(() => {
-      sockets[0]!.open()
-      sockets[0]!.message({ type: 'battle-room.updated', roomId: 'otra-sala', status: 'CANCELLED' })
+      socket.message({ type: 'battle-room.updated', roomId: 'otra-sala', status: 'CANCELLED' })
     })
 
     expect(result.current.lastRoomStatus).toBeNull()
