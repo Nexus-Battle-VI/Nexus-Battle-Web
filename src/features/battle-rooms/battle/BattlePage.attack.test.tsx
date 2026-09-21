@@ -139,7 +139,7 @@ const anaGolpea = (commandId: string): Record<string, unknown> =>
   })
 
 const resultado = (): HTMLElement =>
-  screen.getByRole('status', { name: 'Resultado del último ataque' })
+  screen.getByRole('status', { name: 'Resultado de la última acción' })
 
 beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn())

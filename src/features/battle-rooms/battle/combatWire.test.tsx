@@ -353,7 +353,7 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
     expect(screen.getByText('38 / 44')).toBeInTheDocument()
     expect(screen.getByText('44 / 44')).toBeInTheDocument()
 
-    const resultado = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const resultado = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
     expect(resultado).toHaveTextContent('sin efecto')
     expect(resultado).toHaveTextContent('El Ataque (11) no superó la Defensa (11)')
@@ -367,7 +367,7 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
     expect(await screen.findByText('Tu turno')).toBeInTheDocument()
     expect(screen.getByText('38 / 44')).toBeInTheDocument()
 
-    const resultado = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const resultado = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
     expect(resultado).toHaveTextContent('sin efecto')
 
@@ -386,10 +386,10 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
     await replay('sujeto-a', hastaElCritico)
 
     expect(await screen.findByText('38 / 44')).toBeInTheDocument()
-    expect(screen.getByRole('status', { name: 'Resultado del último ataque' })).toHaveTextContent(
+    expect(screen.getByRole('status', { name: 'Resultado de la última acción' })).toHaveTextContent(
       'Golpe crítico (137 %)',
     )
-    expect(screen.getByRole('status', { name: 'Resultado del último ataque' })).toHaveTextContent(
+    expect(screen.getByRole('status', { name: 'Resultado de la última acción' })).toHaveTextContent(
       'Vida de nombre-de-sujeto-b: 44 → 38',
     )
   })

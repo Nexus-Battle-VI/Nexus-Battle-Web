@@ -197,3 +197,127 @@ describe('la arena no reordena ni saca del flujo los bloques (HU-18)', () => {
     }
   })
 })
+
+/**
+ * HU-19: Combat decide si una habilidad se puede pagar, cuanto Poder queda, cuando termina la
+ * recarga, el resultado, el dano, la Vida y el turno (y degrada a ataque basico si el Poder no
+ * alcanza, HU-11). Web solo envia la intencion (cual habilidad y contra quien) y pinta lo que llega.
+ * Estas guardas recorren el codigo de PRODUCCION de las habilidades y fallan si aparece un calculo
+ * de Poder, costo o recarga en el cliente.
+ */
+describe('las habilidades no se deciden en Web (HU-19)', () => {
+  const SKILL_FILES = ['SkillList.tsx', 'skillIntent.ts', 'skillPresentation.ts']
+
+  const sources = (files: readonly string[]) =>
+    productionSources().filter((source) => files.includes(source.file))
+
+  const only = (file: string): string => {
+    const found = productionSources().find((source) => source.file === file)
+
+    if (found === undefined) {
+      throw new Error(`no se encontro ${file}`)
+    }
+
+    return found.code
+  }
+
+  it('recorre los archivos nuevos de HU-19', () => {
+    expect(productionSources().map((source) => source.file)).toEqual(
+      expect.arrayContaining(SKILL_FILES),
+    )
+  })
+
+  it.each([
+    [
+      'aritmetica sobre costo o recarga (el cliente no descuenta Poder ni cuenta turnos)',
+      /\b(powerCost|amount|cooldownRemaining|remainingTurns|chargeTurns)\b\s*[-+*/](?!=)/u,
+    ],
+    [
+      'aritmetica con costo o recarga a la derecha de un operador',
+      /[-+*/]\s*\b(powerCost|amount|cooldownRemaining|remainingTurns|chargeTurns)\b/u,
+    ],
+    [
+      'aritmetica sobre el Poder (`power.current`, `.before`, `.after`, `.max`)',
+      /\bpower\b\.(current|before|after|max)\s*[-+*/](?!=)|[-+*/]\s*\bpower\b\.(current|before|after|max)/u,
+    ],
+    [
+      'comparar el Poder con el costo (decidir si alcanza es de Combat)',
+      /\b(current|before|after|max)\b\s*[<>]=?\s*[\w.]*\b(amount|powerCost)\b|\b(amount|powerCost)\b\s*[<>]=?\s*[\w.]*\b(current|before|after|max)\b/u,
+    ],
+    [
+      'asignar el estado de una habilidad (READY / RECHARGING / UNSUPPORTED los decide Combat)',
+      /\bstatus\s*(:|=(?!=))\s*'(READY|RECHARGING|UNSUPPORTED)'/u,
+    ],
+    [
+      'Math.* sobre habilidades (no hay redondeo ni acotacion)',
+      /Math\.(floor|ceil|round|trunc|min|max)\(/u,
+    ],
+  ])('no hay %s', (_name, pattern) => {
+    for (const { file, code } of sources(SKILL_FILES)) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('el Poder NO decide la disponibilidad: `skillAvailability` no lo menciona (HU-11 lo degrada en Combat)', () => {
+    const code = only('skillPresentation.ts')
+    const start = code.indexOf('export const skillAvailability')
+    const end = code.indexOf('export const describeSkillRejection')
+
+    expect(start).toBeGreaterThan(-1)
+    expect(end).toBeGreaterThan(start)
+    expect(code.slice(start, end)).not.toMatch(/\b(power|current|max|amount|cost)\b/iu)
+  })
+
+  it('la intencion de habilidad solo lleva cual habilidad y contra quien: no conoce costo, Poder ni dano', () => {
+    expect(only('skillIntent.ts')).not.toMatch(/power|poder|cost|damage|dano|cooldown|health/iu)
+  })
+
+  it('el boton usa `aria-disabled` y solo envia si esta habilitado; no hay `disabled` nativo', () => {
+    const list = only('SkillList.tsx')
+
+    expect(list).toMatch(/aria-disabled=\{!availability\.enabled\}/u)
+    expect(list).toMatch(/if \(availability\.enabled\)/u)
+    expect(list).not.toMatch(/\sdisabled=/u)
+  })
+
+  it('el rechazo se muestra con texto propio por codigo, nunca el del servidor tal cual', () => {
+    const list = only('SkillList.tsx')
+
+    expect(list).toMatch(/describeSkillRejection\(skill\.rejection\)/u)
+    expect(list).not.toMatch(/\{\s*skill\.rejection\s*\}/u)
+  })
+
+  it('el hook envia el comando de habilidad con una lista blanca de claves: type, commandId, roomId, abilityId y target', () => {
+    const hook = only('useBattleRealtime.ts')
+    const start = hook.indexOf('const sendSkill')
+    const end = hook.indexOf('const retrySkill')
+    const body = hook.slice(start, end)
+    const sent = /send\(\{([\s\S]*?)\}\)/u.exec(body)?.[1] ?? ''
+
+    expect(start).toBeGreaterThan(-1)
+    expect(end).toBeGreaterThan(start)
+    expect(
+      sent
+        .split(',')
+        .map((entry) => entry.split(':')[0]?.trim() ?? '')
+        .filter((key) => key !== '')
+        .sort(),
+    ).toEqual(['abilityId', 'commandId', 'roomId', 'target', 'type'])
+  })
+
+  it('las habilidades no reordenan ni sacan del flujo sus bloques (mismo criterio que la arena)', () => {
+    for (const pattern of [
+      /(^|[\s"'`:])-?order-(first|last|none|\d+|\[)/u,
+      /(row|col)-reverse/u,
+      /(^|[\s"'`:])(absolute|fixed)(?=[\s"'`])/u,
+    ]) {
+      const { file, code } = { file: 'SkillList.tsx', code: only('SkillList.tsx') }
+
+      expect({ file, pattern: String(pattern), found: pattern.test(code) }).toEqual({
+        file,
+        pattern: String(pattern),
+        found: false,
+      })
+    }
+  })
+})

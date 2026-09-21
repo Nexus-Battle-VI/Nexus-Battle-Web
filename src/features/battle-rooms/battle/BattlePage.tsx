@@ -100,11 +100,16 @@ export const BattlePage = ({
         connection={realtime.connection}
         synced={realtime.synced}
         lastAttack={realtime.lastAttack}
+        lastSkill={realtime.lastSkill}
         combat={{
           attack: realtime.attack,
           onAttack: realtime.sendAttack,
           onRetry: realtime.retryAttack,
           onDismissRejection: realtime.dismissAttackRejection,
+          skill: realtime.skill,
+          onUseSkill: realtime.sendSkill,
+          onRetrySkill: realtime.retrySkill,
+          onDismissSkillRejection: realtime.dismissSkillRejection,
         }}
       />
     )

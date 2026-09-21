@@ -31,6 +31,7 @@ describe('battleReducer — el cliente solo aplica lo que el servidor publica, e
       synced: false,
       needsResync: false,
       lastAttack: null,
+      lastSkill: null,
     })
   })
 

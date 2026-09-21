@@ -4,15 +4,15 @@ import type { RealtimeConnectionState } from '../realtime'
 
 import { AttackPanel, type CombatControls } from './AttackPanel'
 import { ArenaSide } from './BattleArena'
-import type { LastAttack } from './battleReducer'
+import type { LastAttack, LastSkill } from './battleReducer'
 import {
   combatantHealth,
-  describeLastAttack,
   describeTurn,
   findSelf,
   groupCombatants,
   hasCombatState,
 } from './presentation'
+import { describeLatestAction } from './skillPresentation'
 import { TurnOrderStrip } from './TurnOrderStrip'
 import type { BattleView, HealthView, TurnOrderEntry } from './types'
 
@@ -25,6 +25,8 @@ export interface BattleScreenProps {
   readonly synced: boolean
   /** El ultimo ataque basico que publico el servidor (HU-18); `null` si aun no hubo ninguno. */
   readonly lastAttack?: LastAttack | null
+  /** La ultima habilidad que publico el servidor (HU-19); `null` si aun no hubo ninguna. */
+  readonly lastSkill?: LastSkill | null
   /**
    * Acciones de combate (HU-18). Sin ellas la pantalla es de solo lectura: se ve la Vida y
    * el turno, pero no se ofrece ningun boton.
@@ -62,6 +64,7 @@ export const BattleScreen = ({
   connection,
   synced,
   lastAttack = null,
+  lastSkill = null,
   combat,
 }: BattleScreenProps): React.JSX.Element => {
   const turn = describeTurn(battle, subject)
@@ -75,7 +78,7 @@ export const BattleScreen = ({
   const withHealth = hasCombatState(battle)
   const healthOf = (entry: TurnOrderEntry): HealthView | null | undefined =>
     withHealth ? combatantHealth(battle, entry) : undefined
-  const feedback = lastAttack === null ? null : describeLastAttack(lastAttack, battle)
+  const feedback = describeLatestAction(lastAttack, lastSkill, battle)
   // Con 1 o 2 participantes por lado la arena ya cabe en horizontal desde `md` (tablet); con 3
   // hace falta `lg`. Depende solo de cuantos son, no de nombres ni de la modalidad.
   const horizontalFrom =
@@ -137,6 +140,7 @@ export const BattleScreen = ({
         )}
       >
         <ArenaSide
+          battle={battle}
           title="Rival"
           entries={opponents}
           isSelf={isSelf}
@@ -152,6 +156,7 @@ export const BattleScreen = ({
         </p>
 
         <ArenaSide
+          battle={battle}
           title={allies.length > 1 ? 'Tu equipo' : 'Tu héroe'}
           entries={allies}
           isSelf={isSelf}
@@ -165,7 +170,7 @@ export const BattleScreen = ({
       <div
         role="status"
         aria-live="polite"
-        aria-label="Resultado del último ataque"
+        aria-label="Resultado de la última acción"
         className={clsx(
           feedback === null
             ? '-mt-3 lg:-mt-4'
@@ -185,7 +190,7 @@ export const BattleScreen = ({
           aria-label="Acciones de combate"
           className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted"
         >
-          Las habilidades y la épica llegarán con las siguientes historias de Jugar Online.
+          Las acciones de combate no están disponibles en esta vista.
         </p>
       ) : (
         <AttackPanel

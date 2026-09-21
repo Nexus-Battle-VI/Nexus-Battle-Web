@@ -4,9 +4,11 @@ import clsx from 'clsx'
 import { heroIdFromSubtype } from '@/features/player-inventory/equipment/heroSubtype'
 import { Hero3D } from '@/shared/visual-library/heroes'
 
+import { PowerMeter } from '../PowerMeter'
 import { HealthBar } from './HealthBar'
 import { combatantName } from './presentation'
-import type { HealthView, TurnOrderEntry } from './types'
+import { combatantPower } from './skillPresentation'
+import type { BattleView, HealthView, PowerView, TurnOrderEntry } from './types'
 
 interface CombatantCardProps {
   readonly entry: TurnOrderEntry
@@ -14,6 +16,8 @@ interface CombatantCardProps {
   readonly isActive: boolean
   /** `undefined` si la batalla no trae Vida (iniciada antes de HU-18): no se pinta la barra. */
   readonly health: HealthView | null | undefined
+  /** HU-19: el medidor del heroe; `null` sin estado de habilidades (no se pinta ni se inventa). */
+  readonly power: PowerView | null
   /** Cuantos participantes hay en su lado: decide el tamano del heroe, sin casos por nombre. */
   readonly sideSize: number
 }
@@ -49,6 +53,7 @@ const CombatantCard = ({
   isSelf,
   isActive,
   health,
+  power,
   sideSize,
 }: CombatantCardProps): React.JSX.Element => {
   const modelId = entry.heroSubtype === null ? null : heroIdFromSubtype(entry.heroSubtype)
@@ -94,11 +99,18 @@ const CombatantCard = ({
           <HealthBar name={name} health={health} />
         </div>
       )}
+      {power !== null && (
+        <div className="w-full">
+          <PowerMeter power={power} heroName={name} />
+        </div>
+      )}
     </li>
   )
 }
 
 export interface ArenaSideProps {
+  /** La batalla: de ella salen el Poder de cada participante (HU-19), que Combat publica. */
+  readonly battle: BattleView
   /** Titulo corto del lado («Rival», «Tu héroe», «Tu equipo»). */
   readonly title: string
   readonly entries: readonly TurnOrderEntry[]
@@ -112,6 +124,7 @@ export interface ArenaSideProps {
  * no depende de nombres ni de casos por modalidad: solo de cuantos participantes trae.
  */
 export const ArenaSide = ({
+  battle,
   title,
   entries,
   isSelf,
@@ -142,6 +155,7 @@ export const ArenaSide = ({
             isSelf={isSelf(entry)}
             isActive={isCurrent(entry)}
             health={healthOf(entry)}
+            power={combatantPower(battle, entry)}
             sideSize={entries.length}
           />
         ))}
