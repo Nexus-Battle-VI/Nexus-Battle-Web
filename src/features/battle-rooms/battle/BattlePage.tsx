@@ -20,7 +20,7 @@ export interface BattlePageProps {
 const BackToRooms = (): React.JSX.Element => (
   <Link
     to="/play"
-    className="text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    className="inline-flex min-h-11 items-center text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
   >
     Volver a Jugar Online
   </Link>
@@ -126,6 +126,7 @@ export const BattlePage = ({
             </p>
             <Button
               variant="secondary"
+              className="min-h-11"
               onClick={() => {
                 start.reset()
               }}

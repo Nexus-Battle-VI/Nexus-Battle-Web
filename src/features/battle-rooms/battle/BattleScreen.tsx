@@ -47,12 +47,12 @@ const CombatantCard = ({ entry, isSelf, isActive }: CombatantCardProps): React.J
       <div className="flex flex-wrap items-center justify-center gap-2 text-center">
         <span className="truncate text-sm font-semibold text-ink">{name}</span>
         {isSelf && (
-          <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
+          <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-ink ring-1 ring-brand">
             Tú
           </span>
         )}
         {isActive && (
-          <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-ink">
+          <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-brand-ink">
             Turno actual
           </span>
         )}
@@ -168,7 +168,9 @@ export const BattleScreen = ({
                 {isSelf(entry) ? ' (tú)' : ''}
               </span>
               <span className="text-xs text-muted">Equipo {entry.teamLabel}</span>
-              {isCurrent(entry) && <span className="text-xs text-brand">Turno actual</span>}
+              {isCurrent(entry) && (
+                <span className="text-xs font-semibold text-ink">Turno actual</span>
+              )}
             </li>
           ))}
         </ol>
