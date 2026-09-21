@@ -30,6 +30,11 @@ const FORBIDDEN_MARKERS = [
   // `BattleScreen` en si es de produccion.
   '__dev/hu17',
   'BattleScreenDevPreview',
+  // Artefactos exclusivamente DEV de la vista previa del chat (HU-13): la ruta
+  // `__dev/hu13/chat`, su servidor falso y el ticket de ejemplo que le inyecta.
+  '__dev/hu13',
+  'ChatPanelDevPreview',
+  'ticket-de-vista-previa',
 ]
 
 /**

@@ -356,6 +356,8 @@ describe('Proteccion visual de rutas (HU-02)', () => {
       renderRoute('/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle')
 
       expect(await screen.findByLabelText('Batalla')).toHaveTextContent('Tu sesión expiró')
+      // HU-13: la ruta compone la batalla con el chat de su sala (`BattleWithChat`).
+      expect(screen.getByRole('heading', { name: 'Chat de la sala' })).toBeInTheDocument()
       expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
     } finally {
       vi.unstubAllGlobals()
