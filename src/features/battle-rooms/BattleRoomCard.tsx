@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Coins } from '@/components/ui/icons'
 
 import { modeLabel, occupancyOf, teamByLetter } from './presentation'
+import type { JoinBattleRoomFailure } from './presentation'
 import type { BattleRoom, TeamLetter } from './types'
 
 export interface BattleRoomCardProps {
@@ -19,8 +20,12 @@ export interface BattleRoomCardProps {
   readonly onJoin: (roomId: string, team: TeamLetter) => void
   /** Equipo con una solicitud de union en curso PARA ESTA sala, o `null` si ninguna. */
   readonly joiningTeam: TeamLetter | null
-  /** Mensaje humano del ultimo fallo de union a ESTA sala, o `null` si ninguno. */
-  readonly joinError: string | null
+  /**
+   * Fallo del ultimo intento de union a ESTA sala (HU-15.3 + HU-16.3,
+   * `joinBattleRoomFailure`), o `null` si ninguno. `action`, cuando existe,
+   * es siempre una ruta ya existente de la app (nunca una pantalla nueva).
+   */
+  readonly joinError: JoinBattleRoomFailure | null
 }
 
 /**
@@ -107,8 +112,16 @@ export const BattleRoomCard = ({
           <span>{room.reward.amount.toLocaleString('es-CO')}</span>
         </p>
         {joinError !== null && (
-          <p role="alert" className="text-xs text-danger">
-            {joinError}
+          <p
+            role="alert"
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-danger"
+          >
+            <span>{joinError.message}</span>
+            {joinError.action !== null && (
+              <Link to={joinError.action.to} className="font-medium underline hover:no-underline">
+                {joinError.action.label}
+              </Link>
+            )}
           </p>
         )}
       </div>

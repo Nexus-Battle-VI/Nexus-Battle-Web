@@ -4,6 +4,7 @@ import { HttpError } from '@/lib/http'
 import {
   describeBattleRoomFailure,
   describeJoinBattleRoomFailure,
+  joinBattleRoomFailure,
   modeLabel,
   occupancyOf,
   teamByLetter,
@@ -164,5 +165,136 @@ describe('describeJoinBattleRoomFailure', () => {
     expect(describeJoinBattleRoomFailure(new TypeError('Failed to fetch'))).toContain(
       'error inesperado',
     )
+  })
+})
+
+describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)', () => {
+  it('422 con code HERO_NOT_SELECTED da el mensaje de heroe faltante con accion a Mi Heroe', () => {
+    const failure = joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo', {
+        statusCode: 422,
+        message: 'texto crudo',
+        code: 'HERO_NOT_SELECTED',
+      }),
+    )
+
+    expect(failure.message).toContain('héroe')
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+  })
+
+  it('422 con blockers HERO_CLASS_NOT_ALLOWED_FOR_FORMAT explica la restriccion de clase/modalidad, sin action de inventario', () => {
+    const failure = joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo', {
+        statusCode: 422,
+        message: 'texto crudo',
+        blockers: [
+          {
+            code: 'HERO_CLASS_NOT_ALLOWED_FOR_FORMAT',
+            slot: null,
+            reference: 'CHAMAN',
+            detail: 'texto interno que no debe mostrarse',
+          },
+        ],
+      }),
+    )
+
+    expect(failure.message).toContain('1 contra 1')
+    expect(failure.message).not.toContain('texto interno')
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+  })
+
+  it.each(['EQUIPPED_PRODUCT_NOT_OWNED', 'EQUIPPED_PRODUCT_NOT_ACTIVE'])(
+    '422 con blocker %s ofrece revisar el inventario, sin filtrar el id interno del producto',
+    (code) => {
+      const productId = '8f14e45f-ceea-467e-b7a5-2c0e5f7c8b1a'
+      const failure = joinBattleRoomFailure(
+        new HttpError(422, 'texto crudo', {
+          statusCode: 422,
+          message: 'texto crudo',
+          blockers: [{ code, slot: 'WEAPON_1', reference: productId, detail: `id ${productId}` }],
+        }),
+      )
+
+      expect(failure.message).toContain('equipamiento')
+      expect(failure.message).not.toContain(productId)
+      expect(failure.action).toEqual({ label: 'Revisar inventario', to: '/inventory' })
+    },
+  )
+
+  it('422 con blocker HERO_NOT_ACTIVE indica que el heroe ya no esta disponible', () => {
+    const failure = joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo', {
+        statusCode: 422,
+        message: 'texto crudo',
+        blockers: [{ code: 'HERO_NOT_ACTIVE', slot: null, reference: 'hero-1', detail: 'interno' }],
+      }),
+    )
+
+    expect(failure.message).toContain('no está disponible')
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+  })
+
+  it('prioriza HERO_CLASS_NOT_ALLOWED_FOR_FORMAT cuando concurre con un blocker de equipamiento', () => {
+    const failure = joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo', {
+        statusCode: 422,
+        message: 'texto crudo',
+        blockers: [
+          { code: 'EQUIPPED_PRODUCT_NOT_OWNED', slot: 'WEAPON_1', reference: 'p1', detail: 'x' },
+          {
+            code: 'HERO_CLASS_NOT_ALLOWED_FOR_FORMAT',
+            slot: null,
+            reference: 'CHAMAN',
+            detail: 'x',
+          },
+        ],
+      }),
+    )
+
+    expect(failure.message).toContain('1 contra 1')
+  })
+
+  it('un codigo de blocker desconocido cae al fallback seguro, sin exponer detalle tecnico ni accion inventada', () => {
+    const failure = joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo', {
+        statusCode: 422,
+        message: 'texto crudo',
+        blockers: [
+          {
+            code: 'UN_CODIGO_QUE_TODAVIA_NO_EXISTE',
+            slot: null,
+            reference: 'x',
+            detail: 'detalle interno',
+          },
+        ],
+      }),
+    )
+
+    expect(failure.message).not.toContain('detalle interno')
+    expect(failure.action).toBeNull()
+  })
+
+  it('NUNCA inventa nivel, nivel minimo ni mision activa: un blocker desconocido no produce ese vocabulario', () => {
+    const failure = joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo', {
+        statusCode: 422,
+        message: 'texto crudo',
+        blockers: [{ code: 'ALGO_NUEVO', slot: null, reference: 'x', detail: 'y' }],
+      }),
+    )
+
+    expect(failure.message.toLowerCase()).not.toContain('nivel')
+    expect(failure.message.toLowerCase()).not.toContain('misión')
+    expect(failure.message.toLowerCase()).not.toContain('mision')
+  })
+
+  it('describeJoinBattleRoomFailure sigue devolviendo solo el mensaje (compatibilidad)', () => {
+    const error = new HttpError(422, 'texto crudo', {
+      statusCode: 422,
+      message: 'texto crudo',
+      code: 'HERO_NOT_SELECTED',
+    })
+
+    expect(describeJoinBattleRoomFailure(error)).toBe(joinBattleRoomFailure(error).message)
   })
 })
