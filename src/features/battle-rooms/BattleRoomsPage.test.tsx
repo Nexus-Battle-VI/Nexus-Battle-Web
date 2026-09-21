@@ -7,6 +7,20 @@ import { useSession } from '@/shared/session'
 import { BattleRoomsPage } from './BattleRoomsPage'
 import type { BattleRoom } from './types'
 
+/**
+ * HU-13: la pantalla incluye el chat del lobby. Aqui se sustituye por un doble:
+ * estas pruebas tienen una sesion con testimonio y el panel real abriria un
+ * WebSocket de verdad contra un servidor que no existe. El panel, su sesion y
+ * su protocolo tienen su propia cobertura en `features/chat`.
+ */
+vi.mock('@/features/chat/ChatPanel', () => ({
+  ChatPanel: (props: { channel: unknown; title: string }): React.JSX.Element => (
+    <div data-testid="chat-panel" data-channel={JSON.stringify(props.channel)}>
+      {props.title}
+    </div>
+  ),
+}))
+
 const jsonResponse = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), {
     status,
@@ -41,6 +55,19 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   useSession.setState({ subject: null, accessToken: null, expiresAt: null })
+})
+
+describe('BattleRoomsPage — chat del lobby (HU-13)', () => {
+  it('incluye el chat del lobby: un canal global, no el de una sala', () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [])))
+
+    renderWithProviders(<BattleRoomsPage />)
+
+    const chat = screen.getByTestId('chat-panel')
+
+    expect(chat).toHaveTextContent('Chat del lobby')
+    expect(chat).toHaveAttribute('data-channel', JSON.stringify({ kind: 'lobby' }))
+  })
 })
 
 describe('BattleRoomsPage — consulta (GET)', () => {

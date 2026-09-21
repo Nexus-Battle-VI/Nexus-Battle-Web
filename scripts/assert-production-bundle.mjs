@@ -25,6 +25,11 @@ const FORBIDDEN_MARKERS = [
   // llegar cuando una pantalla lo monte.
   '__dev/hu11',
   'PowerMeterDevPreview',
+  // Artefactos exclusivamente DEV de la vista previa del chat (HU-13): la ruta
+  // `__dev/hu13/chat`, su servidor falso y la sesion que falsea.
+  '__dev/hu13',
+  'ChatPanelDevPreview',
+  'token-de-vista-previa',
 ]
 
 /**

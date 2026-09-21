@@ -75,6 +75,11 @@ if (import.meta.env.DEV) {
       default: module.PowerMeterDevPreview,
     })),
   )
+  const ChatPanelDevPreviewLazy = lazy(() =>
+    import('@/features/chat/dev/ChatPanelDevPreview').then((module) => ({
+      default: module.ChatPanelDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -190,6 +195,18 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <PowerMeterDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-13: el chat real necesita una sesion de Cognito y a Combat respondiendo
+    // por WebSocket. El preview monta el componente de produccion contra un
+    // servidor FALSO que habla el protocolo del contrato y falsea una sesion
+    // mientras esta montado. No prueba el servidor.
+    {
+      path: '__dev/hu13/chat',
+      element: (
+        <Suspense fallback={null}>
+          <ChatPanelDevPreviewLazy />
         </Suspense>
       ),
     },

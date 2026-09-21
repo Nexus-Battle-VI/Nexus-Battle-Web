@@ -1,4 +1,6 @@
 import { Swords } from '@/components/ui/icons'
+import { ChatPanel } from '@/features/chat/ChatPanel'
+import { LOBBY_CHANNEL } from '@/features/chat/protocol'
 
 import { AvailableBattleRoomsPanel } from './AvailableBattleRoomsPanel'
 import { CreateBattleRoomPanel } from './CreateBattleRoomPanel'
@@ -11,6 +13,9 @@ import { CreateBattleRoomPanel } from './CreateBattleRoomPanel'
  *
  * `lg:items-start` evita que el grid estire el panel de creacion (mas corto)
  * hasta la altura del listado; cada panel controla su propio alto.
+ *
+ * HU-13: debajo, el chat del lobby (la "vista general" de Jugar Online, seccion
+ * 7.6 del documento oficial), para organizar partidas.
  */
 export const BattleRoomsPage = (): React.JSX.Element => (
   <section aria-label="Jugar Online" className="flex flex-col gap-6">
@@ -33,5 +38,11 @@ export const BattleRoomsPage = (): React.JSX.Element => (
       <CreateBattleRoomPanel />
       <AvailableBattleRoomsPanel />
     </div>
+
+    <ChatPanel
+      channel={LOBBY_CHANNEL}
+      title="Chat del lobby"
+      description="Organiza partidas con otros jugadores."
+    />
   </section>
 )

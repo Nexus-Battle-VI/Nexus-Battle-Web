@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { Coins } from '@/components/ui/icons'
+import { ChatPanel } from '@/features/chat/ChatPanel'
 import { useSession } from '@/shared/session'
 
 import { useBattleRooms, useCancelBattleRoom, useLeaveBattleRoom } from './hooks'
@@ -156,7 +157,20 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     }
 
     if (realtime.lastRoomStatus === 'PREPARING') {
-      return <p className="text-sm text-muted">La sala se llenó y ya está lista para comenzar.</p>
+      // HU-13: el chat de la sala sigue abierto en PREPARING. Combat es quien decide
+      // si esta persona es participante: si no lo es, el panel lo explica.
+      return (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted">La sala se llenó y ya está lista para comenzar.</p>
+          {roomId !== null && subject !== null && (
+            <ChatPanel
+              channel={{ kind: 'room', roomId }}
+              title="Chat de la sala"
+              description="Solo lo ven los participantes de esta sala."
+            />
+          )}
+        </div>
+      )
     }
 
     return <p className="text-sm text-muted">Esta sala ya no está disponible.</p>
@@ -262,6 +276,14 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
           )}
         </div>
       </Card>
+
+      {isParticipant && (
+        <ChatPanel
+          channel={{ kind: 'room', roomId: room.id }}
+          title="Chat de la sala"
+          description="Solo lo ven los participantes de esta sala."
+        />
+      )}
     </section>
   )
 }
