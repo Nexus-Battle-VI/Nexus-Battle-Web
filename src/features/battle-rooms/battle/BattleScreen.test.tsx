@@ -110,12 +110,12 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
     expect(container.textContent).not.toContain('heroe-')
   })
 
-  it('no ofrece botones de accion: ataque, habilidad y epica llegan con HU-18/HU-19', () => {
+  it('sin controles de combate la pantalla es de solo lectura: ningun boton de accion', () => {
     pintar({ subject: BRUNO })
 
     expect(screen.queryAllByRole('button')).toHaveLength(0)
     expect(screen.getByLabelText('Acciones de combate')).toHaveTextContent(
-      'llegarán con las siguientes historias',
+      'no están disponibles en esta vista',
     )
   })
 
@@ -299,7 +299,7 @@ describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones',
   it('el resultado del ultimo ataque va en una region viva con nombre, SIEMPRE presente', () => {
     pintar()
 
-    const region = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const region = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
     expect(region).toHaveAttribute('aria-live', 'polite')
     expect(region).toBeEmptyDOMElement()
@@ -308,7 +308,7 @@ describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones',
   it('golpe efectivo: describe el efecto, el porcentaje, el dano y la Vida con los datos del servidor', () => {
     pintar({ battle: combatBattle(1), lastAttack: lastAttack() })
 
-    const region = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const region = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
     expect(region).toHaveTextContent('Bruno atacó a Ana: Golpe crítico (137 %)')
     expect(region).toHaveTextContent('El Ataque (14) superó la Defensa (11)')
@@ -319,7 +319,7 @@ describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones',
   it('golpe que no supera la Defensa: «sin efecto» con los dos valores comparados', () => {
     pintar({ battle: combatBattle(1), lastAttack: lastAttack(MISS, 44, 44) })
 
-    const region = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const region = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
     expect(region).toHaveTextContent('sin efecto')
     expect(region).toHaveTextContent('El Ataque (11) no superó la Defensa (11)')
@@ -327,12 +327,12 @@ describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones',
 
   it('ambos jugadores ven el mismo resultado (lo pinta cualquier perspectiva)', () => {
     const { unmount } = pintar({ battle: combatBattle(1), subject: ANA, lastAttack: lastAttack() })
-    const ana = screen.getByRole('status', { name: 'Resultado del último ataque' }).textContent
+    const ana = screen.getByRole('status', { name: 'Resultado de la última acción' }).textContent
 
     unmount()
     pintar({ battle: combatBattle(1), subject: BRUNO, lastAttack: lastAttack() })
 
-    expect(screen.getByRole('status', { name: 'Resultado del último ataque' }).textContent).toBe(
+    expect(screen.getByRole('status', { name: 'Resultado de la última acción' }).textContent).toBe(
       ana,
     )
   })
@@ -384,7 +384,7 @@ describe('BattleScreen — arena: una sola pantalla para 1v1, 2v2 y 3v3, con el 
     const estado = screen.getByRole('status', { name: '' })
     const rival = screen.getByRole('heading', { name: 'Rival' })
     const propio = screen.getByRole('heading', { name: 'Tu héroe' })
-    const resultado = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const resultado = screen.getByRole('status', { name: 'Resultado de la última acción' })
     const acciones = screen.getByRole('heading', { name: 'Acciones de combate' })
     const turnos = screen.getByRole('heading', { name: 'Turnos' })
     const enOrden = [estado, rival, propio, resultado, acciones, turnos]
@@ -486,7 +486,7 @@ describe('BattleScreen — arena: una sola pantalla para 1v1, 2v2 y 3v3, con el 
     pintar({ combat: controles() })
 
     expect(
-      screen.getByRole('status', { name: 'Resultado del último ataque' }),
+      screen.getByRole('status', { name: 'Resultado de la última acción' }),
     ).toBeEmptyDOMElement()
   })
 

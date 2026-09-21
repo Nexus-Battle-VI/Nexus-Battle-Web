@@ -85,7 +85,7 @@ describe('BattleScreenDevPreview — HU-18: monta los componentes y reductores r
 
     await userEvent.click(screen.getByRole('button', { name: /Responde: golpe crítico/u }))
 
-    const resultado = screen.getByRole('status', { name: 'Resultado del último ataque' })
+    const resultado = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
     expect(resultado).toHaveTextContent('Ana atacó a Bruno: Golpe crítico (137 %)')
     expect(resultado).toHaveTextContent('Vida de Bruno: 44 → 38')
@@ -102,7 +102,7 @@ describe('BattleScreenDevPreview — HU-18: monta los componentes y reductores r
     await userEvent.click(screen.getByRole('button', { name: 'Ataque básico' }))
     await userEvent.click(screen.getByRole('button', { name: /Responde: sin efecto/u }))
 
-    expect(screen.getByRole('status', { name: 'Resultado del último ataque' })).toHaveTextContent(
+    expect(screen.getByRole('status', { name: 'Resultado de la última acción' })).toHaveTextContent(
       'sin efecto',
     )
     expect(screen.getAllByText('44 / 44')).toHaveLength(2)

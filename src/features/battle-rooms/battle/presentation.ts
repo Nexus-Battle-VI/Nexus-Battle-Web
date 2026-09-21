@@ -163,7 +163,7 @@ export const attackableTargets = (
     hasHealth(combatantHealth(battle, entry)),
   )
 
-const EFFECT_LABELS: Readonly<Record<RandomEffect, string>> = {
+export const EFFECT_LABELS: Readonly<Record<RandomEffect, string>> = {
   DAMAGE: 'Daño normal',
   CRITICAL_DAMAGE: 'Golpe crítico',
   EVADE: 'Evasión',
@@ -297,7 +297,7 @@ export const attackAvailability = ({
   }
 
   if (pending) {
-    return { visible: true, enabled: false, hint: 'Esperando el resultado de tu ataque…' }
+    return { visible: true, enabled: false, hint: 'Esperando el resultado de tu acción…' }
   }
 
   if (attackableTargets(battle, subject).length === 0) {

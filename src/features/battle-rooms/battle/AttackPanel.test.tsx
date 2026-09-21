@@ -90,7 +90,7 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
     await userEvent.click(boton())
 
     expect(combat.onAttack).not.toHaveBeenCalled()
-    expect(screen.getByText('Esperando el resultado de tu ataque…')).toBeInTheDocument()
+    expect(screen.getByText('Esperando el resultado de tu acción…')).toBeInTheDocument()
   })
 
   it('el boton pendiente conserva el foco (aria-disabled, no disabled)', () => {
@@ -322,10 +322,12 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
     })
   })
 
-  it('las habilidades y la epica siguen fuera de alcance (no hay botones de ellas)', () => {
+  it('sin controles de habilidad y con la epica bloqueada (HU-31): no hay botones de ellas', () => {
     pintar()
 
     expect(screen.queryByRole('button', { name: /habilidad|épica/iu })).not.toBeInTheDocument()
-    expect(screen.getByText(/llegarán con las siguientes historias/u)).toBeInTheDocument()
+    expect(
+      screen.getByText(/La habilidad épica llegará cuando el juego defina/u),
+    ).toBeInTheDocument()
   })
 })

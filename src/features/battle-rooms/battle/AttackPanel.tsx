@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/Button'
 import type { RealtimeConnectionState } from '../realtime'
 
 import type { AttackIntentState } from './attackIntent'
+import { SkillList } from './SkillList'
+import { initialSkillIntentState, type SkillIntentState } from './skillIntent'
+import { skillsVisible } from './skillPresentation'
 import {
   attackableTargets,
   attackAvailability,
@@ -22,6 +25,16 @@ export interface CombatControls {
   /** Reenvia la intencion pendiente con el MISMO `commandId`. */
   readonly onRetry: () => void
   readonly onDismissRejection: () => void
+  /**
+   * HU-19 (opcional): la habilidad en curso y sus acciones. Sin `onUseSkill` no se ofrece ninguna
+   * habilidad y la pantalla se comporta como en HU-18.
+   */
+  readonly skill?: SkillIntentState
+  /** Envia `useSkill` con la habilidad y UN objetivo. */
+  readonly onUseSkill?: (abilityId: string, target: TargetRef) => void
+  /** Reenvia la habilidad pendiente con el MISMO `commandId`. */
+  readonly onRetrySkill?: () => void
+  readonly onDismissSkillRejection?: () => void
 }
 
 export interface AttackPanelProps {
@@ -33,6 +46,8 @@ export interface AttackPanelProps {
 }
 
 const keyOf = (ref: TargetRef): string => `${ref.teamLabel}#${String(ref.seat)}`
+
+const noop = (): void => undefined
 
 /**
  * Acciones de combate (HU-18): elegir UN objetivo y pulsar «Ataque básico».
@@ -57,7 +72,9 @@ export const AttackPanel = ({
   const hintId = useId()
   const [chosen, setChosen] = useState<string | null>(null)
   const { attack } = combat
-  const pending = attack.intent !== null
+  const attackPending = attack.intent !== null
+  // Una sola accion por turno: mientras una habilidad espera su resultado tampoco se ataca.
+  const pending = attackPending || (combat.skill?.intent ?? null) !== null
   const ready = connection === 'open' && synced
 
   const targets = attackableTargets(battle, subject)
@@ -98,8 +115,8 @@ export const AttackPanel = ({
       </h2>
 
       {/*
-       * La accion principal va primero y las demas (habilidades y epica, HU-19) podran
-       * sumarse como hermanas de este bloque sin tocar el resto. Hoy no hay botones falsos.
+       * La accion principal va primero; las habilidades (HU-19) son hermanas de este bloque y
+       * comparten el objetivo elegido. La epica no tiene boton: no existe una epica activa real.
        */}
       {availability.visible && (
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-6">
@@ -148,15 +165,32 @@ export const AttackPanel = ({
 
           <Button
             aria-disabled={!availability.enabled}
-            aria-busy={pending}
+            aria-busy={attackPending}
             aria-describedby={availability.hint === null ? undefined : hintId}
             className="min-h-12 w-full px-8 text-base font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50 md:w-auto md:min-w-52"
             onClick={submit}
           >
-            {pending ? 'Atacando…' : 'Ataque básico'}
+            {attackPending ? 'Atacando…' : 'Ataque básico'}
           </Button>
         </div>
       )}
+
+      {availability.visible &&
+        combat.onUseSkill !== undefined &&
+        skillsVisible(battle, subject) && (
+          <SkillList
+            battle={battle}
+            subject={subject}
+            connection={connection}
+            synced={synced}
+            pending={pending}
+            target={selected}
+            skill={combat.skill ?? initialSkillIntentState}
+            onUse={combat.onUseSkill}
+            onRetry={combat.onRetrySkill ?? noop}
+            onDismissRejection={combat.onDismissSkillRejection ?? noop}
+          />
+        )}
 
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         {availability.hint !== null && (
@@ -165,7 +199,8 @@ export const AttackPanel = ({
           </p>
         )}
         <p className="text-xs text-muted">
-          Las habilidades y la épica llegarán con las siguientes historias de Jugar Online.
+          La habilidad épica llegará cuando el juego defina cómo se equipa; hoy no hay ninguna
+          disponible.
         </p>
       </div>
 

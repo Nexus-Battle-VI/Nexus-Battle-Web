@@ -1,4 +1,10 @@
-import type { BasicAttackResolution, BattleView, TargetRef, TurnOrderEntry } from './types'
+import type {
+  BasicAttackResolution,
+  BattleView,
+  SkillView,
+  TargetRef,
+  TurnOrderEntry,
+} from './types'
 
 /**
  * Fixtures de la batalla con la FORMA EXACTA del contrato v1 de Combat (vease
@@ -159,4 +165,152 @@ export const attackRejected = (code: string, commandId?: string): Record<string,
   command: 'attack',
   ...(commandId === undefined ? {} : { commandId }),
   code,
+})
+
+// ---------------------------------------------------------------------------------
+// HU-19: Poder, habilidades y recarga. Forma EXACTA del contrato
+// `docs/contracts/hu-19-skills-v1.md` (Nexus-Battle-Infrastructure).
+// ---------------------------------------------------------------------------------
+
+/** Una habilidad disponible que cuesta 2 de Poder (fija). */
+export const SHIELD_STRIKE: SkillView = {
+  abilityId: 'hab-golpe-con-escudo',
+  name: 'Golpe con escudo',
+  powerCost: { mode: 'FIXED', amount: 2 },
+  chargeTurns: 1,
+  cooldownRemaining: 0,
+  status: 'READY',
+}
+
+/** Una habilidad que Combat todavia no puede ejecutar (efecto no soportado). */
+export const STONE_HAND: SkillView = {
+  abilityId: 'hab-mano-de-piedra',
+  name: 'Mano de piedra',
+  powerCost: { mode: 'FIXED', amount: 4 },
+  chargeTurns: 1,
+  cooldownRemaining: 0,
+  status: 'UNSUPPORTED',
+}
+
+/** Una habilidad que gasta todo el Poder disponible. */
+export const ALL_IN: SkillView = {
+  abilityId: 'hab-descarga-total',
+  name: 'Descarga total',
+  powerCost: { mode: 'ALL_AVAILABLE' },
+  chargeTurns: 1,
+  cooldownRemaining: 0,
+  status: 'READY',
+}
+
+/** La misma habilidad ya usada: le falta 1 turno propio de recarga. */
+export const recharging = (skill: SkillView, remaining = 1): SkillView => ({
+  ...skill,
+  cooldownRemaining: remaining,
+  status: 'RECHARGING',
+})
+
+/** Poder `[actual, maximo]` y habilidades de un participante, o `null` sin perfil. */
+export interface SkillStateInput {
+  readonly power: readonly [number, number]
+  readonly skills: readonly SkillView[]
+}
+
+/** Estado de habilidades por posicion de la cola. */
+export type SkillStateByPosition = readonly (SkillStateInput | null)[]
+
+export const DEFAULT_SKILL_STATE: SkillStateInput = {
+  power: [10, 10],
+  skills: [SHIELD_STRIKE, STONE_HAND],
+}
+
+/** La misma vista con `power` y `skills` (HU-19) en cada participante, en el orden de la cola. */
+export const withSkills = (view: BattleView, states: SkillStateByPosition): BattleView => ({
+  ...view,
+  combatants: view.turnOrder.map((member, index) => {
+    const base = view.combatants?.find(
+      (combatant) => combatant.teamLabel === member.teamLabel && combatant.seat === member.seat,
+    ) ?? { teamLabel: member.teamLabel, seat: member.seat, health: null }
+    const state = states[index] ?? null
+
+    return state === null
+      ? { ...base, power: null, skills: [] }
+      : {
+          ...base,
+          power: { current: state.power[0], max: state.power[1] },
+          skills: state.skills,
+        }
+  }),
+})
+
+/** 1v1 con Vida, Poder y habilidades (Bruno es la posicion 0 y Ana la 1). */
+export const skillBattle = (
+  turnsCompleted = 1,
+  health: HealthByPosition = [
+    [44, 44],
+    [44, 44],
+  ],
+  states: SkillStateByPosition = [DEFAULT_SKILL_STATE, DEFAULT_SKILL_STATE],
+): BattleView => withSkills(combatBattle(turnsCompleted, health), states)
+
+export interface SkillEventInput {
+  readonly seq: number
+  readonly commandId: string
+  readonly actor: TargetRef
+  readonly target: TargetRef
+  readonly skill?: SkillView
+  /** Poder del actor antes y despues de pagar el costo. */
+  readonly power: { readonly before: number; readonly after: number }
+  /** Turnos que le faltan a la habilidad; por omision, su `chargeTurns`. */
+  readonly cooldownRemaining?: number
+  readonly bonus?: { readonly attack: number; readonly damage: number | null }
+  readonly resolution?: BasicAttackResolution
+  readonly before: number
+  readonly after: number
+  /** Vista POSTERIOR a la habilidad (Vida, Poder, recargas y turno ya actualizados). */
+  readonly view: BattleView
+  readonly completedPosition?: number
+}
+
+/** `skillUsed` con la forma EXACTA del contrato v1 (seccion 6). */
+export const skillUsed = (input: SkillEventInput): Record<string, unknown> => {
+  const skill = input.skill ?? SHIELD_STRIKE
+
+  return {
+    type: 'skillUsed',
+    seq: input.seq,
+    roomId: ROOM_ID,
+    occurredAt: '2026-09-21T10:01:00.000Z',
+    commandId: input.commandId,
+    completedPosition: input.completedPosition ?? 1,
+    actor: input.actor,
+    target: input.target,
+    skill: {
+      abilityId: skill.abilityId,
+      name: skill.name,
+      powerCost: skill.powerCost,
+      chargeTurns: skill.chargeTurns,
+    },
+    power: input.power,
+    cooldown: { remainingTurns: input.cooldownRemaining ?? skill.chargeTurns },
+    bonus: input.bonus ?? { attack: 0, damage: null },
+    resolution: input.resolution ?? RESOLUTION,
+    targetHealth: { before: input.before, after: input.after },
+    battle: input.view,
+  }
+}
+
+/** Rechazo de una habilidad: llega solo al remitente, con `command: 'useSkill'` y el codigo estable. */
+export const skillRejected = (code: string, commandId?: string): Record<string, unknown> => ({
+  type: 'command.rejected',
+  command: 'useSkill',
+  ...(commandId === undefined ? {} : { commandId }),
+  code,
+})
+
+/** Un ataque basico que Combat puso en lugar de una habilidad por Poder insuficiente (HU-11). */
+export const degradedAttackResolved = (
+  input: AttackEventInput & { readonly abilityId: string },
+): Record<string, unknown> => ({
+  ...basicAttackResolved(input),
+  degradedFrom: { command: 'useSkill', abilityId: input.abilityId, reason: 'INSUFFICIENT_POWER' },
 })

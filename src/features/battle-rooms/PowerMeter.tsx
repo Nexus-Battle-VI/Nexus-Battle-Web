@@ -26,9 +26,10 @@ export interface PowerMeterProps {
  * visible `6/10` se oculta a los lectores y en su lugar hay una región `polite`
  * con «Poder de <héroe>: 6 de 10», que anuncia cada cambio sin leer «6 barra 10».
  *
- * Aún no está montado en ninguna pantalla del producto: no existe el inicio de
- * batalla ni un evento de Combat que lleve el Poder. Ver
- * `docs/frontend/hu-11-poder-en-batalla.md` y la vista previa `__dev/hu11/poder`.
+ * Desde HU-19 está montado en la arena de batalla (`BattleArena`), con el Poder que
+ * Combat publica en `battle.combatants[].power` y que se actualiza con cada evento.
+ * Ver `docs/frontend/hu-19-habilidades.md` y `docs/frontend/hu-11-poder-en-batalla.md`
+ * (ahi esta tambien la vista previa, que existe solo en desarrollo).
  */
 export const PowerMeter = ({ power, heroName, className }: PowerMeterProps): React.JSX.Element => {
   const display = describePower(power)

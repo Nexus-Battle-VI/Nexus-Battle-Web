@@ -287,7 +287,7 @@ describe('attackAvailability — cuando se ofrece el «Ataque básico»', () => 
   it('con un ataque pendiente: deshabilitado (no se envia otro)', () => {
     expect(attackAvailability(ready({ pending: true }))).toMatchObject({
       enabled: false,
-      hint: 'Esperando el resultado de tu ataque…',
+      hint: 'Esperando el resultado de tu acción…',
     })
   })
 

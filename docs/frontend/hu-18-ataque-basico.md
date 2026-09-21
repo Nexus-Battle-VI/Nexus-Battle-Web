@@ -10,14 +10,14 @@ de Combat.
 
 ## Qué hace la interfaz (y qué no)
 
-|                                      | Web                                                      | Combat                                      |
-| ------------------------------------ | -------------------------------------------------------- | ------------------------------------------- |
-| A quién atacar                       | **Elige** un objetivo y envía la intención               | Valida turno, equipo, Vida y perfil         |
-| Ataque contra Defensa, efecto y dado | Nada                                                     | Todo (HU-20, HU-24, HU-25)                  |
-| Daño, redondeo (`floor`) y Vida      | Nada: **pinta** la Vida que llega                        | Todo                                        |
-| Turno siguiente                      | Nada: pinta `currentTurn`                                | Todo                                        |
-| Poder                                | **No interviene**: el botón no lo lee ni lo menciona     | Tampoco lo consume (aún no modela el Poder) |
-| Idempotencia                         | Un `commandId` por intención; reintento con el **mismo** | Devuelve el resultado guardado              |
+|                                      | Web                                                      | Combat                                     |
+| ------------------------------------ | -------------------------------------------------------- | ------------------------------------------ |
+| A quién atacar                       | **Elige** un objetivo y envía la intención               | Valida turno, equipo, Vida y perfil        |
+| Ataque contra Defensa, efecto y dado | Nada                                                     | Todo (HU-20, HU-24, HU-25)                 |
+| Daño, redondeo (`floor`) y Vida      | Nada: **pinta** la Vida que llega                        | Todo                                       |
+| Turno siguiente                      | Nada: pinta `currentTurn`                                | Todo                                       |
+| Poder                                | **No interviene**: el botón no lo lee ni lo menciona     | El ataque básico **no** lo consume (HU-11) |
+| Idempotencia                         | Un `commandId` por intención; reintento con el **mismo** | Devuelve el resultado guardado             |
 
 Web **nunca** envía Ataque, Defensa, daño, Vida, efecto, porcentaje, semilla ni turno, y **no usa aleatoriedad de juego** (el `commandId` es un identificador, no un sorteo).
 
@@ -74,7 +74,7 @@ Solo en **tu turno** y si la batalla trae Vida. Se habilita cuando hay un objeti
 ## Qué pinta y cómo
 
 - **Vida**: en cada tarjeta, `32 / 44` y una barra (`role="meter"` con `aria-valuemin/max/now` y `aria-valuetext`). Colores del documento oficial (§7.6): **verde** por encima del 60 %, **amarillo** entre el 40 % y el 60 % (ambos inclusive), **rojo** por debajo del 40 %; con Vida 0 el texto «Sin Vida». El color solo refuerza: el texto siempre está.
-- **Resultado del último ataque**: región viva (`role="status"`, `aria-live="polite"`) con el efecto, el porcentaje, el daño aplicado y la Vida antes → después, o «sin efecto» con el Ataque y la Defensa comparados. Todo sale de lo que envió Combat; ambos jugadores ven el mismo texto. Tras recargar (`snapshot`) se recupera la Vida y el turno vigentes, pero **no** el detalle del último golpe: un `snapshot` no trae acciones.
+- **Resultado del último ataque** (desde HU-19 la región se llama «Resultado de la última acción» y también muestra habilidades): región viva (`role="status"`, `aria-live="polite"`) con el efecto, el porcentaje, el daño aplicado y la Vida antes → después, o «sin efecto» con el Ataque y la Defensa comparados. Todo sale de lo que envió Combat; ambos jugadores ven el mismo texto. Tras recargar (`snapshot`) se recupera la Vida y el turno vigentes, pero **no** el detalle del último golpe: un `snapshot` no trae acciones.
 - **Movimiento reducido**: la animación del ancho de la barra existe solo bajo `motion-safe` (`prefers-reduced-motion: no-preference`).
 - **320 px**: una columna, sin desbordamiento horizontal.
 - **Batallas anteriores a HU-18**: se ven (turno, orden) sin barras ni botón, con una explicación; un rival `AI` sin perfil muestra «Vida no disponible».
