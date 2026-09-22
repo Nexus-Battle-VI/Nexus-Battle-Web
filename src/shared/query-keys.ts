@@ -6,6 +6,10 @@
  * refresque lo que deberia.
  */
 export const queryKeys = {
+  auction: {
+    /** Lista privada del jugador autenticado (HU-68). */
+    watchlist: ['auction', 'watchlist'] as const,
+  },
   catalog: {
     all: ['catalog', 'products'] as const,
     byCategory: (category: string | null) => ['catalog', 'products', category] as const,
