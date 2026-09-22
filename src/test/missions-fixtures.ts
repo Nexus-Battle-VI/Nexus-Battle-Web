@@ -53,5 +53,15 @@ export const difficultiesAfterNormal = (): MissionDifficulties => {
   }
 }
 
+/** Ultimo estado de progresion: Normal, Heroico y Legendario completados; los cuatro libres. */
+export const difficultiesAllUnlocked = (): MissionDifficulties => {
+  const base = difficultiesWithoutProgress()
+
+  return {
+    ...base,
+    items: base.items.map((item) => ({ ...item, unlocked: true, lockReason: null })),
+  }
+}
+
 export const jsonResponse = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })

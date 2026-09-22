@@ -2,7 +2,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
-import { difficultiesAfterNormal, difficultiesWithoutProgress } from '@/test/missions-fixtures'
+import {
+  difficultiesAfterNormal,
+  difficultiesAllUnlocked,
+  difficultiesWithoutProgress,
+} from '@/test/missions-fixtures'
 
 import type { MissionDifficulty } from './api'
 import { DifficultySelector } from './DifficultySelector'
@@ -140,5 +144,33 @@ describe('DifficultySelector (HU-75.3)', () => {
 
     expect(onChange).toHaveBeenCalledWith('LEGENDARY')
     expect(screen.getByRole('radio', { name: 'Heroico' })).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  // P-05 / CA-04 (Task HU-75.4): Mitico libre se elige y se presenta con lo unico que
+  // dice la HU de ese nivel, sin un porcentaje que el PO no ha fijado.
+  it('con Legendario completado, Mitico se puede elegir sin un multiplicador inventado', async () => {
+    const onChange = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <DifficultySelector
+        items={difficultiesAllUnlocked().items}
+        value={null}
+        onChange={onChange}
+      />,
+    )
+
+    const mythic = screen.getByRole('radio', { name: 'Mítico' })
+
+    expect(mythic).toHaveAttribute('aria-disabled', 'false')
+    expect(mythic).toHaveAccessibleDescription(expect.stringContaining('Dificultad máxima'))
+    expect(mythic).toHaveAccessibleDescription(
+      expect.stringContaining('Recompensas únicas y exclusivas'),
+    )
+    expect(mythic).toHaveAccessibleDescription(expect.not.stringContaining('%'))
+    expect(screen.queryByText('Bloqueado')).not.toBeInTheDocument()
+
+    await user.click(mythic)
+
+    expect(onChange).toHaveBeenCalledWith('MYTHIC')
   })
 })
