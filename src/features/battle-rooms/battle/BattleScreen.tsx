@@ -6,6 +6,7 @@ import { AttackPanel, type CombatControls } from './AttackPanel'
 import { ArenaSide } from './BattleArena'
 import { BattleResultView } from './BattleResultView'
 import { RewardPanel } from './RewardPanel'
+import { StakePanel } from './StakePanel'
 import { BattleTimers } from './BattleTimers'
 import type { ServerClock } from './battleClock'
 import type { LastAttack, LastSkill, LastTurnTimeout } from './battleReducer'
@@ -208,6 +209,9 @@ export const BattleScreen = ({
           recompensa es ADITIVO, justo despues -- BattleResultView nunca muestra creditos (D4). */}
       {finished && <BattleResultView result={result} subject={subject} />}
       {finished && <RewardPanel battleId={battle.battleId} subject={subject} />}
+      {/* HU-23: la apuesta propia, solo si la hubo (el panel no se renderiza
+          cuando no hay nada que contar). */}
+      {finished && <StakePanel roomId={battle.battleId} subject={subject} />}
 
       {/* La region viva existe siempre (los lectores de pantalla anuncian los cambios de una
           region que ya estaba en la pagina) y, vacia, no ocupa ni reserva altura. */}
