@@ -34,10 +34,15 @@ export const useBattleReward = (
 
       // CONFIRMED: cofre entregado, nada mas que esperar. NONE con balance ya
       // conocido: el credito se confirmo y no corresponde cofre (COMPLETED
-      // sin cofre). PENDING sigue en curso (CHEST_ELIGIBLE/REWARD_SELECTED o
-      // el credito aun no llega) y debe seguir sondeando.
+      // sin cofre). FAILED: terminal por diseno (Combat nunca reintenta un
+      // TERMINAL_FAILURE solo, `hu-22-reward-workflow.md` §Failures) -- sin
+      // esto, un fallo real (credito rechazado o cofre nunca entregado)
+      // sondeaba para siempre porque nada iba a cambiar. PENDING sigue en
+      // curso (CHEST_ELIGIBLE/REWARD_SELECTED o el credito aun no llega) y
+      // debe seguir sondeando.
       const settled =
         data.rewardDelivery === 'CONFIRMED' ||
+        data.rewardDelivery === 'FAILED' ||
         (data.rewardDelivery === 'NONE' && data.balance !== null)
 
       return settled ? false : POLL_MS

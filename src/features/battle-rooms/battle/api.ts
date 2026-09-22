@@ -36,7 +36,7 @@ export const startBattle = (roomId: string): Promise<BattleRoom> =>
  * sale del testimonio, nunca de un parametro. `null` en cada campo mientras
  * Combat aun no confirmo el credito con Wallet (recien terminada la batalla).
  */
-export const REWARD_DELIVERY_STATES = ['NONE', 'PENDING', 'CONFIRMED'] as const
+export const REWARD_DELIVERY_STATES = ['NONE', 'PENDING', 'CONFIRMED', 'FAILED'] as const
 export type RewardDeliveryState = (typeof REWARD_DELIVERY_STATES)[number]
 
 export interface RewardProduct {

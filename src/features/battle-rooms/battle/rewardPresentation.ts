@@ -42,11 +42,16 @@ export interface DeliveryPresentation {
 /**
  * `rewardDelivery` es la UNICA fuente de si ya se puede decir "entregado":
  * `PENDING` nunca se muestra como confirmado (HU-22 S88/S9), y `NONE` no
- * insinua un cofre que no existe.
+ * insinua un cofre que no existe. `FAILED` (terminal, Combat nunca reintenta
+ * solo un `TERMINAL_FAILURE`) tampoco dice "entregado" NI sigue insinuando un
+ * "procesando" que ya no va a resolverse -- `balance` distingue si el fallo
+ * fue ANTES de confirmar el credito (nunca se acredito) o DESPUES (el
+ * credito quedo firme, solo la entrega del cofre fallo).
  */
 export const describeDelivery = (
   delivery: RewardDeliveryState,
   reward: RewardProduct | null,
+  balance: number | null,
 ): DeliveryPresentation | null => {
   if (delivery === 'NONE') {
     return null
@@ -60,6 +65,19 @@ export const describeDelivery = (
           ? 'Tus créditos ya se acreditaron. Seleccionando tu recompensa…'
           : `Tus créditos ya se acreditaron. Estamos completando la entrega de ${reward.name}.`,
     }
+  }
+
+  if (delivery === 'FAILED') {
+    return balance === null
+      ? {
+          headline: 'No se pudo procesar tu recompensa',
+          detail: 'Vuelve a intentarlo más tarde o contacta con soporte si el problema persiste.',
+        }
+      : {
+          headline: 'Entrega incompleta',
+          detail:
+            'Tus créditos ya se acreditaron, pero no pudimos completar la entrega de tu recompensa.',
+        }
   }
 
   // CONFIRMED: reward siempre no-nulo en este estado (el contrato lo garantiza).

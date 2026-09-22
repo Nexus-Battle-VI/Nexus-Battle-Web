@@ -63,12 +63,12 @@ describe('weeklyLimitReached', () => {
 
 describe('describeDelivery — estado de entrega (HU-22 S9)', () => {
   it('NONE no muestra ninguna tarjeta: no hay cofre que anunciar', () => {
-    expect(describeDelivery('NONE', null)).toBeNull()
+    expect(describeDelivery('NONE', null, null)).toBeNull()
   })
 
   it('PENDING nunca dice "entregado": sigue seleccionando o completando', () => {
-    const withoutProduct = describeDelivery('PENDING', null)
-    const withProduct = describeDelivery('PENDING', PRODUCT)
+    const withoutProduct = describeDelivery('PENDING', null, 20)
+    const withProduct = describeDelivery('PENDING', PRODUCT, 20)
 
     expect(withoutProduct?.headline).toBe('Cofre obtenido')
     expect(withoutProduct?.detail).toMatch(/Seleccionando/u)
@@ -78,15 +78,39 @@ describe('describeDelivery — estado de entrega (HU-22 S9)', () => {
   })
 
   it('CONFIRMED con producto anuncia la entrega real', () => {
-    const delivery = describeDelivery('CONFIRMED', PRODUCT)
+    const delivery = describeDelivery('CONFIRMED', PRODUCT, 20)
 
     expect(delivery?.headline).toBe('Cofre obtenido')
     expect(delivery?.detail).toBe('Armadura de Escamas añadida a tu inventario ✓')
   })
 
   it('el texto nunca inventa un nombre de producto que no llego del servidor', () => {
-    const delivery = describeDelivery('CONFIRMED', null)
+    const delivery = describeDelivery('CONFIRMED', null, 20)
 
     expect(delivery?.detail).toBeNull()
+  })
+})
+
+describe('describeDelivery — FAILED (HU-22, corregido en revision): terminal, nunca sondea para siempre', () => {
+  it('con saldo desconocido (el credito nunca se confirmo) no dice que ya se acredito', () => {
+    const delivery = describeDelivery('FAILED', null, null)
+
+    expect(delivery?.headline).not.toMatch(/Cofre obtenido/u)
+    expect(delivery?.detail).not.toMatch(/ya se acreditaron/u)
+  })
+
+  it('con saldo conocido (el credito si se confirmo, solo fallo la entrega) lo dice tal cual', () => {
+    const delivery = describeDelivery('FAILED', null, 20)
+
+    expect(delivery?.detail).toMatch(/ya se acreditaron/u)
+    expect(delivery?.detail).toMatch(/no pudimos completar la entrega/u)
+  })
+
+  it('nunca dice "entregado" ni "añadida a tu inventario"', () => {
+    const conProducto = describeDelivery('FAILED', PRODUCT, 20)
+    const sinProducto = describeDelivery('FAILED', null, null)
+
+    expect(conProducto?.detail).not.toMatch(/añadida a tu inventario/u)
+    expect(sinProducto?.detail).not.toMatch(/añadida a tu inventario/u)
   })
 })

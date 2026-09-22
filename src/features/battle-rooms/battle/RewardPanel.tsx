@@ -51,7 +51,7 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
   }
 
   const wallet = walletQuery.data
-  const delivery = describeDelivery(reward.rewardDelivery, reward.reward)
+  const delivery = describeDelivery(reward.rewardDelivery, reward.reward, reward.balance)
   const limitReached =
     wallet !== undefined &&
     reward.weeklyChestCount !== null &&
@@ -127,9 +127,20 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
       {delivery !== null && (
         <div
           role="status"
-          className="flex flex-col items-center gap-1 rounded-lg border-2 border-muted p-3 text-center"
+          className={clsx(
+            'flex flex-col items-center gap-1 rounded-lg border-2 p-3 text-center',
+            reward.rewardDelivery === 'FAILED' ? 'border-danger' : 'border-muted',
+          )}
         >
-          <Trophy aria-hidden="true" className="h-6 w-6 text-brand" />
+          {/* El color solo refuerza (nunca es la unica fuente): el titular y el
+              detalle ya dicen "no se pudo" en texto. */}
+          <Trophy
+            aria-hidden="true"
+            className={clsx(
+              'h-6 w-6',
+              reward.rewardDelivery === 'FAILED' ? 'text-danger' : 'text-brand',
+            )}
+          />
           <p className="font-bold text-ink">{delivery.headline}</p>
           {delivery.detail !== null && <p className="text-sm text-muted">{delivery.detail}</p>}
         </div>

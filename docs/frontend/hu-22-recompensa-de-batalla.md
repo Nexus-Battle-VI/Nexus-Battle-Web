@@ -10,15 +10,15 @@ de Combat.
 
 ## Qué hace la interfaz (y qué no)
 
-|                                  | Web                                                                                             | Wallet / Combat                                           |
-| -------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Créditos ganados en la batalla   | **Muestra** `creditsEarned` tal cual                                                            | Todo (`BattleCreditsPolicy`, ya de HU-21)                 |
-| Saldo total                      | **Muestra** `balance`/`wallet.balance`; `null` = «Confirmando…», nunca un número inventado      | Todo (Wallet es la única fuente del saldo)                |
-| Progreso hacia el cofre (0-20)   | **Muestra** la fracción `progreso / umbral`, acotada a `[0, 1]` solo para no desbordar la barra | Todo (umbral, reinicio, congelado tras 2/2)               |
-| Límite semanal (máx. 2 cofres)   | **Muestra** `count / limit` y un aviso en texto si ya se alcanzó                                | Todo (Wallet decide cuándo se alcanza)                    |
-| Qué producto toca                | **Muestra** el nombre que llega en `reward`; nunca lo elige ni lo adivina                       | Todo (`RewardTable`, motor de HU-24, un único draw)       |
-| Cuándo el cofre está "entregado" | Solo cuando `rewardDelivery === 'CONFIRMED'`; `PENDING` nunca dice "añadido"                    | Todo (workflow de 6 estados, Combat → Wallet → Inventory) |
-| Recuperación tras un refresh     | **Sondea** `GET .../reward` mientras la entrega no llegue a un estado final                     | El workflow es resumible e idempotente                    |
+|                                  | Web                                                                                                                                      | Wallet / Combat                                           |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Créditos ganados en la batalla   | **Muestra** `creditsEarned` tal cual                                                                                                     | Todo (`BattleCreditsPolicy`, ya de HU-21)                 |
+| Saldo total                      | **Muestra** `balance`/`wallet.balance`; `null` = «Confirmando…», nunca un número inventado                                               | Todo (Wallet es la única fuente del saldo)                |
+| Progreso hacia el cofre (0-20)   | **Muestra** la fracción `progreso / umbral`, acotada a `[0, 1]` solo para no desbordar la barra                                          | Todo (umbral, reinicio, congelado tras 2/2)               |
+| Límite semanal (máx. 2 cofres)   | **Muestra** `count / limit` y un aviso en texto si ya se alcanzó                                                                         | Todo (Wallet decide cuándo se alcanza)                    |
+| Qué producto toca                | **Muestra** el nombre que llega en `reward`; nunca lo elige ni lo adivina                                                                | Todo (`RewardTable`, motor de HU-24, un único draw)       |
+| Cuándo el cofre está "entregado" | Solo cuando `rewardDelivery === 'CONFIRMED'`; `PENDING` nunca dice "añadido", `FAILED` nunca dice "entregado" ni sigue como "procesando" | Todo (workflow de 6 estados, Combat → Wallet → Inventory) |
+| Recuperación tras un refresh     | **Sondea** `GET .../reward` mientras la entrega no llegue a un estado final                                                              | El workflow es resumible e idempotente                    |
 
 Web **nunca** calcula créditos, progreso, ni decide si corresponde cofre: todo llega ya resuelto.
 
@@ -27,7 +27,7 @@ Web **nunca** calcula créditos, progreso, ni decide si corresponde cofre: todo 
 | Pieza                | Dónde                          | Qué hace                                                                                                                                                                           |
 | -------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `api`                | `battle/api.ts`                | `fetchBattleReward` (`GET /v1/combat/rooms/:roomId/reward`) y `fetchWallet` (`GET /v1/wallet/me`); ambos deducen el jugador del testimonio, sin parámetros de identidad            |
-| `useBattleReward`    | `battle/useBattleReward.ts`    | `useQuery` habilitado solo con la batalla terminada; sondea cada 1500 ms mientras `rewardDelivery` no sea `CONFIRMED` ni (`NONE` con `balance` ya conocido)                        |
+| `useBattleReward`    | `battle/useBattleReward.ts`    | `useQuery` habilitado solo con la batalla terminada; sondea cada 1500 ms mientras `rewardDelivery` no sea `CONFIRMED`/`FAILED` ni (`NONE` con `balance` ya conocido)               |
 | `useWallet`          | `battle/useWallet.ts`          | `useQuery` del saldo propio; deshabilitado sin sesión                                                                                                                              |
 | `rewardPresentation` | `battle/rewardPresentation.ts` | Módulo puro: fracción de la barra (acotada, sin `Math.min`/`Math.max` para no chocar con la guarda de HU-18), textos de progreso/límite y el titular/detalle de entrega por estado |
 | `RewardPanel`        | `battle/RewardPanel.tsx`       | Créditos, saldo, barra de progreso (`role="meter"`), límite semanal y tarjeta de entrega; `null` sin sesión o sin `RewardWorkflow` propio (espectador, IA)                         |
@@ -43,6 +43,7 @@ El flujo Combat → Wallet → Inventory puede tardar más que el primer render 
 - La barra de progreso es un `role="meter"` (no `progressbar`, porque no representa una tarea en curso) con `aria-valuemin/max/now/valuetext`; el texto `12 / 20` acompaña, nunca lo sustituye.
 - El límite semanal muestra `count / limit` y, si ya se alcanzó, un aviso en texto aparte (nunca solo color).
 - La entrega usa `rewardDelivery` como única fuente de verdad: `NONE` no muestra tarjeta, `PENDING` dice «Cofre obtenido» sin afirmar que ya está en el inventario, `CONFIRMED` nombra el producto real y añade «✓».
+- `FAILED` (corregido en revisión) es un estado terminal público: Combat nunca reintenta solo un `TERMINAL_FAILURE`, así que devolverlo como si siguiera "en curso" (como hacía antes) invitaba a un sondeo indefinido sin que nada fuera a cambiar. El texto distingue si el crédito ya se confirmó (`balance` conocido: "ya se acreditaron, pero no pudimos completar la entrega") de si nunca llegó a confirmarse (`balance` desconocido: no se afirma un crédito que no ocurrió).
 
 ## Accesibilidad
 
@@ -52,7 +53,7 @@ El flujo Combat → Wallet → Inventory puede tardar más que el primer render 
 
 ## Pruebas y lo que NO se verificó
 
-`api.test.ts` (nuevas pruebas de `fetchBattleReward`/`fetchWallet`), `rewardPresentation.test.ts`, `useWallet.test.tsx`, `useBattleReward.test.tsx` (activación, clave de consulta y las cuatro combinaciones de sondeo: `PENDING` y `NONE` sin saldo siguen sondeando, `CONFIRMED` y `NONE` con saldo lo detienen) y `RewardPanel.test.tsx` (visibilidad, singular/plural de créditos, `Confirmando…`, meter, límite semanal, los tres estados de entrega y `motion-safe`). La guarda estática `noClientAuthority.test.ts` (HU-18) sigue pasando sin excepciones nuevas. Todo corre en **jsdom**.
+`api.test.ts` (nuevas pruebas de `fetchBattleReward`/`fetchWallet`), `rewardPresentation.test.ts` (incluido `FAILED` con `balance` conocido/desconocido), `useWallet.test.tsx`, `useBattleReward.test.tsx` (activación, clave de consulta y las cinco combinaciones de sondeo: `PENDING` y `NONE` sin saldo siguen sondeando, `CONFIRMED`, `FAILED` y `NONE` con saldo lo detienen) y `RewardPanel.test.tsx` (visibilidad, singular/plural de créditos, `Confirmando…`, meter, límite semanal, los cuatro estados de entrega y `motion-safe`). La guarda estática `noClientAuthority.test.ts` (HU-18) sigue pasando sin excepciones nuevas. Todo corre en **jsdom**.
 
 **No verificado**: un recorrido visual en navegador contra el stack local completo (Wallet + Combat + Inventory reales). El proxy de Vite en desarrollo (`vite.config.ts`, `target: 'http://localhost:3000'`) no alcanza los servicios del `docker-compose` de este entorno, que solo publica el puerto `18080` del proxy inverso; ese descuadre es anterior a esta Task y queda fuera de su alcance. La aceptación manual con datos reales de principio a fin (batalla completa → crédito → progreso → cofre) queda para la Task #432 (validación cruzada E2E).
 

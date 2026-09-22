@@ -55,6 +55,16 @@ const CONFIRMED: BattleRewardStatus = {
   reward: { productId: 'p-1', sku: 'ARM-1', name: 'Armadura de Escamas' },
 }
 
+const FAILED: BattleRewardStatus = {
+  creditsEarned: 4,
+  balance: 20,
+  victoryProgress: 0,
+  weeklyChestCount: 1,
+  chestEarned: true,
+  rewardDelivery: 'FAILED',
+  reward: null,
+}
+
 const wrapper =
   (queryClient: ReturnType<typeof createTestQueryClient>) =>
   ({ children }: { readonly children: ReactNode }): React.JSX.Element => (
@@ -175,6 +185,24 @@ describe('useBattleReward — sondeo (HU-22): se detiene solo en un estado final
   it('NONE con balance ya conocido detiene el sondeo: no corresponde cofre', async () => {
     const queryClient = createTestQueryClient()
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, NONE_SETTLED))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    renderHook(() => useBattleReward(ROOM_ID, true), { wrapper: wrapper(queryClient) })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('FAILED detiene el sondeo: terminal, Combat nunca lo reintenta solo (corregido en revision)', async () => {
+    const queryClient = createTestQueryClient()
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, FAILED))
     vi.stubGlobal('fetch', fetchImpl)
 
     renderHook(() => useBattleReward(ROOM_ID, true), { wrapper: wrapper(queryClient) })

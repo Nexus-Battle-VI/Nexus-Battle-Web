@@ -56,6 +56,26 @@ const REWARD_CONFIRMED: BattleRewardStatus = {
   reward: { productId: 'p-1', sku: 'ARM-001', name: 'Armadura de Escamas' },
 }
 
+const REWARD_FAILED_AFTER_CREDIT: BattleRewardStatus = {
+  creditsEarned: 4,
+  balance: 60,
+  victoryProgress: 0,
+  weeklyChestCount: 1,
+  chestEarned: true,
+  rewardDelivery: 'FAILED',
+  reward: null,
+}
+
+const REWARD_FAILED_BEFORE_CREDIT: BattleRewardStatus = {
+  creditsEarned: 4,
+  balance: null,
+  victoryProgress: null,
+  weeklyChestCount: null,
+  chestEarned: null,
+  rewardDelivery: 'FAILED',
+  reward: null,
+}
+
 const WALLET: WalletSnapshot = {
   balance: 60,
   victoryProgress: 0,
@@ -214,6 +234,32 @@ describe('RewardPanel — entrega del cofre (HU-22 §9): PENDING nunca dice "ent
     renderWithProviders(<RewardPanel battleId={ROOM_ID} subject="sujeto-ana" />)
 
     await screen.findByText('16 créditos')
+    expect(screen.queryByText('Cofre obtenido')).toBeNull()
+  })
+})
+
+describe('RewardPanel — FAILED (HU-22, corregido en revision): terminal, nunca "entregado" ni "procesando" eterno', () => {
+  it('el credito ya confirmado (balance conocido) dice que ya se acredito, pero no la entrega', async () => {
+    authenticate('sujeto-ana')
+    stubFetch(REWARD_FAILED_AFTER_CREDIT)
+
+    renderWithProviders(<RewardPanel battleId={ROOM_ID} subject="sujeto-ana" />)
+
+    expect(await screen.findByText(/ya se acreditaron/u)).toBeInTheDocument()
+    expect(screen.queryByText('Cofre obtenido')).toBeNull()
+    expect(screen.queryByText(/añadida a tu inventario/u)).toBeNull()
+    // El saldo real sigue visible: fallar la entrega no revierte el credito.
+    expect(screen.getByText('60 créditos')).toBeInTheDocument()
+  })
+
+  it('el credito nunca se confirmo (balance desconocido) no afirma que ya se acredito', async () => {
+    authenticate('sujeto-ana')
+    stubFetch(REWARD_FAILED_BEFORE_CREDIT)
+
+    renderWithProviders(<RewardPanel battleId={ROOM_ID} subject="sujeto-ana" />)
+
+    await screen.findByText('Confirmando…')
+    expect(screen.queryByText(/ya se acreditaron/u)).toBeNull()
     expect(screen.queryByText('Cofre obtenido')).toBeNull()
   })
 })
