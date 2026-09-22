@@ -12,6 +12,7 @@ import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 
 import { fetchBattleRoom } from './battle/api'
+import { describeOwnStake, ownStakeOf } from './battle/stakePresentation'
 import { useBattleRooms, useCancelBattleRoom, useLeaveBattleRoom } from './hooks'
 import { useBattleRoomRealtime } from './useBattleRoomRealtime'
 import { describeBattleRoomFailure, modeLabel, teamByLetter } from './presentation'
@@ -138,11 +139,27 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   // de estar en esa lista (se lleno, esta en batalla o se cancelo) se lee por
   // `GET /rooms/:roomId` (solo participantes) para saber a donde llevar a la
   // persona, en lugar de quedarse sin datos.
+  //
+  // HU-23: ademas, mientras la sala es terminal y la apuesta propia sigue
+  // `ACTIVE`, se sondea corto para ver el paso a `RELEASED`/`CAPTURED` que
+  // confirma Wallet -- sin afirmar "recuperado" antes de que el dato lo diga.
   const detail = useQuery({
     queryKey: queryKeys.battleRooms.detail(roomId ?? ''),
     queryFn: ({ signal }) => fetchBattleRoom(roomId ?? '', signal),
     enabled: roomId !== null && rooms.isSuccess && room === null,
     retry: false,
+    refetchInterval: (query) => {
+      const data = query.state.data
+
+      if (data === undefined) {
+        return false
+      }
+
+      const terminal = data.status === 'CANCELLED' || data.status === 'FINISHED'
+      const stake = ownStakeOf(data, subject)
+
+      return terminal && stake?.status === 'ACTIVE' ? 2_000 : false
+    },
   })
 
   if (rooms.isPending) {
@@ -182,10 +199,21 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     }
 
     if (detail.data?.status === 'CANCELLED' || realtime.lastRoomStatus === 'CANCELLED') {
+      const cancelledStake = describeOwnStake(ownStakeOf(detail.data ?? null, subject))
+
       return (
-        <p role="alert" className="text-sm text-danger">
-          La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
-        </p>
+        <section className="flex flex-col gap-2">
+          <p role="alert" className="text-sm text-danger">
+            La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
+          </p>
+          {/* HU-23: el estado REAL que publico Combat; "liberándose" mientras
+              Wallet no confirme, nunca "recuperado" por adelantado. */}
+          {cancelledStake !== null && (
+            <p role="status" className="text-sm text-muted">
+              {cancelledStake}
+            </p>
+          )}
+        </section>
       )
     }
 
@@ -198,6 +226,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     room.teams.some((team) =>
       team.participants.some((participant) => participant.playerId === subject),
     )
+  const ownStakeLine = describeOwnStake(ownStakeOf(room, subject))
 
   const handleCancel = (): void => {
     setActionError(null)
@@ -263,6 +292,12 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             La batalla comienza cuando la sala se llena: Combat valida a los participantes y decide
             el orden de los turnos.
           </p>
+
+          {ownStakeLine !== null && (
+            <p role="status" className="text-sm font-medium text-brand">
+              {ownStakeLine}
+            </p>
+          )}
 
           {actionError !== null && (
             <p role="alert" className="text-xs text-danger">

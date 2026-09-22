@@ -121,6 +121,19 @@ const ACCOUNT_PROFILE_NOT_FOUND_MESSAGE =
 const MISSING_HERO_MESSAGE = 'Debes preparar un héroe antes de unirte a una sala de batalla.'
 
 /**
+ * HU-23 (contrato §11): rechazos del intento de unirse con apuesta. Se
+ * distinguen por el `code` estructurado del cuerpo, nunca por texto libre
+ * (mismo criterio que el resto del mapper).
+ */
+const INSUFFICIENT_AVAILABLE_BALANCE_MESSAGE =
+  'No tienes créditos disponibles suficientes para esa apuesta. Prueba con un monto menor.'
+
+const STAKE_NOT_ALLOWED_IN_PVE_MESSAGE = 'Las salas JcE no admiten apuestas.'
+
+const INVALID_STAKE_AMOUNT_MESSAGE =
+  'El monto de la apuesta no es válido: debe ser un número entero de créditos.'
+
+/**
  * Ruta de accion opcional que acompana un mensaje de fallo de union: siempre
  * una de las rutas ya existentes de React Router (`routes.tsx`), NUNCA una
  * pantalla nueva creada para HU-16.3.
@@ -282,6 +295,18 @@ export const joinBattleRoomFailure = (error: unknown): JoinBattleRoomFailure => 
 
       if (code === 'HERO_NOT_SELECTED') {
         return { message: MISSING_HERO_MESSAGE, action: HEROES_ACTION }
+      }
+
+      if (code === 'INSUFFICIENT_AVAILABLE_BALANCE') {
+        return { message: INSUFFICIENT_AVAILABLE_BALANCE_MESSAGE, action: null }
+      }
+
+      if (code === 'STAKE_NOT_ALLOWED_IN_PVE') {
+        return { message: STAKE_NOT_ALLOWED_IN_PVE_MESSAGE, action: null }
+      }
+
+      if (code === 'INVALID_AMOUNT') {
+        return { message: INVALID_STAKE_AMOUNT_MESSAGE, action: null }
       }
 
       const blockerCodes = blockerCodesOf(error.body)

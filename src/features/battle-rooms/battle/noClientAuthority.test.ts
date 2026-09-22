@@ -386,3 +386,85 @@ describe('el resultado no se decide en Web (HU-21)', () => {
     expect(withTimers).toEqual(['BattleTimers.tsx', 'realtime.ts'])
   })
 })
+
+/**
+ * HU-23: Combat y Wallet deciden la apuesta (reserva, pozo, reparto,
+ * liquidacion y saldo). Web solo manda la INTENCION (monto al crear/unirse) y
+ * pinta lo que el servidor devolvio. Estas guardas fallan si aparece un
+ * calculo de economia en el codigo de produccion de la feature.
+ */
+describe('la apuesta no se calcula en Web (HU-23)', () => {
+  const STAKE_FILES = ['stakePresentation.ts', 'useBattleStake.ts', 'StakePanel.tsx']
+  const ROOM_STAKE_FILES = [
+    'BattleRoomCard.tsx',
+    'CreateBattleRoomPanel.tsx',
+    'AvailableBattleRoomsPanel.tsx',
+    'BattleRoomLobbyPage.tsx',
+  ]
+
+  const roomDir = path.resolve(__dirname, '..')
+
+  /** Archivos de produccion de la feature fuera de `battle/` (tarjeta, crear, lobby). */
+  const roomSources = (): readonly { readonly file: string; readonly code: string }[] =>
+    readdirSync(roomDir)
+      .filter((name) => /\.(ts|tsx)$/u.test(name))
+      .filter((name) => !/\.test\.(ts|tsx)$/u.test(name) && name !== 'presentation.ts')
+      .map((name) => ({
+        file: name,
+        code: readFileSync(path.join(roomDir, name), 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//gu, '')
+          .replace(/(^|[^:])\/\/.*$/gmu, '$1'),
+      }))
+
+  const stakeSources = (): readonly { readonly file: string; readonly code: string }[] => [
+    ...productionSources().filter((source) => STAKE_FILES.includes(source.file)),
+    ...roomSources().filter((source) => ROOM_STAKE_FILES.includes(source.file)),
+  ]
+
+  it('recorre los archivos nuevos de HU-23', () => {
+    expect(productionSources().map((source) => source.file)).toEqual(
+      expect.arrayContaining(STAKE_FILES),
+    )
+    expect(roomSources().map((source) => source.file)).toEqual(
+      expect.arrayContaining(ROOM_STAKE_FILES),
+    )
+  })
+
+  it.each([
+    [
+      'aritmetica sobre el monto de la apuesta (el monto se muestra, no se recalcula)',
+      /\.amount\s*[-+*/](?!=)|[-+*/]\s*[\w.()[\]]*\.amount\b/u,
+    ],
+    ['agregacion propia del pozo (`reduce`, `sum`)', /\breduce\s*\(|\bsum\s*\(/u],
+    [
+      'aritmetica sobre el saldo (Web nunca suma ni resta creditos)',
+      /\bbalance\b\s*[-+*/](?!=)|[-+*/]\s*\bbalance\b/u,
+    ],
+    [
+      'decisiones de ganador (el resultado llega decidido de Combat)',
+      /winnerTeamLabel\s*:|\boutcome\s*:\s*['"]|stakePool\??\s*:/u,
+    ],
+  ])('no hay %s', (_name, pattern) => {
+    for (const { file, code } of stakeSources()) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('el resumen agregado del pozo solo se LEE: la unica declaracion vive en types.ts', () => {
+    const declarers = [...productionSources(), ...roomSources()]
+      .filter(({ code }) => /stakePool\??\s*:/u.test(code))
+      .map(({ file }) => file)
+
+    // `types.ts` declara el TIPO (no construye nada) y por eso queda fuera de
+    // `stakeSources`; cualquier OTRO archivo que lo declare seria un calculo.
+    expect(declarers).toEqual(['types.ts'])
+    expect(readFileSync(path.join(roomDir, 'types.ts'), 'utf8')).toMatch(/stakePool\?/u)
+  })
+
+  it('el monto de la apuesta se envia tal cual lo escribio la persona, sin transformarlo', () => {
+    const panel = roomSources().find((source) => source.file === 'CreateBattleRoomPanel.tsx')
+
+    expect(panel?.code).toMatch(/stake:\s*\{\s*amount:\s*stakeAmount/u)
+    expect(panel?.code).not.toMatch(/Math\.(floor|round|ceil|max|min)\(/u)
+  })
+})

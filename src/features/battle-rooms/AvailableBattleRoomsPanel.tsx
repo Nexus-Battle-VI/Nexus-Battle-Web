@@ -65,7 +65,7 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
       : byMode.filter((room) => room.id.toLowerCase().includes(normalizedSearch))
   }, [rooms.data, modeFilter, search])
 
-  const handleJoin = (roomId: string, team: TeamLetter): void => {
+  const handleJoin = (roomId: string, team: TeamLetter, stakeAmount: number | null): void => {
     setJoiningRoomId(roomId)
     setJoiningTeam(team)
     setJoinErrorByRoom((previous) => {
@@ -78,7 +78,13 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
     })
 
     joinRoom.mutate(
-      { roomId, team },
+      {
+        roomId,
+        team,
+        // HU-23: la apuesta propia viaja SOLO cuando la persona indico un
+        // monto; sin ella el cuerpo de union es exactamente el de antes.
+        ...(stakeAmount === null ? {} : { stake: { amount: stakeAmount } }),
+      },
       {
         onSuccess: () => {
           setJoiningRoomId(null)

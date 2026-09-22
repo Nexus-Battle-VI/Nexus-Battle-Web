@@ -1,3 +1,4 @@
+import { useId, useState } from 'react'
 import { Link } from 'react-router'
 
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -6,6 +7,12 @@ import { Coins } from '@/components/ui/icons'
 
 import { modeLabel, occupancyOf, teamByLetter } from './presentation'
 import type { JoinBattleRoomFailure } from './presentation'
+import {
+  creditAmountText,
+  describeStakeReservation,
+  parseStakeInput,
+  roomHasStakes,
+} from './battle/stakePresentation'
 import type { BattleRoom, TeamLetter } from './types'
 
 export interface BattleRoomCardProps {
@@ -16,8 +23,11 @@ export interface BattleRoomCardProps {
   readonly isParticipant: boolean
   readonly onCancel: (roomId: string) => void
   readonly cancelling: boolean
-  /** HU-15.3: unirse a un equipo explicito. La autoridad final sigue siendo Combat. */
-  readonly onJoin: (roomId: string, team: TeamLetter) => void
+  /**
+   * HU-15.3/HU-23: unirse a un equipo explicito, con la apuesta propia opcional
+   * (`null` = no apostar). La autoridad final sigue siendo Combat/Wallet.
+   */
+  readonly onJoin: (roomId: string, team: TeamLetter, stakeAmount: number | null) => void
   /** Equipo con una solicitud de union en curso PARA ESTA sala, o `null` si ninguna. */
   readonly joiningTeam: TeamLetter | null
   /**
@@ -54,6 +64,13 @@ export interface BattleRoomCardProps {
  * backend, la solicitud se envia igual y el 409 real se muestra tal cual
  * (ver `AvailableBattleRoomsPanel`), nunca se oculta. Quien YA es
  * participante ve un enlace a la sala en vez de los botones de union.
+ *
+ * HU-23 (D1): cada quien indica SU propio monto al unirse; nadie iguala a
+ * nadie. Sin monto (vacio o `0`) el boton une DIRECTAMENTE, exactamente como
+ * antes de HU-23; con monto, primero se muestra cuanto se va a reservar y se
+ * confirma (D8: la reserva es sincrona). Si la sala ya tiene apuestas activas
+ * se anuncia con el total agregado que publica Combat (§10: nunca el monto de
+ * un rival).
  */
 export const BattleRoomCard = ({
   room,
@@ -69,6 +86,42 @@ export const BattleRoomCard = ({
   const teamA = teamByLetter(room, 'A')
   const teamB = teamByLetter(room, 'B')
   const canJoin = room.status === 'WAITING_FOR_PLAYERS'
+  const stakeFieldId = useId()
+
+  const [stakeInput, setStakeInput] = useState('0')
+  const [stakeError, setStakeError] = useState<string | null>(null)
+  const [pendingJoin, setPendingJoin] = useState<{
+    readonly team: TeamLetter
+    readonly amount: number
+  } | null>(null)
+
+  const stake = parseStakeInput(stakeInput)
+  const hasStakes = roomHasStakes(room)
+
+  const requestJoin = (letter: TeamLetter): void => {
+    if (stake.error !== null) {
+      setStakeError(stake.error)
+      return
+    }
+
+    setStakeError(null)
+
+    if (stake.amount === null) {
+      onJoin(room.id, letter, null)
+      return
+    }
+
+    setPendingJoin({ team: letter, amount: stake.amount })
+  }
+
+  const confirmJoin = (): void => {
+    if (pendingJoin === null) {
+      return
+    }
+
+    onJoin(room.id, pendingJoin.team, pendingJoin.amount)
+    setPendingJoin(null)
+  }
 
   const joinButton = (letter: TeamLetter, team: typeof teamA): React.JSX.Element | null => {
     if (team === undefined) {
@@ -85,7 +138,7 @@ export const BattleRoomCard = ({
         loading={thisTeamPending}
         disabled={!canJoin || full || otherTeamPending}
         onClick={() => {
-          onJoin(room.id, letter)
+          requestJoin(letter)
         }}
       >
         Unirse — Equipo {letter} ({team.participants.length}/{team.capacity})
@@ -111,6 +164,11 @@ export const BattleRoomCard = ({
           <Coins aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
           <span>{room.reward.amount.toLocaleString('es-CO')}</span>
         </p>
+        {hasStakes && (
+          <p className="text-xs font-medium text-brand">
+            {`Apuestas activas: ${creditAmountText(room.stakePool?.total ?? 0)}`}
+          </p>
+        )}
         {joinError !== null && (
           <p
             role="alert"
@@ -126,7 +184,7 @@ export const BattleRoomCard = ({
         )}
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
         {isOwn && (
           <Button
             variant="danger"
@@ -145,8 +203,50 @@ export const BattleRoomCard = ({
           >
             Ver sala
           </Link>
+        ) : pendingJoin !== null ? (
+          <div className="flex flex-col items-stretch gap-2 rounded-lg border border-brand/40 p-2 sm:items-end">
+            <p role="status" className="text-xs text-ink">
+              {describeStakeReservation(pendingJoin.amount)}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setPendingJoin(null)
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button loading={joiningTeam === pendingJoin.team} onClick={confirmJoin}>
+                {`Confirmar y unirse al equipo ${pendingJoin.team}`}
+              </Button>
+            </div>
+          </div>
         ) : (
           <>
+            <div className="flex flex-col items-stretch gap-1 sm:items-end">
+              <label htmlFor={stakeFieldId} className="text-xs text-muted">
+                Apostar créditos (opcional)
+              </label>
+              <input
+                id={stakeFieldId}
+                type="number"
+                min={0}
+                step="1"
+                inputMode="numeric"
+                value={stakeInput}
+                aria-invalid={stakeError !== null}
+                onChange={(event) => {
+                  setStakeInput(event.target.value)
+                }}
+                className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink sm:w-28"
+              />
+              {stakeError !== null && (
+                <p role="alert" className="text-xs text-danger">
+                  {stakeError}
+                </p>
+              )}
+            </div>
             {joinButton('A', teamA)}
             {joinButton('B', teamB)}
           </>

@@ -9,6 +9,7 @@ import {
   occupancyOf,
   teamByLetter,
 } from './presentation'
+import type { JoinBattleRoomFailure } from './presentation'
 import type { BattleRoom } from './types'
 
 const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
@@ -296,5 +297,29 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
     })
 
     expect(describeJoinBattleRoomFailure(error)).toBe(joinBattleRoomFailure(error).message)
+  })
+})
+
+describe('joinBattleRoomFailure (HU-23, rechazos de la apuesta)', () => {
+  const withCode = (code: string): JoinBattleRoomFailure =>
+    joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo del backend', {
+        statusCode: 422,
+        message: 'texto crudo del backend',
+        code,
+      }),
+    )
+
+  it('INSUFFICIENT_AVAILABLE_BALANCE explica el saldo sin mostrar el texto del backend', () => {
+    const failure = withCode('INSUFFICIENT_AVAILABLE_BALANCE')
+
+    expect(failure.message).toContain('disponibles')
+    expect(failure.message).not.toContain('texto crudo')
+    expect(failure.action).toBeNull()
+  })
+
+  it('STAKE_NOT_ALLOWED_IN_PVE y INVALID_AMOUNT tienen su propio mensaje', () => {
+    expect(withCode('STAKE_NOT_ALLOWED_IN_PVE').message).toContain('JcE')
+    expect(withCode('INVALID_AMOUNT').message).toContain('entero')
   })
 })
