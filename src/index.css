@@ -17,6 +17,9 @@
   --color-brand-ink: oklch(0.98 0.01 265);
   --color-danger: oklch(0.55 0.2 25);
   --color-success: oklch(0.6 0.15 150);
+  /* Ambar de la barra de Vida entre el 40 % y el 60 % (HU-18, §7.6). Un unico valor para
+     ambos temas, como `--color-success`; el texto de la Vida nunca depende del color. */
+  --color-warning: oklch(0.64 0.14 80);
 }
 
 /*
@@ -362,6 +365,22 @@ body {
   transition:
     transform 200ms ease-out,
     width 200ms ease-out;
+}
+
+/*
+ * Halo sutil del logotipo real (header/nav, `AppHeader.tsx`). `drop-shadow`
+ * -no `box-shadow`- respeta la silueta transparente del PNG en vez de dibujar
+ * un rectangulo detras. Sale de `--color-brand` con `color-mix`, igual que
+ * `.nb-nav-pill` arriba: azul en Light, violeta Nexus en Dark, sin hex propio.
+ */
+.nb-logo-glow {
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--color-brand) 45%, transparent));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nb-logo-glow {
+    transition: filter 300ms ease-out;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

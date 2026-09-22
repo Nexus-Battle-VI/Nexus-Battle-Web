@@ -22,6 +22,18 @@
  * prototipo de Figma de esa tarea usa para el control. Es decorativo
  * (`aria-hidden`): la calificación seleccionada se comunica por texto/estado,
  * nunca solo por el relleno del icono.
+ *
+ * `RefreshCw` y `Coins` se añaden para el panel de salas de batalla (HU-14.4):
+ * el primero acompaña el botón "Refrescar" del listado (decorativo, gira
+ * brevemente mientras la consulta está en curso); el segundo acompaña el
+ * campo de recompensa del formulario de creación. Ninguno reemplaza texto: la
+ * recompensa sigue mostrándose como número con su etiqueta, y "Refrescar"
+ * conserva su texto — ambos son refuerzo visual, no la única fuente de la
+ * información.
+ *
+ * `Swords` (ya listado arriba para HU-06.4) se reutiliza tal cual, sin
+ * reimportar, como acento decorativo del encabezado de "Jugar Online"
+ * (HU-14.4): mismo icono, misma política de "decorativo + `aria-hidden`".
  */
 export {
   ChevronDown,
@@ -38,4 +50,6 @@ export {
   TrendingUp,
   Download,
   Star,
+  RefreshCw,
+  Coins,
 } from 'lucide-react'

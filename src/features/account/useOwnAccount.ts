@@ -18,10 +18,20 @@ import {
  * preferencia de cliente. `useSession` sigue siendo la unica fuente de la
  * sesion; esto es la cuenta que hay detras de esa sesion, y se refresca sola.
  */
-export const useOwnAccount = (): UseQueryResult<OwnAccount> =>
+export interface UseOwnAccountOptions {
+  /**
+   * `false` evita la consulta cuando todavia no hay sesion (HU-15.3,
+   * `SessionControl`): sin testimonio, `GET /accounts/me` solo produciria un
+   * 401 predecible. Por defecto `true`, igual que antes de este parametro.
+   */
+  readonly enabled?: boolean
+}
+
+export const useOwnAccount = (options: UseOwnAccountOptions = {}): UseQueryResult<OwnAccount> =>
   useQuery({
     queryKey: queryKeys.account.me,
     queryFn: ({ signal }) => fetchOwnAccount(signal),
+    enabled: options.enabled ?? true,
   })
 
 /**

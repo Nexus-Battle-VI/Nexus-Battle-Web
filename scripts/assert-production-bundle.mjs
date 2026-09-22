@@ -12,6 +12,34 @@ const FORBIDDEN_MARKERS = [
   'DEV_STATISTICS_FIXTURE',
   'dev-fixture-achievement',
   'StatisticsDevPreview',
+  // Artefactos exclusivamente DEV del lobby de preparación de sala (HU-15.3).
+  // El bundle productivo nunca debe contener las rutas `__dev/hu15/lobby(/:roomId)`
+  // ni el componente de preview asociado (hallazgo MEDIO-01, auditoría HU-15.4:
+  // hoy Vite los elimina por tree-shaking, pero sin este guard explícito una
+  // futura regresión no seria detectada por `build:verify`).
+  '__dev/hu15',
+  'BattleRoomLobbyDevPreview',
+  // Artefactos exclusivamente DEV del medidor de Poder (HU-11): la ruta
+  // `__dev/hu11/poder` y su preview, con el recorrido de ejemplo. El bundle
+  // productivo no debe llevarlos; el componente `PowerMeter` en si si puede
+  // llegar cuando una pantalla lo monte.
+  '__dev/hu11',
+  'PowerMeterDevPreview',
+  // Artefactos exclusivamente DEV de la pantalla de batalla (HU-17): la ruta
+  // `__dev/hu17/battle` y su preview con eventos de ejemplo. La pantalla
+  // `BattleScreen` en si es de produccion.
+  '__dev/hu17',
+  'BattleScreenDevPreview',
+  // HU-18: el «servidor simulado» de esa vista previa (respuestas guionizadas de Combat).
+  // Solo existe en DEV; el ataque basico real solo pinta lo que publica Combat.
+  'Servidor simulado (vista previa)',
+  // HU-18 (arena): el panel plegable de controles de la misma vista previa.
+  'Controles de desarrollo — no forman parte del producto',
+  // Artefactos exclusivamente DEV de la vista previa del chat (HU-13): la ruta
+  // `__dev/hu13/chat`, su servidor falso y el ticket de ejemplo que le inyecta.
+  '__dev/hu13',
+  'ChatPanelDevPreview',
+  'ticket-de-vista-previa',
 ]
 
 /**

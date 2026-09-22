@@ -12,6 +12,9 @@ import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
+import { BattleRoomsPage } from '@/features/battle-rooms/BattleRoomsPage'
+import { BattleRoomLobbyPage } from '@/features/battle-rooms/BattleRoomLobbyPage'
+import { BattleWithChat } from '@/features/battle-rooms/BattleWithChat'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
@@ -219,7 +222,15 @@ export const routes: RouteObject[] = [
       </RequireSession>
     ),
     children: [
-      { path: 'play', element: <ModuleUnavailable title="Jugar Online" /> },
+      // Jugar Online (HU-14): creacion y consulta de salas de batalla contra
+      // el contrato real de Combat.
+      { path: 'play', element: <BattleRoomsPage /> },
+      // Lobby / pantalla de preparacion de una sala concreta (HU-15.3). No
+      // entra en `NAVIGATION`: se llega tras unirse o desde "Ver sala" en el
+      // listado, nunca escribiendo la URL a mano sin un roomId real.
+      { path: 'play/rooms/:roomId', element: <BattleRoomLobbyPage /> },
+      // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
+      { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },

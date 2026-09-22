@@ -282,6 +282,100 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
   })
 
+  /**
+   * HU-14.4: `/missions` y `/auction` NO se tocan por esta task y deben
+   * seguir mostrando el mismo marcador que `/tournament` ya prueba arriba.
+   */
+  it.each(['/missions', '/auction'])(
+    '%s sigue mostrando el modulo no disponible (sin regresion de HU-14.4)',
+    async (path) => {
+      useSession.setState(AUTHENTICATED_STATE)
+      renderRoute(path)
+
+      expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
+    },
+  )
+
+  /**
+   * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un
+   * `fetch` real stubbeado (no un mock manual) porque la pantalla real hace
+   * una consulta GET al montar.
+   */
+  it('/play ya no muestra el modulo no disponible: renderiza la pantalla real de salas de batalla', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+
+    try {
+      renderRoute('/play')
+
+      expect(await screen.findByRole('heading', { name: 'Jugar Online' })).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  /**
+   * HU-17: la batalla de una sala cuelga de `/play/rooms/:roomId/battle`, dentro
+   * del mismo flujo protegido de Jugar Online (sin entrada paralela). Un 401 al
+   * pedir el ticket evita abrir un WebSocket real en jsdom.
+   */
+  it('/play/rooms/:roomId/battle renderiza la pantalla de batalla (no un marcador) para una sesion valida', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    // Respuestas NUEVAS por peticion: un `Response` solo se puede leer una vez y el
+    // layout tambien consulta al montar.
+    const urlOf = (input: RequestInfo | URL): string =>
+      typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(
+          urlOf(input).endsWith('/realtime/tickets')
+            ? new Response(JSON.stringify({ message: 'Sesion vencida' }), {
+                status: 401,
+                headers: { 'content-type': 'application/json' },
+              })
+            : new Response(JSON.stringify([]), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
+              }),
+        ),
+      ),
+    )
+
+    try {
+      renderRoute('/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle')
+
+      expect(await screen.findByLabelText('Batalla')).toHaveTextContent('Tu sesión expiró')
+      // HU-13: la ruta compone la batalla con el chat de su sala (`BattleWithChat`).
+      expect(screen.getByRole('heading', { name: 'Chat de la sala' })).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('un visitante sin sesion que abre la batalla recibe el gate, no la batalla', async () => {
+    useSession.setState(ANONYMOUS_STATE)
+    const { router } = renderRoute('/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(
+      '/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle',
+    )
+    expect(screen.queryByLabelText('Batalla')).not.toBeInTheDocument()
+  })
+
   it('un visitante que intenta Mi Inventario sin sesion recibe el gate, no el inventario', async () => {
     useSession.setState(ANONYMOUS_STATE)
     const { router } = renderRoute('/inventory')

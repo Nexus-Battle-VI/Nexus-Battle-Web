@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { screen } from '@testing-library/react'
 
 import { AppHeader } from './AppHeader'
 import { useSession } from '@/shared/session'
 import { initTheme, useTheme } from '@/shared/theme'
+import { renderWithProviders } from '@/test/render'
 
-const renderHeader = (route = '/ecommerce') =>
-  render(
-    <MemoryRouter initialEntries={[route]}>
-      <AppHeader />
-    </MemoryRouter>,
-  )
+/**
+ * Desde HU-15.3, `SessionControl` consulta `useOwnAccount` (React Query) para
+ * el avatar real: renderizar `AppHeader` exige un `QueryClientProvider`, igual
+ * que cualquier otra pantalla que use consultas del servidor.
+ */
+const renderHeader = (route = '/ecommerce') => renderWithProviders(<AppHeader />, { route })
 
 afterEach(() => {
   useSession.setState({
@@ -28,6 +28,16 @@ describe('AppHeader', () => {
     const brand = screen.getByRole('link', { name: 'Nexus Battles VI' })
     expect(brand).toHaveAttribute('href', '/ecommerce')
     expect(screen.getByRole('img', { name: 'Nexus Battles VI' })).toBeInTheDocument()
+  })
+
+  it('el logo conserva alt, dimensiones y fallback, y suma el halo de marca sin cambiarlos', () => {
+    renderHeader()
+
+    const logo = screen.getByRole('img', { name: 'Nexus Battles VI' })
+    expect(logo).toHaveAttribute('src', '/assets/logo.png')
+    expect(logo).toHaveAttribute('width', '1600')
+    expect(logo).toHaveAttribute('height', '600')
+    expect(logo).toHaveClass('nb-logo-glow')
   })
 
   it('incluye la navegacion principal y el conmutador de tema', () => {

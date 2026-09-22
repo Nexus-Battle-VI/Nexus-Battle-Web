@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { Navigate } from 'react-router'
 import type { RouteObject } from 'react-router'
 
 /**
@@ -23,12 +24,17 @@ let resolvedDevRoutes: RouteObject[] = []
 let resolvedPublicDevRoutes: RouteObject[] = []
 
 if (import.meta.env.DEV) {
-  const [{ HeroesDevPreviewLazy }, { ProductsDevPreviewLazy }, { accountPreviewChildren }] =
-    await Promise.all([
-      import('./HeroesDevPreviewLazy'),
-      import('./ProductsDevPreviewLazy'),
-      import('@/features/account/dev/previewRoutes'),
-    ])
+  const [
+    { HeroesDevPreviewLazy },
+    { ProductsDevPreviewLazy },
+    { accountPreviewChildren },
+    { FIXED_ROOM_ID },
+  ] = await Promise.all([
+    import('./HeroesDevPreviewLazy'),
+    import('./ProductsDevPreviewLazy'),
+    import('@/features/account/dev/previewRoutes'),
+    import('@/features/battle-rooms/dev/BattleRoomLobbyDevPreview'),
+  ])
   const AccountDevPreviewLazy = lazy(() =>
     import('@/features/account/dev/AccountDevPreview').then((module) => ({
       default: module.AccountDevPreview,
@@ -57,6 +63,26 @@ if (import.meta.env.DEV) {
   const BannerManagementDevPreviewLazy = lazy(() =>
     import('@/features/notifications/dev/BannerManagementDevPreview').then((module) => ({
       default: module.BannerManagementDevPreview,
+    })),
+  )
+  const BattleRoomLobbyDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/BattleRoomLobbyDevPreview').then((module) => ({
+      default: module.BattleRoomLobbyDevPreview,
+    })),
+  )
+  const PowerMeterDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/PowerMeterDevPreview').then((module) => ({
+      default: module.PowerMeterDevPreview,
+    })),
+  )
+  const BattleScreenDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/BattleScreenDevPreview').then((module) => ({
+      default: module.BattleScreenDevPreview,
+    })),
+  )
+  const ChatPanelDevPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/ChatPanelDevPreview').then((module) => ({
+      default: module.ChatPanelDevPreview,
     })),
   )
 
@@ -142,6 +168,61 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <BannerManagementDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-15.3: el lobby de preparacion vive tras `RequireSession` y necesita
+    // Combat respondiendo de verdad. El preview intercepta `fetch` para
+    // `/api/v1/combat/rooms*` y falsea una sesion sin `accessToken` (para
+    // que el WebSocket de tiempo real quede `disabled`, mismo criterio que
+    // las pruebas de `BattleRoomLobbyPage`). `useParams` necesita un
+    // `roomId` real en la URL: `__dev/hu15/lobby` redirige al id fijo que el
+    // preview simula.
+    {
+      path: '__dev/hu15/lobby',
+      element: <Navigate to={`__dev/hu15/lobby/${FIXED_ROOM_ID}`} replace />,
+    },
+    {
+      path: '__dev/hu15/lobby/:roomId',
+      element: (
+        <Suspense fallback={null}>
+          <BattleRoomLobbyDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-11: el medidor de Poder aun no esta montado en ninguna pantalla del
+    // producto (no existe el inicio de batalla ni un evento de Combat que lleve
+    // el Poder). El preview monta el componente de produccion con datos de
+    // ejemplo y sin red, para revisar su diseno y como se ve el valor
+    // actualizado.
+    {
+      path: '__dev/hu11/poder',
+      element: (
+        <Suspense fallback={null}>
+          <PowerMeterDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-17: la batalla vive tras `RequireSession` y necesita Combat publicando
+    // por WebSocket. El preview monta la pantalla y el reductor de produccion con
+    // eventos de la forma del contrato v1, sin red. NO es evidencia E2E.
+    {
+      path: '__dev/hu17/battle',
+      element: (
+        <Suspense fallback={null}>
+          <BattleScreenDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-13: el chat real necesita una sesion de Cognito y a Combat respondiendo
+    // por WebSocket. El preview monta el componente de produccion contra un
+    // servidor FALSO que habla el protocolo del contrato, con un ticket y una
+    // sesion de ejemplo inyectados solo en sus paneles. No prueba el servidor.
+    {
+      path: '__dev/hu13/chat',
+      element: (
+        <Suspense fallback={null}>
+          <ChatPanelDevPreviewLazy />
         </Suspense>
       ),
     },
