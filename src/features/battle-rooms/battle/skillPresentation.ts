@@ -1,5 +1,5 @@
 import type { RealtimeConnectionState } from '../realtime'
-import type { LastAttack, LastSkill } from './battleReducer'
+import type { LastAttack, LastHealSkill, LastSkill } from './battleReducer'
 import {
   EFFECT_LABELS,
   combatantHealth,
@@ -224,15 +224,46 @@ export const describeLastSkill = (last: LastSkill, battle: BattleView): SkillFee
 }
 
 /**
- * Lo ultimo que paso, sea un ataque basico, una habilidad o un ataque basico que sustituyo a una
- * habilidad: gana el de `seq` mayor (el servidor los numera en orden). `null` si no hubo ninguno.
+ * Texto de la ultima curacion (excepcion de HU-12, sin Task de Management): SOLO lo que Combat
+ * envio, sin resolucion de golpe (curar no lo tiene). El monto sanado y la Vida «antes → despues»
+ * vienen ya calculados por Combat.
+ */
+export const describeLastHealSkill = (last: LastHealSkill, battle: BattleView): SkillFeedback => {
+  const actor = nameOf(findEntry(battle, last.actor), 'Un participante')
+  const target = nameOf(findEntry(battle, last.target), 'su objetivo')
+  const power = `Poder de ${actor}: ${String(last.power.before)} → ${String(last.power.after)}.`
+  const recharge = `La habilidad queda en recarga: ${describeTurns(last.cooldown.remainingTurns)}.`
+
+  return {
+    headline: `${actor} usó ${last.skill.name} sobre ${target}: +${String(last.heal.amount)} de Vida`,
+    detail: [
+      `Vida de ${target}: ${String(last.targetHealth.before)} → ${String(last.targetHealth.after)}.`,
+      power,
+      recharge,
+    ].join(' '),
+  }
+}
+
+/**
+ * Lo ultimo que paso, sea un ataque basico, una habilidad, una curacion (excepcion de HU-12) o un
+ * ataque basico que sustituyo a una habilidad: gana el de `seq` mayor (el servidor los numera en
+ * orden). `null` si no hubo ninguno.
  */
 export const describeLatestAction = (
   lastAttack: LastAttack | null,
   lastSkill: LastSkill | null,
   battle: BattleView,
+  lastHealSkill: LastHealSkill | null = null,
 ): SkillFeedback | null => {
-  if (lastSkill !== null && (lastAttack === null || lastSkill.seq > lastAttack.seq)) {
+  const attackSeq = lastAttack?.seq ?? 0
+  const skillSeq = lastSkill?.seq ?? 0
+  const healSeq = lastHealSkill?.seq ?? 0
+
+  if (lastHealSkill !== null && healSeq > attackSeq && healSeq > skillSeq) {
+    return describeLastHealSkill(lastHealSkill, battle)
+  }
+
+  if (lastSkill !== null && skillSeq > attackSeq) {
     return describeLastSkill(lastSkill, battle)
   }
 

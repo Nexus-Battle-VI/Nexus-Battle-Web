@@ -32,6 +32,7 @@ describe('battleReducer — el cliente solo aplica lo que el servidor publica, e
       needsResync: false,
       lastAttack: null,
       lastSkill: null,
+      lastHealSkill: null,
       result: null,
       lastTurnTimeout: null,
     })
