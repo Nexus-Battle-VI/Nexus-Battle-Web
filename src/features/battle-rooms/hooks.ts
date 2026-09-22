@@ -15,7 +15,7 @@ import {
   joinBattleRoom,
   leaveBattleRoom,
 } from './api'
-import type { BattleRoom, CreateBattleRoomInput, TeamLetter } from './types'
+import type { BattleRoom, CreateBattleRoomInput, StakeDeclaration, TeamLetter } from './types'
 
 export const useBattleRooms = (): UseQueryResult<readonly BattleRoom[]> =>
   useQuery({
@@ -72,6 +72,8 @@ export const useLeaveBattleRoom = (): UseMutationResult<BattleRoom, unknown, str
 export interface JoinBattleRoomVariables {
   readonly roomId: string
   readonly team?: TeamLetter
+  /** HU-23: apuesta propia opcional; `null`/ausente = no apostar. */
+  readonly stake?: StakeDeclaration
 }
 
 /**
@@ -90,8 +92,11 @@ export const useJoinBattleRoom = (): UseMutationResult<
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ roomId, team }: JoinBattleRoomVariables) =>
-      joinBattleRoom(roomId, team === undefined ? {} : { team }),
+    mutationFn: ({ roomId, team, stake }: JoinBattleRoomVariables) =>
+      joinBattleRoom(roomId, {
+        ...(team === undefined ? {} : { team }),
+        ...(stake === undefined ? {} : { stake }),
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
     },

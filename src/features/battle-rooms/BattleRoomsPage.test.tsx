@@ -21,11 +21,18 @@ vi.mock('./ChatPanel', () => ({
   ),
 }))
 
+/**
+ * Respuesta falsa REUTILIZABLE: `httpClient` lee el cuerpo con `text()`, y un
+ * `Response` real solo se puede consumir una vez. Varias consultas
+ * concurrentes de la pagina (listado de salas y saldo de Wallet, HU-23)
+ * comparten el mismo doble, asi que el cuerpo se devuelve en cada lectura.
+ */
 const jsonResponse = (status: number, body: unknown): Response =>
-  new Response(JSON.stringify(body), {
+  ({
     status,
-    headers: { 'content-type': 'application/json' },
-  })
+    ok: status >= 200 && status < 300,
+    text: () => Promise.resolve(JSON.stringify(body)),
+  }) as unknown as Response
 
 const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',

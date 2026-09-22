@@ -113,7 +113,7 @@ describe('BattleRoomCard', () => {
 
     screen.getByRole('button', { name: /Equipo A/u }).click()
 
-    expect(onJoin).toHaveBeenCalledWith(room().id, 'A')
+    expect(onJoin).toHaveBeenCalledWith(room().id, 'A', null)
   })
 
   it('permite unirse al Equipo B con capacidad disponible', () => {
@@ -122,7 +122,7 @@ describe('BattleRoomCard', () => {
 
     screen.getByRole('button', { name: /Equipo B/u }).click()
 
-    expect(onJoin).toHaveBeenCalledWith(room().id, 'B')
+    expect(onJoin).toHaveBeenCalledWith(room().id, 'B', null)
   })
 
   it('deshabilita visualmente el boton de un equipo lleno', () => {
