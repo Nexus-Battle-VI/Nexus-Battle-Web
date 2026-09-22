@@ -191,6 +191,17 @@ describe('BattleRoomLobbyPage — propietario/invitado', () => {
           return Promise.resolve(jsonResponse(200, room({ status: 'WAITING_FOR_PLAYERS' })))
         }
 
+        // `GET /rooms` (listado) y `GET /rooms/:id` (detalle) comparten prefijo:
+        // hay que distinguirlos por URL, no responder el mismo cuerpo a los dos.
+        // Tras abandonar, la sala sale del listado (HU-15) pero el detalle sigue
+        // siendo un unico `BattleRoom` real, nunca un array -- si no se distingue,
+        // `detail` (habilitada porque la sala ya no esta en el listado) recibe un
+        // array donde espera un objeto y `ownStakeOf`/HU-23 revienta al iterar
+        // `.teams`.
+        if (url.endsWith(`/rooms/${ROOM_ID}`)) {
+          return Promise.resolve(jsonResponse(200, room({ status: 'WAITING_FOR_PLAYERS' })))
+        }
+
         return Promise.resolve(jsonResponse(200, left ? [] : [room()]))
       }),
     )
