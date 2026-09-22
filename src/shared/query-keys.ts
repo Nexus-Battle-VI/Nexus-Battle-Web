@@ -118,6 +118,15 @@ export const queryKeys = {
     /** Saldo y progreso de cofre propios (HU-22, `GET /api/v1/wallet/me`). El servicio deduce el jugador del testimonio. */
     me: ['wallet', 'me'] as const,
   },
+  missions: {
+    /**
+     * Niveles de dificultad de una mision para el jugador autenticado (HU-75,
+     * `GET /api/v1/missions/:missionId/difficulties`). Lleva la identidad: el
+     * desbloqueo es propio de cada jugador y no debe reutilizarse entre sesiones.
+     */
+    difficulties: (subject: string | null, missionId: string) =>
+      ['missions', 'difficulties', subject, missionId] as const,
+  },
   notifications: {
     /**
      * Novedades de catálogo pendientes de presentar (HU-38,

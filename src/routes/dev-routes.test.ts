@@ -22,7 +22,8 @@ describe('devRoutes', () => {
     // novedades/banner de catalogo (HU-38, Task #181/#185) y el lobby de
     // preparacion de sala de batalla (HU-15.3), el medidor de Poder (HU-11),
     // que aun no esta montado en ninguna pantalla del producto, la pantalla de
-    // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket.
+    // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket, y
+    // el selector de dificultad (HU-75.3), que espera la matricula de HU-70.3.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/account',
       '__dev/admin/products/new',
@@ -35,6 +36,7 @@ describe('devRoutes', () => {
       '__dev/hu11/poder',
       '__dev/hu17/battle',
       '__dev/hu13/chat',
+      '__dev/hu75/dificultad',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 
