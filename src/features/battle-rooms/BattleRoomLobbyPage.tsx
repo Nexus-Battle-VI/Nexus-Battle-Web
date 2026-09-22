@@ -162,9 +162,14 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   }
 
   if (room === null) {
-    if (detail.data?.status === 'PREPARING' || detail.data?.status === 'IN_BATTLE') {
-      // La sala se lleno: la batalla continua en su propia pantalla. El servidor
-      // decide cuando empieza; esta pantalla solo lleva a quien participa.
+    if (
+      detail.data?.status === 'PREPARING' ||
+      detail.data?.status === 'IN_BATTLE' ||
+      detail.data?.status === 'FINISHED'
+    ) {
+      // La sala se lleno o la batalla ya termino: la batalla (y su resultado) viven
+      // en su propia pantalla. El servidor decide cuando empieza; esta pantalla solo
+      // lleva a quien participa.
       return <Navigate to={`/play/rooms/${encodeURIComponent(roomId ?? '')}/battle`} replace />
     }
 

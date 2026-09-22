@@ -92,6 +92,12 @@ export const BattlePage = ({
     return <Notice alert>{describeRejection(realtime.rejected)}</Notice>
   }
 
+  // HU-21: una sala FINISHED sin `result` es de un Combat anterior a HU-21; se
+  // avisa sin inventar un resultado.
+  if (realtime.roomStatus === 'FINISHED' && realtime.result === null) {
+    return <Notice>La batalla terminó.</Notice>
+  }
+
   if (realtime.battle !== null) {
     return (
       <BattleScreen
@@ -101,6 +107,9 @@ export const BattlePage = ({
         synced={realtime.synced}
         lastAttack={realtime.lastAttack}
         lastSkill={realtime.lastSkill}
+        result={realtime.result}
+        lastTurnTimeout={realtime.lastTurnTimeout}
+        serverClock={realtime.serverClock}
         combat={{
           attack: realtime.attack,
           onAttack: realtime.sendAttack,

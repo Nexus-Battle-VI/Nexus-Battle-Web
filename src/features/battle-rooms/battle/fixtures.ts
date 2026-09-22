@@ -1,5 +1,6 @@
 import type {
   BasicAttackResolution,
+  BattleResult,
   BattleView,
   SkillView,
   TargetRef,
@@ -74,7 +75,16 @@ export const snapshot = (
   seq: number,
   status: string,
   view: BattleView | null,
-): Record<string, unknown> => ({ type: 'snapshot', roomId: ROOM_ID, seq, status, battle: view })
+  /** HU-21 (opcional): el resultado si la sala esta `FINISHED`. */
+  result?: BattleResult | null,
+): Record<string, unknown> => ({
+  type: 'snapshot',
+  roomId: ROOM_ID,
+  seq,
+  status,
+  battle: view,
+  ...(result === undefined ? {} : { result }),
+})
 
 /** Vida por posicion de la cola: `[actual, maxima]`, o `null` si el participante no tiene perfil. */
 export type HealthByPosition = readonly (readonly [number, number] | null)[]
@@ -313,4 +323,104 @@ export const degradedAttackResolved = (
 ): Record<string, unknown> => ({
   ...basicAttackResolved(input),
   degradedFrom: { command: 'useSkill', abilityId: input.abilityId, reason: 'INSUFFICIENT_POWER' },
+})
+
+/**
+ * HU-21: resultados y eventos del fin de batalla con la forma exacta del
+ * contrato (`hu-21-battle-finish-v1.md` §5 y §6).
+ */
+export const DEADLINES = {
+  turnEndsAt: '2026-09-21T10:00:30.000Z',
+  battleEndsAt: '2026-09-21T10:06:00.000Z',
+} as const
+
+export const withDeadlines = (view: BattleView): BattleView => ({ ...view, deadlines: DEADLINES })
+
+export const winResult = (): BattleResult => ({
+  reason: 'ELIMINATION',
+  outcome: 'WIN',
+  winnerTeamLabel: 'A',
+  finishedAt: '2026-09-21T10:05:00.000Z',
+  tiebreak: null,
+  disconnected: null,
+  teams: [
+    { teamLabel: 'A', remainingHealth: 44, maxHealth: 44, lifePercent: 100, eliminated: false },
+    { teamLabel: 'B', remainingHealth: 0, maxHealth: 44, lifePercent: 0, eliminated: true },
+  ],
+  participants: [
+    {
+      teamLabel: 'A',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-ana',
+      displayName: 'Ana',
+      heroId: 'heroe-1',
+      result: 'WON',
+    },
+    {
+      teamLabel: 'B',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-bruno',
+      displayName: 'Bruno',
+      heroId: 'heroe-0',
+      result: 'LOST',
+    },
+  ],
+})
+
+export const noWinnerResult = (): BattleResult => ({
+  reason: 'TIME_LIMIT',
+  outcome: 'NO_WINNER',
+  winnerTeamLabel: null,
+  finishedAt: '2026-09-21T10:06:00.000Z',
+  tiebreak: null,
+  disconnected: null,
+  teams: [
+    { teamLabel: 'A', remainingHealth: 22, maxHealth: 44, lifePercent: 50, eliminated: false },
+    { teamLabel: 'B', remainingHealth: 22, maxHealth: 44, lifePercent: 50, eliminated: false },
+  ],
+  participants: [
+    {
+      teamLabel: 'A',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-ana',
+      displayName: 'Ana',
+      heroId: 'heroe-1',
+      result: 'NO_WINNER',
+    },
+    {
+      teamLabel: 'B',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-bruno',
+      displayName: 'Bruno',
+      heroId: 'heroe-0',
+      result: 'NO_WINNER',
+    },
+  ],
+})
+
+export const turnTimedOut = (view: BattleView = battle(1), seq = 2): Record<string, unknown> => ({
+  type: 'turnTimedOut',
+  seq,
+  roomId: ROOM_ID,
+  occurredAt: '2026-09-21T10:00:30.000Z',
+  completedPosition: 0,
+  timedOut: { teamLabel: 'B', seat: 0 },
+  battle: view,
+})
+
+export const battleFinished = (
+  result: BattleResult = winResult(),
+  view: BattleView = battle(),
+  seq = 3,
+): Record<string, unknown> => ({
+  type: 'battleFinished',
+  seq,
+  roomId: ROOM_ID,
+  occurredAt: result.finishedAt,
+  result,
+  battle: view,
 })

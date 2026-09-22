@@ -4,7 +4,7 @@
  * `Nexus-Battle-Combat` — no se inventa ningun campo ni se renombra ninguno.
  */
 
-import type { BattleView } from './battle/types'
+import type { BattleResult, BattleView } from './battle/types'
 
 /** Valores reales del contrato. La UI puede traducirlos para mostrarlos, pero
  * lo que viaja al backend es siempre uno de estos dos literales. */
@@ -12,11 +12,13 @@ export type BattleRoomMode = 'PVP' | 'PVE'
 
 /**
  * `PREPARING` se suma en HU-15.3: Combat la usa cuando la sala se llena y
- * pasa a preparar el combate. El resto de la feature (crear, cancelar,
- * listar) sigue viendo indistintamente cualquier estado, sin asumir que solo
- * existen los dos originales de HU-14.
+ * pasa a preparar el combate. `FINISHED` (HU-21) es el estado TERMINAL de la
+ * batalla: la sala conserva su resultado y su chat queda cerrado. El resto de
+ * la feature (crear, cancelar, listar) sigue viendo indistintamente cualquier
+ * estado, sin asumir que solo existen los originales de HU-14.
  */
-export type BattleRoomStatus = 'WAITING_FOR_PLAYERS' | 'PREPARING' | 'IN_BATTLE' | 'CANCELLED'
+export type BattleRoomStatus =
+  'WAITING_FOR_PLAYERS' | 'PREPARING' | 'IN_BATTLE' | 'FINISHED' | 'CANCELLED'
 
 /** Los dos unicos equipos que declara el contrato de creacion (HU-14). */
 export type TeamLetter = 'A' | 'B'
@@ -60,6 +62,11 @@ export interface BattleRoom {
   readonly lastSeq?: number
   /** HU-17 (aditivo): batalla en curso; `null` hasta `IN_BATTLE`. */
   readonly battle?: BattleView | null
+  /**
+   * HU-21 (aditivo): resultado unico si la sala esta `FINISHED`; `null` en otro
+   * caso. Misma visibilidad que `battle`.
+   */
+  readonly result?: BattleResult | null
 }
 
 /**

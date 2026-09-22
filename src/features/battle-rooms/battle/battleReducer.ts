@@ -1,6 +1,7 @@
 import type {
   BasicAttackResolution,
   BattleEventMessage,
+  BattleResult,
   BattleView,
   DegradedFrom,
   SkillUsedMessage,
@@ -41,6 +42,16 @@ export interface LastSkill {
 }
 
 /**
+ * El ultimo turno perdido por tiempo que el servidor publico (HU-21), tal cual
+ * llego: alimenta el aviso de la franja de resultado. No se deriva nada.
+ */
+export interface LastTurnTimeout {
+  readonly seq: number
+  readonly timedOut: TargetRef
+  readonly occurredAt: string
+}
+
+/**
  * Estado del cliente de la batalla: SOLO lo que el servidor ha publicado.
  *
  * No hay un segundo estado autoritativo: `battle` es la ultima vista recibida
@@ -62,6 +73,13 @@ export interface BattleClientState {
   readonly lastAttack: LastAttack | null
   /** La ultima habilidad aplicada en vivo o por replay (HU-19); `null` tras una instantanea. */
   readonly lastSkill: LastSkill | null
+  /**
+   * HU-21: el resultado unico cuando la batalla termino (`battleFinished` o un
+   * `snapshot` de una sala `FINISHED`); `null` mientras siga en curso.
+   */
+  readonly result: BattleResult | null
+  /** HU-21: el ultimo `turnTimedOut` aplicado; `null` tras una instantanea. */
+  readonly lastTurnTimeout: LastTurnTimeout | null
 }
 
 export const initialBattleState: BattleClientState = {
@@ -72,6 +90,8 @@ export const initialBattleState: BattleClientState = {
   needsResync: false,
   lastAttack: null,
   lastSkill: null,
+  result: null,
+  lastTurnTimeout: null,
 }
 
 export type BattleAction =
@@ -123,7 +143,8 @@ const lastSkillOf = (message: BattleEventMessage, previous: LastSkill | null): L
  *    (duplicado, evento viejo) se IGNORA -- no duplica efectos, no repite el resultado,
  *    no resta Vida dos veces y no retrocede el turno -- y un salto (`seq > lastSeq + 1`)
  *    NO se aplica: marca `needsResync` para recuperar con `resume`, sin reconstruir
- *    mensajes perdidos.
+ *    mensajes perdidos. HU-21: tras `FINISHED` no se aplica NINGUN otro evento (el
+ *    servidor no deberia enviarlo; si lo hace, se ignora).
  *  - `connectionLost`: deja de considerarse sincronizado; conserva lo ultimo que
  *    dijo el servidor (no inventa nada mientras dura la desconexion).
  */
@@ -141,9 +162,16 @@ export const battleReducer = (
         needsResync: false,
         lastAttack: null,
         lastSkill: null,
+        result: action.message.result ?? null,
+        lastTurnTimeout: null,
       }
     case 'event': {
       const { message } = action
+
+      // HU-21: la batalla ya termino; ningun evento posterior se aplica.
+      if (state.roomStatus === 'FINISHED') {
+        return state
+      }
 
       if (message.seq <= state.lastSeq) {
         return state
@@ -155,11 +183,16 @@ export const battleReducer = (
 
       return {
         ...state,
-        roomStatus: 'IN_BATTLE',
+        roomStatus: message.type === 'battleFinished' ? 'FINISHED' : 'IN_BATTLE',
         battle: message.battle,
         lastSeq: message.seq,
         lastAttack: lastAttackOf(message, state.lastAttack),
         lastSkill: lastSkillOf(message, state.lastSkill),
+        result: message.type === 'battleFinished' ? message.result : state.result,
+        lastTurnTimeout:
+          message.type === 'turnTimedOut'
+            ? { seq: message.seq, timedOut: message.timedOut, occurredAt: message.occurredAt }
+            : state.lastTurnTimeout,
       }
     }
     case 'synced':

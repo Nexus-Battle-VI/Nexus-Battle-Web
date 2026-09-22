@@ -123,9 +123,14 @@ describe('el ataque basico no se decide en Web (HU-18)', () => {
       /\b(current|before|after)\s*-[^>]|\bhealth\b[^;\n]*-=/u,
     ],
   ])('no hay %s', (_name, pattern) => {
-    // `realtime.ts` es la conexion compartida (su backoff usa `Math.min`): no es combate.
+    // `realtime.ts` es la conexion compartida (su backoff usa `Math.min`), y
+    // `battleClock.ts` es el UNICO modulo autorizado a redondear el reloj de
+    // VISUALIZACION (HU-21); ninguno es combate. Hay una prueba que comprueba que
+    // `battleClock.ts` no habla de Vida, dano, ataque ni Poder.
+    const mathExceptions = new Set(['realtime.ts', 'battleClock.ts'])
+
     for (const { file, code } of productionSources().filter(
-      (source) => source.file !== 'realtime.ts',
+      (source) => !mathExceptions.has(source.file),
     )) {
       expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
     }
@@ -319,5 +324,65 @@ describe('las habilidades no se deciden en Web (HU-19)', () => {
         found: false,
       })
     }
+  })
+})
+
+/**
+ * HU-21: el resultado y los tiempos los decide Combat. Estas guardas comprueban
+ * que el reloj de visualizacion es SOLO de presentacion, que no habla de combate
+ * y que el unico temporizador nuevo vive en `BattleTimers.tsx` (el hook sigue sin
+ * temporizadores; `realtime.ts` ya tenia su reconexion).
+ */
+describe('el resultado no se decide en Web (HU-21)', () => {
+  const clockFile = (): { readonly file: string; readonly code: string } => {
+    const source = productionSources().find((entry) => entry.file === 'battleClock.ts')
+
+    if (source === undefined) {
+      throw new Error('battleClock.ts no esta entre las fuentes de produccion')
+    }
+
+    return source
+  }
+
+  it('battleClock.ts no menciona Vida, dano, ataque, Poder ni ganador', () => {
+    const { code } = clockFile()
+
+    expect(code).not.toMatch(/health|damage|attack|power|percent|winner/iu)
+  })
+
+  it('battleClock.ts usa un reloj monotono inyectable y NO Date.now()', () => {
+    const { code } = clockFile()
+
+    expect(code).toMatch(/performance\.now/u)
+    expect(code).not.toMatch(/Date\.now\(/u)
+    expect(code).not.toMatch(/new Date\(/u)
+  })
+
+  it('ningun archivo de produccion de batalla construye un BattleResult ni fija ganador', () => {
+    for (const { file, code } of productionSources()) {
+      // `fixtures.ts` no es produccion y `types.ts` VALIDA la forma (declara el
+      // tipo del resultado y lo comprueba); ninguno construye un resultado.
+      if (file === 'fixtures.ts' || file === 'types.ts') {
+        continue
+      }
+
+      // Solo se prohibe CONSTRUIR (clave de objeto o asignacion), no leer el
+      // resultado que llega de Combat.
+      expect({ file, found: /winnerTeamLabel\s*:/u.test(code) }).toEqual({ file, found: false })
+      expect({ file, found: /\boutcome\s*:\s*['"]/u.test(code) }).toEqual({ file, found: false })
+      expect({
+        file,
+        found: /\breason\s*:\s*['"](ELIMINATION|DISCONNECTION|TIME_LIMIT)/u.test(code),
+      }).toEqual({ file, found: false })
+    }
+  })
+
+  it('los temporizadores nuevos solo estan en BattleTimers.tsx', () => {
+    const withTimers = productionSources()
+      .filter(({ code }) => /setInterval|setTimeout/u.test(code))
+      .map(({ file }) => file)
+      .sort()
+
+    expect(withTimers).toEqual(['BattleTimers.tsx', 'realtime.ts'])
   })
 })
