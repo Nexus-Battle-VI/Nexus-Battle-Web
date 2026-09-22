@@ -5,6 +5,7 @@ import type { RealtimeConnectionState } from '../realtime'
 import { AttackPanel, type CombatControls } from './AttackPanel'
 import { ArenaSide } from './BattleArena'
 import { BattleResultView } from './BattleResultView'
+import { RewardPanel } from './RewardPanel'
 import { BattleTimers } from './BattleTimers'
 import type { ServerClock } from './battleClock'
 import type { LastAttack, LastSkill, LastTurnTimeout } from './battleReducer'
@@ -203,8 +204,10 @@ export const BattleScreen = ({
       </div>
 
       {/* HU-21: la vista de resultado va ENTRE la arena y el resto; el orden del DOM es
-          el orden de lectura (sin `order` ni posiciones absolutas). */}
+          el orden de lectura (sin `order` ni posiciones absolutas). HU-22: el panel de
+          recompensa es ADITIVO, justo despues -- BattleResultView nunca muestra creditos (D4). */}
       {finished && <BattleResultView result={result} subject={subject} />}
+      {finished && <RewardPanel battleId={battle.battleId} subject={subject} />}
 
       {/* La region viva existe siempre (los lectores de pantalla anuncian los cambios de una
           region que ya estaba en la pagina) y, vacia, no ocupa ni reserva altura. */}
