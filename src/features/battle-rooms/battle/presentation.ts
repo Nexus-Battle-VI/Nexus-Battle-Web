@@ -163,6 +163,23 @@ export const attackableTargets = (
     hasHealth(combatantHealth(battle, entry)),
   )
 
+/**
+ * Companeros que pueden recibir la excepcion de curacion de HU-12 (Reanimacion,
+ * sin Task de Management): el propio equipo, SIN uno mismo. A diferencia de
+ * `attackableTargets`, NO se filtra por Vida: un companero caido sigue siendo
+ * un objetivo valido (es el uso central de "reanimar") y uno herido tambien
+ * -- la Tabla 7 no lo restringe a un caido. Lo decide Combat al ejecutar; esto
+ * solo ofrece opciones razonables.
+ */
+export const healableAllies = (
+  battle: BattleView,
+  subject: string | null,
+): readonly TurnOrderEntry[] => {
+  const self = findSelf(battle, subject)
+
+  return groupCombatants(battle, subject).allies.filter((entry) => entry.seat !== self?.seat)
+}
+
 export const EFFECT_LABELS: Readonly<Record<RandomEffect, string>> = {
   DAMAGE: 'Daño normal',
   CRITICAL_DAMAGE: 'Golpe crítico',

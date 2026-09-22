@@ -65,6 +65,16 @@ export const SKILL_STATUSES = ['READY', 'RECHARGING', 'UNSUPPORTED'] as const
 
 export type SkillStatus = (typeof SKILL_STATUSES)[number]
 
+/**
+ * A quien puede dirigirse una habilidad (excepcion de curacion de HU-12, sin
+ * Task de Management): `OPPONENT` es el default de siempre (HU-19); `ALLY`
+ * SOLO para la excepcion nombrada de curacion (Reanimacion). Lo decide
+ * Combat, nunca el cliente.
+ */
+export const SKILL_TARGET_AUDIENCES = ['OPPONENT', 'ALLY'] as const
+
+export type SkillTargetAudience = (typeof SKILL_TARGET_AUDIENCES)[number]
+
 /** Una habilidad del heroe tal como la ve el cliente: nunca lleva sus efectos. */
 export interface SkillView {
   /** `productId` de Catalog: es lo unico que se envia en `useSkill`. */
@@ -74,6 +84,7 @@ export interface SkillView {
   readonly chargeTurns: number
   /** Turnos propios que le faltan; `0` si esta disponible. */
   readonly cooldownRemaining: number
+  readonly targetAudience: SkillTargetAudience
   readonly status: SkillStatus
 }
 
@@ -225,11 +236,45 @@ export interface SkillUsedMessage {
   readonly battle: BattleView
 }
 
+/**
+ * Excepcion de curacion de HU-12 (Tabla 7, sin Task de Management): una
+ * habilidad de curacion ejecutada sobre un aliado, con el `battle` posterior
+ * (Vida, Poder, recargas y turno ya actualizados), con un solo `seq`. Distinto
+ * de `SkillUsedMessage`: sin `resolution` ni `bonus` (curar no resuelve un
+ * golpe), con `heal` en su lugar.
+ */
+export interface HealSkillUsedMessage {
+  readonly type: 'healSkillUsed'
+  readonly seq: number
+  readonly roomId: string
+  readonly occurredAt: string
+  /** El `commandId` del actor: correlaciona el comando con su resultado. */
+  readonly commandId: string
+  readonly completedPosition: number
+  readonly actor: TargetRef
+  readonly target: TargetRef
+  readonly skill: {
+    readonly abilityId: string
+    readonly name: string
+    readonly powerCost: PowerCost
+    readonly chargeTurns: number
+  }
+  /** Poder del actor antes y despues de pagar el costo. */
+  readonly power: { readonly before: number; readonly after: number }
+  /** Turnos propios que le faltan a ESTA habilidad tras la accion. */
+  readonly cooldown: { readonly remainingTurns: number }
+  /** Monto de Vida restaurado al objetivo, ya acotado a su maximo (sin overheal). */
+  readonly heal: { readonly amount: number }
+  readonly targetHealth: { readonly before: number; readonly after: number }
+  readonly battle: BattleView
+}
+
 export type BattleEventMessage =
   | BattleStartedMessage
   | TurnAdvancedMessage
   | BasicAttackResolvedMessage
   | SkillUsedMessage
+  | HealSkillUsedMessage
   | TurnTimedOutMessage
   | BattleFinishedMessage
 
@@ -397,6 +442,9 @@ const isPowerCost = (value: unknown): value is PowerCost =>
 const isSkillStatus = (value: unknown): value is SkillStatus =>
   typeof value === 'string' && (SKILL_STATUSES as readonly string[]).includes(value)
 
+const isSkillTargetAudience = (value: unknown): value is SkillTargetAudience =>
+  typeof value === 'string' && (SKILL_TARGET_AUDIENCES as readonly string[]).includes(value)
+
 /**
  * Una habilidad, campo por campo y coherente con ella misma: disponible no tiene recarga y en
  * recarga siempre le faltan turnos. Una `UNSUPPORTED` puede traer cualquier recarga. No se calcula
@@ -410,6 +458,7 @@ const isSkill = (value: unknown): value is SkillView =>
   isNonNegativeInteger(value.chargeTurns) &&
   value.chargeTurns >= 1 &&
   isNonNegativeInteger(value.cooldownRemaining) &&
+  isSkillTargetAudience(value.targetAudience) &&
   isSkillStatus(value.status) &&
   (value.status === 'READY'
     ? value.cooldownRemaining === 0
@@ -679,6 +728,13 @@ const isTargetHealth = (value: unknown): value is { before: number; after: numbe
   isNonNegativeInteger(value.after) &&
   value.after <= value.before
 
+/** Vida que solo puede SUBIR (o quedar igual, si ya estaba al maximo): la direccion de curar. */
+const isHealedHealth = (value: unknown): value is { before: number; after: number } =>
+  isRecord(value) &&
+  isNonNegativeInteger(value.before) &&
+  isNonNegativeInteger(value.after) &&
+  value.after >= value.before
+
 const isInQueue = (battle: BattleView, ref: TargetRef): boolean =>
   battle.turnOrder.some((entry) => entry.teamLabel === ref.teamLabel && entry.seat === ref.seat)
 
@@ -752,6 +808,38 @@ export const isSkillUsedMessage = (value: unknown): value is SkillUsedMessage =>
   isInQueue(value.battle, value.actor) &&
   isInQueue(value.battle, value.target)
 
+/**
+ * `healSkillUsed` (excepcion de curacion, HU-12): validacion ESTRICTA, mismo criterio que
+ * `skillUsed` pero sin `resolution` ni `bonus` -- curar no resuelve un golpe -- y con `heal`
+ * (entero no negativo) en su lugar. Actor y objetivo deben existir en la cola del `battle`.
+ */
+export const isHealSkillUsedMessage = (value: unknown): value is HealSkillUsedMessage =>
+  isRecord(value) &&
+  value.type === 'healSkillUsed' &&
+  hasEventEnvelope(value) &&
+  isCommandId(value.commandId) &&
+  isNonNegativeInteger(value.completedPosition) &&
+  isTargetRef(value.actor) &&
+  isTargetRef(value.target) &&
+  isRecord(value.skill) &&
+  isNonEmptyString(value.skill.abilityId) &&
+  isNonEmptyString(value.skill.name) &&
+  isPowerCost(value.skill.powerCost) &&
+  isNonNegativeInteger(value.skill.chargeTurns) &&
+  value.skill.chargeTurns >= 1 &&
+  isRecord(value.power) &&
+  isNonNegativeInteger(value.power.before) &&
+  isNonNegativeInteger(value.power.after) &&
+  value.power.after <= value.power.before &&
+  isRecord(value.cooldown) &&
+  isNonNegativeInteger(value.cooldown.remainingTurns) &&
+  isRecord(value.heal) &&
+  isNonNegativeInteger(value.heal.amount) &&
+  isHealedHealth(value.targetHealth) &&
+  isBattleView(value.battle) &&
+  isInQueue(value.battle, value.actor) &&
+  isInQueue(value.battle, value.target)
+
 export const isBattleEventMessage = (value: unknown): value is BattleEventMessage =>
   isRecord(value) &&
   ((hasEventEnvelope(value) &&
@@ -759,6 +847,7 @@ export const isBattleEventMessage = (value: unknown): value is BattleEventMessag
       (value.type === 'turnAdvanced' && isNonNegativeInteger(value.completedPosition)))) ||
     isBasicAttackResolvedMessage(value) ||
     isSkillUsedMessage(value) ||
+    isHealSkillUsedMessage(value) ||
     isTurnTimedOutMessage(value) ||
     isBattleFinishedMessage(value))
 

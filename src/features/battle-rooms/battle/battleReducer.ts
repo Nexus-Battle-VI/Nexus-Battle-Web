@@ -4,6 +4,7 @@ import type {
   BattleResult,
   BattleView,
   DegradedFrom,
+  HealSkillUsedMessage,
   SkillUsedMessage,
   SnapshotMessage,
   TargetRef,
@@ -42,6 +43,24 @@ export interface LastSkill {
 }
 
 /**
+ * La ultima habilidad de curacion que el servidor publico (excepcion de HU-12,
+ * sin Task de Management), tal cual llego: alimenta el mensaje de resultado.
+ * NO se deriva nada de ella. Distinta de `LastSkill`: sin `resolution` ni
+ * `bonus` (curar no resuelve un golpe), con `heal` en su lugar.
+ */
+export interface LastHealSkill {
+  readonly seq: number
+  readonly commandId: string
+  readonly actor: TargetRef
+  readonly target: TargetRef
+  readonly skill: HealSkillUsedMessage['skill']
+  readonly power: HealSkillUsedMessage['power']
+  readonly cooldown: HealSkillUsedMessage['cooldown']
+  readonly heal: HealSkillUsedMessage['heal']
+  readonly targetHealth: { readonly before: number; readonly after: number }
+}
+
+/**
  * El ultimo turno perdido por tiempo que el servidor publico (HU-21), tal cual
  * llego: alimenta el aviso de la franja de resultado. No se deriva nada.
  */
@@ -74,6 +93,11 @@ export interface BattleClientState {
   /** La ultima habilidad aplicada en vivo o por replay (HU-19); `null` tras una instantanea. */
   readonly lastSkill: LastSkill | null
   /**
+   * La ultima habilidad de curacion aplicada en vivo o por replay (excepcion
+   * de HU-12); `null` tras una instantanea.
+   */
+  readonly lastHealSkill: LastHealSkill | null
+  /**
    * HU-21: el resultado unico cuando la batalla termino (`battleFinished` o un
    * `snapshot` de una sala `FINISHED`); `null` mientras siga en curso.
    */
@@ -90,6 +114,7 @@ export const initialBattleState: BattleClientState = {
   needsResync: false,
   lastAttack: null,
   lastSkill: null,
+  lastHealSkill: null,
   result: null,
   lastTurnTimeout: null,
 }
@@ -133,6 +158,24 @@ const lastSkillOf = (message: BattleEventMessage, previous: LastSkill | null): L
       }
     : previous
 
+const lastHealSkillOf = (
+  message: BattleEventMessage,
+  previous: LastHealSkill | null,
+): LastHealSkill | null =>
+  message.type === 'healSkillUsed'
+    ? {
+        seq: message.seq,
+        commandId: message.commandId,
+        actor: message.actor,
+        target: message.target,
+        skill: message.skill,
+        power: message.power,
+        cooldown: message.cooldown,
+        heal: message.heal,
+        targetHealth: message.targetHealth,
+      }
+    : previous
+
 /**
  * Reductor PURO de la batalla (HU-17, HU-18):
  *
@@ -162,6 +205,7 @@ export const battleReducer = (
         needsResync: false,
         lastAttack: null,
         lastSkill: null,
+        lastHealSkill: null,
         result: action.message.result ?? null,
         lastTurnTimeout: null,
       }
@@ -188,6 +232,7 @@ export const battleReducer = (
         lastSeq: message.seq,
         lastAttack: lastAttackOf(message, state.lastAttack),
         lastSkill: lastSkillOf(message, state.lastSkill),
+        lastHealSkill: lastHealSkillOf(message, state.lastHealSkill),
         result: message.type === 'battleFinished' ? message.result : state.result,
         lastTurnTimeout:
           message.type === 'turnTimedOut'

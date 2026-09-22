@@ -1,10 +1,10 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
 import type { RealtimeConnectionState } from '../realtime'
 
-import { findSelf } from './presentation'
+import { combatantHealth, combatantName, findSelf, healableAllies } from './presentation'
 import type { SkillIntentState } from './skillIntent'
 import {
   combatantSkills,
@@ -14,7 +14,9 @@ import {
   describeSkillStatus,
   skillAvailability,
 } from './skillPresentation'
-import type { BattleView, SkillView, TargetRef } from './types'
+import type { BattleView, SkillView, TargetRef, TurnOrderEntry } from './types'
+
+const keyOf = (ref: TargetRef): string => `${ref.teamLabel}#${String(ref.seat)}`
 
 export interface SkillListProps {
   readonly battle: BattleView
@@ -23,7 +25,7 @@ export interface SkillListProps {
   readonly synced: boolean
   /** Hay una intencion (de ataque o de habilidad) enviada sin resultado. */
   readonly pending: boolean
-  /** El objetivo elegido en el panel de combate; `null` si todavia no hay uno. */
+  /** El objetivo elegido en el panel de combate (rival); `null` si todavia no hay uno. */
   readonly target: TargetRef | null
   readonly skill: SkillIntentState
   /** Envia `useSkill` con la habilidad y el objetivo. Combat decide todo lo demas. */
@@ -45,6 +47,11 @@ export interface SkillListProps {
  *
  * Con Poder insuficiente la habilidad NO se bloquea aqui: HU-11 manda que Combat use un ataque basico
  * en ese turno, asi que la interfaz lo avisa (texto fijo) y deja que Combat decida.
+ *
+ * EXCEPCION DE CURACION (HU-12, sin Task de Management): una habilidad con `targetAudience: 'ALLY'`
+ * (Reanimacion) NO usa el objetivo rival del panel de ataque -- ofrece su PROPIO selector de
+ * companero (`healableAllies`, sin filtrar por Vida: un aliado caido sigue siendo un objetivo
+ * valido). Con un unico companero no hay nada que elegir, igual que el objetivo del ataque basico.
  */
 export const SkillList = ({
   battle,
@@ -64,6 +71,16 @@ export const SkillList = ({
   const skills = self === null ? [] : combatantSkills(battle, self)
   const using = skill.intent
   const ready = connection === 'open' && synced
+  const allies = healableAllies(battle, subject)
+  const [chosenAlly, setChosenAlly] = useState<string | null>(null)
+  const [onlyAlly] = allies
+  const selectedAllyKey =
+    allies.length === 1 && onlyAlly !== undefined
+      ? keyOf(onlyAlly)
+      : allies.some((entry) => keyOf(entry) === chosenAlly)
+        ? chosenAlly
+        : null
+  const selectedAlly = allies.find((entry) => keyOf(entry) === selectedAllyKey) ?? null
 
   if (skills.length === 0) {
     return null
@@ -76,20 +93,38 @@ export const SkillList = ({
       </h3>
 
       <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-        {skills.map((entry) => (
-          <SkillRow
-            key={entry.abilityId}
-            skill={entry}
-            availability={skillAvailability({ connection, synced, pending, target, skill: entry })}
-            busy={using?.abilityId === entry.abilityId}
-            noteId={noteId}
-            onUse={() => {
-              if (target !== null) {
-                onUse(entry.abilityId, { teamLabel: target.teamLabel, seat: target.seat })
-              }
-            }}
-          />
-        ))}
+        {skills.map((entry) => {
+          const isHeal = entry.targetAudience === 'ALLY'
+          const effectiveTarget = isHeal ? selectedAlly : target
+
+          return (
+            <SkillRow
+              key={entry.abilityId}
+              skill={entry}
+              battle={battle}
+              allies={allies}
+              selectedAllyKey={selectedAllyKey}
+              onChooseAlly={setChosenAlly}
+              availability={skillAvailability({
+                connection,
+                synced,
+                pending,
+                target: effectiveTarget,
+                skill: entry,
+              })}
+              busy={using?.abilityId === entry.abilityId}
+              noteId={noteId}
+              onUse={() => {
+                if (effectiveTarget !== null) {
+                  onUse(entry.abilityId, {
+                    teamLabel: effectiveTarget.teamLabel,
+                    seat: effectiveTarget.seat,
+                  })
+                }
+              }}
+            />
+          )
+        })}
       </ul>
 
       <p id={noteId} className="text-xs text-muted">
@@ -132,6 +167,11 @@ export const SkillList = ({
 
 interface SkillRowProps {
   readonly skill: SkillView
+  readonly battle: BattleView
+  /** Companeros elegibles para una habilidad de curacion (`targetAudience: 'ALLY'`). */
+  readonly allies: readonly TurnOrderEntry[]
+  readonly selectedAllyKey: string | null
+  readonly onChooseAlly: (key: string) => void
   readonly availability: { readonly enabled: boolean; readonly hint: string | null }
   /** Esta es la habilidad enviada que espera resultado. */
   readonly busy: boolean
@@ -141,6 +181,10 @@ interface SkillRowProps {
 
 const SkillRow = ({
   skill,
+  battle,
+  allies,
+  selectedAllyKey,
+  onChooseAlly,
   availability,
   busy,
   noteId,
@@ -148,6 +192,8 @@ const SkillRow = ({
 }: SkillRowProps): React.JSX.Element => {
   const hintId = useId()
   const stateId = useId()
+  const allyLegendId = useId()
+  const isHeal = skill.targetAudience === 'ALLY'
 
   return (
     <li
@@ -165,6 +211,51 @@ const SkillRow = ({
       <p id={stateId} className="text-xs text-muted">
         {describeSkillStatus(skill)} · {describeRecharge(skill.chargeTurns)}
       </p>
+
+      {isHeal && allies.length > 1 && (
+        <fieldset className="min-w-0">
+          <legend id={allyLegendId} className="mb-1 text-xs font-semibold text-muted">
+            Compañero a curar
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {allies.map((entry) => {
+              const key = keyOf(entry)
+              const health = combatantHealth(battle, entry)
+
+              return (
+                <label
+                  key={key}
+                  className={clsx(
+                    'flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2',
+                    'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
+                    key === selectedAllyKey ? 'border-brand bg-brand/10' : 'border-border',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`${allyLegendId}-companero`}
+                    value={key}
+                    checked={key === selectedAllyKey}
+                    onChange={() => {
+                      onChooseAlly(key)
+                    }}
+                    className="size-4 accent-brand"
+                  />
+                  <span className="min-w-0 truncate text-sm font-medium text-ink">
+                    {combatantName(entry)}
+                  </span>
+                  <span className="text-xs tabular-nums text-muted">
+                    {health === null
+                      ? ''
+                      : `Vida ${String(health.current)} / ${String(health.max)}`}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+      )}
+
       <Button
         aria-disabled={!availability.enabled}
         aria-busy={busy}

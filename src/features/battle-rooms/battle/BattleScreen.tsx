@@ -9,7 +9,7 @@ import { RewardPanel } from './RewardPanel'
 import { StakePanel } from './StakePanel'
 import { BattleTimers } from './BattleTimers'
 import type { ServerClock } from './battleClock'
-import type { LastAttack, LastSkill, LastTurnTimeout } from './battleReducer'
+import type { LastAttack, LastHealSkill, LastSkill, LastTurnTimeout } from './battleReducer'
 import {
   combatantHealth,
   describeTurn,
@@ -32,6 +32,11 @@ export interface BattleScreenProps {
   readonly lastAttack?: LastAttack | null
   /** La ultima habilidad que publico el servidor (HU-19); `null` si aun no hubo ninguna. */
   readonly lastSkill?: LastSkill | null
+  /**
+   * La ultima curacion que publico el servidor (excepcion de HU-12, sin Task
+   * de Management); `null` si aun no hubo ninguna.
+   */
+  readonly lastHealSkill?: LastHealSkill | null
   /**
    * Acciones de combate (HU-18). Sin ellas la pantalla es de solo lectura: se ve la Vida y
    * el turno, pero no se ofrece ningun boton.
@@ -76,6 +81,7 @@ export const BattleScreen = ({
   synced,
   lastAttack = null,
   lastSkill = null,
+  lastHealSkill = null,
   combat,
   result = null,
   lastTurnTimeout = null,
@@ -98,7 +104,8 @@ export const BattleScreen = ({
   const timeoutAfterActions =
     lastTurnTimeout !== null &&
     lastTurnTimeout.seq > (lastAttack?.seq ?? 0) &&
-    lastTurnTimeout.seq > (lastSkill?.seq ?? 0)
+    lastTurnTimeout.seq > (lastSkill?.seq ?? 0) &&
+    lastTurnTimeout.seq > (lastHealSkill?.seq ?? 0)
   const timeoutEntry = battle.turnOrder.find(
     (entry) =>
       entry.teamLabel === lastTurnTimeout?.timedOut.teamLabel &&
@@ -108,7 +115,7 @@ export const BattleScreen = ({
     timeoutEntry?.displayName ?? `Asiento ${String((lastTurnTimeout?.timedOut.seat ?? 0) + 1)}`
   const feedback = timeoutAfterActions
     ? { headline: `${timeoutName} perdió el turno por tiempo.`, detail: '' }
-    : describeLatestAction(lastAttack, lastSkill, battle)
+    : describeLatestAction(lastAttack, lastSkill, battle, lastHealSkill)
   // Con 1 o 2 participantes por lado la arena ya cabe en horizontal desde `md` (tablet); con 3
   // hace falta `lg`. Depende solo de cuantos son, no de nombres ni de la modalidad.
   const horizontalFrom =
