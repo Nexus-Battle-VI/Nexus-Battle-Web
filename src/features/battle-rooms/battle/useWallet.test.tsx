@@ -50,7 +50,10 @@ describe('useWallet (HU-22)', () => {
     })
 
     expect(queryKeys.wallet.me).toEqual(['wallet', 'me'])
-    expect(fetchImpl).toHaveBeenCalledWith('/api/v1/wallet/me', expect.objectContaining({ method: 'GET' }))
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/api/v1/wallet/me',
+      expect.objectContaining({ method: 'GET' }),
+    )
     expect(result.current.data).toEqual(SNAPSHOT)
   })
 

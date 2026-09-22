@@ -10,29 +10,29 @@ de Combat.
 
 ## Qué hace la interfaz (y qué no)
 
-|                                       | Web                                                                                | Wallet / Combat                                       |
-| ------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Créditos ganados en la batalla        | **Muestra** `creditsEarned` tal cual                                                | Todo (`BattleCreditsPolicy`, ya de HU-21)               |
-| Saldo total                           | **Muestra** `balance`/`wallet.balance`; `null` = «Confirmando…», nunca un número inventado | Todo (Wallet es la única fuente del saldo)         |
-| Progreso hacia el cofre (0-20)        | **Muestra** la fracción `progreso / umbral`, acotada a `[0, 1]` solo para no desbordar la barra | Todo (umbral, reinicio, congelado tras 2/2)        |
-| Límite semanal (máx. 2 cofres)        | **Muestra** `count / limit` y un aviso en texto si ya se alcanzó                    | Todo (Wallet decide cuándo se alcanza)                  |
-| Qué producto toca                     | **Muestra** el nombre que llega en `reward`; nunca lo elige ni lo adivina           | Todo (`RewardTable`, motor de HU-24, un único draw)     |
-| Cuándo el cofre está "entregado"      | Solo cuando `rewardDelivery === 'CONFIRMED'`; `PENDING` nunca dice "añadido"        | Todo (workflow de 6 estados, Combat → Wallet → Inventory) |
-| Recuperación tras un refresh          | **Sondea** `GET .../reward` mientras la entrega no llegue a un estado final         | El workflow es resumible e idempotente                 |
+|                                  | Web                                                                                             | Wallet / Combat                                           |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Créditos ganados en la batalla   | **Muestra** `creditsEarned` tal cual                                                            | Todo (`BattleCreditsPolicy`, ya de HU-21)                 |
+| Saldo total                      | **Muestra** `balance`/`wallet.balance`; `null` = «Confirmando…», nunca un número inventado      | Todo (Wallet es la única fuente del saldo)                |
+| Progreso hacia el cofre (0-20)   | **Muestra** la fracción `progreso / umbral`, acotada a `[0, 1]` solo para no desbordar la barra | Todo (umbral, reinicio, congelado tras 2/2)               |
+| Límite semanal (máx. 2 cofres)   | **Muestra** `count / limit` y un aviso en texto si ya se alcanzó                                | Todo (Wallet decide cuándo se alcanza)                    |
+| Qué producto toca                | **Muestra** el nombre que llega en `reward`; nunca lo elige ni lo adivina                       | Todo (`RewardTable`, motor de HU-24, un único draw)       |
+| Cuándo el cofre está "entregado" | Solo cuando `rewardDelivery === 'CONFIRMED'`; `PENDING` nunca dice "añadido"                    | Todo (workflow de 6 estados, Combat → Wallet → Inventory) |
+| Recuperación tras un refresh     | **Sondea** `GET .../reward` mientras la entrega no llegue a un estado final                     | El workflow es resumible e idempotente                    |
 
 Web **nunca** calcula créditos, progreso, ni decide si corresponde cofre: todo llega ya resuelto.
 
 ## Qué hay
 
-| Pieza                 | Dónde                               | Qué hace                                                                                                                                                                                                    |
-| ---------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `api`                  | `battle/api.ts`                      | `fetchBattleReward` (`GET /v1/combat/rooms/:roomId/reward`) y `fetchWallet` (`GET /v1/wallet/me`); ambos deducen el jugador del testimonio, sin parámetros de identidad                                   |
-| `useBattleReward`      | `battle/useBattleReward.ts`          | `useQuery` habilitado solo con la batalla terminada; sondea cada 1500 ms mientras `rewardDelivery` no sea `CONFIRMED` ni (`NONE` con `balance` ya conocido)                                               |
-| `useWallet`            | `battle/useWallet.ts`                | `useQuery` del saldo propio; deshabilitado sin sesión                                                                                                                                                      |
-| `rewardPresentation`   | `battle/rewardPresentation.ts`       | Módulo puro: fracción de la barra (acotada, sin `Math.min`/`Math.max` para no chocar con la guarda de HU-18), textos de progreso/límite y el titular/detalle de entrega por estado                        |
-| `RewardPanel`          | `battle/RewardPanel.tsx`             | Créditos, saldo, barra de progreso (`role="meter"`), límite semanal y tarjeta de entrega; `null` sin sesión o sin `RewardWorkflow` propio (espectador, IA)                                                |
-| Pantalla               | `BattleScreen.tsx`                   | `RewardPanel` se monta **aditivo**, justo después de `BattleResultView` (HU-21), que sigue sin mostrar créditos (D4)                                                                                      |
-| Claves de consulta     | `shared/query-keys.ts`               | `battleRooms.reward(roomId)` (recurso aparte de `battleRooms.detail`) y `wallet.me`                                                                                                                        |
+| Pieza                | Dónde                          | Qué hace                                                                                                                                                                           |
+| -------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api`                | `battle/api.ts`                | `fetchBattleReward` (`GET /v1/combat/rooms/:roomId/reward`) y `fetchWallet` (`GET /v1/wallet/me`); ambos deducen el jugador del testimonio, sin parámetros de identidad            |
+| `useBattleReward`    | `battle/useBattleReward.ts`    | `useQuery` habilitado solo con la batalla terminada; sondea cada 1500 ms mientras `rewardDelivery` no sea `CONFIRMED` ni (`NONE` con `balance` ya conocido)                        |
+| `useWallet`          | `battle/useWallet.ts`          | `useQuery` del saldo propio; deshabilitado sin sesión                                                                                                                              |
+| `rewardPresentation` | `battle/rewardPresentation.ts` | Módulo puro: fracción de la barra (acotada, sin `Math.min`/`Math.max` para no chocar con la guarda de HU-18), textos de progreso/límite y el titular/detalle de entrega por estado |
+| `RewardPanel`        | `battle/RewardPanel.tsx`       | Créditos, saldo, barra de progreso (`role="meter"`), límite semanal y tarjeta de entrega; `null` sin sesión o sin `RewardWorkflow` propio (espectador, IA)                         |
+| Pantalla             | `BattleScreen.tsx`             | `RewardPanel` se monta **aditivo**, justo después de `BattleResultView` (HU-21), que sigue sin mostrar créditos (D4)                                                               |
+| Claves de consulta   | `shared/query-keys.ts`         | `battleRooms.reward(roomId)` (recurso aparte de `battleRooms.detail`) y `wallet.me`                                                                                                |
 
 ## Por qué sondeo y no un mensaje de tiempo real nuevo
 

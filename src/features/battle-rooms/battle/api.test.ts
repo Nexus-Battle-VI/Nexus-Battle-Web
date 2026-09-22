@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 
-import { fetchBattleReward, fetchBattleRoom, fetchWallet, issueRealtimeTicket, startBattle } from './api'
+import {
+  fetchBattleReward,
+  fetchBattleRoom,
+  fetchWallet,
+  issueRealtimeTicket,
+  startBattle,
+} from './api'
 import { ROOM_ID } from './fixtures'
 
 const jsonResponse = (status: number, body: unknown): Response =>

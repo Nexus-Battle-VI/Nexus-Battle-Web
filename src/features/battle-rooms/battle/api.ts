@@ -60,7 +60,10 @@ export const fetchBattleReward = (
   roomId: string,
   signal?: AbortSignal,
 ): Promise<BattleRewardStatus> =>
-  httpClient.get<BattleRewardStatus>(`/v1/combat/rooms/${encodeURIComponent(roomId)}/reward`, signal)
+  httpClient.get<BattleRewardStatus>(
+    `/v1/combat/rooms/${encodeURIComponent(roomId)}/reward`,
+    signal,
+  )
 
 /**
  * Saldo y progreso de cofre del jugador autenticado (HU-22,

@@ -69,7 +69,10 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
         Créditos y recompensa
       </h2>
 
-      <p role="status" className="flex items-center justify-center gap-2 text-lg font-bold text-ink">
+      <p
+        role="status"
+        className="flex items-center justify-center gap-2 text-lg font-bold text-ink"
+      >
         <Coins aria-hidden="true" className="h-5 w-5 text-brand" />
         {`+${String(reward.creditsEarned)} crédito${reward.creditsEarned === 1 ? '' : 's'}`}
       </p>

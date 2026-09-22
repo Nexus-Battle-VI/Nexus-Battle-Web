@@ -91,9 +91,7 @@ describe('RewardPanel — visibilidad (HU-22)', () => {
   it('sin sesion (espectador anonimo) no renderiza nada', () => {
     stubFetch(REWARD_CREDITED_NO_CHEST)
 
-    const { container } = renderWithProviders(
-      <RewardPanel battleId={ROOM_ID} subject={null} />,
-    )
+    const { container } = renderWithProviders(<RewardPanel battleId={ROOM_ID} subject={null} />)
 
     expect(container).toBeEmptyDOMElement()
   })
@@ -204,7 +202,9 @@ describe('RewardPanel — entrega del cofre (HU-22 §9): PENDING nunca dice "ent
 
     renderWithProviders(<RewardPanel battleId={ROOM_ID} subject="sujeto-ana" />)
 
-    expect(await screen.findByText('Armadura de Escamas añadida a tu inventario ✓')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Armadura de Escamas añadida a tu inventario ✓'),
+    ).toBeInTheDocument()
   })
 
   it('sin cofre (NONE ya asentado) no muestra ninguna tarjeta de entrega', async () => {
