@@ -77,6 +77,14 @@ export const fetchBattleReward = (
  */
 export interface WalletSnapshot {
   readonly balance: number
+  /**
+   * HU-23 (aditivo, contrato §6): suma de las apuestas `ACTIVE` del jugador.
+   * Opcional para no romper contra un Wallet anterior a HU-23; cuando falta,
+   * la UI no puede avisar de antemano y la validacion real queda en el backend.
+   */
+  readonly reserved?: number
+  /** HU-23: `balance - reserved`, lo unico contra lo que se valida una reserva nueva. */
+  readonly available?: number
   readonly victoryProgress: number
   readonly weeklyChestCount: number
   readonly weeklyChestLimit: number
