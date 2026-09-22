@@ -481,4 +481,22 @@ describe('ChatPanel', () => {
     expect(sockets[0]?.url).not.toContain('jwt-vigente')
     expect(sockets[0]?.url).not.toContain('ticket-de-prueba')
   })
+
+  it('HU-21: cuando la sala termina, el chat se cierra con un estado claro y sin reintentos', async () => {
+    const { sockets } = await setup()
+
+    connect(sockets[0])
+    act(() => {
+      sockets[0]?.message({
+        type: 'chat.unsubscribed',
+        channel: 'lobby',
+        reason: 'ROOM_NOT_ACTIVE',
+      })
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'La sala ya no está activa: su chat está cerrado.',
+    )
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
+  })
 })

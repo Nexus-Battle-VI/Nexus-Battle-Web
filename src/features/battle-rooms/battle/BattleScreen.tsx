@@ -4,7 +4,10 @@ import type { RealtimeConnectionState } from '../realtime'
 
 import { AttackPanel, type CombatControls } from './AttackPanel'
 import { ArenaSide } from './BattleArena'
-import type { LastAttack, LastSkill } from './battleReducer'
+import { BattleResultView } from './BattleResultView'
+import { BattleTimers } from './BattleTimers'
+import type { ServerClock } from './battleClock'
+import type { LastAttack, LastSkill, LastTurnTimeout } from './battleReducer'
 import {
   combatantHealth,
   describeTurn,
@@ -14,7 +17,7 @@ import {
 } from './presentation'
 import { describeLatestAction } from './skillPresentation'
 import { TurnOrderStrip } from './TurnOrderStrip'
-import type { BattleView, HealthView, TurnOrderEntry } from './types'
+import type { BattleResult, BattleView, HealthView, TurnOrderEntry } from './types'
 
 export interface BattleScreenProps {
   readonly battle: BattleView
@@ -32,6 +35,12 @@ export interface BattleScreenProps {
    * el turno, pero no se ofrece ningun boton.
    */
   readonly combat?: CombatControls
+  /** HU-21: el resultado unico si la batalla termino; `null` mientras siga en curso. */
+  readonly result?: BattleResult | null
+  /** HU-21: el ultimo turno perdido por tiempo (franja de resultado). */
+  readonly lastTurnTimeout?: LastTurnTimeout | null
+  /** HU-21: reloj de visualizacion; sin el no se muestran cuentas atras. */
+  readonly serverClock?: ServerClock | null
 }
 
 /** Estado de la conexion en TEXTO (el punto de color solo lo refuerza). */
@@ -66,8 +75,14 @@ export const BattleScreen = ({
   lastAttack = null,
   lastSkill = null,
   combat,
+  result = null,
+  lastTurnTimeout = null,
+  serverClock = null,
 }: BattleScreenProps): React.JSX.Element => {
-  const turn = describeTurn(battle, subject)
+  const finished = result !== null
+  const turn = finished
+    ? { isMyTurn: false, headline: 'Batalla terminada', detail: `Ronda ${String(battle.round)}` }
+    : describeTurn(battle, subject)
   const self = findSelf(battle, subject)
   const { allies, opponents } = groupCombatants(battle, subject)
   const isCurrent = (entry: TurnOrderEntry): boolean =>
@@ -78,7 +93,20 @@ export const BattleScreen = ({
   const withHealth = hasCombatState(battle)
   const healthOf = (entry: TurnOrderEntry): HealthView | null | undefined =>
     withHealth ? combatantHealth(battle, entry) : undefined
-  const feedback = describeLatestAction(lastAttack, lastSkill, battle)
+  const timeoutAfterActions =
+    lastTurnTimeout !== null &&
+    lastTurnTimeout.seq > (lastAttack?.seq ?? 0) &&
+    lastTurnTimeout.seq > (lastSkill?.seq ?? 0)
+  const timeoutEntry = battle.turnOrder.find(
+    (entry) =>
+      entry.teamLabel === lastTurnTimeout?.timedOut.teamLabel &&
+      entry.seat === lastTurnTimeout.timedOut.seat,
+  )
+  const timeoutName =
+    timeoutEntry?.displayName ?? `Asiento ${String((lastTurnTimeout?.timedOut.seat ?? 0) + 1)}`
+  const feedback = timeoutAfterActions
+    ? { headline: `${timeoutName} perdió el turno por tiempo.`, detail: '' }
+    : describeLatestAction(lastAttack, lastSkill, battle)
   // Con 1 o 2 participantes por lado la arena ya cabe en horizontal desde `md` (tablet); con 3
   // hace falta `lg`. Depende solo de cuantos son, no de nombres ni de la modalidad.
   const horizontalFrom =
@@ -119,6 +147,15 @@ export const BattleScreen = ({
           {connectionLabel(connection, reconnecting)}
         </p>
       </div>
+
+      {!finished && battle.deadlines !== undefined && serverClock !== null && (
+        <BattleTimers
+          battle={battle}
+          serverClock={serverClock}
+          isMyTurn={turn.isMyTurn}
+          synced={synced}
+        />
+      )}
 
       {reconnecting && (
         <p role="status" className="text-center text-xs text-muted">
@@ -165,6 +202,10 @@ export const BattleScreen = ({
         />
       </div>
 
+      {/* HU-21: la vista de resultado va ENTRE la arena y el resto; el orden del DOM es
+          el orden de lectura (sin `order` ni posiciones absolutas). */}
+      {finished && <BattleResultView result={result} subject={subject} />}
+
       {/* La region viva existe siempre (los lectores de pantalla anuncian los cambios de una
           region que ya estaba en la pagina) y, vacia, no ocupa ni reserva altura. */}
       <div
@@ -185,22 +226,24 @@ export const BattleScreen = ({
         )}
       </div>
 
-      {combat === undefined ? (
-        <p
-          aria-label="Acciones de combate"
-          className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted"
-        >
-          Las acciones de combate no están disponibles en esta vista.
-        </p>
-      ) : (
-        <AttackPanel
-          battle={battle}
-          subject={subject}
-          connection={connection}
-          synced={synced}
-          combat={combat}
-        />
-      )}
+      {/* HU-21: tras el final las acciones NO existen (no se muestran deshabilitadas). */}
+      {!finished &&
+        (combat === undefined ? (
+          <p
+            aria-label="Acciones de combate"
+            className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted"
+          >
+            Las acciones de combate no están disponibles en esta vista.
+          </p>
+        ) : (
+          <AttackPanel
+            battle={battle}
+            subject={subject}
+            connection={connection}
+            synced={synced}
+            combat={combat}
+          />
+        ))}
 
       <TurnOrderStrip battle={battle} isSelf={isSelf} isCurrent={isCurrent} />
     </section>

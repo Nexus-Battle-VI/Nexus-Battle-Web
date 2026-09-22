@@ -44,6 +44,8 @@ export type AttackIntentAction =
   | { readonly type: 'connectionLost' }
   | { readonly type: 'retried' }
   | { readonly type: 'dismissed' }
+  /** HU-21: la batalla termino; la accion que no llego a procesarse ya no aplica. */
+  | { readonly type: 'finished' }
 
 /**
  * Reductor PURO de la intencion de ataque. Todo lo que no corresponde a la intencion
@@ -74,5 +76,7 @@ export const attackIntentReducer = (
       return state.intent !== null && state.unconfirmed ? { ...state, unconfirmed: false } : state
     case 'dismissed':
       return state.rejection === null ? state : { ...state, rejection: null }
+    case 'finished':
+      return state.intent === null ? state : initialAttackIntentState
   }
 }

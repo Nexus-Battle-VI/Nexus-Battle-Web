@@ -16,6 +16,7 @@ import {
   type AttackIntentState,
 } from './attackIntent'
 import { battleReducer, initialBattleState, type BattleClientState } from './battleReducer'
+import { createServerClock, type ServerClock } from './battleClock'
 import {
   initialSkillIntentState,
   skillIntentReducer,
@@ -37,6 +38,12 @@ const SKILL_COMMAND = 'useSkill'
 
 export interface BattleRealtime extends BattleClientState {
   readonly connection: RealtimeConnectionState
+  /**
+   * HU-21: reloj de VISUALIZACION creado al recibir `resume.ok.serverTime`; `null`
+   * sin el (Combat anterior a HU-21). No es autoridad: solo alimenta las cuentas
+   * atras de `BattleTimers`.
+   */
+  readonly serverClock: ServerClock | null
   /**
    * Codigo estable de un `command.rejected` de `resume` (p. ej. `NOT_A_PARTICIPANT`,
    * `ROOM_NOT_FOUND`), o `null`. Mientras no sea `null` la batalla no es accesible.
@@ -105,8 +112,10 @@ export const useBattleRealtime = (
   const [skill, skillDispatch] = useReducer(skillIntentReducer, initialSkillIntentState)
   const [connection, setConnection] = useState<RealtimeConnectionState>('connecting')
   const [rejected, setRejected] = useState<string | null>(null)
+  const [serverClock, setServerClock] = useState<ServerClock | null>(null)
   const lastSeqRef = useRef(0)
   const syncedRef = useRef(false)
+  const finishedRef = useRef(false)
   const attackRef = useRef<AttackIntentState>(initialAttackIntentState)
   const skillRef = useRef<SkillIntentState>(initialSkillIntentState)
   const sendRef = useRef<((payload: unknown) => void) | null>(null)
@@ -118,6 +127,10 @@ export const useBattleRealtime = (
   useEffect(() => {
     syncedRef.current = state.synced
   }, [state.synced])
+
+  useEffect(() => {
+    finishedRef.current = state.result !== null
+  }, [state.result])
 
   useEffect(() => {
     attackRef.current = attack
@@ -174,25 +187,50 @@ export const useBattleRealtime = (
               skillDispatch({ type: 'resolved', commandId: message.commandId })
             } else if (message.type === 'skillUsed') {
               skillDispatch({ type: 'resolved', commandId: message.commandId })
+            } else if (message.type === 'battleFinished') {
+              // HU-21: la accion pendiente (si la habia) ya no aplica; el
+              // resultado es el que acaba de llegar.
+              attackDispatch({ type: 'finished' })
+              skillDispatch({ type: 'finished' })
             }
           }
         } else if (isResumeOkMessage(message)) {
           if (message.roomId === roomId) {
             dispatch({ type: 'synced' })
+
+            // HU-21: el instante del servidor se lee UNA vez por sincronizacion y
+            // se proyecta con el reloj monotono local.
+            if (message.serverTime !== undefined) {
+              const clock = createServerClock(message.serverTime, performance.now())
+
+              if (clock !== null) {
+                setServerClock(clock)
+              }
+            }
           }
         } else if (isCommandRejectedMessage(message)) {
           if (message.command === ATTACK_COMMAND) {
-            attackDispatch({
-              type: 'rejected',
-              code: message.code,
-              ...(message.commandId === undefined ? {} : { commandId: message.commandId }),
-            })
+            if (message.code === 'BATTLE_NOT_ACTIVE') {
+              // HU-21: la batalla ya termino; la intencion se cierra SIN dejar
+              // un aviso de error (el resultado llega por `battleFinished`).
+              attackDispatch({ type: 'finished' })
+            } else {
+              attackDispatch({
+                type: 'rejected',
+                code: message.code,
+                ...(message.commandId === undefined ? {} : { commandId: message.commandId }),
+              })
+            }
           } else if (message.command === SKILL_COMMAND) {
-            skillDispatch({
-              type: 'rejected',
-              code: message.code,
-              ...(message.commandId === undefined ? {} : { commandId: message.commandId }),
-            })
+            if (message.code === 'BATTLE_NOT_ACTIVE') {
+              skillDispatch({ type: 'finished' })
+            } else {
+              skillDispatch({
+                type: 'rejected',
+                code: message.code,
+                ...(message.commandId === undefined ? {} : { commandId: message.commandId }),
+              })
+            }
           } else if (message.command === undefined) {
             setRejected(message.code)
           }
@@ -221,10 +259,12 @@ export const useBattleRealtime = (
 
       // Solo con la conexion lista y sin otra intencion en vuelo. `attackRef` se adelanta
       // aqui (no espera al render) para que un doble clic inmediato tambien se bloquee.
+      // HU-21: tras el resultado no se envia nada.
       if (
         roomId === null ||
         send === null ||
         !syncedRef.current ||
+        finishedRef.current ||
         attackRef.current.intent !== null ||
         skillRef.current.intent !== null
       ) {
@@ -247,7 +287,7 @@ export const useBattleRealtime = (
     const send = sendRef.current
     const current = attackRef.current
 
-    if (roomId === null || send === null || !syncedRef.current) {
+    if (roomId === null || send === null || !syncedRef.current || finishedRef.current) {
       return
     }
 
@@ -274,11 +314,12 @@ export const useBattleRealtime = (
       const send = sendRef.current
 
       // Igual que el ataque: solo con la conexion lista y sin otra accion en vuelo, adelantando la
-      // referencia para que un doble clic inmediato tambien se bloquee.
+      // referencia para que un doble clic inmediato tambien se bloquee. HU-21: tras el final, no-op.
       if (
         roomId === null ||
         send === null ||
         !syncedRef.current ||
+        finishedRef.current ||
         attackRef.current.intent !== null ||
         skillRef.current.intent !== null
       ) {
@@ -308,7 +349,7 @@ export const useBattleRealtime = (
     const send = sendRef.current
     const current = skillRef.current
 
-    if (roomId === null || send === null || !syncedRef.current) {
+    if (roomId === null || send === null || !syncedRef.current || finishedRef.current) {
       return
     }
 
@@ -334,6 +375,7 @@ export const useBattleRealtime = (
   return {
     ...state,
     connection: roomId === null ? 'disabled' : connection,
+    serverClock,
     rejected,
     attack,
     sendAttack,

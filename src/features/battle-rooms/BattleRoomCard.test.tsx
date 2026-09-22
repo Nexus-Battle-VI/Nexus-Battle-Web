@@ -150,6 +150,13 @@ describe('BattleRoomCard', () => {
     expect(screen.getByRole('button', { name: /Equipo B/u })).toBeDisabled()
   })
 
+  it('HU-21: una sala FINISHED tampoco se ofrece para unirse', () => {
+    renderCard(room({ status: 'FINISHED' }))
+
+    expect(screen.getByRole('button', { name: /Equipo A/u })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Equipo B/u })).toBeDisabled()
+  })
+
   it('muestra el mensaje de union en curso solo en el equipo que se esta uniendo', () => {
     renderCard(room(), { joiningTeam: 'B' })
 

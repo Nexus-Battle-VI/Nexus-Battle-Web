@@ -45,6 +45,8 @@ export type SkillIntentAction =
   | { readonly type: 'connectionLost' }
   | { readonly type: 'retried' }
   | { readonly type: 'dismissed' }
+  /** HU-21: la batalla termino; la accion que no llego a procesarse ya no aplica. */
+  | { readonly type: 'finished' }
 
 /**
  * Reductor PURO de la intencion de habilidad. Todo lo que no corresponde a la intencion vigente
@@ -78,5 +80,7 @@ export const skillIntentReducer = (
       return state.intent !== null && state.unconfirmed ? { ...state, unconfirmed: false } : state
     case 'dismissed':
       return state.rejection === null ? state : { ...state, rejection: null }
+    case 'finished':
+      return state.intent === null ? state : initialSkillIntentState
   }
 }
