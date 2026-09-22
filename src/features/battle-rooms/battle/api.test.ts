@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 
-import { fetchBattleRoom, issueRealtimeTicket, startBattle } from './api'
+import {
+  fetchBattleReward,
+  fetchBattleRoom,
+  fetchWallet,
+  issueRealtimeTicket,
+  startBattle,
+} from './api'
 import { ROOM_ID } from './fixtures'
 
 const jsonResponse = (status: number, body: unknown): Response =>
@@ -122,4 +128,83 @@ describe('startBattle (HU-17)', () => {
       await expect(startBattle(ROOM_ID)).rejects.toMatchObject({ status })
     },
   )
+})
+
+describe('fetchBattleReward (HU-22)', () => {
+  const STATUS = {
+    creditsEarned: 2,
+    balance: 42,
+    victoryProgress: 6,
+    weeklyChestCount: 0,
+    chestEarned: false,
+    rewardDelivery: 'NONE' as const,
+    reward: null,
+  }
+
+  it('pide GET /api/v1/combat/rooms/:roomId/reward y devuelve el estado tal cual', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, STATUS))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    await expect(fetchBattleReward(ROOM_ID)).resolves.toEqual(STATUS)
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      `/api/v1/combat/rooms/${ROOM_ID}/reward`,
+      expect.objectContaining({ method: 'GET' }),
+    )
+  })
+
+  it('escapa el identificador de sala para que no pueda alterar la ruta', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, STATUS))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    await fetchBattleReward('../otra/ruta?x=1')
+
+    expect((fetchImpl.mock.calls[0] as [string])[0]).toBe(
+      '/api/v1/combat/rooms/..%2Fotra%2Fruta%3Fx%3D1/reward',
+    )
+  })
+
+  it('propaga un 403 cuando quien consulta no participa', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(403, { message: 'No eres participante' })),
+    )
+
+    await expect(fetchBattleReward(ROOM_ID)).rejects.toSatisfy(
+      (error: unknown) => error instanceof HttpError && error.isForbidden,
+    )
+  })
+})
+
+describe('fetchWallet (HU-22)', () => {
+  const SNAPSHOT = {
+    balance: 42,
+    victoryProgress: 6,
+    weeklyChestCount: 0,
+    weeklyChestLimit: 2,
+    threshold: 20,
+  }
+
+  it('pide GET /api/v1/wallet/me sin ningun identificador: el servicio deduce el jugador del testimonio', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse(200, SNAPSHOT))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    await expect(fetchWallet()).resolves.toEqual(SNAPSHOT)
+
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit]
+
+    expect(url).toBe('/api/v1/wallet/me')
+    expect(init.method).toBe('GET')
+  })
+
+  it('propaga un 401 cuando no hay sesion vigente', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse(401, { message: 'Sin testimonio' })),
+    )
+
+    await expect(fetchWallet()).rejects.toSatisfy(
+      (error: unknown) => error instanceof HttpError && error.isUnauthorized,
+    )
+  })
 })

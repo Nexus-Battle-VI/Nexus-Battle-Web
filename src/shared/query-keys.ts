@@ -107,6 +107,16 @@ export const queryKeys = {
     list: ['battle-rooms', 'list'] as const,
     /** Una sala concreta para sus participantes (HU-17, `GET /api/v1/combat/rooms/:roomId`). */
     detail: (roomId: string) => ['battle-rooms', 'detail', roomId] as const,
+    /**
+     * Estado de creditos/cofre de HU-22 para el jugador autenticado en ESA
+     * batalla (`GET /api/v1/combat/rooms/:roomId/reward`). Clave distinta de
+     * `detail`: es un recurso aparte (RewardWorkflow), no parte de la sala.
+     */
+    reward: (roomId: string) => ['battle-rooms', 'reward', roomId] as const,
+  },
+  wallet: {
+    /** Saldo y progreso de cofre propios (HU-22, `GET /api/v1/wallet/me`). El servicio deduce el jugador del testimonio. */
+    me: ['wallet', 'me'] as const,
   },
   notifications: {
     /**
