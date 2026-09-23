@@ -35,8 +35,12 @@ export const NICKNAME_MAX_LENGTH = 32
  */
 export const PASSWORD_EXCLUSIVE_MIN_LENGTH = 8
 
-/** 500 MB, en la unidad en la que `File.size` cuenta realmente. */
-export const AVATAR_MAX_BYTES = 500 * 1024 * 1024
+/**
+ * 5 MiB, en la unidad en la que `File.size` cuenta realmente. Es el tope de
+ * SUBIDA que aplica Account (`AVATAR_UPLOAD_MAX_BYTES`): el archivo se recibe en
+ * memoria, y 500 MB por peticion permitia agotarla.
+ */
+export const AVATAR_MAX_BYTES = 5 * 1024 * 1024
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u
 
@@ -81,7 +85,7 @@ export const MESSAGES = {
   nicknameLength: 'El apodo no puede superar los 32 caracteres.',
   avatarMissing: 'Selecciona una imagen para tu avatar.',
   avatarType: 'El avatar debe ser un archivo de imagen.',
-  avatarSize: 'El avatar no puede superar los 500 MB.',
+  avatarSize: 'El avatar no puede superar los 5 MB.',
   securityAnswer: 'Responde esta pregunta de seguridad.',
   terms: 'Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.',
 } as const

@@ -630,7 +630,7 @@ export const RegistrationPage = ({
                   <Field
                     id={FIELD.avatar}
                     label="Sube tu avatar (obligatorio)"
-                    hint="Formato imagen · Tamaño máximo 500 MB"
+                    hint="Formato imagen · Tamaño máximo 5 MB"
                     {...(visible[FIELD.avatar] === undefined
                       ? {}
                       : { error: visible[FIELD.avatar] })}
