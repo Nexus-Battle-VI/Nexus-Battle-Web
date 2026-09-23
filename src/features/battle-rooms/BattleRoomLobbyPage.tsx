@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate, useNavigate, useParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -324,6 +324,29 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             La batalla comienza cuando la sala se llena: Combat valida a los participantes y decide
             el orden de los turnos.
           </p>
+
+          {/*
+           * Seccion 12 del prompt maestro de estabilizacion: revisar la propia
+           * preparacion sin abandonar la sala. Un modal que reutilizara
+           * `HeroConfigurator` no es viable aqui -- ninguna feature importa
+           * componentes de otra (`eslint.config.js`); la comunicacion es por
+           * rutas. Enlazar a Mi Inventario NO abandona la sala (no llama
+           * `leave`); Combat sigue siendo quien de verdad protege el `start`
+           * contra un equipamiento vencido (HU-16, `HERO_CHANGED_SINCE_JOIN`/
+           * `HERO_LOADOUT_CHANGED`, ya traducido arriba en `actionError`). No
+           * se construye aqui ningun bloqueo nuevo -eso es HU-29, todavia en
+           * dos PR abiertos (Player-Inventory #26, Web #90): revisar este
+           * enlace cuando esos se integren, por si entonces conviene enlazar
+           * a algo mas especifico que el inventario general.
+           */}
+          {isParticipant && (
+            <Link
+              to="/inventory"
+              className="self-start text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              Revisar mi equipamiento
+            </Link>
+          )}
 
           {ownStakeLine !== null && (
             <p role="status" className="text-sm font-medium text-brand">

@@ -203,6 +203,34 @@ describe('BattleRoomLobbyPage', () => {
     expect(screen.getByRole('button', { name: 'Cancelar sala' })).toBeInTheDocument()
   })
 
+  /**
+   * Seccion 12 del prompt maestro de estabilizacion: revisar la propia
+   * preparacion sin abandonar la sala (sin llamar a `leave`). El enlace va a
+   * Mi Inventario -no a un panel embebido- porque ninguna feature importa
+   * componentes de otra en este proyecto.
+   */
+  it('un participante ve "Revisar mi equipamiento", enlazado a Mi Inventario', async () => {
+    useSession.setState(AUTHENTICATED_NO_SOCKET)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    expect(await screen.findByRole('link', { name: 'Revisar mi equipamiento' })).toHaveAttribute(
+      'href',
+      '/inventory',
+    )
+  })
+
+  it('quien no es participante NO ve "Revisar mi equipamiento"', async () => {
+    useSession.setState({ ...AUTHENTICATED_NO_SOCKET, subject: 'sujeto-ajeno' })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    await screen.findByText('Equipo A')
+    expect(screen.queryByRole('link', { name: 'Revisar mi equipamiento' })).not.toBeInTheDocument()
+  })
+
   it('representa un oponente IA sin depender de displayName', async () => {
     useSession.setState(AUTHENTICATED_NO_SOCKET)
     vi.stubGlobal(
