@@ -186,7 +186,11 @@ describe('BattleRoomLobbyPage', () => {
     expect(container.innerHTML).not.toContain(ROOM_ID)
   })
 
-  it('no ofrece un boton para iniciar: la batalla comienza cuando la sala se llena y decide Combat (HU-17)', async () => {
+  it('mientras espera jugadores no ofrece "Iniciar partida" (ni al propietario): solo aparece en PREPARING (HU-17)', async () => {
+    // `AUTHENTICATED_NO_SOCKET` autentica como 'sujeto-ana', que en `room()`
+    // TAMBIEN es `createdBy` -- ni siquiera el propietario ve el boton mientras
+    // la sala sigue WAITING_FOR_PLAYERS. Cobertura del boton ya PREPARING (y de
+    // quien no es propietario) vive en `BattleRoomLobbyPage.lifecycle.test.tsx`.
     useSession.setState(AUTHENTICATED_NO_SOCKET)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
 
@@ -195,7 +199,8 @@ describe('BattleRoomLobbyPage', () => {
     expect(
       await screen.findByText(/La batalla comienza cuando la sala se llena/u),
     ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Empezar partida/u })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Iniciar partida' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar sala' })).toBeInTheDocument()
   })
 
   it('representa un oponente IA sin depender de displayName', async () => {
