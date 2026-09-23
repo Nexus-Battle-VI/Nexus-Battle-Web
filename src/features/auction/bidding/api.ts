@@ -25,4 +25,3 @@ export const registerBid = (
     headers: { 'Idempotency-Key': idempotencyKey },
     ...(signal === undefined ? {} : { signal }),
   })
-

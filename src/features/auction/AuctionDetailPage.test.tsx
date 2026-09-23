@@ -149,6 +149,8 @@ describe('AuctionDetailPage (HU-64.1)', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
 
-    expect(screen.getByText(/La compra inmediata todavia no esta conectada al backend/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/La compra inmediata todavia no esta conectada al backend/),
+    ).toBeInTheDocument()
   })
 })

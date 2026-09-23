@@ -81,8 +81,13 @@ export const AuctionBidPanel = ({
   const [lastError, setLastError] = useState<unknown>()
 
   const mutation = useMutation({
-    mutationFn: ({ amountCredits, idempotencyKey }: { amountCredits: number; idempotencyKey: string }) =>
-      registerBid(auction.id, { amountCredits }, idempotencyKey),
+    mutationFn: ({
+      amountCredits,
+      idempotencyKey,
+    }: {
+      amountCredits: number
+      idempotencyKey: string
+    }) => registerBid(auction.id, { amountCredits }, idempotencyKey),
     onMutate: () => {
       setStage('processing')
       setLastError(undefined)

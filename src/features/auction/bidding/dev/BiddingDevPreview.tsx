@@ -28,11 +28,7 @@ export const BiddingDevPreview = (): React.JSX.Element => (
         availableCredits={5000}
         onRegister={noop}
       />
-      <BidRegistrationCard
-        product={PRODUCT}
-        stage="processing"
-        minimumBidCredits={100}
-      />
+      <BidRegistrationCard product={PRODUCT} stage="processing" minimumBidCredits={100} />
       <BidRegistrationCard
         product={PRODUCT}
         stage="leading"
@@ -59,12 +55,7 @@ export const BiddingDevPreview = (): React.JSX.Element => (
         minimumBidCredits={100}
         onRetry={noop}
       />
-      <BidRegistrationCard
-        product={PRODUCT}
-        stage="limit"
-        minimumBidCredits={100}
-        onClose={noop}
-      />
+      <BidRegistrationCard product={PRODUCT} stage="limit" minimumBidCredits={100} onClose={noop} />
       <BidRegistrationCard
         product={{ ...PRODUCT, icon: '📪' }}
         stage="outbid"
@@ -75,4 +66,3 @@ export const BiddingDevPreview = (): React.JSX.Element => (
     </div>
   </main>
 )
-

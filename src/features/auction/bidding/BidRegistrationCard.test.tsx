@@ -33,7 +33,9 @@ describe('BidRegistrationCard', () => {
   })
 
   it('muestra el estado de registro con progreso accesible', () => {
-    renderWithProviders(<BidRegistrationCard product={product} stage="processing" minimumBidCredits={100} />)
+    renderWithProviders(
+      <BidRegistrationCard product={product} stage="processing" minimumBidCredits={100} />,
+    )
 
     expect(screen.getByRole('progressbar', { name: 'Registrando tu puja' })).toBeInTheDocument()
     expect(screen.getByText('No cierres esta ventana')).toBeInTheDocument()
@@ -64,4 +66,3 @@ describe('BidRegistrationCard', () => {
     expect(screen.getByText('+1.600 créditos')).toBeInTheDocument()
   })
 })
-

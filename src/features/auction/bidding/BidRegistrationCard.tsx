@@ -10,14 +10,7 @@ const formatCredits = (amount: number): string =>
   `${Math.trunc(amount).toString().replace(THOUSANDS, '.')} créditos`
 
 export type BidRegistrationStage =
-  | 'ready'
-  | 'processing'
-  | 'leading'
-  | 'rejected'
-  | 'own-auction'
-  | 'cooldown'
-  | 'limit'
-  | 'outbid'
+  'ready' | 'processing' | 'leading' | 'rejected' | 'own-auction' | 'cooldown' | 'limit' | 'outbid'
 
 export interface BidRegistrationProduct {
   readonly name: string
@@ -227,11 +220,7 @@ export const BidRegistrationCard = ({
 
       {stage === 'rejected' && (
         <>
-          <Alert
-            tone="danger"
-            title="Monto insuficiente"
-            message={errorMessage ?? DEFAULT_ERROR}
-          />
+          <Alert tone="danger" title="Monto insuficiente" message={errorMessage ?? DEFAULT_ERROR} />
           <Button type="button" variant="danger" className="bid-button" onClick={onRetry}>
             Reintentar
           </Button>
