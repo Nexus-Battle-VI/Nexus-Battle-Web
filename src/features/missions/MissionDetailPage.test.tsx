@@ -52,6 +52,7 @@ describe('detalle y matrícula de misión', () => {
   it('reutiliza la clave tras un 503 y muestra la confirmación que devuelve Missions', async () => {
     signIn()
     const attempts: string[] = []
+    const enrollmentBodies: unknown[] = []
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -61,11 +62,19 @@ describe('detalle y matrícula de misión', () => {
           return Promise.resolve(jsonResponse(200, difficultiesWithoutProgress()))
         }
         if (url.endsWith('/inventories/me/heroes')) {
-          return Promise.resolve(jsonResponse(200, [{ heroId: HERO_ID, name: 'Heroína' }]))
+          return Promise.resolve(
+            jsonResponse(200, [{ heroId: HERO_ID, name: 'Heroína', abilities: [] }]),
+          )
+        }
+        if (url.includes('/strategies/')) {
+          return Promise.resolve(
+            jsonResponse(404, { code: 'STRATEGY_NOT_FOUND', message: 'Sin estrategia.' }),
+          )
         }
         if (url.endsWith('/enrollments') && init?.method === 'POST') {
           const headers = init.headers as Record<string, string>
           attempts.push(headers['Idempotency-Key'] ?? '')
+          enrollmentBodies.push(JSON.parse(init.body as string) as unknown)
           return Promise.resolve(
             attempts.length === 1
               ? jsonResponse(503, {
@@ -97,6 +106,9 @@ describe('detalle y matrícula de misión', () => {
 
     expect(await screen.findByRole('heading', { name: 'El Templo Olvidado' })).toBeInTheDocument()
     await user.selectOptions(await screen.findByRole('combobox', { name: 'Héroe' }), HERO_ID)
+    expect(
+      await screen.findByText('Sin estrategia guardada: la IA usará ataque básico.'),
+    ).toBeInTheDocument()
     await user.click(await screen.findByRole('radio', { name: 'Normal' }))
     await user.click(screen.getByRole('button', { name: 'Iniciar misión' }))
 
@@ -108,6 +120,10 @@ describe('detalle y matrícula de misión', () => {
     })
     expect(attempts[0]).toMatch(/^[0-9a-f-]{36}$/iu)
     expect(attempts[1]).toBe(attempts[0])
+    expect(enrollmentBodies).toEqual([
+      { heroId: HERO_ID, difficulty: 'NORMAL', strategyVersion: null },
+      { heroId: HERO_ID, difficulty: 'NORMAL', strategyVersion: null },
+    ])
     expect(await screen.findByRole('status')).toHaveTextContent('Matrícula enr_uno creada')
     expect(screen.getByRole('button', { name: 'Iniciar misión' })).toBeDisabled()
   })

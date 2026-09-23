@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 
@@ -12,6 +12,7 @@ import { queryKeys } from '@/shared/query-keys'
 
 import type { DifficultyLevel } from './api'
 import { MissionDifficultyPicker } from './MissionDifficultyPicker'
+import { MissionStrategyEditor } from './MissionStrategyEditor'
 import { useMissionDifficulties } from './useMissionDifficulties'
 import { enrollInMission, fetchMissionDetail, type EnrollmentAttempt } from './missionApi'
 import { categoryLabel, durationLabel, missionStatusLabel } from './missionPresentation'
@@ -23,12 +24,30 @@ const isExpiredAttempt = (error: unknown): boolean =>
   'code' in error.body &&
   error.body.code === 'ENROLLMENT_EXPIRED'
 
+const isStrategyMismatch = (error: unknown): boolean =>
+  error instanceof HttpError &&
+  error.status === 409 &&
+  typeof error.body === 'object' &&
+  error.body !== null &&
+  'code' in error.body &&
+  error.body.code === 'STRATEGY_VERSION_MISMATCH'
+
 const MissionDetailContent = ({ missionId }: { readonly missionId: string }): React.JSX.Element => {
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
   const [heroId, setHeroId] = useState('')
   const [difficulty, setDifficulty] = useState<DifficultyLevel | null>(null)
+  const [strategyVersion, setStrategyVersion] = useState<number | null>(null)
+  const [strategyReady, setStrategyReady] = useState(false)
   const attemptRef = useRef<EnrollmentAttempt | null>(null)
+  const handleStrategyVersionChange = useCallback(
+    (version: number | null, ready: boolean): void => {
+      setStrategyVersion(version)
+      setStrategyReady(ready)
+      attemptRef.current = null
+    },
+    [],
+  )
   const mission = useQuery({
     queryKey: queryKeys.missions.detail(subject, missionId),
     queryFn: ({ signal }) => fetchMissionDetail(missionId, signal),
@@ -48,12 +67,18 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
     },
     onError: (error) => {
       if (isExpiredAttempt(error)) attemptRef.current = null
+      if (isStrategyMismatch(error)) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.missions.strategy(subject, missionId, heroId),
+        })
+      }
       void queryClient.invalidateQueries({ queryKey: ['missions', 'board'] })
     },
   })
 
   const detail = mission.data
   const heroList = heroes.data ?? []
+  const selectedHero = heroList.find((hero) => hero.heroId === heroId)
   const difficultyAllowed =
     difficulty !== null &&
     !difficulties.isError &&
@@ -61,7 +86,8 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
       true
   const canSubmit =
     detail?.canEnroll === true &&
-    heroList.some((hero) => hero.heroId === heroId) &&
+    selectedHero !== undefined &&
+    strategyReady &&
     difficultyAllowed &&
     !enrollment.isPending &&
     enrollment.data === undefined
@@ -72,9 +98,10 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
     const attempt: EnrollmentAttempt =
       previous?.missionId === missionId &&
       previous.heroId === heroId &&
-      previous.difficulty === difficulty
+      previous.difficulty === difficulty &&
+      previous.strategyVersion === strategyVersion
         ? previous
-        : { missionId, heroId, difficulty, idempotencyKey: crypto.randomUUID() }
+        : { missionId, heroId, difficulty, strategyVersion, idempotencyKey: crypto.randomUUID() }
     attemptRef.current = attempt
     enrollment.mutate(attempt)
   }
@@ -197,6 +224,8 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                       value={heroId}
                       onChange={(event) => {
                         setHeroId(event.target.value)
+                        setStrategyVersion(null)
+                        setStrategyReady(false)
                         attemptRef.current = null
                         enrollment.reset()
                       }}
@@ -211,6 +240,14 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                     </select>
                   </label>
                 </QueryState>
+                {selectedHero !== undefined && (
+                  <MissionStrategyEditor
+                    key={selectedHero.heroId}
+                    missionId={missionId}
+                    hero={selectedHero}
+                    onVersionChange={handleStrategyVersionChange}
+                  />
+                )}
                 <MissionDifficultyPicker
                   missionId={missionId}
                   value={difficulty}

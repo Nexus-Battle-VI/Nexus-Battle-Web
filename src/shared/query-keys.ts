@@ -133,6 +133,10 @@ export const queryKeys = {
     detail: (subject: string | null, missionId: string) =>
       ['missions', 'detail', subject, missionId] as const,
     availableHeroes: (subject: string | null) => ['missions', 'available-heroes', subject] as const,
+    strategy: (subject: string | null, missionId: string, heroId: string) =>
+      ['missions', 'strategy', subject, missionId, heroId] as const,
+    strategyAbilities: (subject: string | null, heroId: string) =>
+      ['missions', 'strategy-abilities', subject, heroId] as const,
     /**
      * Niveles de dificultad de una mision para el jugador autenticado (HU-75,
      * `GET /api/v1/missions/:missionId/difficulties`). Lleva la identidad: el
