@@ -55,11 +55,28 @@ const detail = (itemId: string, name: string) => ({
   },
 })
 
+/** Nadie ha preparado ningun heroe: `fetchHeroSelection` trata el 404 como `null`, no como error. */
+const NO_SELECTION = (): Response => jsonResponse({ message: 'Sin seleccion.' }, 404)
+
 describe('PlayerInventoryPage', () => {
+  // Cada prueba de este archivo configura `fetchMock` pensando SOLO en el
+  // inventario (HU-27/HU-28); ahora que la pantalla tambien consulta
+  // `GET .../heroes/selection` (HU-07, insignia de "Héroe preparado"), un
+  // `fetch` global que delegara ciegamente le daria forma de pagina de
+  // inventario a esa respuesta. En vez de tocar cada prueba existente, el
+  // `fetch` global intercepta esa URL con un 404 ("nada preparado todavia") y
+  // delega el resto, sin cambiar, a `fetchMock`.
   const fetchMock = vi.fn()
+  const globalFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
+    return url.includes('/heroes/selection')
+      ? Promise.resolve(NO_SELECTION())
+      : fetchMock(input, init)
+  })
 
   beforeEach(() => {
-    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('fetch', globalFetch)
     fetchMock.mockReset()
   })
 
@@ -294,5 +311,60 @@ describe('PlayerInventoryPage', () => {
       await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
     ).toBeInTheDocument()
     expect(screen.getByTestId('delta-ATTACK')).toHaveTextContent('+2')
+  })
+
+  /**
+   * HU-07 (2026-09-22, consolidacion de "Mi Héroe" en "Mi Inventario"): con un
+   * héroe ya preparado, la cabecera lo dice de una -sin entrar a "Mi Héroe",
+   * que ya no existe como pantalla propia (ver `routes.test.tsx`).
+   */
+  it('con un héroe ya preparado, la cabecera muestra "Héroe preparado" con su nombre', async () => {
+    const heroEquipment = {
+      hero: {
+        heroId: 'pid-guerrero-tanque',
+        reference: 'guerrero-tanque',
+        subtype: 'GUERRERO_TANQUE',
+        name: 'Guerrero Tanque',
+        imageUrl: 'https://assets.example.test/guerrero-tanque.png',
+      },
+      equipment: { weapons: [], armor: {}, items: [] },
+      baseStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      effectiveStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      deltas: [],
+      activeEffects: [],
+    }
+    const selection = {
+      selectedAt: '2026-09-20T00:00:00.000Z',
+      configuration: heroEquipment,
+      readiness: { ready: true, blockers: [] },
+      capacity: {
+        weapons: { used: 0, max: 2 },
+        armor: { used: 0, max: 6 },
+        items: { used: 0, max: 2 },
+      },
+    }
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
+        if (url.includes('/heroes/selection')) {
+          return Promise.resolve(jsonResponse(selection))
+        }
+        if (url.includes('/heroes/guerrero-tanque/equipment')) {
+          return Promise.resolve(jsonResponse(heroEquipment))
+        }
+        return Promise.resolve(
+          jsonResponse(page([summary('guerrero-tanque', 'Guerrero Tanque', 'HEROE')])),
+        )
+      }),
+    )
+
+    render()
+
+    expect(await screen.findByText('Héroe preparado:')).toBeInTheDocument()
+    expect(screen.getByText('Guerrero Tanque ✓')).toBeInTheDocument()
   })
 })

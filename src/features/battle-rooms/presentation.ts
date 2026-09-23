@@ -148,7 +148,10 @@ export interface JoinBattleRoomFailure {
   readonly action: JoinBattleRoomFailureAction | null
 }
 
-const HEROES_ACTION: JoinBattleRoomFailureAction = { label: 'Revisar Mi Héroe', to: '/heroes' }
+// HU-07 (2026-09-22): "Mi Héroe" se consolido en "Mi Inventario" -ya no es una
+// pantalla propia (`/heroes` solo redirige)-, asi que esta accion apunta
+// directo al destino real en vez de depender de ese redirect.
+const HEROES_ACTION: JoinBattleRoomFailureAction = { label: 'Revisar Mi Héroe', to: '/inventory' }
 const INVENTORY_ACTION: JoinBattleRoomFailureAction = {
   label: 'Revisar inventario',
   to: '/inventory',

@@ -10,6 +10,29 @@ import { HeroConfigurator, type OwnedHero } from './HeroConfigurator'
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 
+/** Nadie ha preparado ningun heroe: `fetchHeroSelection` trata el 404 como `null`, no como error. */
+const NO_SELECTION = (): Response => json({ message: 'Sin seleccion.' }, 404)
+
+/**
+ * Enruta por URL en vez de responder lo mismo a cualquier peticion: desde que
+ * `HeroConfigurator` tambien consulta `GET/PUT .../heroes/selection` (HU-07),
+ * un mock ciego le daria la forma de `HeroEquipment` a una respuesta que se
+ * lee como `HeroSelection`, y el test pasaria por casualidad, no por
+ * construccion. `onEquipment` recibe lo que antes recibia el mock completo
+ * (`url`, `init`); `onSelection` por defecto dice "nada preparado todavia".
+ */
+const routedFetch = (
+  onEquipment: (url: string, init?: RequestInit) => Response,
+  onSelection: (url: string, init?: RequestInit) => Response = NO_SELECTION,
+): ((input: string, init?: RequestInit) => Promise<Response>) =>
+  (input: string, init?: RequestInit) => {
+    const url = String(input)
+
+    return Promise.resolve(
+      url.includes('/selection') ? onSelection(url, init) : onEquipment(url, init),
+    )
+  }
+
 const EMPTY_EQUIPMENT = {
   hero: {
     heroId: 'pid-guerrero-tanque',
@@ -116,7 +139,7 @@ describe('HeroConfigurator (HU-28)', () => {
 
   it('al elegir un héroe propio consulta su equipamiento y muestra las diez ranuras y las estadísticas', async () => {
     const user = userEvent.setup()
-    fetchMock.mockResolvedValue(json(EMPTY_EQUIPMENT))
+    fetchMock.mockImplementation(routedFetch(() => json(EMPTY_EQUIPMENT)))
 
     renderWithProviders(<Harness />)
     await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
@@ -131,13 +154,15 @@ describe('HeroConfigurator (HU-28)', () => {
   it('con ranura elegida y producto compatible, Equipar llama al backend y refleja el nuevo estado', async () => {
     const user = userEvent.setup()
     let equipped = false
-    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
-      if (init?.method === 'PUT') {
-        equipped = true
-        return Promise.resolve(json(EQUIPPED))
-      }
-      return Promise.resolve(json(equipped ? EQUIPPED : EMPTY_EQUIPMENT))
-    })
+    fetchMock.mockImplementation(
+      routedFetch((url, init) => {
+        if (init?.method === 'PUT') {
+          equipped = true
+          return json(EQUIPPED)
+        }
+        return json(equipped ? EQUIPPED : EMPTY_EQUIPMENT)
+      }),
+    )
 
     renderWithProviders(<Harness productReference="espada-de-fuego" productType="ARMA" />)
     await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
@@ -159,7 +184,7 @@ describe('HeroConfigurator (HU-28)', () => {
 
   it('un producto de tipo incompatible con la ranura deja Equipar deshabilitado', async () => {
     const user = userEvent.setup()
-    fetchMock.mockResolvedValue(json(EMPTY_EQUIPMENT))
+    fetchMock.mockImplementation(routedFetch(() => json(EMPTY_EQUIPMENT)))
 
     renderWithProviders(<Harness productReference="casco-de-acero" productType="ARMADURA" />)
     await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
@@ -170,12 +195,14 @@ describe('HeroConfigurator (HU-28)', () => {
 
   it('muestra el mensaje del backend cuando la ranura ya está ocupada (409)', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
-      if (init?.method === 'PUT') {
-        return Promise.resolve(json({ message: 'La ranura WEAPON_1 ya esta ocupada.' }, 409))
-      }
-      return Promise.resolve(json(EMPTY_EQUIPMENT))
-    })
+    fetchMock.mockImplementation(
+      routedFetch((url, init) => {
+        if (init?.method === 'PUT') {
+          return json({ message: 'La ranura WEAPON_1 ya esta ocupada.' }, 409)
+        }
+        return json(EMPTY_EQUIPMENT)
+      }),
+    )
 
     renderWithProviders(<Harness productReference="espada-de-fuego" productType="ARMA" />)
     await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
@@ -187,11 +214,120 @@ describe('HeroConfigurator (HU-28)', () => {
 
   it('propaga el 503 de Catalog al consultar el equipamiento', async () => {
     const user = userEvent.setup()
-    fetchMock.mockResolvedValue(json({ message: 'Catalog no disponible.' }, 503))
+    fetchMock.mockImplementation(
+      routedFetch(() => json({ message: 'Catalog no disponible.' }, 503)),
+    )
 
     renderWithProviders(<Harness />)
     await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Catalog no disponible.')
+  })
+
+  describe('preparar para batalla (HU-07, consolidacion de "Mi Héroe")', () => {
+    const selectionOf = (ready: boolean): Record<string, unknown> => ({
+      selectedAt: '2026-09-20T00:00:00.000Z',
+      configuration: EMPTY_EQUIPMENT,
+      readiness: {
+        ready,
+        blockers: ready
+          ? []
+          : [
+              {
+                code: 'EQUIPPED_PRODUCT_NOT_OWNED',
+                slot: 'WEAPON_1',
+                reference: 'espada-de-fuego',
+                detail: 'Ya no tienes ese producto equipado.',
+              },
+            ],
+      },
+      capacity: {
+        weapons: { used: 0, max: 2 },
+        armor: { used: 0, max: 6 },
+        items: { used: 0, max: 2 },
+      },
+    })
+
+    it('sin heroe preparado, el heroe propio no muestra la insignia y el boton dice "Confirmar para batalla"', async () => {
+      const user = userEvent.setup()
+      fetchMock.mockImplementation(routedFetch(() => json(EMPTY_EQUIPMENT)))
+
+      renderWithProviders(<Harness />)
+      expect(
+        screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }),
+      ).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+      const confirmButton = await screen.findByRole('button', { name: 'Confirmar para batalla' })
+      expect(confirmButton).toBeEnabled()
+    })
+
+    it('al entrar, el heroe REALMENTE preparado aparece elegido de una, con su insignia', async () => {
+      fetchMock.mockImplementation(
+        routedFetch(
+          () => json(EMPTY_EQUIPMENT),
+          () => json(selectionOf(true)),
+        ),
+      )
+
+      renderWithProviders(<Harness />)
+
+      expect(
+        await screen.findByRole('button', {
+          name: 'Seleccionar Guerrero Tanque (preparado para batalla)',
+        }),
+      ).toBeInTheDocument()
+      // Ya esta preparado: el equipamiento se consulto solo, sin pulsar nada.
+      expect(await screen.findByTestId('slot-WEAPON_1')).toBeInTheDocument()
+      expect(await screen.findByRole('button', { name: 'Preparado para batalla ✓' })).toBeDisabled()
+    })
+
+    it('confirmar para batalla invoca PUT .../heroes/selection y la insignia pasa al heroe recien confirmado', async () => {
+      const user = userEvent.setup()
+      let confirmedReference: string | null = null
+      fetchMock.mockImplementation(
+        routedFetch(
+          () => json(EMPTY_EQUIPMENT),
+          (url, init) => {
+            if (init?.method === 'PUT') {
+              const body = JSON.parse(String(init.body)) as { heroReference: string }
+              confirmedReference = body.heroReference
+              return json(selectionOf(true))
+            }
+            return NO_SELECTION()
+          },
+        ),
+      )
+
+      renderWithProviders(<Harness />)
+      await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+      await user.click(await screen.findByRole('button', { name: 'Confirmar para batalla' }))
+
+      await waitFor(() => {
+        expect(confirmedReference).toBe('guerrero-tanque')
+      })
+      expect(await screen.findByRole('button', { name: 'Preparado para batalla ✓' })).toBeDisabled()
+      expect(
+        screen.getByRole('button', {
+          name: 'Seleccionar Guerrero Tanque (preparado para batalla)',
+        }),
+      ).toBeInTheDocument()
+    })
+
+    it('un heroe preparado pero no listo muestra los avisos de elegibilidad, sin inventar el motivo', async () => {
+      fetchMock.mockImplementation(
+        routedFetch(
+          () => json(EMPTY_EQUIPMENT),
+          () => json(selectionOf(false)),
+        ),
+      )
+
+      renderWithProviders(<Harness />)
+
+      expect(
+        await screen.findByText('Este héroe todavía no puede entrar a una batalla.'),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Ya no tienes ese producto equipado.')).toBeInTheDocument()
+    })
   })
 })

@@ -31,10 +31,10 @@ describe('NAVIGATION', () => {
       '/missions',
       '/tournament',
       '/inventory',
-      // HU-07: preparar al heroe es un paso previo a jugar y no cuelga de
-      // ningun otro flujo. Sin acceso propio solo se llegaria escribiendo la
-      // URL.
-      '/heroes',
+      // HU-07 (2026-09-22): "Mi Héroe" se retiro de la navegacion -se
+      // consolido dentro de "Mi Inventario"-, asi que /heroes ya no tiene
+      // entrada propia aqui. La ruta sigue montada como redirect (ver
+      // "Proteccion visual de rutas").
       '/auction',
       // HU-33: catalogo administrativo. Solo lo ven los roles administrativos;
       // el filtro se comprueba mas abajo.
@@ -374,6 +374,36 @@ describe('Proteccion visual de rutas (HU-02)', () => {
       '/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle',
     )
     expect(screen.queryByLabelText('Batalla')).not.toBeInTheDocument()
+  })
+
+  /**
+   * HU-07 (2026-09-22, retiro de "Mi Héroe"): la ruta sigue montada -un
+   * enlace guardado o externo no debe romperse- pero ahora redirige a "Mi
+   * Inventario" en vez de mostrar una pantalla propia, que absorbio esa
+   * funcionalidad (`HeroConfigurator`, "Confirmar para batalla").
+   */
+  it('/heroes redirige a Mi Inventario en lugar de mostrar una pantalla propia', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ items: [], page: 1, pageSize: 16, totalItems: 0, totalPages: 0 }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+        ),
+    )
+
+    try {
+      const { router } = renderRoute('/heroes')
+
+      expect(await screen.findByRole('heading', { name: 'Mi Inventario' })).toBeInTheDocument()
+      expect(router.state.location.pathname).toBe('/inventory')
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('un visitante que intenta Mi Inventario sin sesion recibe el gate, no el inventario', async () => {
