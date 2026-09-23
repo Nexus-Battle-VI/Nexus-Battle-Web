@@ -8,6 +8,9 @@ import { PlayerInventoryPage } from './PlayerInventoryPage'
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 
+const urlOf = (input: RequestInfo | URL): string =>
+  typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
 const summary = (itemId: string, name: string, type = 'ARMA') => ({
   itemId,
   quantity: 2,
@@ -55,11 +58,28 @@ const detail = (itemId: string, name: string) => ({
   },
 })
 
+/** Nadie ha preparado ningun heroe: `fetchHeroSelection` trata el 404 como `null`, no como error. */
+const NO_SELECTION = (): Response => jsonResponse({ message: 'Sin seleccion.' }, 404)
+
 describe('PlayerInventoryPage', () => {
-  const fetchMock = vi.fn()
+  // Cada prueba de este archivo configura `fetchMock` pensando SOLO en el
+  // inventario (HU-27/HU-28); ahora que la pantalla tambien consulta
+  // `GET .../heroes/selection` (HU-07, insignia de "Héroe preparado"), un
+  // `fetch` global que delegara ciegamente le daria forma de pagina de
+  // inventario a esa respuesta. En vez de tocar cada prueba existente, el
+  // `fetch` global intercepta esa URL con un 404 ("nada preparado todavia") y
+  // delega el resto, sin cambiar, a `fetchMock`.
+  const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
+  const globalFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = urlOf(input)
+
+    return url.includes('/heroes/selection')
+      ? Promise.resolve(NO_SELECTION())
+      : fetchMock(input, init)
+  })
 
   beforeEach(() => {
-    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('fetch', globalFetch)
     fetchMock.mockReset()
   })
 
@@ -94,7 +114,8 @@ describe('PlayerInventoryPage', () => {
 
   it('al elegir una tarjeta actualiza el panel de detalle en la misma vista', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string) => {
+    fetchMock.mockImplementation((input) => {
+      const url = urlOf(input)
       if (url.includes('/items/espada-larga')) {
         return Promise.resolve(jsonResponse(detail('espada-larga', 'Espada Larga')))
       }
@@ -140,7 +161,7 @@ describe('PlayerInventoryPage', () => {
 
     await waitFor(
       () => {
-        expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('q=espada'))).toBe(true)
+        expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('q=espada'))).toBe(true)
       },
       { timeout: 2_000 },
     )
@@ -156,13 +177,14 @@ describe('PlayerInventoryPage', () => {
     await user.click(screen.getByRole('button', { name: 'Ítems' }))
 
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('type=ITEM'))).toBe(true)
+      expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('type=ITEM'))).toBe(true)
     })
   })
 
   it('muestra el mensaje del servicio cuando la búsqueda no puede resolverse (503)', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string) => {
+    fetchMock.mockImplementation((input) => {
+      const url = urlOf(input)
       if (url.includes('q=espada')) {
         return Promise.resolve(
           jsonResponse({ message: 'La información del producto no está disponible.' }, 503),
@@ -182,7 +204,8 @@ describe('PlayerInventoryPage', () => {
 
   it('pagina: hay controles cuando el servicio reporta más de una página', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string) => {
+    fetchMock.mockImplementation((input) => {
+      const url = urlOf(input)
       const current = url.includes('page=2') ? 2 : 1
       return Promise.resolve(
         jsonResponse(
@@ -201,7 +224,7 @@ describe('PlayerInventoryPage', () => {
     await user.click(screen.getByRole('button', { name: 'Página 2' }))
 
     expect(await screen.findByText('Objeto página 2')).toBeInTheDocument()
-    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('page=2'))).toBe(true)
+    expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('page=2'))).toBe(true)
   })
 
   it('sin héroes visibles, el configurador de HU-28 no ofrece equipar', async () => {
@@ -255,7 +278,8 @@ describe('PlayerInventoryPage', () => {
     }
 
     let equipped = false
-    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    fetchMock.mockImplementation((input, init) => {
+      const url = urlOf(input)
       if (url.includes('/heroes/guerrero-tanque/equipment') && init?.method === 'PUT') {
         equipped = true
         return Promise.resolve(jsonResponse(heroEquipmentEquipped))
@@ -294,5 +318,60 @@ describe('PlayerInventoryPage', () => {
       await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
     ).toBeInTheDocument()
     expect(screen.getByTestId('delta-ATTACK')).toHaveTextContent('+2')
+  })
+
+  /**
+   * HU-07 (2026-09-22, consolidacion de "Mi Héroe" en "Mi Inventario"): con un
+   * héroe ya preparado, la cabecera lo dice de una -sin entrar a "Mi Héroe",
+   * que ya no existe como pantalla propia (ver `routes.test.tsx`).
+   */
+  it('con un héroe ya preparado, la cabecera muestra "Héroe preparado" con su nombre', async () => {
+    const heroEquipment = {
+      hero: {
+        heroId: 'pid-guerrero-tanque',
+        reference: 'guerrero-tanque',
+        subtype: 'GUERRERO_TANQUE',
+        name: 'Guerrero Tanque',
+        imageUrl: 'https://assets.example.test/guerrero-tanque.png',
+      },
+      equipment: { weapons: [], armor: {}, items: [] },
+      baseStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      effectiveStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      deltas: [],
+      activeEffects: [],
+    }
+    const selection = {
+      selectedAt: '2026-09-20T00:00:00.000Z',
+      configuration: heroEquipment,
+      readiness: { ready: true, blockers: [] },
+      capacity: {
+        weapons: { used: 0, max: 2 },
+        armor: { used: 0, max: 6 },
+        items: { used: 0, max: 2 },
+      },
+    }
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
+        if (url.includes('/heroes/selection')) {
+          return Promise.resolve(jsonResponse(selection))
+        }
+        if (url.includes('/heroes/guerrero-tanque/equipment')) {
+          return Promise.resolve(jsonResponse(heroEquipment))
+        }
+        return Promise.resolve(
+          jsonResponse(page([summary('guerrero-tanque', 'Guerrero Tanque', 'HEROE')])),
+        )
+      }),
+    )
+
+    render()
+
+    expect(await screen.findByText('Héroe preparado:')).toBeInTheDocument()
+    expect(screen.getByText('Guerrero Tanque ✓')).toBeInTheDocument()
   })
 })

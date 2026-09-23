@@ -86,6 +86,17 @@ if (import.meta.env.DEV) {
     })),
   )
 
+  const ImmediatePurchaseDevPreviewLazy = lazy(() =>
+    import('@/features/auction/immediate-purchase/dev/ImmediatePurchaseDevPreview').then(
+      (module) => ({ default: module.ImmediatePurchaseDevPreview }),
+    ),
+  )
+  const BiddingDevPreviewLazy = lazy(() =>
+    import('@/features/auction/bidding/dev/BiddingDevPreview').then((module) => ({
+      default: module.BiddingDevPreview,
+    })),
+  )
+
   resolvedDevRoutes = [
     {
       path: '__dev/visual-library/heroes',
@@ -106,6 +117,24 @@ if (import.meta.env.DEV) {
   ]
 
   resolvedPublicDevRoutes = [
+    // HU-64.1: la tarjeta de compra inmediata se monta con datos de ejemplo y sin
+    // red, para revisar en claro y oscuro los estados de Figma antes de HU-64.6.
+    {
+      path: '__dev/auction/immediate-purchase',
+      element: (
+        <Suspense fallback={null}>
+          <ImmediatePurchaseDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/bidding',
+      element: (
+        <Suspense fallback={null}>
+          <BiddingDevPreviewLazy />
+        </Suspense>
+      ),
+    },
     {
       path: '__dev/account',
       element: (
