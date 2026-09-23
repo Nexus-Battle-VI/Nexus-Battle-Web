@@ -84,23 +84,25 @@ export const AuctionPage = (): React.JSX.Element => {
         <ul className="grid gap-4 md:grid-cols-2">
           {items.map(({ auction, followedAt }) => (
             <li key={auction.id} className="rounded-lg border border-border bg-surface-raised p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-semibold text-ink">Subasta {auction.id}</h2>
-                  <p className="text-sm text-muted">Producto {auction.productId}</p>
+              <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between sm:gap-3">
+                <div className="min-w-0">
+                  <h2 className="break-words font-semibold text-ink">Subasta {auction.id}</h2>
+                  <p className="break-words text-sm text-muted">Producto {auction.productId}</p>
                 </div>
                 <span className="rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success">
                   {auction.status}
                 </span>
               </div>
-              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-muted">Puja mínima</dt>
                   <dd className="font-medium text-ink">{auction.minimumBidCredits} créditos</dd>
                 </div>
                 <div>
                   <dt className="text-muted">Cierra</dt>
-                  <dd className="font-medium text-ink">{formatDateTime(auction.closesAt)}</dd>
+                  <dd className="break-words font-medium text-ink">
+                    {formatDateTime(auction.closesAt)}
+                  </dd>
                 </div>
               </dl>
               <p className="mt-3 text-xs text-muted">

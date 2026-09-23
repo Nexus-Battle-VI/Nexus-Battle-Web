@@ -14,6 +14,8 @@ La ruta `/auction` dejó de ser un marcador y ahora permite al jugador:
 
 La vista incluye estados de carga, lista vacía, error de consulta y errores controlados para duplicados o subastas inexistentes, cerradas o vencidas.
 
+La revisión visual a 390 px detectó desbordamiento por identificadores y fechas largas. Las tarjetas ahora apilan estado, puja y cierre en móvil, permiten saltos de línea y mantienen la cuadrícula de dos columnas desde `sm`.
+
 ## Arquitectura
 
 - `api.ts` concentra el contrato HTTP real de Auction.
@@ -54,12 +56,14 @@ Todas las métricas superan RNF-16 (80 %).
 - `src/features/auction/useWatchlist.ts`
 - `src/features/auction/AuctionPage.tsx`
 - `src/features/auction/AuctionPage.test.tsx`
+- `src/features/auction/dev/AuctionWatchlistDevPreview.tsx`, harness visual disponible únicamente en desarrollo mediante `/__dev/hu68/watchlist`.
 
 ### Archivos modificados
 
 - Rutas para activar `/auction`.
 - Claves compartidas de React Query.
 - Contrato y badge de Notifications para `AUCTION_CHANGED` y `AUCTION_CLOSING_SOON`.
+- Ruta de desarrollo para revisar la pantalla real con respuestas simuladas, sin autenticación ni servicios externos.
 
 Commit: `feat(web): add auction watchlist experience #TASK-68.5`.  
 PR: https://github.com/Nexus-Battle-VI/Nexus-Battle-Web/pull/125
