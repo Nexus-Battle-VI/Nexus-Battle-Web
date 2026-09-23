@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
@@ -126,5 +126,33 @@ describe('StakePanel (HU-23)', () => {
     const { container } = renderWithProviders(<StakePanel roomId={ROOM_ID} subject={null} />)
 
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('al llegar a un estado terminal relee el saldo de Wallet (la cabecera no queda desactualizada)', async () => {
+    stubFetch(roomWithStake('CAPTURED'))
+    authenticate('sujeto-ana')
+    const { queryClient } = renderWithProviders(
+      <StakePanel roomId={ROOM_ID} subject="sujeto-ana" />,
+    )
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await screen.findByText('Perdiste tu apuesta de 10 créditos')
+
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: ['wallet', 'me'] })
+    })
+  })
+
+  it('mientras la apuesta sigue ACTIVE no relee el saldo (nada que confirmar todavia)', async () => {
+    stubFetch(roomWithStake('ACTIVE'))
+    authenticate('sujeto-ana')
+    const { queryClient } = renderWithProviders(
+      <StakePanel roomId={ROOM_ID} subject="sujeto-ana" />,
+    )
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await screen.findByText('Apuesta reservada: 10 créditos')
+
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['wallet', 'me'] })
   })
 })

@@ -8,6 +8,7 @@ import {
 
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
+import { invalidateWallet } from '@/shared/wallet'
 
 import {
   cancelBattleRoom,
@@ -24,6 +25,12 @@ export const useBattleRooms = (): UseQueryResult<readonly BattleRoom[]> =>
     queryKey: queryKeys.battleRooms.list,
     queryFn: ({ signal }) => fetchBattleRooms(signal),
   })
+
+/** `true` si al crear la sala el creador declara una apuesta propia (HU-23). */
+const declaresStake = (input: CreateBattleRoomInput): boolean =>
+  input.teamConfigs.some((team) =>
+    (team.initialParticipants ?? []).some((participant) => 'stake' in participant),
+  )
 
 /**
  * Salas activas del jugador ("volver a mi sala"). `staleTime: 0`: cada vez que
@@ -67,8 +74,12 @@ export const useCreateBattleRoom = (): UseMutationResult<
 
   return useMutation({
     mutationFn: (input: CreateBattleRoomInput) => createBattleRoom(input),
-    onSuccess: () => {
+    onSuccess: (_room, input) => {
       invalidateRoomLists(queryClient)
+      // HU-23: crear apostando reserva creditos (baja `available`).
+      if (declaresStake(input)) {
+        invalidateWallet(queryClient)
+      }
     },
   })
 }
@@ -81,6 +92,8 @@ export const useCancelBattleRoom = (): UseMutationResult<BattleRoom, unknown, st
     mutationFn: (roomId: string) => cancelBattleRoom(roomId),
     onSuccess: () => {
       invalidateRoomLists(queryClient)
+      // HU-23: cancelar libera las apuestas reservadas.
+      invalidateWallet(queryClient)
     },
   })
 }
@@ -93,6 +106,8 @@ export const useLeaveBattleRoom = (): UseMutationResult<BattleRoom, unknown, str
     mutationFn: (roomId: string) => leaveBattleRoom(roomId),
     onSuccess: () => {
       invalidateRoomLists(queryClient)
+      // HU-23: abandonar antes de iniciar libera la apuesta propia.
+      invalidateWallet(queryClient)
     },
   })
 }
@@ -125,8 +140,12 @@ export const useJoinBattleRoom = (): UseMutationResult<
         ...(team === undefined ? {} : { team }),
         ...(stake === undefined ? {} : { stake }),
       }),
-    onSuccess: () => {
+    onSuccess: (_room, { stake }) => {
       invalidateRoomLists(queryClient)
+      // HU-23: unirse apostando reserva creditos (baja `available`).
+      if (stake !== undefined) {
+        invalidateWallet(queryClient)
+      }
     },
   })
 }

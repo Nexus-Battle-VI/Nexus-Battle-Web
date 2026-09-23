@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 
 import { AppHeader } from './AppHeader'
@@ -57,6 +57,57 @@ describe('AppHeader', () => {
     renderHeader()
 
     expect(screen.getByTestId('user-menu-trigger')).toBeInTheDocument()
+  })
+
+  it('con sesion el orden es Mi cuenta → Créditos → tema', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify(
+              url.includes('/wallet/me')
+                ? {
+                    balance: 50_000,
+                    reserved: 0,
+                    available: 50_000,
+                    victoryProgress: 0,
+                    weeklyChestCount: 0,
+                    weeklyChestLimit: 2,
+                    threshold: 20,
+                  }
+                : {},
+            ),
+            {
+              status: url.includes('/wallet/me') ? 200 : 404,
+              headers: { 'content-type': 'application/json' },
+            },
+          ),
+        ),
+      ),
+    )
+    useSession.setState({
+      authenticationAvailable: true,
+      subject: 'sujeto-ana',
+      displayName: 'Ana',
+      accessToken: 'token',
+    })
+    renderHeader()
+
+    const account = screen.getByTestId('user-menu-trigger')
+    const credits = await screen.findByRole('img', { name: /Créditos disponibles: 50\.000/u })
+    const theme = screen.getByRole('group', { name: 'Tema de la interfaz' })
+
+    expect(account.compareDocumentPosition(credits) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(credits.compareDocumentPosition(theme) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    vi.unstubAllGlobals()
+  })
+
+  it('sin sesion no muestra creditos', () => {
+    useSession.setState({ authenticationAvailable: true })
+    renderHeader('/')
+
+    expect(screen.queryByRole('img', { name: /Créditos/u })).not.toBeInTheDocument()
   })
 
   it('sin sesion pero con proveedor configurado, invita a iniciar sesion o crear cuenta', () => {

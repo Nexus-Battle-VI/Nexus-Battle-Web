@@ -1,7 +1,8 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { HttpError } from '@/lib/http'
+import { invalidateWallet } from '@/shared/wallet'
 import type { AuctionDetail } from '../detail-api'
 import { registerBid, type RegisteredBid } from './api'
 import { BidRegistrationCard, type BidRegistrationStage } from './BidRegistrationCard'
@@ -80,6 +81,7 @@ export const AuctionBidPanel = ({
   const [registeredBid, setRegisteredBid] = useState<RegisteredBid | undefined>()
   const [lastError, setLastError] = useState<unknown>()
 
+  const queryClient = useQueryClient()
   const mutation = useMutation({
     mutationFn: ({
       amountCredits,
@@ -95,6 +97,8 @@ export const AuctionBidPanel = ({
     onSuccess: (result) => {
       setRegisteredBid(result)
       setStage('leading')
+      // La puja reserva creditos: el saldo disponible (cabecera incluida) cambia.
+      invalidateWallet(queryClient)
     },
     onError: (error) => {
       setLastError(error)
