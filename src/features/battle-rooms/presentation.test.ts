@@ -180,7 +180,7 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
     )
 
     expect(failure.message).toContain('héroe')
-    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/inventory' })
   })
 
   it('422 con blockers HERO_CLASS_NOT_ALLOWED_FOR_FORMAT explica la restriccion de clase/modalidad, sin action de inventario', () => {
@@ -201,7 +201,7 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
 
     expect(failure.message).toContain('1 contra 1')
     expect(failure.message).not.toContain('texto interno')
-    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/inventory' })
   })
 
   it.each(['EQUIPPED_PRODUCT_NOT_OWNED', 'EQUIPPED_PRODUCT_NOT_ACTIVE'])(
@@ -232,7 +232,7 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
     )
 
     expect(failure.message).toContain('no está disponible')
-    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/inventory' })
   })
 
   it('prioriza HERO_CLASS_NOT_ALLOWED_FOR_FORMAT cuando concurre con un blocker de equipamiento', () => {

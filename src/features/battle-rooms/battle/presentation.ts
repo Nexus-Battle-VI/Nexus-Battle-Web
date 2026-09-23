@@ -83,7 +83,12 @@ export const describeStartBattleFailure = (error: unknown): string => {
       case 401:
         return 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.'
       case 403:
-        return 'No participas en esta batalla.'
+        // HU-17 (2026-09-22): el 403 de /start ahora tiene dos causas -- no ser
+        // participante, o serlo pero no ser el propietario. El boton solo se
+        // muestra al propietario, asi que en la practica esto no deberia verse;
+        // si ocurre (llamada manual, condicion de carrera), este mensaje cubre
+        // ambos casos sin mentir sobre cual aplica.
+        return 'Solo quien creó la sala puede iniciar la partida.'
       case 404:
         return 'La sala ya no existe.'
       case 409:
@@ -189,9 +194,78 @@ export const EFFECT_LABELS: Readonly<Record<RandomEffect, string>> = {
   NO_DAMAGE: 'No causa daño',
 }
 
-export interface AttackFeedback {
+/**
+ * Lo que la pantalla cuenta de una accion, con jerarquia de lectura:
+ *
+ * 1. `headline`: QUIEN hizo QUE a QUIEN ("Ana golpeo a Bruno").
+ * 2. `impact`: CUANTO, en grande ("−3 Vida", "+5 Vida", "Sin daño").
+ * 3. `life`: como quedo la Vida ("Bruno: 26 → 23").
+ * 4. `detail`: el detalle tecnico secundario (Ataque contra Defensa, efecto y
+ *    porcentaje, Poder, recarga), que se conserva para quien lo quiera leer.
+ *
+ * `notice` es un aviso previo opcional (p. ej. Poder insuficiente). Todo sale
+ * de lo que Combat envio: aqui no se recalcula ningun resultado.
+ */
+export interface ActionFeedback {
+  readonly notice?: string
   readonly headline: string
+  readonly impact: string | null
+  /** Refuerzo visual del impacto (el texto ya lo dice): daño, curacion o neutro. */
+  readonly tone: 'damage' | 'heal' | 'neutral'
+  readonly life: string | null
   readonly detail: string
+}
+
+export type AttackFeedback = ActionFeedback
+
+/** Separador de los datos secundarios. */
+export const DETAIL_SEPARATOR = ' · '
+
+/** Signo menos tipografico: "−3 Vida" se lee como una perdida, no como un guion. */
+export const damageImpact = (applied: number): string =>
+  applied > 0 ? `−${String(applied)} Vida` : 'Sin daño'
+
+/** "Bruno: 26 → 23", con la Vida antes y despues que publico Combat. */
+export const lifeChange = (name: string, before: number, after: number): string =>
+  `${name}: ${String(before)} → ${String(after)}`
+
+/** "Ataque 17 vs Defensa 11". */
+export const attackVersusDefense = (attack: number, defense: number): string =>
+  `Ataque ${String(attack)} vs Defensa ${String(defense)}`
+
+/** "Golpe crítico 170 %" (o solo la etiqueta si Combat no envio porcentaje). */
+export const effectWithPercent = (effect: RandomEffect, percent: number | null): string =>
+  percent === null ? EFFECT_LABELS[effect] : `${EFFECT_LABELS[effect]} ${String(percent)} %`
+
+/**
+ * Titular de un golpe EFECTIVO de ataque basico segun el efecto que sorteo
+ * Combat. Evasion, resistencia y escape con daño mayor que 0 NO se redactan
+ * como "esquivo por completo": el porcentaje redujo el golpe, no lo anulo.
+ */
+const hitHeadline = (
+  effect: Exclude<RandomEffect, 'NO_DAMAGE'>,
+  attacker: string,
+  target: string,
+  applied: number,
+): string => {
+  switch (effect) {
+    case 'DAMAGE':
+      return `${attacker} golpeó a ${target}`
+    case 'CRITICAL_DAMAGE':
+      return `¡Golpe crítico de ${attacker} a ${target}!`
+    case 'EVADE':
+      return applied > 0
+        ? `${target} redujo el impacto del ataque de ${attacker}`
+        : `${target} esquivó el ataque de ${attacker}`
+    case 'RESIST':
+      return applied > 0
+        ? `${target} resistió parte del ataque de ${attacker}`
+        : `${target} resistió el ataque de ${attacker}`
+    case 'ESCAPE':
+      return applied > 0
+        ? `${target} escapó en parte del ataque de ${attacker}`
+        : `${target} escapó del ataque de ${attacker}`
+  }
 }
 
 /**
@@ -205,32 +279,41 @@ export const describeLastAttack = (last: LastAttack, battle: BattleView): Attack
   const attacker = attackerEntry === null ? 'Un participante' : combatantName(attackerEntry)
   const target = targetEntry === null ? 'su objetivo' : combatantName(targetEntry)
   const { resolution } = last
+  const compared = attackVersusDefense(resolution.attackValue, resolution.defenseValue)
 
   if (!resolution.effective || resolution.effect === null) {
     return {
-      headline: `${attacker} atacó a ${target}: sin efecto`,
-      detail: `El Ataque (${String(resolution.attackValue)}) no superó la Defensa (${String(resolution.defenseValue)}).`,
+      headline: `${attacker} atacó a ${target}, pero no superó su Defensa`,
+      impact: 'Sin daño',
+      tone: 'neutral',
+      life: null,
+      detail: [compared, 'el Ataque debe superar la Defensa'].join(DETAIL_SEPARATOR),
     }
   }
-
-  const compared = `El Ataque (${String(resolution.attackValue)}) superó la Defensa (${String(resolution.defenseValue)}).`
 
   if (resolution.effect === 'NO_DAMAGE') {
     return {
-      headline: `${attacker} atacó a ${target}: ${EFFECT_LABELS.NO_DAMAGE}`,
-      detail: `${compared} El efecto fue «no causa daño».`,
+      headline: `El ataque de ${attacker} alcanzó a ${target}, pero no causó daño`,
+      impact: 'Sin pérdida de Vida',
+      tone: 'neutral',
+      life: null,
+      detail: [compared, 'Efecto: sin daño'].join(DETAIL_SEPARATOR),
     }
   }
 
-  const percent = resolution.percent === null ? '' : ` (${String(resolution.percent)} %)`
   const reduced =
     resolution.calculatedDamage === resolution.appliedDamage
-      ? ''
-      : ` (calculado ${String(resolution.calculatedDamage)}: la Vida no baja de 0)`
+      ? null
+      : `daño calculado ${String(resolution.calculatedDamage)} (la Vida no baja de 0)`
 
   return {
-    headline: `${attacker} atacó a ${target}: ${EFFECT_LABELS[resolution.effect]}${percent}`,
-    detail: `${compared} Daño aplicado: ${String(resolution.appliedDamage)}${reduced}. Vida de ${target}: ${String(last.targetHealth.before)} → ${String(last.targetHealth.after)}.`,
+    headline: hitHeadline(resolution.effect, attacker, target, resolution.appliedDamage),
+    impact: damageImpact(resolution.appliedDamage),
+    tone: resolution.appliedDamage > 0 ? 'damage' : 'neutral',
+    life: lifeChange(target, last.targetHealth.before, last.targetHealth.after),
+    detail: [compared, effectWithPercent(resolution.effect, resolution.percent), reduced]
+      .filter((part): part is string => part !== null)
+      .join(DETAIL_SEPARATOR),
   }
 }
 

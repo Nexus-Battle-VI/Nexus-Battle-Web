@@ -97,6 +97,10 @@ export const queryKeys = {
     /** Solo el nombre visible (HU-41, `GET /accounts/:id/display-name`), no `detail`. */
     displayName: (accountId: string) => ['account', accountId, 'display-name'] as const,
   },
+  auction: {
+    /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
+    detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+  },
   battleRooms: {
     /**
      * Listado de salas esperando jugadores (HU-14,
@@ -105,6 +109,11 @@ export const queryKeys = {
      * filtro de la UI se aplica client-side sobre este mismo resultado.
      */
     list: ['battle-rooms', 'list'] as const,
+    /**
+     * Salas activas del jugador autenticado (`GET /api/v1/combat/me/rooms`):
+     * "volver a mi sala" en Jugar Online. El jugador sale del testimonio.
+     */
+    mine: ['battle-rooms', 'mine'] as const,
     /** Una sala concreta para sus participantes (HU-17, `GET /api/v1/combat/rooms/:roomId`). */
     detail: (roomId: string) => ['battle-rooms', 'detail', roomId] as const,
     /**

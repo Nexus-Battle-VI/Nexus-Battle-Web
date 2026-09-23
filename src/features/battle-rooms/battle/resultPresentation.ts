@@ -124,3 +124,32 @@ export const describeResult = (
     standings: result.teams.map(standingText),
   }
 }
+
+/** Nombre visible de un participante del resultado; una IA es "Oponente IA". */
+export const participantOutcomeName = (participant: ParticipantOutcome): string =>
+  participant.kind === 'AI'
+    ? 'Oponente IA'
+    : (participant.displayName ?? `Asiento ${String(participant.seat + 1)}`)
+
+/**
+ * "Ganador: Equipo B (Ana, Beto) · Perdedor: Equipo A (Carla)", con el equipo
+ * ganador que publico Combat. `null` sin ganador (empate): el titular ya lo dice.
+ */
+export const winnerLine = (result: BattleResult): string | null => {
+  if (result.winnerTeamLabel === null) {
+    return null
+  }
+
+  const teamText = (label: string): string => {
+    const names = result.participants
+      .filter((participant) => participant.teamLabel === label)
+      .map(participantOutcomeName)
+
+    return names.length === 0 ? `Equipo ${label}` : `Equipo ${label} (${names.join(', ')})`
+  }
+  const loser = result.teams.find((team) => team.teamLabel !== result.winnerTeamLabel)?.teamLabel
+
+  return loser === undefined
+    ? `Ganador: ${teamText(result.winnerTeamLabel)}`
+    : `Ganador: ${teamText(result.winnerTeamLabel)} · Perdedor: ${teamText(loser)}`
+}

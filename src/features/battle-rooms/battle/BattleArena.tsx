@@ -1,7 +1,9 @@
 import { useId } from 'react'
 import clsx from 'clsx'
 
+import { Avatar } from '@/components/ui/Avatar'
 import { heroIdFromSubtype } from '@/features/player-inventory/equipment/heroSubtype'
+import { avatarPathForSubject } from '@/shared/avatar'
 import { Hero3D } from '@/shared/visual-library/heroes'
 
 import { PowerMeter } from '../PowerMeter'
@@ -82,6 +84,14 @@ const CombatantCard = ({
         )}
       </div>
       <div className="flex min-w-0 flex-wrap items-center justify-center gap-1.5">
+        {/* El avatar es del JUGADOR, no del heroe: acompana al nombre sin sustituir al
+            modelo. Decorativo (el nombre ya se lee); una IA no tiene avatar. */}
+        <Avatar
+          avatarUrl={entry.kind === 'HUMAN' ? avatarPathForSubject(entry.playerId) : null}
+          alt=""
+          initials={name.charAt(0).toUpperCase()}
+          size="sm"
+        />
         <span className="truncate text-base font-semibold text-ink">{name}</span>
         {isSelf && (
           <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-ink ring-1 ring-brand">

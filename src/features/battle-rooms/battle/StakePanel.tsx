@@ -5,7 +5,7 @@ import { Coins } from '@/components/ui/icons'
 
 import { useBattleStake } from './useBattleStake'
 import { describeOwnStake } from './stakePresentation'
-import { useWallet } from './useWallet'
+import { useRefreshWalletOn, useWallet } from '@/shared/wallet'
 
 export interface StakePanelProps {
   readonly roomId: string
@@ -24,10 +24,21 @@ export interface StakePanelProps {
  * apuesta propia no se renderiza NADA: no hay una seccion vacia que nadie
  * pidio.
  */
+const TERMINAL_STAKE_STATES: ReadonlySet<string> = new Set([
+  'RELEASED',
+  'CAPTURED',
+  'SETTLED_WON',
+  'RESERVE_FAILED',
+])
+
 export const StakePanel = ({ roomId, subject }: StakePanelProps): React.JSX.Element | null => {
   const headingId = useId()
   const stakeQuery = useBattleStake(roomId, subject, subject !== null)
   const walletQuery = useWallet()
+  const status = stakeQuery.data?.status ?? null
+  // En cuanto Wallet confirma la liquidacion (o liberacion) se relee el saldo:
+  // este panel y la cabecera muestran el mismo valor, nunca uno adelantado.
+  useRefreshWalletOn(status !== null && TERMINAL_STAKE_STATES.has(status) ? status : null)
 
   if (subject === null) {
     return null

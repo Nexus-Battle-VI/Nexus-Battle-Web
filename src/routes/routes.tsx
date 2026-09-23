@@ -16,9 +16,9 @@ import { BattleRoomsPage } from '@/features/battle-rooms/BattleRoomsPage'
 import { BattleRoomLobbyPage } from '@/features/battle-rooms/BattleRoomLobbyPage'
 import { BattleWithChat } from '@/features/battle-rooms/BattleWithChat'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
-import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
+import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -83,11 +83,12 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: '/missions', label: 'Misiones' },
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
-  // HU-07. Entra en la navegacion porque preparar al heroe es un paso previo a
-  // jugar y no cuelga de ningun otro flujo: sin acceso propio solo se llegaria
-  // escribiendo la URL. El prototipo de Figma no la enumera porque su barra de
-  // navegacion es anterior a la que HU-02 dejo acordada.
-  { path: '/heroes', label: 'Mi Héroe' },
+  // HU-07 ya NO tiene entrada propia (2026-09-22, retiro de "Mi Héroe" por
+  // pedido del profesor): elegir héroe se consolidó dentro de "Mi Inventario"
+  // -- `PlayerInventoryPage`/`HeroConfigurator` ya mostraba la galería de
+  // héroes y el equipamiento; ahora también prepara ("Confirmar para
+  // batalla"). `/heroes` sigue montada como redirect (ver más abajo) para no
+  // romper un enlace guardado.
   { path: '/auction', label: 'Subasta' },
   // "Mi Cuenta" ya no vive en la navegacion central (HU-05.4): el acceso a la
   // cuenta es `SessionControl`. La ruta `/account` sigue montada mas abajo.
@@ -234,10 +235,17 @@ export const routes: RouteObject[] = [
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
-      // Seleccion y preparacion del heroe (HU-07). Equipar sigue viviendo en
-      // `/inventory`: esta pantalla elige el heroe y enseña con que entraria.
-      { path: 'heroes', element: <HeroSelectionPage /> },
+      // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,
+      // verlo y equiparlo viven ahora en la misma pantalla (`/inventory`).
+      // `/heroes` se conserva como redirect -no se borra la ruta de golpe-
+      // por si un enlace externo o guardado sigue apuntando ahi.
+      { path: 'heroes', element: <Navigate to="/inventory" replace /> },
       { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
+      // Detalle de una subasta para quien la va a comprar (HU-64.1). El
+      // formulario del vendedor para PUBLICAR ('auction' arriba) sigue en
+      // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta hija no
+      // depende de esa fusion.
+      { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.

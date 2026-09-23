@@ -229,8 +229,8 @@ describe('BattlePage — HU-19: del clic de la habilidad al resultado, solo con 
     )
     expect(screen.getByText('38 / 44')).toBeInTheDocument()
     expect(resultado()).toHaveTextContent('Ana usó Golpe con escudo contra Bruno')
-    expect(resultado()).toHaveTextContent('Poder de Ana: 10 → 8.')
-    expect(resultado()).toHaveTextContent('Bono de Ataque de la habilidad: +2.')
+    expect(resultado()).toHaveTextContent('Poder 10 → 8')
+    expect(resultado()).toHaveTextContent('Bono de Ataque +2')
     // Ya no es mi turno: ni boton de habilidad ni de ataque, ni «Usando…» colgado.
     expect(screen.queryByRole('button', { name: /^Usar |Usando/u })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ataque básico' })).not.toBeInTheDocument()
@@ -279,9 +279,9 @@ describe('BattlePage — HU-19: del clic de la habilidad al resultado, solo con 
     expect(await screen.findByText('Turno de Bruno')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(resultado()).toHaveTextContent(
-      'Ana no tenía Poder suficiente para Golpe con escudo: se usó un ataque básico',
+      'No había Poder suficiente para Golpe con escudo. Se ejecutó un ataque básico en su lugar',
     )
-    expect(resultado()).toHaveTextContent('La habilidad no se gastó ni quedó en recarga.')
+    expect(resultado()).toHaveTextContent('la habilidad no se gastó ni quedó en recarga.')
     expect(screen.getByRole('meter', { name: 'Poder de Ana' })).toHaveAttribute(
       'aria-valuenow',
       '0',

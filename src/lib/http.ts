@@ -59,6 +59,8 @@ export interface HttpClientOptions {
 export interface RequestOptions {
   readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   readonly body?: unknown
+  /** Cabeceras adicionales de la operacion (por ejemplo Idempotency-Key). */
+  readonly headers?: Readonly<Record<string, string>>
   readonly signal?: AbortSignal
 }
 
@@ -172,7 +174,7 @@ export class HttpClient {
     // `exactOptionalPropertyTypes` prohibe asignar `undefined` de forma
     // explicita a una propiedad opcional: el init se compone por partes.
     const init: RequestInit = { method }
-    const headers: Record<string, string> = {}
+    const headers: Record<string, string> = { ...options.headers }
 
     if (hasBody) {
       if (options.body instanceof FormData) {
@@ -239,8 +241,12 @@ export class HttpClient {
     }
   }
 
-  post<T>(path: string, body?: unknown): Promise<T> {
-    return this.request<T>(path, { method: 'POST', body })
+  post<T>(path: string, body?: unknown, headers?: Readonly<Record<string, string>>): Promise<T> {
+    return this.request<T>(path, {
+      method: 'POST',
+      body,
+      ...(headers === undefined ? {} : { headers }),
+    })
   }
 
   /**

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
 
 import { renderWithProviders } from '@/test/render'
@@ -135,7 +134,7 @@ describe('BattlePage — HU-17: la batalla solo se pinta cuando Combat la public
     expect(screen.getByRole('status')).toHaveTextContent('Conectando con la batalla')
   })
 
-  it('sala llena (PREPARING): pide el inicio UNA vez, sin cuerpo, y no pinta ninguna batalla antes de battleStarted', async () => {
+  it('sala llena (PREPARING): espera battleStarted SIN pedir el inicio ella misma (lo pide el lobby, HU-17)', async () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValue(jsonResponse(200, { id: ROOM_ID, status: 'IN_BATTLE' }))
@@ -146,13 +145,9 @@ describe('BattlePage — HU-17: la batalla solo se pinta cuando Combat la public
     deliver(socket, snapshot(0, 'PREPARING', null), ready(0))
 
     expect(await screen.findByText('Preparando la batalla…')).toBeInTheDocument()
-    await waitFor(() => {
-      expect(startCalls(fetchImpl)).toHaveLength(1)
-    })
-    const [, init] = startCalls(fetchImpl)[0] as [string, RequestInit]
-
-    expect(init.method).toBe('POST')
-    expect(init.body).toBeUndefined()
+    // El control de inicio del propietario vive en el lobby (`BattleRoomLobbyPage`)
+    // desde el 2026-09-22: esta pantalla ya NO llama a `POST .../start`.
+    expect(startCalls(fetchImpl)).toHaveLength(0)
     // Ningun turno ni heroe hasta que llegue el evento del servidor.
     expect(screen.queryByText(/Turno de/u)).not.toBeInTheDocument()
     expect(screen.queryByText('Tu turno')).not.toBeInTheDocument()
@@ -202,50 +197,6 @@ describe('BattlePage — HU-17: la batalla solo se pinta cuando Combat la public
     deliver(socket, turnAdvanced(1, 2))
 
     expect(await screen.findByText('Tu turno')).toBeInTheDocument()
-  })
-
-  it('un fallo al iniciar (422 en la revalidacion de un participante) se explica y permite reintentar', async () => {
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse(422, { message: 'detalle tecnico' }))
-      .mockResolvedValue(jsonResponse(200, { id: ROOM_ID, status: 'IN_BATTLE' }))
-    vi.stubGlobal('fetch', fetchImpl)
-    const { sockets } = montar(ANA)
-    const socket = await connect(sockets)
-
-    deliver(socket, snapshot(0, 'PREPARING', null), ready(0))
-
-    expect(await screen.findByText('La batalla no pudo comenzar.')).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent('ya no cumple los requisitos para combatir')
-    expect(screen.queryByText(/detalle tecnico/u)).not.toBeInTheDocument()
-    expect(startCalls(fetchImpl)).toHaveLength(1)
-
-    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
-
-    await waitFor(() => {
-      expect(startCalls(fetchImpl)).toHaveLength(2)
-    })
-  })
-
-  it('equipos de distinto tamano (422 UNSUPPORTED_TEAM_COMPOSITION): lo explica y NO pinta ninguna batalla', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse(422, {
-          statusCode: 422,
-          message: 'Los equipos tienen distinto tamano (1 contra 3)',
-          code: 'UNSUPPORTED_TEAM_COMPOSITION',
-        }),
-      ),
-    )
-    const { sockets } = montar(ANA)
-    const socket = await connect(sockets)
-
-    deliver(socket, snapshot(0, 'PREPARING', null), ready(0))
-
-    expect(await screen.findByText('La batalla no pudo comenzar.')).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent('distinto tamaño')
-    expect(screen.queryByText(/Turno de/u)).not.toBeInTheDocument()
   })
 
   it('sala cancelada: mensaje claro y vuelta a Jugar Online', async () => {
