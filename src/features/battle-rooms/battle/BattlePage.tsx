@@ -107,6 +107,7 @@ export const BattlePage = ({
         synced={realtime.synced}
         lastAttack={realtime.lastAttack}
         lastSkill={realtime.lastSkill}
+        lastHealSkill={realtime.lastHealSkill}
         result={realtime.result}
         lastTurnTimeout={realtime.lastTurnTimeout}
         serverClock={realtime.serverClock}

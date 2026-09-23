@@ -328,6 +328,65 @@ describe('las habilidades no se deciden en Web (HU-19)', () => {
 })
 
 /**
+ * Excepcion de curacion de HU-12 (Tabla 7, sin Task de Management): Combat decide
+ * el monto sanado y quien puede ser objetivo; Web solo ofrece un selector de
+ * companero y pinta lo que Combat ya resolvio. Estas guardas fallan si aparece un
+ * calculo de curacion en el codigo de produccion de la batalla.
+ */
+describe('la curacion no se decide en Web (HU-12, excepcion de sanadores)', () => {
+  const HEAL_FILES = [
+    'SkillList.tsx',
+    'skillPresentation.ts',
+    'presentation.ts',
+    'battleReducer.ts',
+  ]
+
+  const sources = (files: readonly string[]) =>
+    productionSources().filter((source) => files.includes(source.file))
+
+  it('recorre los archivos que tocan la excepcion de curacion', () => {
+    expect(productionSources().map((source) => source.file)).toEqual(
+      expect.arrayContaining(HEAL_FILES),
+    )
+  })
+
+  it.each([
+    [
+      'aritmetica sobre el monto sanado (`heal.amount` se muestra, no se recalcula)',
+      /\bheal\b\.amount\s*[-+*/](?!=)|[-+*/]\s*[\w.()[\]]*\bheal\b\.amount\b/u,
+    ],
+    [
+      'aritmetica sobre la Vida del objetivo de curacion (`targetHealth`)',
+      /\btargetHealth\b\.(before|after)\s*[-+*/](?!=)|[-+*/]\s*[\w.()[\]]*\btargetHealth\b\.(before|after)/u,
+    ],
+    [
+      'Math.* sobre la curacion (no hay redondeo ni acotacion en Web)',
+      /Math\.(floor|ceil|round|trunc|min|max)\(/u,
+    ],
+  ])('no hay %s', (_name, pattern) => {
+    for (const { file, code } of sources(HEAL_FILES)) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('healableAllies no filtra por Vida: un companero caido sigue siendo un objetivo valido', () => {
+    const code = productionSources().find((source) => source.file === 'presentation.ts')?.code ?? ''
+    const start = code.indexOf('export const healableAllies')
+    const end = code.indexOf('export const EFFECT_LABELS')
+
+    expect(start).toBeGreaterThan(-1)
+    expect(end).toBeGreaterThan(start)
+    expect(code.slice(start, end)).not.toMatch(/hasHealth|combatantHealth/u)
+  })
+
+  it('el selector de companero es un `radio` nativo, igual que el objetivo del ataque basico', () => {
+    const code = productionSources().find((source) => source.file === 'SkillList.tsx')?.code ?? ''
+
+    expect(code).toMatch(/type="radio"/u)
+  })
+})
+
+/**
  * HU-21: el resultado y los tiempos los decide Combat. Estas guardas comprueban
  * que el reloj de visualizacion es SOLO de presentacion, que no habla de combate
  * y que el unico temporizador nuevo vive en `BattleTimers.tsx` (el hook sigue sin

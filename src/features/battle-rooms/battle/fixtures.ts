@@ -189,6 +189,7 @@ export const SHIELD_STRIKE: SkillView = {
   powerCost: { mode: 'FIXED', amount: 2 },
   chargeTurns: 1,
   cooldownRemaining: 0,
+  targetAudience: 'OPPONENT',
   status: 'READY',
 }
 
@@ -199,6 +200,7 @@ export const STONE_HAND: SkillView = {
   powerCost: { mode: 'FIXED', amount: 4 },
   chargeTurns: 1,
   cooldownRemaining: 0,
+  targetAudience: 'OPPONENT',
   status: 'UNSUPPORTED',
 }
 
@@ -209,6 +211,22 @@ export const ALL_IN: SkillView = {
   powerCost: { mode: 'ALL_AVAILABLE' },
   chargeTurns: 1,
   cooldownRemaining: 0,
+  targetAudience: 'OPPONENT',
+  status: 'READY',
+}
+
+/**
+ * Reanimacion (Medico): excepcion de curacion de HU-12 (sin Task de
+ * Management). `targetAudience: 'ALLY'` -- se dirige a un companero, no a un
+ * rival -- y cuesta todo el Poder disponible (Tabla 7).
+ */
+export const REANIMATE: SkillView = {
+  abilityId: 'hab-reanimacion',
+  name: 'Reanimación',
+  powerCost: { mode: 'ALL_AVAILABLE' },
+  chargeTurns: 1,
+  cooldownRemaining: 0,
+  targetAudience: 'ALLY',
   status: 'READY',
 }
 
@@ -304,6 +322,53 @@ export const skillUsed = (input: SkillEventInput): Record<string, unknown> => {
     cooldown: { remainingTurns: input.cooldownRemaining ?? skill.chargeTurns },
     bonus: input.bonus ?? { attack: 0, damage: null },
     resolution: input.resolution ?? RESOLUTION,
+    targetHealth: { before: input.before, after: input.after },
+    battle: input.view,
+  }
+}
+
+/**
+ * Entrada de `healSkillUsed` (excepcion de curacion, HU-12, sin Task de
+ * Management): mismo criterio que `SkillEventInput`, SIN `bonus` ni
+ * `resolution` (curar no resuelve un golpe) y CON `heal`.
+ */
+export interface HealSkillEventInput {
+  readonly seq: number
+  readonly commandId: string
+  readonly actor: TargetRef
+  readonly target: TargetRef
+  readonly skill?: SkillView
+  readonly power: { readonly before: number; readonly after: number }
+  readonly cooldownRemaining?: number
+  readonly heal: number
+  readonly before: number
+  readonly after: number
+  readonly view: BattleView
+  readonly completedPosition?: number
+}
+
+/** `healSkillUsed` con la forma EXACTA del contrato (excepcion de curacion de HU-12). */
+export const healSkillUsed = (input: HealSkillEventInput): Record<string, unknown> => {
+  const skill = input.skill ?? REANIMATE
+
+  return {
+    type: 'healSkillUsed',
+    seq: input.seq,
+    roomId: ROOM_ID,
+    occurredAt: '2026-09-21T10:01:00.000Z',
+    commandId: input.commandId,
+    completedPosition: input.completedPosition ?? 1,
+    actor: input.actor,
+    target: input.target,
+    skill: {
+      abilityId: skill.abilityId,
+      name: skill.name,
+      powerCost: skill.powerCost,
+      chargeTurns: skill.chargeTurns,
+    },
+    power: input.power,
+    cooldown: { remainingTurns: input.cooldownRemaining ?? skill.chargeTurns },
+    heal: { amount: input.heal },
     targetHealth: { before: input.before, after: input.after },
     battle: input.view,
   }
