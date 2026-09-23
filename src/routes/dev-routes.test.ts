@@ -23,12 +23,13 @@ describe('devRoutes', () => {
     // preparacion de sala de batalla (HU-15.3), el medidor de Poder (HU-11),
     // que aun no esta montado en ninguna pantalla del producto, la pantalla de
     // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket, y
-    // la tarjeta de compra inmediata (HU-64.1) y el registro de puja (HU-63.8)
-    // con datos de ejemplo, revisables en claro y oscuro sin depender de una
-    // subasta real.
+    // la tarjeta de compra inmediata (HU-64.1), el registro de puja (HU-63.8)
+    // y la configuracion de puja automatica (HU-67.6) con datos de ejemplo,
+    // revisables en claro y oscuro sin depender de una subasta real.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/auction/immediate-purchase',
       '__dev/auction/bidding',
+      '__dev/auction/auto-bid',
       '__dev/account',
       '__dev/admin/products/new',
       '__dev/heroes',
