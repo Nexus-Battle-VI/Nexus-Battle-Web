@@ -8,7 +8,7 @@ import { QueryState } from '@/components/ui/QueryState'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
-import { fetchAuctionDetail } from './detail-api'
+import { fetchAuctionDetail, fetchBuyerCredits } from './detail-api'
 import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCard'
 
 /**
@@ -51,6 +51,21 @@ export const AuctionDetailPage = (): React.JSX.Element => {
   const product = productQuery.data
   const isSeller = auction !== undefined && subject !== null && subject === auction.sellerId
 
+  const walletQuery = useQuery({
+    queryKey: queryKeys.wallet.me,
+    queryFn: ({ signal }) => fetchBuyerCredits(signal),
+    enabled: subject !== null && auction !== undefined && !isSeller,
+  })
+
+  const availableCredits = walletQuery.data?.available ?? walletQuery.data?.balance
+  const buyNowCredits = auction?.buyNowCredits ?? null
+  const purchaseStage =
+    buyNowCredits === null
+      ? 'unavailable'
+      : availableCredits !== undefined && availableCredits < buyNowCredits
+        ? 'insufficient-credits'
+        : 'available'
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       <Breadcrumb
@@ -90,10 +105,9 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                         icon: '🎁',
                         summary: product.description,
                       }}
-                      stage={auction.buyNowCredits === null ? 'unavailable' : 'available'}
-                      {...(auction.buyNowCredits !== null
-                        ? { priceCredits: auction.buyNowCredits }
-                        : {})}
+                      stage={purchaseStage}
+                      {...(buyNowCredits !== null ? { priceCredits: buyNowCredits } : {})}
+                      {...(availableCredits !== undefined ? { availableCredits } : {})}
                       confirmed={confirmed}
                       onConfirmedChange={setConfirmed}
                       onBuy={() => {

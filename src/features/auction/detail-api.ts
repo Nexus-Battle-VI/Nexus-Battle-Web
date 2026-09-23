@@ -38,3 +38,20 @@ export const fetchAuctionDetail = (
   signal?: AbortSignal,
 ): Promise<AuctionDetail> =>
   httpClient.get<AuctionDetail>(`/v1/auctions/${encodeURIComponent(auctionId)}`, signal)
+
+export interface BuyerCreditsSnapshot {
+  readonly balance: number
+  /** HU-23: saldo menos apuestas activas. Cuando falta, se usa `balance`. */
+  readonly available?: number
+}
+
+/**
+ * `GET /v1/wallet/me` (HU-22). Comparte el mismo endpoint y la misma clave de
+ * consulta (`queryKeys.wallet.me`) que `features/battle-rooms/battle/useWallet`,
+ * pero se llama aqui de forma local -sin importar ese modulo- porque `useWallet`
+ * vive dentro de `battle-rooms/battle`, no en un punto de entrada de esa
+ * feature pensado para reutilizarse (a diferencia de `features/catalog/api`).
+ * Solo se necesita el saldo disponible para CA-02, no el progreso de cofre.
+ */
+export const fetchBuyerCredits = (signal?: AbortSignal): Promise<BuyerCreditsSnapshot> =>
+  httpClient.get<BuyerCreditsSnapshot>('/v1/wallet/me', signal)

@@ -59,9 +59,10 @@ describe('AuctionDetailPage (HU-64.1)', () => {
     useSession.setState({ subject: 'buyer-1', accessToken: 'token', expiresAt: null })
   })
 
-  it('muestra la tarjeta de compra inmediata cuando hay precio configurado', async () => {
+  it('muestra la tarjeta de compra inmediata cuando hay precio configurado y saldo suficiente', async () => {
     vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
     vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
 
     montar()
 
@@ -72,6 +73,28 @@ describe('AuctionDetailPage (HU-64.1)', () => {
     expect(
       screen.getByRole('checkbox', { name: 'Confirmo la compra inmediata' }),
     ).toBeInTheDocument()
+  })
+
+  it('CA-02: saldo insuficiente muestra el aviso y deshabilita la compra', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 100 })
+
+    montar()
+
+    expect(await screen.findByText('Créditos insuficientes')).toBeInTheDocument()
+    expect(screen.getByText(/Necesitas 2\.500 créditos/u)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Comprar ahora' })).toBeDisabled()
+  })
+
+  it('CA-02: usa el saldo disponible (balance menos apuestas activas) cuando el servicio lo informa', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000, available: 100 })
+
+    montar()
+
+    expect(await screen.findByText('Créditos insuficientes')).toBeInTheDocument()
   })
 
   it('CA-03: sin precio de compra inmediata no muestra la tarjeta de compra, ofrece pujar', async () => {
