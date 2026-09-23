@@ -263,4 +263,96 @@ describe('BattleRoomLobbyPage', () => {
 
     expect(await screen.findByText('Oponente IA')).toBeInTheDocument()
   })
+  describe('avatar de los participantes (HU-15)', () => {
+    const imageResponse = (): Response =>
+      new Response(new Blob(['png'], { type: 'image/png' }), {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      })
+
+    /** Enruta por URL: la sala para el listado, la imagen/404 para el avatar. */
+    const fetchRouting = (avatar: () => Response) =>
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
+        return Promise.resolve(
+          url.includes('/accounts/by-subject/') ? avatar() : jsonResponse(200, [room()]),
+        )
+      })
+
+    const requestedUrls = (fetchMock: ReturnType<typeof vi.fn>): string[] =>
+      fetchMock.mock.calls.map(([input]) =>
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url,
+      )
+
+    it('muestra el avatar REAL de un jugador humano, pedido por su sujeto', async () => {
+      useSession.setState(AUTHENTICATED_NO_SOCKET)
+      vi.stubGlobal('URL', {
+        ...URL,
+        createObjectURL: vi.fn().mockReturnValue('blob:avatar-ana'),
+        revokeObjectURL: vi.fn(),
+      })
+      const fetchMock = fetchRouting(imageResponse)
+      vi.stubGlobal('fetch', fetchMock)
+
+      montar()
+
+      const image = await screen.findByRole('img', { name: 'Ana' })
+      expect(image).toHaveAttribute('src', 'blob:avatar-ana')
+      expect(requestedUrls(fetchMock)).toContainEqual(
+        expect.stringContaining('/accounts/by-subject/sujeto-ana/avatar'),
+      )
+    })
+
+    it('cae a la inicial cuando el jugador no tiene avatar (404 legitimo)', async () => {
+      useSession.setState(AUTHENTICATED_NO_SOCKET)
+      vi.stubGlobal(
+        'fetch',
+        fetchRouting(() => jsonResponse(404, { message: 'sin avatar' })),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Ana')).toBeInTheDocument()
+      expect(await screen.findByText('A')).toBeInTheDocument()
+      expect(screen.queryByRole('img', { name: 'Ana' })).not.toBeInTheDocument()
+    })
+
+    it('un oponente IA no pide avatar', async () => {
+      useSession.setState(AUTHENTICATED_NO_SOCKET)
+      const fetchMock = vi.fn().mockResolvedValue(
+        jsonResponse(200, [
+          room({
+            mode: 'PVE',
+            teams: [
+              { label: 'A', capacity: 1, participants: [] },
+              {
+                label: 'B',
+                capacity: 1,
+                participants: [
+                  {
+                    kind: 'AI',
+                    playerId: null,
+                    heroId: null,
+                    joinedAt: '2026-01-01T00:00:00.000Z',
+                  },
+                ],
+              },
+            ],
+          }),
+        ]),
+      )
+      vi.stubGlobal('fetch', fetchMock)
+
+      montar()
+
+      expect(await screen.findByText('Oponente IA')).toBeInTheDocument()
+      expect(requestedUrls(fetchMock).some((url) => url.includes('/avatar'))).toBe(false)
+    })
+  })
 })

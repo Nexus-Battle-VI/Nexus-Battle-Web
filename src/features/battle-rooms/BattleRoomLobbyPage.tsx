@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { Coins } from '@/components/ui/icons'
 import { ChatPanel } from './ChatPanel'
+import { avatarPathForSubject } from '@/shared/avatar'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 
@@ -72,7 +73,9 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
             // respuesta de la sala: la posicion es la unica clave disponible.
             <li key={`${participant.kind}-${String(index)}`} className="flex items-center gap-2">
               <Avatar
-                avatarUrl={null}
+                avatarUrl={
+                  participant.kind === 'HUMAN' ? avatarPathForSubject(participant.playerId) : null
+                }
                 alt={label}
                 initials={initialsOfDisplayName(label)}
                 size="sm"
@@ -144,6 +147,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     mutationFn: (id: string) => startBattle(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.mine })
       if (roomId !== null) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.detail(roomId) })
       }
