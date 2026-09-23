@@ -97,6 +97,10 @@ export const queryKeys = {
     /** Solo el nombre visible (HU-41, `GET /accounts/:id/display-name`), no `detail`. */
     displayName: (accountId: string) => ['account', accountId, 'display-name'] as const,
   },
+  auction: {
+    /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
+    detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+  },
   battleRooms: {
     /**
      * Listado de salas esperando jugadores (HU-14,
