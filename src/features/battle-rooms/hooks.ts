@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
+import { invalidateWallet } from '@/shared/wallet'
 
 import {
   cancelBattleRoom,
@@ -22,6 +23,12 @@ export const useBattleRooms = (): UseQueryResult<readonly BattleRoom[]> =>
     queryKey: queryKeys.battleRooms.list,
     queryFn: ({ signal }) => fetchBattleRooms(signal),
   })
+
+/** `true` si al crear la sala el creador declara una apuesta propia (HU-23). */
+const declaresStake = (input: CreateBattleRoomInput): boolean =>
+  input.teamConfigs.some((team) =>
+    (team.initialParticipants ?? []).some((participant) => 'stake' in participant),
+  )
 
 /**
  * Crear sala. Sin actualizacion optimista: la sala real la decide el
@@ -39,8 +46,12 @@ export const useCreateBattleRoom = (): UseMutationResult<
 
   return useMutation({
     mutationFn: (input: CreateBattleRoomInput) => createBattleRoom(input),
-    onSuccess: () => {
+    onSuccess: (_room, input) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      // HU-23: crear apostando reserva creditos (baja `available`).
+      if (declaresStake(input)) {
+        invalidateWallet(queryClient)
+      }
     },
   })
 }
@@ -53,6 +64,8 @@ export const useCancelBattleRoom = (): UseMutationResult<BattleRoom, unknown, st
     mutationFn: (roomId: string) => cancelBattleRoom(roomId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      // HU-23: cancelar libera las apuestas reservadas.
+      invalidateWallet(queryClient)
     },
   })
 }
@@ -65,6 +78,8 @@ export const useLeaveBattleRoom = (): UseMutationResult<BattleRoom, unknown, str
     mutationFn: (roomId: string) => leaveBattleRoom(roomId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      // HU-23: abandonar antes de iniciar libera la apuesta propia.
+      invalidateWallet(queryClient)
     },
   })
 }
@@ -97,8 +112,12 @@ export const useJoinBattleRoom = (): UseMutationResult<
         ...(team === undefined ? {} : { team }),
         ...(stake === undefined ? {} : { stake }),
       }),
-    onSuccess: () => {
+    onSuccess: (_room, { stake }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      // HU-23: unirse apostando reserva creditos (baja `available`).
+      if (stake !== undefined) {
+        invalidateWallet(queryClient)
+      }
     },
   })
 }

@@ -1,5 +1,6 @@
 import { Link, matchPath, useLocation } from 'react-router'
 
+import { CreditsBadge } from './CreditsBadge'
 import { PrimaryNav } from './PrimaryNav'
 import { SessionControl } from './SessionControl'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -9,7 +10,7 @@ import { ACCOUNT_PATH, ECOMMERCE_PATH } from '@/routes/routes'
  * Encabezado global (HU-05.4).
  *
  * Unica implementacion, con o sin sesion: marca + navegacion + control de
- * sesion + conmutador de tema. E-commerce es el punto de entrada tanto para
+ * sesion + creditos (solo con sesion, `CreditsBadge`) + conmutador de tema. E-commerce es el punto de entrada tanto para
  * quien visita sin cuenta como para quien ya inicio sesion (ver `routes.tsx`
  * y `AppLayout`), asi que ya no hace falta una variante "publica" distinta;
  * `SessionControl` decide por su cuenta que mostrar segun haya o no sesion.
@@ -58,6 +59,7 @@ export const AppHeader = (): React.JSX.Element => {
 
         <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <SessionControl />
+          <CreditsBadge />
           {!inAccountArea && <ThemeToggle />}
         </div>
       </div>

@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Coins } from '@/components/ui/icons'
 import { ChatPanel } from './ChatPanel'
 import { queryKeys } from '@/shared/query-keys'
+import { useRefreshWalletOn } from '@/shared/wallet'
 import { useSession } from '@/shared/session'
 
 import { fetchBattleRoom, startBattle } from './battle/api'
@@ -185,6 +186,11 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   // inicio) con esos datos, en vez de saltar a /battle antes de que el propietario
   // decida iniciar.
   const room = listRoom ?? (detail.data?.status === 'PREPARING' ? detail.data : null)
+
+  // HU-23: cuando Wallet confirma la liberacion de la apuesta propia (sala
+  // cancelada o abandonada), la cabecera relee el saldo disponible.
+  const ownStakeStatus = ownStakeOf(detail.data ?? null, subject)?.status ?? null
+  useRefreshWalletOn(ownStakeStatus === 'RELEASED' ? ownStakeStatus : null)
 
   if (rooms.isPending) {
     return (
