@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { Coins } from '@/components/ui/icons'
 import { ChatPanel } from './ChatPanel'
+import { avatarPathForSubject } from '@/shared/avatar'
 import { queryKeys } from '@/shared/query-keys'
+import { useRefreshWalletOn } from '@/shared/wallet'
 import { useSession } from '@/shared/session'
 
 import { fetchBattleRoom, startBattle } from './battle/api'
@@ -72,7 +74,9 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
             // respuesta de la sala: la posicion es la unica clave disponible.
             <li key={`${participant.kind}-${String(index)}`} className="flex items-center gap-2">
               <Avatar
-                avatarUrl={null}
+                avatarUrl={
+                  participant.kind === 'HUMAN' ? avatarPathForSubject(participant.playerId) : null
+                }
                 alt={label}
                 initials={initialsOfDisplayName(label)}
                 size="sm"
@@ -144,6 +148,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     mutationFn: (id: string) => startBattle(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.mine })
       if (roomId !== null) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.detail(roomId) })
       }
@@ -185,6 +190,11 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   // inicio) con esos datos, en vez de saltar a /battle antes de que el propietario
   // decida iniciar.
   const room = listRoom ?? (detail.data?.status === 'PREPARING' ? detail.data : null)
+
+  // HU-23: cuando Wallet confirma la liberacion de la apuesta propia (sala
+  // cancelada o abandonada), la cabecera relee el saldo disponible.
+  const ownStakeStatus = ownStakeOf(detail.data ?? null, subject)?.status ?? null
+  useRefreshWalletOn(ownStakeStatus === 'RELEASED' ? ownStakeStatus : null)
 
   if (rooms.isPending) {
     return (

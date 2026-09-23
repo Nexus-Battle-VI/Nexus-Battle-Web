@@ -65,31 +65,5 @@ export const fetchBattleReward = (
     signal,
   )
 
-/**
- * Saldo y progreso de cofre del jugador autenticado (HU-22,
- * `hu-22-reward-contract-v1` S4, `GET /v1/wallet/me`). El servicio deduce el
- * jugador del testimonio; Web nunca envia un identificador.
- *
- * Vive aqui (no en una feature "wallet" aparte) porque una feature no importa
- * de otra (`eslint.config.js`, "la comunicacion entre ellas ocurre por rutas,
- * por estado compartido o por el cliente HTTP") y `RewardPanel` es lo unico
- * que hoy necesita este dato.
- */
-export interface WalletSnapshot {
-  readonly balance: number
-  /**
-   * HU-23 (aditivo, contrato §6): suma de las apuestas `ACTIVE` del jugador.
-   * Opcional para no romper contra un Wallet anterior a HU-23; cuando falta,
-   * la UI no puede avisar de antemano y la validacion real queda en el backend.
-   */
-  readonly reserved?: number
-  /** HU-23: `balance - reserved`, lo unico contra lo que se valida una reserva nueva. */
-  readonly available?: number
-  readonly victoryProgress: number
-  readonly weeklyChestCount: number
-  readonly weeklyChestLimit: number
-  readonly threshold: number
-}
-
-export const fetchWallet = (signal?: AbortSignal): Promise<WalletSnapshot> =>
-  httpClient.get<WalletSnapshot>('/v1/wallet/me', signal)
+/** El saldo vive en `@/shared/wallet`; se reexporta para los consumidores de Jugar Online. */
+export { fetchWallet, type WalletSnapshot } from '@/shared/wallet'

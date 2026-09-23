@@ -1,5 +1,6 @@
 import type { HeroEquipment } from './api'
-import { formatMagnitude } from './magnitude'
+import { describeEquipmentEffect } from './effectPresentation'
+import { describeMagnitudeRange, formatMagnitude } from './magnitude'
 
 const STAT_LABELS: Readonly<Record<string, string>> = {
   POWER: 'Poder',
@@ -61,21 +62,39 @@ export const HeroStatsPanel = ({ equipment }: HeroStatsPanelProps): React.JSX.El
               )
             })}
             <tr>
-              <td className="text-ink">Daño</td>
-              <td className="text-right tabular-nums text-muted" colSpan={3}>
-                {formatMagnitude(effectiveStats.damage)}
+              <td className="align-top text-ink">Daño</td>
+              <td className="text-right" colSpan={3}>
+                <span className="block font-semibold tabular-nums text-ink">
+                  {formatMagnitude(effectiveStats.damage)}
+                </span>
+                {describeMagnitudeRange(effectiveStats.damage) !== null && (
+                  <span className="block text-muted">
+                    {describeMagnitudeRange(effectiveStats.damage)}
+                  </span>
+                )}
               </td>
             </tr>
             {effectiveStats.healing !== null && (
               <tr>
-                <td className="text-ink">Sanación</td>
-                <td className="text-right tabular-nums text-muted" colSpan={3}>
-                  {formatMagnitude(effectiveStats.healing)}
+                <td className="align-top text-ink">Sanación</td>
+                <td className="text-right" colSpan={3}>
+                  <span className="block font-semibold tabular-nums text-ink">
+                    {formatMagnitude(effectiveStats.healing)}
+                  </span>
+                  {describeMagnitudeRange(effectiveStats.healing, 'por uso') !== null && (
+                    <span className="block text-muted">
+                      {describeMagnitudeRange(effectiveStats.healing, 'por uso')}
+                    </span>
+                  )}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+        <p className="mt-1 text-[11px] text-muted">
+          El daño final se decide en combate: depende de tu Ataque frente a la Defensa del rival y
+          del efecto de cada golpe (normal, crítico, evasión…).
+        </p>
       </div>
 
       <div>
@@ -89,16 +108,7 @@ export const HeroStatsPanel = ({ equipment }: HeroStatsPanelProps): React.JSX.El
                 key={`${effect.sourceSlot}-${String(index)}`}
                 className="rounded border border-border px-2 py-1"
               >
-                <span className="text-ink">
-                  {[effect.kind, effect.statistic, effect.operation, effect.target]
-                    .filter((part) => part !== undefined)
-                    .join(' · ')}
-                </span>
-                {effect.magnitude !== undefined && (
-                  <span className="ml-1 tabular-nums text-muted">
-                    {formatMagnitude(effect.magnitude)}
-                  </span>
-                )}
+                <span className="text-ink">{describeEquipmentEffect(effect)}</span>
                 <span className="ml-2 rounded-full bg-surface px-1.5 py-0.5 text-[10px] text-muted">
                   {effect.appliedToStats
                     ? 'aplicado a stats'

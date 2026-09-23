@@ -205,16 +205,15 @@ describe('BattlePage — HU-18: del clic al resultado, solo con lo que publica C
       'aria-valuenow',
       '38',
     )
-    expect(
-      within(resultado()).getByText('Ana atacó a Bruno: Golpe crítico (137 %)'),
-    ).toBeInTheDocument()
-    expect(resultado()).toHaveTextContent('Vida de Bruno: 44 → 38')
+    expect(within(resultado()).getByText('¡Golpe crítico de Ana a Bruno!')).toBeInTheDocument()
+    expect(resultado()).toHaveTextContent('−6 Vida')
+    expect(resultado()).toHaveTextContent('Bruno: 44 → 38')
     expect(
       screen.queryByRole('button', { name: /Ataque básico|Atacando/u }),
     ).not.toBeInTheDocument()
   })
 
-  it('un golpe que no supera la Defensa deja la Vida igual, avanza el turno y dice «sin efecto»', async () => {
+  it('un golpe que no supera la Defensa deja la Vida igual, avanza el turno y dice que no supero la Defensa', async () => {
     const { socket } = await enBatalla(ANA_ID)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Ataque básico' }))
@@ -235,8 +234,8 @@ describe('BattlePage — HU-18: del clic al resultado, solo con lo que publica C
 
     expect(await screen.findByText('Turno de Bruno')).toBeInTheDocument()
     expect(screen.getAllByText('44 / 44')).toHaveLength(2)
-    expect(resultado()).toHaveTextContent('Ana atacó a Bruno: sin efecto')
-    expect(resultado()).toHaveTextContent('El Ataque (11) no superó la Defensa (11)')
+    expect(resultado()).toHaveTextContent('Ana atacó a Bruno, pero no superó su Defensa')
+    expect(resultado()).toHaveTextContent('Ataque 11 vs Defensa 11')
   })
 
   it('el rival ve el MISMO resultado en su pantalla y el boton en SU turno', async () => {
@@ -246,7 +245,7 @@ describe('BattlePage — HU-18: del clic al resultado, solo con lo que publica C
 
     expect(await screen.findByText('Tu turno')).toBeInTheDocument()
     expect(screen.getByText('38 / 44')).toBeInTheDocument()
-    expect(resultado()).toHaveTextContent('Ana atacó a Bruno: Golpe crítico (137 %)')
+    expect(resultado()).toHaveTextContent('¡Golpe crítico de Ana a Bruno!')
     expect(screen.getByRole('button', { name: 'Ataque básico' })).toHaveAttribute(
       'aria-disabled',
       'false',
@@ -354,7 +353,7 @@ describe('BattlePage — HU-18: del clic al resultado, solo con lo que publica C
 
     expect(await screen.findByText('38 / 44')).toBeInTheDocument()
     expect(screen.queryByText(/No se pudo confirmar tu ataque/u)).not.toBeInTheDocument()
-    expect(resultado()).toHaveTextContent('Ana atacó a Bruno: Golpe crítico (137 %)')
+    expect(resultado()).toHaveTextContent('¡Golpe crítico de Ana a Bruno!')
     expect(second.attacks()).toHaveLength(0)
   })
 

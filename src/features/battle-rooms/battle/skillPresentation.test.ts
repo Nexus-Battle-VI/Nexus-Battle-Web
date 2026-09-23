@@ -49,9 +49,11 @@ describe('costo, recarga y estado en TEXTO', () => {
 
   it('describeSkillStatus dice el estado y los turnos que faltan, sin depender del color', () => {
     expect(describeSkillStatus(SHIELD_STRIKE)).toBe('Disponible')
-    expect(describeSkillStatus(recharging(SHIELD_STRIKE, 1))).toBe('En recarga: falta 1 turno')
-    expect(describeSkillStatus(recharging(SHIELD_STRIKE, 2))).toBe('En recarga: faltan 2 turnos')
-    expect(describeSkillStatus(STONE_HAND)).toBe('Todavía no disponible')
+    expect(describeSkillStatus(recharging(SHIELD_STRIKE, 1))).toBe('Disponible en 1 turno')
+    expect(describeSkillStatus(recharging(SHIELD_STRIKE, 2))).toBe('Disponible en 2 turnos')
+    expect(describeSkillStatus(STONE_HAND)).toBe(
+      'Esta habilidad todavía no está disponible en combate',
+    )
   })
 })
 
@@ -141,14 +143,14 @@ describe('skillAvailability — cuando se ofrece una habilidad', () => {
   it('en recarga: deshabilitada, con los turnos que faltan como TEXTO', () => {
     expect(skillAvailability(base({ skill: recharging(SHIELD_STRIKE, 2) }))).toEqual({
       enabled: false,
-      hint: 'En recarga: faltan 2 turnos.',
+      hint: 'Disponible en 2 turnos.',
     })
   })
 
-  it('no soportada: deshabilitada, «Todavía no está disponible»', () => {
+  it('no soportada: deshabilitada, explicando que aun no existe en combate', () => {
     expect(skillAvailability(base({ skill: STONE_HAND }))).toEqual({
       enabled: false,
-      hint: 'Todavía no está disponible.',
+      hint: 'Esta habilidad todavía no está disponible en combate.',
     })
   })
 
@@ -245,31 +247,35 @@ const lastSkill = (patch: Partial<LastSkill> = {}): LastSkill => ({
 })
 
 describe('describeLastSkill — solo con lo que Combat envio', () => {
-  it('golpe efectivo: efecto, porcentaje, dano, Vida, Poder y recarga tal cual llegaron', () => {
-    const { headline, detail } = describeLastSkill(lastSkill(), ANAS_TURN)
+  it('golpe efectivo: quien/que/a quien, impacto, Vida y detalle (efecto, Poder, recarga)', () => {
+    const feedback = describeLastSkill(lastSkill(), ANAS_TURN)
 
-    expect(headline).toBe('Ana usó Golpe con escudo contra Bruno: Golpe crítico (137 %)')
-    expect(detail).toContain('El Ataque (14) superó la Defensa (11).')
-    expect(detail).toContain('Daño aplicado: 6.')
-    expect(detail).toContain('Vida de Bruno: 44 → 38.')
-    expect(detail).toContain('Poder de Ana: 10 → 8.')
-    expect(detail).toContain('La habilidad queda en recarga: 1 turno.')
+    expect(feedback.headline).toBe('Ana usó Golpe con escudo contra Bruno')
+    expect(feedback.impact).toBe('−6 Vida')
+    expect(feedback.tone).toBe('damage')
+    expect(feedback.life).toBe('Bruno: 44 → 38')
+    expect(feedback.detail).toBe(
+      'Ataque 14 vs Defensa 11 · Golpe crítico 137 % · Poder 10 → 8 · Recarga 1 turno',
+    )
   })
 
-  it('golpe que no supera la Defensa: «sin efecto» con los dos valores y sin Vida', () => {
-    const { headline, detail } = describeLastSkill(
+  it('golpe que no supera la Defensa: sin daño, con los dos valores y sin Vida', () => {
+    const feedback = describeLastSkill(
       lastSkill({ resolution: MISS, targetHealth: { before: 44, after: 44 } }),
       ANAS_TURN,
     )
 
-    expect(headline).toBe('Ana usó Golpe con escudo contra Bruno: sin efecto')
-    expect(detail).toContain('El Ataque (11) no superó la Defensa (11).')
-    expect(detail).toContain('Poder de Ana: 10 → 8.')
-    expect(detail).not.toContain('Vida de Bruno')
+    expect(feedback.headline).toBe(
+      'Ana usó Golpe con escudo contra Bruno, pero no superó su Defensa',
+    )
+    expect(feedback.impact).toBe('Sin daño')
+    expect(feedback.life).toBeNull()
+    expect(feedback.detail).toContain('Ataque 11 vs Defensa 11')
+    expect(feedback.detail).toContain('Poder 10 → 8')
   })
 
   it('efecto «no causa dano»: lo dice y no inventa dano', () => {
-    const { headline, detail } = describeLastSkill(
+    const feedback = describeLastSkill(
       lastSkill({
         resolution: {
           ...RESOLUTION,
@@ -284,8 +290,11 @@ describe('describeLastSkill — solo con lo que Combat envio', () => {
       ANAS_TURN,
     )
 
-    expect(headline).toBe('Ana usó Golpe con escudo contra Bruno: No causa daño')
-    expect(detail).toContain('El efecto fue «no causa daño».')
+    expect(feedback.headline).toBe(
+      'Ana usó Golpe con escudo contra Bruno: alcanzó, pero no causó daño',
+    )
+    expect(feedback.impact).toBe('Sin pérdida de Vida')
+    expect(feedback.detail).toContain('Efecto: sin daño')
   })
 
   it('muestra los bonos de la habilidad SOLO si son mayores que 0', () => {
@@ -296,8 +305,8 @@ describe('describeLastSkill — solo con lo que Combat envio', () => {
     )
     const zeroDamage = describeLastSkill(lastSkill({ bonus: { attack: 0, damage: 0 } }), ANAS_TURN)
 
-    expect(withBonus.detail).toContain('Bono de Ataque de la habilidad: +3.')
-    expect(withBonus.detail).toContain('Bono de Daño de la habilidad: +4.')
+    expect(withBonus.detail).toContain('Bono de Ataque +3')
+    expect(withBonus.detail).toContain('Bono de Daño +4')
     expect(withoutBonus.detail).not.toContain('Bono')
     expect(zeroDamage.detail).not.toContain('Bono')
   })
@@ -308,15 +317,13 @@ describe('describeLastSkill — solo con lo que Combat envio', () => {
       ANAS_TURN,
     )
 
-    expect(headline).toBe(
-      'Un participante usó Golpe con escudo contra su objetivo: Golpe crítico (137 %)',
-    )
+    expect(headline).toBe('Un participante usó Golpe con escudo contra su objetivo')
   })
 
   it('recarga en plural', () => {
     expect(
       describeLastSkill(lastSkill({ cooldown: { remainingTurns: 2 } }), ANAS_TURN).detail,
-    ).toContain('La habilidad queda en recarga: 2 turnos.')
+    ).toContain('Recarga 2 turnos')
   })
 })
 
@@ -346,12 +353,12 @@ describe('describeDegradedAttack y describeLatestAction (HU-11)', () => {
   it('un ataque degradado explica POR QUE hubo un ataque basico y luego describe el golpe', () => {
     const feedback = describeDegradedAttack(degraded, ANAS_TURN)
 
-    expect(feedback?.headline).toBe(
-      'Ana no tenía Poder suficiente para Golpe con escudo: se usó un ataque básico',
+    expect(feedback?.notice).toBe(
+      'No había Poder suficiente para Golpe con escudo. Se ejecutó un ataque básico en su lugar; la habilidad no se gastó ni quedó en recarga.',
     )
-    expect(feedback?.detail).toContain('Ana atacó a Bruno: Golpe crítico (137 %).')
-    expect(feedback?.detail).toContain('Vida de Bruno: 44 → 38.')
-    expect(feedback?.detail).toContain('La habilidad no se gastó ni quedó en recarga.')
+    expect(feedback?.headline).toBe('¡Golpe crítico de Ana a Bruno!')
+    expect(feedback?.impact).toBe('−6 Vida')
+    expect(feedback?.life).toBe('Bruno: 44 → 38')
   })
 
   it('si la habilidad ya no esta en la lista, cae en «la habilidad»', () => {
@@ -360,8 +367,8 @@ describe('describeDegradedAttack y describeLatestAction (HU-11)', () => {
       { power: [10, 10], skills: [] },
     ])
 
-    expect(describeDegradedAttack(degraded, view)?.headline).toContain(
-      'para la habilidad: se usó un ataque básico',
+    expect(describeDegradedAttack(degraded, view)?.notice).toContain(
+      'No había Poder suficiente para la habilidad.',
     )
   })
 
@@ -382,17 +389,17 @@ describe('describeDegradedAttack y describeLatestAction (HU-11)', () => {
     )
 
     expect(skillLater?.headline).toContain('usó Golpe con escudo')
-    expect(attackLater?.headline).toContain('atacó a Bruno')
+    expect(attackLater?.headline).toBe('¡Golpe crítico de Ana a Bruno!')
   })
 
   it('describeLatestAction: solo habilidad o solo ataque', () => {
     expect(describeLatestAction(null, lastSkill(), ANAS_TURN)?.headline).toContain('usó')
-    expect(describeLatestAction(lastAttack(), null, ANAS_TURN)?.headline).toContain('atacó')
+    expect(describeLatestAction(lastAttack(), null, ANAS_TURN)?.headline).toContain('Golpe crítico')
   })
 
   it('describeLatestAction: un ataque degradado (seq mayor) se explica como tal', () => {
     const feedback = describeLatestAction({ ...degraded, seq: 5 }, lastSkill({ seq: 3 }), ANAS_TURN)
 
-    expect(feedback?.headline).toContain('no tenía Poder suficiente')
+    expect(feedback?.notice).toContain('No había Poder suficiente')
   })
 })

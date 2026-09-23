@@ -12,10 +12,12 @@ import type { ServerClock } from './battleClock'
 import type { LastAttack, LastHealSkill, LastSkill, LastTurnTimeout } from './battleReducer'
 import {
   combatantHealth,
+  combatantName,
   describeTurn,
   findSelf,
   groupCombatants,
   hasCombatState,
+  type ActionFeedback,
 } from './presentation'
 import { describeLatestAction } from './skillPresentation'
 import { TurnOrderStrip } from './TurnOrderStrip'
@@ -111,10 +113,16 @@ export const BattleScreen = ({
       entry.teamLabel === lastTurnTimeout?.timedOut.teamLabel &&
       entry.seat === lastTurnTimeout.timedOut.seat,
   )
-  const timeoutName =
-    timeoutEntry?.displayName ?? `Asiento ${String((lastTurnTimeout?.timedOut.seat ?? 0) + 1)}`
-  const feedback = timeoutAfterActions
-    ? { headline: `${timeoutName} perdió el turno por tiempo.`, detail: '' }
+  // Mismo nombre que en el resto de la pantalla: una IA es "Oponente IA", nunca "Asiento N".
+  const timeoutName = timeoutEntry === undefined ? 'Un participante' : combatantName(timeoutEntry)
+  const feedback: ActionFeedback | null = timeoutAfterActions
+    ? {
+        headline: `${timeoutName} perdió su turno por tiempo.`,
+        impact: null,
+        tone: 'neutral',
+        life: null,
+        detail: '',
+      }
     : describeLatestAction(lastAttack, lastSkill, battle, lastHealSkill)
   // Con 1 o 2 participantes por lado la arena ya cabe en horizontal desde `md` (tablet); con 3
   // hace falta `lg`. Depende solo de cuantos son, no de nombres ni de la modalidad.
@@ -233,10 +241,34 @@ export const BattleScreen = ({
         )}
       >
         {feedback !== null && (
-          <p className="text-sm sm:text-base">
-            <span className="font-semibold text-ink">{feedback.headline}</span>{' '}
-            <span className="text-muted">{feedback.detail}</span>
-          </p>
+          <div className="flex flex-col items-center gap-0.5">
+            {feedback.notice !== undefined && (
+              <p className="text-sm font-medium text-warning">{feedback.notice}</p>
+            )}
+            <p className="text-sm font-semibold text-ink sm:text-base">{feedback.headline}</p>
+            {(feedback.impact !== null || feedback.life !== null) && (
+              <p className="flex flex-wrap items-baseline justify-center gap-x-3">
+                {feedback.impact !== null && (
+                  <span
+                    className={clsx(
+                      'text-lg font-bold tabular-nums',
+                      feedback.tone === 'damage'
+                        ? 'text-danger'
+                        : feedback.tone === 'heal'
+                          ? 'text-success'
+                          : 'text-ink',
+                    )}
+                  >
+                    {feedback.impact}
+                  </span>
+                )}
+                {feedback.life !== null && (
+                  <span className="text-sm tabular-nums text-ink">{feedback.life}</span>
+                )}
+              </p>
+            )}
+            {feedback.detail !== '' && <p className="text-xs text-muted">{feedback.detail}</p>}
+          </div>
         )}
       </div>
 

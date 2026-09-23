@@ -2,6 +2,7 @@ import { Swords } from '@/components/ui/icons'
 import { ChatPanel } from './ChatPanel'
 import { LOBBY_CHANNEL } from './chatProtocol'
 
+import { ActiveRoomBanner } from './ActiveRoomBanner'
 import { AvailableBattleRoomsPanel } from './AvailableBattleRoomsPanel'
 import { CreateBattleRoomPanel } from './CreateBattleRoomPanel'
 
@@ -16,6 +17,9 @@ import { CreateBattleRoomPanel } from './CreateBattleRoomPanel'
  *
  * HU-13: debajo, el chat del lobby (la "vista general" de Jugar Online, seccion
  * 7.6 del documento oficial), para organizar partidas.
+ *
+ * Arriba de los paneles, "Partida en curso" (`ActiveRoomBanner`): la sala o
+ * batalla del jugador que aun no termino, leida del servidor.
  */
 export const BattleRoomsPage = (): React.JSX.Element => (
   <section aria-label="Jugar Online" className="flex flex-col gap-6">
@@ -33,6 +37,8 @@ export const BattleRoomsPage = (): React.JSX.Element => (
         </p>
       </div>
     </header>
+
+    <ActiveRoomBanner />
 
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
       <CreateBattleRoomPanel />

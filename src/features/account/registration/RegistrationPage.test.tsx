@@ -24,8 +24,8 @@ const imageOfSize = (bytes: number, type = 'image/png', name = 'avatar.png'): Fi
   const file = new File(['x'], name, { type })
 
   // `File` no permite fabricar un tamano arbitrario sin reservar esa memoria:
-  // se redefine para poder ejercitar el limite de 500 MB sin construir medio
-  // gigabyte en la prueba.
+  // se redefine para poder ejercitar el limite de 5 MB sin construir el
+  // archivo en la prueba.
   Object.defineProperty(file, 'size', { value: bytes })
 
   return file
@@ -273,13 +273,13 @@ describe('RegistrationPage', () => {
     })
   })
 
-  it('rechaza un avatar de mas de 500 MB', async () => {
+  it('rechaza un avatar de mas de 5 MB (tope de subida de Account)', async () => {
     const user = setup()
 
     renderPage(vi.fn())
     await user.upload(
       screen.getByLabelText('Sube tu avatar (obligatorio)'),
-      imageOfSize(500 * 1024 * 1024 + 1),
+      imageOfSize(5 * 1024 * 1024 + 1),
     )
 
     await waitFor(() => {

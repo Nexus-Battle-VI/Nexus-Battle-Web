@@ -11,7 +11,7 @@ import {
   weeklyLimitReached,
   weeklyLimitText,
 } from './rewardPresentation'
-import { useWallet } from './useWallet'
+import { useRefreshWalletOn, useWallet } from '@/shared/wallet'
 
 export interface RewardPanelProps {
   readonly battleId: string
@@ -39,6 +39,15 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
   const headingId = useId()
   const rewardQuery = useBattleReward(battleId, subject !== null)
   const walletQuery = useWallet()
+  // Al terminar la batalla (este panel se monta con el resultado) y cuando la
+  // entrega de la recompensa queda resuelta, se relee el saldo: la cabecera
+  // se actualiza sin recargar y sin anticipar un saldo que Wallet no confirmo.
+  const delivered = rewardQuery.data
+  useRefreshWalletOn(
+    delivered?.balance == null
+      ? 'battle-finished'
+      : `${delivered.rewardDelivery}:${String(delivered.balance)}`,
+  )
 
   if (subject === null) {
     return null

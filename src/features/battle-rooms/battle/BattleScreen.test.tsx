@@ -1,5 +1,5 @@
-import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { CombatControls } from './AttackPanel'
 import { initialAttackIntentState } from './attackIntent'
@@ -21,6 +21,38 @@ const BRUNO = 'sujeto-bruno'
 
 const pintar = (overrides: Partial<BattleScreenProps> = {}) =>
   render(<BattleScreen battle={battle()} subject={ANA} connection="open" synced {...overrides} />)
+
+describe('BattleScreen — avatar del jugador junto a su nombre (HU-15)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('pide el avatar de cada jugador humano por su sujeto, una sola vez por jugador', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Blob(['png'], { type: 'image/png' }), {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn().mockReturnValue('blob:avatar'),
+      revokeObjectURL: vi.fn(),
+    })
+
+    pintar()
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    })
+    const urls = fetchMock.mock.calls.map(([input]) => String(input))
+    expect(urls.some((url) => url.includes('/accounts/by-subject/sujeto-ana/avatar'))).toBe(true)
+    expect(urls.some((url) => url.includes('/accounts/by-subject/sujeto-bruno/avatar'))).toBe(true)
+    // El heroe sigue siendo el elemento principal: el modelo no se sustituye.
+    expect(await screen.findByRole('img', { name: 'Guerrero Armas' })).toBeInTheDocument()
+  })
+})
 
 describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo lectura)', () => {
   it('muestra a los dos heroes con su modelo real y sus nombres, sin datos fijos del cliente', async () => {
@@ -310,19 +342,20 @@ describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones',
 
     const region = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
-    expect(region).toHaveTextContent('Bruno atacó a Ana: Golpe crítico (137 %)')
-    expect(region).toHaveTextContent('El Ataque (14) superó la Defensa (11)')
-    expect(region).toHaveTextContent('Daño aplicado: 6')
-    expect(region).toHaveTextContent('Vida de Ana: 44 → 38')
+    expect(region).toHaveTextContent('¡Golpe crítico de Bruno a Ana!')
+    expect(region).toHaveTextContent('−6 Vida')
+    expect(region).toHaveTextContent('Ana: 44 → 38')
+    expect(region).toHaveTextContent('Ataque 14 vs Defensa 11 · Golpe crítico 137 %')
   })
 
-  it('golpe que no supera la Defensa: «sin efecto» con los dos valores comparados', () => {
+  it('golpe que no supera la Defensa: sin daño, con los dos valores comparados', () => {
     pintar({ battle: combatBattle(1), lastAttack: lastAttack(MISS, 44, 44) })
 
     const region = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
-    expect(region).toHaveTextContent('sin efecto')
-    expect(region).toHaveTextContent('El Ataque (11) no superó la Defensa (11)')
+    expect(region).toHaveTextContent('Bruno atacó a Ana, pero no superó su Defensa')
+    expect(region).toHaveTextContent('Sin daño')
+    expect(region).toHaveTextContent('Ataque 11 vs Defensa 11')
   })
 
   it('ambos jugadores ven el mismo resultado (lo pinta cualquier perspectiva)', () => {
