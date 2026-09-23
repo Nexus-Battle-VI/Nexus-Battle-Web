@@ -55,7 +55,8 @@ describe('detalle y matrícula de misión', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
         if (url.endsWith('/difficulties')) {
           return Promise.resolve(jsonResponse(200, difficultiesWithoutProgress()))
         }
