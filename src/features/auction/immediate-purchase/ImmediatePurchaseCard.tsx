@@ -1,14 +1,21 @@
 import { useId, useState } from 'react'
+import clsx from 'clsx'
 
+import { Button } from '@/components/ui/Button'
+import { CheckboxField } from '@/components/ui/form/CheckboxField'
 import { formatCredits } from './formatCredits'
-import './immediate-purchase.css'
 
 /**
  * Tarjeta de compra inmediata (HU-64.1).
  *
  * Es presentacional: recibe la etapa del flujo y los datos ya resueltos, y avisa
  * por callbacks. La orquestacion con la API (`POST /auctions/{auctionId}/buy-now`)
- * la aporta HU-64.6; aqui solo vive la interfaz de los estados de Figma.
+ * la aporta HU-64.6.
+ *
+ * Usa los tokens del producto (`src/index.css`: `--color-brand`, `--color-surface-raised`,
+ * `--color-danger`...) y los componentes compartidos (`Card`, `Button`, `CheckboxField`),
+ * NO una paleta propia: Figma fue la guia de contenido y disposicion, no una licencia
+ * para que este componente se viera distinto al resto de Nexus Battles VI.
  *
  * Criterios de aceptacion que la interfaz hace visibles:
  * - CA-01 `success` / `pending-pickup`: compra completada y producto por recoger.
@@ -63,7 +70,24 @@ const BADGE_LABEL: Readonly<Record<ImmediatePurchaseStage, string>> = {
   'pending-pickup': 'Pendiente de retiro',
 }
 
+/** Mismo criterio de tono que `StatusBadge` (components/ui): fondo suave al 15% del color de estado. */
+const BADGE_TONE: Readonly<Record<ImmediatePurchaseStage, string>> = {
+  available: 'bg-success/15 text-success',
+  processing: 'bg-warning/15 text-warning',
+  success: 'bg-success/15 text-success',
+  unavailable: 'bg-border text-muted',
+  'insufficient-credits': 'bg-danger/15 text-danger',
+  'pending-pickup': 'bg-warning/15 text-warning',
+}
+
 type AlertTone = 'info' | 'warning' | 'success' | 'danger'
+
+const ALERT_TONE: Readonly<Record<AlertTone, string>> = {
+  info: 'bg-brand/10 border-brand',
+  warning: 'bg-warning/10 border-warning',
+  success: 'bg-success/10 border-success',
+  danger: 'bg-danger/10 border-danger',
+}
 
 const Alert = ({
   tone,
@@ -75,13 +99,12 @@ const Alert = ({
   readonly message: string
 }): React.JSX.Element => (
   <div
-    className="ip-alert"
-    data-tone={tone}
+    className={clsx('flex gap-3 rounded-lg border-l-4 p-4 text-xs', ALERT_TONE[tone])}
     role={tone === 'success' || tone === 'info' ? 'status' : 'alert'}
   >
-    <div className="ip-alert-content">
-      <p className="ip-alert-title">{title}</p>
-      <p className="ip-alert-message">{message}</p>
+    <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+      <p className="font-semibold text-ink">{title}</p>
+      <p className="text-muted">{message}</p>
     </div>
   </div>
 )
@@ -93,9 +116,9 @@ const KeyValue = ({
   readonly label: string
   readonly value: string
 }): React.JSX.Element => (
-  <div className="ip-kv">
-    <dt>{label}</dt>
-    <dd>{value}</dd>
+  <div className="flex flex-col gap-1">
+    <dt className="text-[11px] font-medium text-muted">{label}</dt>
+    <dd className="m-0 text-xs font-semibold text-ink">{value}</dd>
   </div>
 )
 
@@ -140,25 +163,40 @@ export const ImmediatePurchaseCard = ({
       : undefined
 
   const header = (
-    <div className="ip-header-row">
-      <h3 className="ip-title" id={titleId}>
+    <div className="flex flex-1 min-w-0 items-center gap-3">
+      <h3 className="m-0 flex-1 min-w-0 text-lg font-semibold text-ink" id={titleId}>
         {product.name}
       </h3>
-      <span className="ip-badge">{BADGE_LABEL[stage]}</span>
+      <span
+        className={clsx(
+          'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+          BADGE_TONE[stage],
+        )}
+      >
+        {BADGE_LABEL[stage]}
+      </span>
     </div>
   )
 
   if (stage === 'processing') {
     return (
-      <article className="ip-card" aria-labelledby={titleId} aria-busy="true">
+      <article
+        className="flex w-full max-w-[480px] flex-col gap-5 rounded-lg border border-border bg-surface-raised p-6"
+        aria-labelledby={titleId}
+        aria-busy="true"
+      >
         {header}
         <div>
-          <div className="ip-progress-header">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
             <span>Procesando tu compra...</span>
-            <span>No cierres esta ventana</span>
+            <span className="text-[11px] font-medium text-muted">No cierres esta ventana</span>
           </div>
-          <div className="ip-progress-track" role="progressbar" aria-label="Procesando tu compra">
-            <div className="ip-progress-indicator" />
+          <div
+            className="h-2 overflow-hidden rounded-full bg-border"
+            role="progressbar"
+            aria-label="Procesando tu compra"
+          >
+            <div className="h-2 w-full animate-pulse rounded-full bg-brand motion-reduce:animate-none" />
           </div>
         </div>
       </article>
@@ -167,12 +205,19 @@ export const ImmediatePurchaseCard = ({
 
   return (
     <article
-      className="ip-card"
+      className={clsx(
+        'flex w-full max-w-[480px] flex-col gap-5 rounded-lg border bg-surface-raised p-6',
+        stage === 'available' && !confirmationMissing
+          ? 'border-2 border-brand p-[23px] shadow-[0_0_20px_0_var(--color-brand)]/30'
+          : 'border-border',
+      )}
       aria-labelledby={titleId}
-      data-emphasis={stage === 'available' && !confirmationMissing}
     >
-      <div className="ip-product-row">
-        <div className="ip-product-icon" aria-hidden="true">
+      <div className="flex items-center gap-4">
+        <div
+          className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-brand text-2xl"
+          aria-hidden="true"
+        >
           {product.icon}
         </div>
         {header}
@@ -180,9 +225,11 @@ export const ImmediatePurchaseCard = ({
 
       {stage === 'available' && (
         <>
-          {product.summary !== undefined && <p className="ip-summary">{product.summary}</p>}
-          <hr className="ip-divider" />
-          <dl className="ip-info-col">
+          {product.summary !== undefined && (
+            <p className="m-0 text-[13px] text-muted">{product.summary}</p>
+          )}
+          <hr className="m-0 h-px border-0 bg-border" />
+          <dl className="m-0 flex flex-col gap-2.5">
             {priceCredits !== undefined && (
               <KeyValue label="Precio de compra inmediata" value={formatCredits(priceCredits)} />
             )}
@@ -190,17 +237,14 @@ export const ImmediatePurchaseCard = ({
               <KeyValue label="Créditos disponibles" value={formatCredits(availableCredits)} />
             )}
           </dl>
-          <hr className="ip-divider" />
-          <label className="ip-confirm">
-            <input
-              type="checkbox"
-              checked={confirmed}
-              onChange={(event) => {
-                handleConfirmedChange(event.target.checked)
-              }}
-            />
-            Confirmo la compra inmediata
-          </label>
+          <hr className="m-0 h-px border-0 bg-border" />
+          <CheckboxField
+            label="Confirmo la compra inmediata"
+            checked={confirmed}
+            onChange={(event) => {
+              handleConfirmedChange(event.target.checked)
+            }}
+          />
           {confirmationMissing && (
             <Alert
               tone="warning"
@@ -208,14 +252,14 @@ export const ImmediatePurchaseCard = ({
               message="Debes marcar la casilla de confirmación antes de continuar."
             />
           )}
-          <button
-            type="button"
-            className="ip-button"
+          <Button
+            variant="primary"
+            className="w-full"
             aria-disabled={confirmationMissing}
             onClick={handleBuy}
           >
             Comprar ahora
-          </button>
+          </Button>
         </>
       )}
 
@@ -226,7 +270,7 @@ export const ImmediatePurchaseCard = ({
             title="¡Compra completada!"
             message={`El producto quedó en pendientes de recoger. Tienes ${String(pickupDays)} días para reclamarlo.`}
           />
-          <dl className="ip-info-col">
+          <dl className="m-0 flex flex-col gap-2.5">
             <KeyValue label="ID de transacción" value={transaction.id} />
             <KeyValue
               label="Créditos debitados"
@@ -237,9 +281,9 @@ export const ImmediatePurchaseCard = ({
               value={formatCredits(transaction.remainingCredits)}
             />
           </dl>
-          <button type="button" className="ip-button" onClick={onViewPending}>
+          <Button variant="secondary" className="w-full" onClick={onViewPending}>
             Ver pendientes de recoger
-          </button>
+          </Button>
         </>
       )}
 
@@ -250,9 +294,9 @@ export const ImmediatePurchaseCard = ({
             title="Compra inmediata no disponible"
             message="El vendedor no configuró un precio de compra inmediata para este producto. Participa en la subasta mediante pujas."
           />
-          <button type="button" className="ip-button" onClick={onGoToBid}>
+          <Button variant="primary" className="w-full" onClick={onGoToBid}>
             Ir a pujar
-          </button>
+          </Button>
         </>
       )}
 
@@ -265,7 +309,7 @@ export const ImmediatePurchaseCard = ({
               message={`Necesitas ${formatCredits(priceCredits)} y solo tienes ${formatCredits(availableCredits)} disponibles.`}
             />
           )}
-          <dl className="ip-info-col">
+          <dl className="m-0 flex flex-col gap-2.5">
             {priceCredits !== undefined && (
               <KeyValue label="Precio de compra inmediata" value={formatCredits(priceCredits)} />
             )}
@@ -276,9 +320,9 @@ export const ImmediatePurchaseCard = ({
               <KeyValue label="Créditos faltantes" value={formatCredits(missingCredits)} />
             )}
           </dl>
-          <button type="button" className="ip-button" disabled>
+          <Button variant="primary" className="w-full" disabled>
             Comprar ahora
-          </button>
+          </Button>
         </>
       )}
 
@@ -289,16 +333,16 @@ export const ImmediatePurchaseCard = ({
             title="Tu compra está lista para reclamar"
             message={`Retira el producto dentro de los próximos ${String(pickupDays)} días o volverá al inventario del vendedor.`}
           />
-          <dl className="ip-info-col">
+          <dl className="m-0 flex flex-col gap-2.5">
             <KeyValue label="ID de transacción" value={transaction.id} />
             {pickupDeadline !== undefined && (
               <KeyValue label="Fecha límite de retiro" value={pickupDeadline} />
             )}
             <KeyValue label="Estado" value="Pendiente de retiro" />
           </dl>
-          <button type="button" className="ip-button" onClick={onViewOtherProducts}>
+          <Button variant="secondary" className="w-full" onClick={onViewOtherProducts}>
             Ver otros productos
-          </button>
+          </Button>
         </>
       )}
     </article>
