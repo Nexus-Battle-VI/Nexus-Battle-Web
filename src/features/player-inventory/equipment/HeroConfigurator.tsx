@@ -144,7 +144,7 @@ export const HeroConfigurator = ({
           {HERO_IDS.map((id) => {
             const owned = ownedByHeroId.get(id)
             const isActive = heroRef === owned?.reference
-            const isPrepared = owned !== undefined && owned.reference === preparedRef
+            const isPrepared = owned?.reference === preparedRef
             const name = HERO_VISUAL_SPECS_BY_ID.get(id)?.displayName ?? id
 
             return (

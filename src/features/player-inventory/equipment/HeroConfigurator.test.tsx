@@ -21,12 +21,13 @@ const NO_SELECTION = (): Response => json({ message: 'Sin seleccion.' }, 404)
  * construccion. `onEquipment` recibe lo que antes recibia el mock completo
  * (`url`, `init`); `onSelection` por defecto dice "nada preparado todavia".
  */
-const routedFetch = (
-  onEquipment: (url: string, init?: RequestInit) => Response,
-  onSelection: (url: string, init?: RequestInit) => Response = NO_SELECTION,
-): ((input: string, init?: RequestInit) => Promise<Response>) =>
+const routedFetch =
+  (
+    onEquipment: (url: string, init?: RequestInit) => Response,
+    onSelection: (url: string, init?: RequestInit) => Response = NO_SELECTION,
+  ): ((input: string, init?: RequestInit) => Promise<Response>) =>
   (input: string, init?: RequestInit) => {
-    const url = String(input)
+    const url = input
 
     return Promise.resolve(
       url.includes('/selection') ? onSelection(url, init) : onEquipment(url, init),
@@ -290,7 +291,7 @@ describe('HeroConfigurator (HU-28)', () => {
           () => json(EMPTY_EQUIPMENT),
           (url, init) => {
             if (init?.method === 'PUT') {
-              const body = JSON.parse(String(init.body)) as { heroReference: string }
+              const body = JSON.parse(init.body as string) as { heroReference: string }
               confirmedReference = body.heroReference
               return json(selectionOf(true))
             }

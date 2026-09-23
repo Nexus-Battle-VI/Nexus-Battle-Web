@@ -8,6 +8,9 @@ import { PlayerInventoryPage } from './PlayerInventoryPage'
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 
+const urlOf = (input: RequestInfo | URL): string =>
+  typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
 const summary = (itemId: string, name: string, type = 'ARMA') => ({
   itemId,
   quantity: 2,
@@ -66,9 +69,9 @@ describe('PlayerInventoryPage', () => {
   // inventario a esa respuesta. En vez de tocar cada prueba existente, el
   // `fetch` global intercepta esa URL con un 404 ("nada preparado todavia") y
   // delega el resto, sin cambiar, a `fetchMock`.
-  const fetchMock = vi.fn()
+  const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
   const globalFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    const url = urlOf(input)
 
     return url.includes('/heroes/selection')
       ? Promise.resolve(NO_SELECTION())
@@ -111,7 +114,8 @@ describe('PlayerInventoryPage', () => {
 
   it('al elegir una tarjeta actualiza el panel de detalle en la misma vista', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string) => {
+    fetchMock.mockImplementation((input) => {
+      const url = urlOf(input)
       if (url.includes('/items/espada-larga')) {
         return Promise.resolve(jsonResponse(detail('espada-larga', 'Espada Larga')))
       }
@@ -157,7 +161,7 @@ describe('PlayerInventoryPage', () => {
 
     await waitFor(
       () => {
-        expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('q=espada'))).toBe(true)
+        expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('q=espada'))).toBe(true)
       },
       { timeout: 2_000 },
     )
@@ -173,13 +177,14 @@ describe('PlayerInventoryPage', () => {
     await user.click(screen.getByRole('button', { name: 'Ítems' }))
 
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('type=ITEM'))).toBe(true)
+      expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('type=ITEM'))).toBe(true)
     })
   })
 
   it('muestra el mensaje del servicio cuando la búsqueda no puede resolverse (503)', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string) => {
+    fetchMock.mockImplementation((input) => {
+      const url = urlOf(input)
       if (url.includes('q=espada')) {
         return Promise.resolve(
           jsonResponse({ message: 'La información del producto no está disponible.' }, 503),
@@ -199,7 +204,8 @@ describe('PlayerInventoryPage', () => {
 
   it('pagina: hay controles cuando el servicio reporta más de una página', async () => {
     const user = userEvent.setup()
-    fetchMock.mockImplementation((url: string) => {
+    fetchMock.mockImplementation((input) => {
+      const url = urlOf(input)
       const current = url.includes('page=2') ? 2 : 1
       return Promise.resolve(
         jsonResponse(
@@ -218,7 +224,7 @@ describe('PlayerInventoryPage', () => {
     await user.click(screen.getByRole('button', { name: 'Página 2' }))
 
     expect(await screen.findByText('Objeto página 2')).toBeInTheDocument()
-    expect(fetchMock.mock.calls.some((call) => String(call[0]).includes('page=2'))).toBe(true)
+    expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('page=2'))).toBe(true)
   })
 
   it('sin héroes visibles, el configurador de HU-28 no ofrece equipar', async () => {
@@ -272,7 +278,8 @@ describe('PlayerInventoryPage', () => {
     }
 
     let equipped = false
-    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    fetchMock.mockImplementation((input, init) => {
+      const url = urlOf(input)
       if (url.includes('/heroes/guerrero-tanque/equipment') && init?.method === 'PUT') {
         equipped = true
         return Promise.resolve(jsonResponse(heroEquipmentEquipped))
@@ -346,7 +353,7 @@ describe('PlayerInventoryPage', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      vi.fn((input: RequestInfo | URL) => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
 
