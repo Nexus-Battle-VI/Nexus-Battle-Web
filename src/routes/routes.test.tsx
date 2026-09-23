@@ -282,19 +282,33 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
   })
 
-  /**
-   * HU-14.4: `/missions` y `/auction` NO se tocan por esta task y deben
-   * seguir mostrando el mismo marcador que `/tournament` ya prueba arriba.
-   */
-  it.each(['/missions', '/auction'])(
-    '%s sigue mostrando el modulo no disponible (sin regresion de HU-14.4)',
-    async (path) => {
-      useSession.setState(AUTHENTICATED_STATE)
-      renderRoute(path)
+  /** HU-14.4 no implementa misiones; conserva el marcador explícito. */
+  it('/missions sigue mostrando el modulo no disponible', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/missions')
 
-      expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
-    },
-  )
+    expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
+  })
+
+  /** HU-68 reemplaza el marcador de subastas por la lista de seguimiento real. */
+  it('/auction renderiza la lista de seguimiento', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ items: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+    renderRoute('/auction')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Subastas en seguimiento' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
 
   /**
    * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un

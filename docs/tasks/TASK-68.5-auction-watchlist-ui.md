@@ -34,14 +34,14 @@ Los casos de aceptación verifican lista vacía, renderizado, baja con refresco 
 
 ## Validación final
 
-| Verificación                  |                 Resultado |
-| ----------------------------- | ------------------------: |
-| Suite completa                | 866 aprobadas, 0 fallidas |
-| Sentencias                    |                   86,82 % |
-| Ramas                         |                   81,31 % |
-| Funciones                     |                   85,35 % |
-| Líneas                        |                   87,14 % |
-| TypeScript, ESLint y Prettier |                 Aprobados |
+| Verificación                  |                  Resultado |
+| ----------------------------- | -------------------------: |
+| Suite completa                | 2125 aprobadas, 0 fallidas |
+| Sentencias                    |                    88,19 % |
+| Ramas                         |                    84,99 % |
+| Funciones                     |                    86,01 % |
+| Líneas                        |                    88,52 % |
+| TypeScript, ESLint y Prettier |                  Aprobados |
 
 Todas las métricas superan RNF-16 (80 %).
 

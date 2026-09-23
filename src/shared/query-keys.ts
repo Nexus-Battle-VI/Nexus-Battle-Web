@@ -6,10 +6,6 @@
  * refresque lo que deberia.
  */
 export const queryKeys = {
-  auction: {
-    /** Lista privada del jugador autenticado (HU-68). */
-    watchlist: ['auction', 'watchlist'] as const,
-  },
   catalog: {
     all: ['catalog', 'products'] as const,
     byCategory: (category: string | null) => ['catalog', 'products', category] as const,
@@ -104,6 +100,8 @@ export const queryKeys = {
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /** Lista privada del jugador autenticado (HU-68). */
+    watchlist: ['auction', 'watchlist'] as const,
   },
   battleRooms: {
     /**
