@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -91,6 +92,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
   const [stakeError, setStakeError] = useState<string | undefined>(undefined)
 
   const createRoom = useCreateBattleRoom()
+  const navigate = useNavigate()
   const wallet = useWallet()
 
   const stake = parseStakeInput(stakeInput)
@@ -114,7 +116,12 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
 
     setRewardError(undefined)
     setStakeError(undefined)
-    createRoom.mutate(buildPayload(mode, capacity, amount, stake.amount))
+    // Igual que al unirse: tras crear, directo al lobby de la sala nueva.
+    createRoom.mutate(buildPayload(mode, capacity, amount, stake.amount), {
+      onSuccess: (room) => {
+        void navigate(`/play/rooms/${room.id}`)
+      },
+    })
   }
 
   return (
@@ -267,7 +274,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
 
         {createRoom.isSuccess && (
           <p role="status" className="text-sm text-success">
-            Sala creada. Ya aparece en el listado de salas disponibles.
+            Sala creada. Entrando al lobby…
           </p>
         )}
 

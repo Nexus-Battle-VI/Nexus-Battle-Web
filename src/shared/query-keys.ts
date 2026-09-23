@@ -109,6 +109,11 @@ export const queryKeys = {
      * filtro de la UI se aplica client-side sobre este mismo resultado.
      */
     list: ['battle-rooms', 'list'] as const,
+    /**
+     * Salas activas del jugador autenticado (`GET /api/v1/combat/me/rooms`):
+     * "volver a mi sala" en Jugar Online. El jugador sale del testimonio.
+     */
+    mine: ['battle-rooms', 'mine'] as const,
     /** Una sala concreta para sus participantes (HU-17, `GET /api/v1/combat/rooms/:roomId`). */
     detail: (roomId: string) => ['battle-rooms', 'detail', roomId] as const,
     /**

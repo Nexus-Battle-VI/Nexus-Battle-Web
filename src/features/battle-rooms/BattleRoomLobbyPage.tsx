@@ -147,6 +147,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     mutationFn: (id: string) => startBattle(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.mine })
       if (roomId !== null) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.detail(roomId) })
       }

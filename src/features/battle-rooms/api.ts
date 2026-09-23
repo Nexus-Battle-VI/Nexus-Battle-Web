@@ -15,6 +15,15 @@ export const fetchBattleRooms = (signal?: AbortSignal): Promise<readonly BattleR
   httpClient.get<readonly BattleRoom[]>('/v1/combat/rooms', signal)
 
 /**
+ * `GET /v1/combat/me/rooms`: salas NO terminales del jugador autenticado
+ * (participa, o las creo y siguen esperando jugadores), de la mas reciente a
+ * la mas antigua. Es la fuente de verdad de "volver a mi sala": la Web no
+ * guarda el id de la sala en almacenamiento local.
+ */
+export const fetchMyActiveBattleRooms = (signal?: AbortSignal): Promise<readonly BattleRoom[]> =>
+  httpClient.get<readonly BattleRoom[]>('/v1/combat/me/rooms', signal)
+
+/**
  * `POST /v1/combat/rooms`. El creador SIEMPRE sale de `identity.subject` en el
  * servicio: este `input` no declara `createdBy` ni `playerId` porque el DTO
  * de Combat tampoco los acepta.
