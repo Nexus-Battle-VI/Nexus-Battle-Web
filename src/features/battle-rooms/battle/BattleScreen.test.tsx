@@ -342,19 +342,20 @@ describe('BattleScreen — HU-18: Vida, resultado del ultimo ataque y acciones',
 
     const region = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
-    expect(region).toHaveTextContent('Bruno atacó a Ana: Golpe crítico (137 %)')
-    expect(region).toHaveTextContent('El Ataque (14) superó la Defensa (11)')
-    expect(region).toHaveTextContent('Daño aplicado: 6')
-    expect(region).toHaveTextContent('Vida de Ana: 44 → 38')
+    expect(region).toHaveTextContent('¡Golpe crítico de Bruno a Ana!')
+    expect(region).toHaveTextContent('−6 Vida')
+    expect(region).toHaveTextContent('Ana: 44 → 38')
+    expect(region).toHaveTextContent('Ataque 14 vs Defensa 11 · Golpe crítico 137 %')
   })
 
-  it('golpe que no supera la Defensa: «sin efecto» con los dos valores comparados', () => {
+  it('golpe que no supera la Defensa: sin daño, con los dos valores comparados', () => {
     pintar({ battle: combatBattle(1), lastAttack: lastAttack(MISS, 44, 44) })
 
     const region = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
-    expect(region).toHaveTextContent('sin efecto')
-    expect(region).toHaveTextContent('El Ataque (11) no superó la Defensa (11)')
+    expect(region).toHaveTextContent('Bruno atacó a Ana, pero no superó su Defensa')
+    expect(region).toHaveTextContent('Sin daño')
+    expect(region).toHaveTextContent('Ataque 11 vs Defensa 11')
   })
 
   it('ambos jugadores ven el mismo resultado (lo pinta cualquier perspectiva)', () => {
