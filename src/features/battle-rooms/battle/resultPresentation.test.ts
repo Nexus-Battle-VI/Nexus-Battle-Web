@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { describeResult } from './resultPresentation'
+import { describeResult, participantOutcomeName, winnerLine } from './resultPresentation'
 import { battle, noWinnerResult, winResult } from './fixtures'
 import type { BattleResult } from './types'
 
@@ -155,5 +155,29 @@ describe('describeResult — marcador y minimizacion', () => {
   it('la vista del sujeto no depende de la batalla: el resultado trae todo lo necesario', () => {
     expect(describeResult(winResult(), null).headline).toBe('Ganó el equipo A')
     expect(battle().battleId).toBeDefined()
+  })
+})
+
+describe('winnerLine y nombres del resultado', () => {
+  it('nombra ganador y perdedor con sus equipos y jugadores, tal como los publico Combat', () => {
+    expect(winnerLine(winResult())).toBe('Ganador: Equipo A (Ana) · Perdedor: Equipo B (Bruno)')
+  })
+
+  it('sin ganador (empate) no hay linea: el titular ya lo dice', () => {
+    expect(winnerLine(noWinnerResult())).toBeNull()
+  })
+
+  it('una IA se nombra «Oponente IA», nunca «Asiento N»', () => {
+    const ai = {
+      teamLabel: 'B',
+      seat: 1,
+      kind: 'AI' as const,
+      playerId: null,
+      displayName: null,
+      heroId: null,
+      result: 'LOST' as const,
+    }
+
+    expect(participantOutcomeName(ai)).toBe('Oponente IA')
   })
 })

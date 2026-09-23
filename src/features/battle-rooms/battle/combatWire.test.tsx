@@ -345,7 +345,7 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
     }
   }
 
-  it('jugador A (equipo A): al final Vida 44 / 44 y 38 / 44, turno del rival y el ultimo golpe «sin efecto»', async () => {
+  it('jugador A (equipo A): al final Vida 44 / 44 y 38 / 44, turno del rival y el ultimo golpe sin superar la Defensa', async () => {
     await replay('sujeto-a', wire.clienteA)
 
     expect(await screen.findByText('Turno de nombre-de-sujeto-b')).toBeInTheDocument()
@@ -355,8 +355,8 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
 
     const resultado = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
-    expect(resultado).toHaveTextContent('sin efecto')
-    expect(resultado).toHaveTextContent('El Ataque (11) no superó la Defensa (11)')
+    expect(resultado).toHaveTextContent('pero no superó su Defensa')
+    expect(resultado).toHaveTextContent('Ataque 11 vs Defensa 11')
     // No es su turno: sin boton de ataque.
     expect(screen.queryByRole('button', { name: 'Ataque básico' })).not.toBeInTheDocument()
   })
@@ -369,7 +369,7 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
 
     const resultado = screen.getByRole('status', { name: 'Resultado de la última acción' })
 
-    expect(resultado).toHaveTextContent('sin efecto')
+    expect(resultado).toHaveTextContent('pero no superó su Defensa')
 
     const boton = screen.getByRole('button', { name: 'Ataque básico' })
 
@@ -387,10 +387,10 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
 
     expect(await screen.findByText('38 / 44')).toBeInTheDocument()
     expect(screen.getByRole('status', { name: 'Resultado de la última acción' })).toHaveTextContent(
-      'Golpe crítico (137 %)',
+      'Golpe crítico 137 %',
     )
     expect(screen.getByRole('status', { name: 'Resultado de la última acción' })).toHaveTextContent(
-      'Vida de nombre-de-sujeto-b: 44 → 38',
+      'nombre-de-sujeto-b: 44 → 38',
     )
   })
 })

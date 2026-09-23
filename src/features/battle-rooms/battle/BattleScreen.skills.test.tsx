@@ -331,12 +331,11 @@ describe('BattleScreen — HU-19: resultado de la ultima accion', () => {
   it('una habilidad: quien la uso, contra quien, el resultado, la Vida, el Poder y la recarga', () => {
     pintar({ lastSkill: lastSkill() })
 
-    expect(region()).toHaveTextContent(
-      'Ana usó Golpe con escudo contra Bruno: Golpe crítico (137 %)',
-    )
-    expect(region()).toHaveTextContent('Vida de Bruno: 44 → 38.')
-    expect(region()).toHaveTextContent('Poder de Ana: 10 → 8.')
-    expect(region()).toHaveTextContent('La habilidad queda en recarga: 1 turno.')
+    expect(region()).toHaveTextContent('Ana usó Golpe con escudo contra Bruno')
+    expect(region()).toHaveTextContent('−6 Vida')
+    expect(region()).toHaveTextContent('Bruno: 44 → 38')
+    expect(region()).toHaveTextContent('Poder 10 → 8')
+    expect(region()).toHaveTextContent('Recarga 1 turno')
   })
 
   it('habilidad y ataque: se pinta el de seq mayor', () => {
@@ -350,7 +349,7 @@ describe('BattleScreen — HU-19: resultado de la ultima accion', () => {
     unmount()
     pintar({ lastSkill: lastSkill({ seq: 3 }), lastAttack: lastAttack({ seq: 4 }) })
 
-    expect(region()).toHaveTextContent('Bruno atacó a Ana')
+    expect(region()).toHaveTextContent('¡Golpe crítico de Bruno a Ana!')
     expect(region()).not.toHaveTextContent('usó Golpe con escudo')
   })
 
@@ -369,18 +368,20 @@ describe('BattleScreen — HU-19: resultado de la ultima accion', () => {
     })
 
     expect(region()).toHaveTextContent(
-      'Ana no tenía Poder suficiente para Golpe con escudo: se usó un ataque básico',
+      'No había Poder suficiente para Golpe con escudo. Se ejecutó un ataque básico en su lugar',
     )
-    expect(region()).toHaveTextContent('La habilidad no se gastó ni quedó en recarga.')
+    expect(region()).toHaveTextContent('la habilidad no se gastó ni quedó en recarga.')
   })
 
-  it('un golpe de habilidad que no supera la Defensa dice «sin efecto» y aun asi muestra el Poder y la recarga', () => {
+  it('un golpe de habilidad que no supera la Defensa dice sin daño y aun asi muestra el Poder y la recarga', () => {
     pintar({
       lastSkill: lastSkill({ resolution: MISS, targetHealth: { before: 44, after: 44 } }),
     })
 
-    expect(region()).toHaveTextContent('Ana usó Golpe con escudo contra Bruno: sin efecto')
-    expect(region()).toHaveTextContent('Poder de Ana: 10 → 8.')
+    expect(region()).toHaveTextContent(
+      'Ana usó Golpe con escudo contra Bruno, pero no superó su Defensa',
+    )
+    expect(region()).toHaveTextContent('Poder 10 → 8')
   })
 
   it('ambos jugadores ven el mismo resultado de la habilidad', () => {
