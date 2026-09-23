@@ -19,6 +19,8 @@ import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventory
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
+import { MissionBoardPage } from '@/features/missions/MissionBoardPage'
+import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -232,7 +234,8 @@ export const routes: RouteObject[] = [
       { path: 'play/rooms/:roomId', element: <BattleRoomLobbyPage /> },
       // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
       { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
-      { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
+      { path: 'missions', element: <MissionBoardPage /> },
+      { path: 'missions/:missionId', element: <MissionDetailPage /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,

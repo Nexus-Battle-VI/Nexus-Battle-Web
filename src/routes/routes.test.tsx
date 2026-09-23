@@ -282,19 +282,35 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
   })
 
-  /**
-   * HU-14.4: `/missions` y `/auction` NO se tocan por esta task y deben
-   * seguir mostrando el mismo marcador que `/tournament` ya prueba arriba.
-   */
-  it.each(['/missions', '/auction'])(
-    '%s sigue mostrando el modulo no disponible (sin regresion de HU-14.4)',
-    async (path) => {
-      useSession.setState(AUTHENTICATED_STATE)
-      renderRoute(path)
+  it('/auction conserva el marcador mientras su pantalla principal no esta disponible', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/auction')
 
-      expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
-    },
-  )
+    expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
+  })
+
+  it('/missions muestra el tablón real en lugar del marcador', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ items: [] }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        ),
+      ),
+    )
+
+    try {
+      renderRoute('/missions')
+      expect(await screen.findByText('No hay misiones para estos filtros.')).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
 
   /**
    * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un
@@ -417,16 +433,14 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.queryByRole('heading', { name: 'Inventario' })).not.toBeInTheDocument()
   })
 
-  it('un visitante que intenta Misiones sin sesion recibe el gate, no el aviso de modulo no disponible', async () => {
+  it('un visitante que intenta Misiones sin sesion recibe el gate', async () => {
     useSession.setState(ANONYMOUS_STATE)
     renderRoute('/missions')
 
-    // El gate de sesion tiene prioridad: sin sesion no hay forma de saber si
-    // el modulo estaria disponible, asi que no se llega a mostrar ese estado.
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
     ).toBeInTheDocument()
-    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Misiones' })).not.toBeInTheDocument()
   })
 
   it('con sesion, E-commerce se renderiza dentro del shell autenticado (misma nav, sesion visible)', async () => {
