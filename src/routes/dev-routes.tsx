@@ -91,6 +91,11 @@ if (import.meta.env.DEV) {
       (module) => ({ default: module.ImmediatePurchaseDevPreview }),
     ),
   )
+  const BiddingDevPreviewLazy = lazy(() =>
+    import('@/features/auction/bidding/dev/BiddingDevPreview').then((module) => ({
+      default: module.BiddingDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -119,6 +124,14 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <ImmediatePurchaseDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/bidding',
+      element: (
+        <Suspense fallback={null}>
+          <BiddingDevPreviewLazy />
         </Suspense>
       ),
     },
