@@ -186,7 +186,11 @@ describe('BattleRoomLobbyPage', () => {
     expect(container.innerHTML).not.toContain(ROOM_ID)
   })
 
-  it('no ofrece un boton para iniciar: la batalla comienza cuando la sala se llena y decide Combat (HU-17)', async () => {
+  it('mientras espera jugadores no ofrece "Iniciar partida" (ni al propietario): solo aparece en PREPARING (HU-17)', async () => {
+    // `AUTHENTICATED_NO_SOCKET` autentica como 'sujeto-ana', que en `room()`
+    // TAMBIEN es `createdBy` -- ni siquiera el propietario ve el boton mientras
+    // la sala sigue WAITING_FOR_PLAYERS. Cobertura del boton ya PREPARING (y de
+    // quien no es propietario) vive en `BattleRoomLobbyPage.lifecycle.test.tsx`.
     useSession.setState(AUTHENTICATED_NO_SOCKET)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
 
@@ -195,7 +199,36 @@ describe('BattleRoomLobbyPage', () => {
     expect(
       await screen.findByText(/La batalla comienza cuando la sala se llena/u),
     ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Empezar partida/u })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Iniciar partida' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar sala' })).toBeInTheDocument()
+  })
+
+  /**
+   * Seccion 12 del prompt maestro de estabilizacion: revisar la propia
+   * preparacion sin abandonar la sala (sin llamar a `leave`). El enlace va a
+   * Mi Inventario -no a un panel embebido- porque ninguna feature importa
+   * componentes de otra en este proyecto.
+   */
+  it('un participante ve "Revisar mi equipamiento", enlazado a Mi Inventario', async () => {
+    useSession.setState(AUTHENTICATED_NO_SOCKET)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    expect(await screen.findByRole('link', { name: 'Revisar mi equipamiento' })).toHaveAttribute(
+      'href',
+      '/inventory',
+    )
+  })
+
+  it('quien no es participante NO ve "Revisar mi equipamiento"', async () => {
+    useSession.setState({ ...AUTHENTICATED_NO_SOCKET, subject: 'sujeto-ajeno' })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    await screen.findByText('Equipo A')
+    expect(screen.queryByRole('link', { name: 'Revisar mi equipamiento' })).not.toBeInTheDocument()
   })
 
   it('representa un oponente IA sin depender de displayName', async () => {

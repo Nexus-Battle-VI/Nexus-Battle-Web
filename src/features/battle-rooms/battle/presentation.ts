@@ -83,7 +83,12 @@ export const describeStartBattleFailure = (error: unknown): string => {
       case 401:
         return 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.'
       case 403:
-        return 'No participas en esta batalla.'
+        // HU-17 (2026-09-22): el 403 de /start ahora tiene dos causas -- no ser
+        // participante, o serlo pero no ser el propietario. El boton solo se
+        // muestra al propietario, asi que en la practica esto no deberia verse;
+        // si ocurre (llamada manual, condicion de carrera), este mensaje cubre
+        // ambos casos sin mentir sobre cual aplica.
+        return 'Solo quien creó la sala puede iniciar la partida.'
       case 404:
         return 'La sala ya no existe.'
       case 409:
