@@ -77,6 +77,7 @@ export const useBattleRoomRealtime = (
         if (message.type === 'battle-room.updated' && message.roomId === roomId) {
           setLastRoomStatus(message.status ?? null)
           void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+          void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.mine })
           void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.detail(roomId) })
         }
       },

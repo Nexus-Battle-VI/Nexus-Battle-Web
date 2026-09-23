@@ -97,4 +97,35 @@ describe('Avatar', () => {
     rerender(<Avatar avatarUrl={null} alt="Ana" initials="A" size="lg" />)
     expect(screen.getByText('A')).toHaveClass('h-16', 'w-16')
   })
+
+  it('comparte UNA descarga entre varios avatares de la misma ruta', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(imageResponse())
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn().mockReturnValue('blob:compartido'),
+      revokeObjectURL: vi.fn(),
+    })
+
+    render(
+      <>
+        <Avatar avatarUrl="/accounts/by-subject/sujeto-ana/avatar" alt="Ana 1" initials="A" />
+        <Avatar avatarUrl="/accounts/by-subject/sujeto-ana/avatar" alt="Ana 2" initials="A" />
+      </>,
+    )
+
+    expect(await screen.findByRole('img', { name: 'Ana 1' })).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Ana 2' })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('no descarga una ruta ajena a Account: muestra la inicial', () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<Avatar avatarUrl="https://externo.test/imagen.png" alt="Ana" initials="A" />)
+
+    expect(screen.getByText('A')).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })

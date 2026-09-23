@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 
-import { httpClient } from '@/lib/http'
+import { loadAvatar } from './avatarCache'
 
 /**
  * Avatar reutilizable (HU-15.3).
@@ -20,7 +20,12 @@ import { httpClient } from '@/lib/http'
  * mismo guardia que el resto de la API), asi que un `<img src="...">` directo
  * no podria enviar el header `Authorization`. Se descarga con `httpClient`
  * (mismo patron que `ProductImage.tsx`) y se expone como Object URL, que se
- * libera al desmontar o al cambiar de avatar.
+ * libera al desmontar o al cambiar de avatar. La descarga se comparte entre
+ * todos los avatares de la misma ruta (`avatarCache.ts`).
+ *
+ * Solo se descargan rutas del propio Account (`/accounts/...`): un valor
+ * inesperado cae a la inicial en vez de pedir un recurso arbitrario con el
+ * testimonio del usuario.
  */
 export interface AvatarProps {
   /** Ruta relativa devuelta por el contrato (`/accounts/{id}/avatar`), o `null` sin avatar. */
@@ -32,6 +37,8 @@ export interface AvatarProps {
   readonly size?: 'sm' | 'md' | 'lg'
   readonly className?: string
 }
+
+const ACCOUNT_AVATAR_PATH = /^\/accounts\/[^?#]+\/avatar$/
 
 const SIZE_CLASS: Readonly<Record<NonNullable<AvatarProps['size']>, string>> = {
   sm: 'h-7 w-7 text-xs',
@@ -57,17 +64,18 @@ export const Avatar = ({
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    if (avatarUrl === null) {
+    if (avatarUrl === null || !ACCOUNT_AVATAR_PATH.test(avatarUrl)) {
       return
     }
 
-    const controller = new AbortController()
+    // La descarga es compartida: desmontar este avatar no la cancela (otro
+    // puede estar esperandola); solo se ignora su resultado.
+    let active = true
     let createdUrl: string | null = null
 
-    void httpClient
-      .download(avatarUrl, controller.signal)
-      .then(({ content, mediaType }) => {
-        if (controller.signal.aborted || !mediaType.startsWith('image/')) {
+    void loadAvatar(avatarUrl)
+      .then((content) => {
+        if (!active || content === null) {
           return
         }
 
@@ -79,7 +87,7 @@ export const Avatar = ({
       })
 
     return () => {
-      controller.abort()
+      active = false
       if (createdUrl !== null) {
         URL.revokeObjectURL(createdUrl)
       }

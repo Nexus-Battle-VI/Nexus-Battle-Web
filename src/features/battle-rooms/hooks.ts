@@ -7,12 +7,14 @@ import {
 } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
+import { useSession } from '@/shared/session'
 import { invalidateWallet } from '@/shared/wallet'
 
 import {
   cancelBattleRoom,
   createBattleRoom,
   fetchBattleRooms,
+  fetchMyActiveBattleRooms,
   joinBattleRoom,
   leaveBattleRoom,
 } from './api'
@@ -31,6 +33,32 @@ const declaresStake = (input: CreateBattleRoomInput): boolean =>
   )
 
 /**
+ * Salas activas del jugador ("volver a mi sala"). `staleTime: 0`: cada vez que
+ * se vuelve a Jugar Online se relee, porque el estado de la sala cambia fuera
+ * de esta pantalla (se lleno, empezo o termino la batalla). Sin sondeo: las
+ * mutaciones y `battle-room.updated` la invalidan.
+ */
+export const useMyActiveRooms = (): UseQueryResult<readonly BattleRoom[]> => {
+  const subject = useSession((state) => state.subject)
+
+  return useQuery({
+    queryKey: queryKeys.battleRooms.mine,
+    queryFn: ({ signal }) => fetchMyActiveBattleRooms(signal),
+    enabled: subject !== null,
+    staleTime: 0,
+  })
+}
+
+/**
+ * Invalida el listado publico y "mis salas": toda mutacion de sala cambia
+ * ambas vistas.
+ */
+const invalidateRoomLists = (queryClient: ReturnType<typeof useQueryClient>): void => {
+  void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+  void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.mine })
+}
+
+/**
  * Crear sala. Sin actualizacion optimista: la sala real la decide el
  * servicio (identidad del creador, `id`, `createdAt`, `version`), y no hay
  * nada valido que adivinar en el cliente mientras se espera la respuesta.
@@ -47,7 +75,7 @@ export const useCreateBattleRoom = (): UseMutationResult<
   return useMutation({
     mutationFn: (input: CreateBattleRoomInput) => createBattleRoom(input),
     onSuccess: (_room, input) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      invalidateRoomLists(queryClient)
       // HU-23: crear apostando reserva creditos (baja `available`).
       if (declaresStake(input)) {
         invalidateWallet(queryClient)
@@ -63,7 +91,7 @@ export const useCancelBattleRoom = (): UseMutationResult<BattleRoom, unknown, st
   return useMutation({
     mutationFn: (roomId: string) => cancelBattleRoom(roomId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      invalidateRoomLists(queryClient)
       // HU-23: cancelar libera las apuestas reservadas.
       invalidateWallet(queryClient)
     },
@@ -77,7 +105,7 @@ export const useLeaveBattleRoom = (): UseMutationResult<BattleRoom, unknown, str
   return useMutation({
     mutationFn: (roomId: string) => leaveBattleRoom(roomId),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      invalidateRoomLists(queryClient)
       // HU-23: abandonar antes de iniciar libera la apuesta propia.
       invalidateWallet(queryClient)
     },
@@ -113,7 +141,7 @@ export const useJoinBattleRoom = (): UseMutationResult<
         ...(stake === undefined ? {} : { stake }),
       }),
     onSuccess: (_room, { stake }) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      invalidateRoomLists(queryClient)
       // HU-23: unirse apostando reserva creditos (baja `available`).
       if (stake !== undefined) {
         invalidateWallet(queryClient)
