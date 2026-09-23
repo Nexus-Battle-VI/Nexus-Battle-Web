@@ -9,6 +9,7 @@ import { fetchCanonicalProduct } from '@/features/catalog/api'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { fetchAuctionDetail, fetchBuyerCredits } from './detail-api'
+import { AuctionBidPanel } from './bidding/AuctionBidPanel'
 import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCard'
 
 /**
@@ -24,9 +25,8 @@ import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCar
  *   datos REALES (`GET /v1/auctions/:auctionId`, ya construido y probado por
  *   HU-63.6), pero el boton "Comprar ahora" NO llama todavia al backend real
  *   -eso es HU-64.6, deliberadamente fuera del alcance de HU-64.1-.
- * - HU-63 (pujar): sin ninguna interfaz propia todavia -HU-63.6 solo
- *   construyo el backend y esta pagina, no una UI de pujar-. Se deja marcado
- *   el lugar exacto donde debe ir.
+ * - HU-63 (pujar): el `AuctionBidPanel` de abajo presenta el registro de pujas
+ *   y sus respuestas del contrato, integrado junto a la compra inmediata.
  */
 export const AuctionDetailPage = (): React.JSX.Element => {
   const { auctionId = '' } = useParams()
@@ -123,18 +123,19 @@ export const AuctionDetailPage = (): React.JSX.Element => {
 
               {showIntegrationNote && (
                 <p role="status" className="text-sm text-muted">
-                  La compra inmediata y el registro de pujas todavia no estan conectados al backend
-                  en esta pantalla (HU-64.6 y HU-63.6 UI, pendientes).
+                  La compra inmediata todavia no esta conectada al backend en esta pantalla
+                  (HU-64.6, pendiente).
                 </p>
               )}
 
-              {/*
-               * TODO(HU-63.6 UI): aqui va el panel para registrar una puja
-               * -"Registrar puja"-, junto al de compra inmediata de arriba.
-               * El endpoint ya existe (`POST /v1/auctions/:auctionId/bids`,
-               * HU-63.4) y `auction.currentBid` ya trae la oferta lider; falta
-               * el componente visual, que no es parte de HU-64.
-               */}
+              {auction.status === 'ACTIVE' && product !== undefined && (
+                <AuctionBidPanel
+                  auction={auction}
+                  product={{ name: product.name, description: product.description }}
+                  subject={subject}
+                  {...(availableCredits === undefined ? {} : { availableCredits })}
+                />
+              )}
             </>
           )}
         </QueryState>

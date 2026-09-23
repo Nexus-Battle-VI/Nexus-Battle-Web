@@ -59,6 +59,8 @@ export interface HttpClientOptions {
 export interface RequestOptions {
   readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   readonly body?: unknown
+  /** Cabeceras adicionales de la operacion (por ejemplo Idempotency-Key). */
+  readonly headers?: Readonly<Record<string, string>>
   readonly signal?: AbortSignal
 }
 
@@ -183,6 +185,10 @@ export class HttpClient {
         headers['content-type'] = 'application/json'
         init.body = JSON.stringify(options.body)
       }
+    }
+
+    if (options.headers !== undefined) {
+      Object.assign(headers, options.headers)
     }
 
     // El testimonio se resuelve en CADA peticion, no al construir el cliente:
