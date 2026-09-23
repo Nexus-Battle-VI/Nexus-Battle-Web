@@ -10,6 +10,7 @@ import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { fetchAuctionDetail, fetchBuyerCredits } from './detail-api'
 import { AuctionBidPanel } from './bidding/AuctionBidPanel'
+import { AutoBidPanel } from './auto-bid/AutoBidPanel'
 import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCard'
 
 /**
@@ -19,7 +20,7 @@ import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCar
  * -el formulario del VENDEDOR para publicar, HU-62-, que no lista ni muestra
  * subastas ajenas.
  *
- * Es el punto de union para dos flujos del comprador que hoy no tienen
+ * Es el punto de union para varios flujos del comprador que hoy no tienen
  * ninguna pantalla propia en este repositorio:
  * - HU-64 (compra inmediata): el `ImmediatePurchaseCard` de abajo. Muestra
  *   datos REALES (`GET /v1/auctions/:auctionId`, ya construido y probado por
@@ -27,6 +28,9 @@ import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCar
  *   -eso es HU-64.6, deliberadamente fuera del alcance de HU-64.1-.
  * - HU-63 (pujar): el `AuctionBidPanel` de abajo presenta el registro de pujas
  *   y sus respuestas del contrato, integrado junto a la compra inmediata.
+ * - HU-67 (puja automatica): el `AutoBidPanel` de abajo llama al mismo
+ *   contrato real que ya prueba Auction (`POST /v1/auctions/:auctionId/auto-bid`,
+ *   HU-67.5), junto al registro de pujas manual.
  */
 export const AuctionDetailPage = (): React.JSX.Element => {
   const { auctionId = '' } = useParams()
@@ -132,6 +136,14 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                 <AuctionBidPanel
                   auction={auction}
                   product={{ name: product.name, description: product.description }}
+                  subject={subject}
+                  {...(availableCredits === undefined ? {} : { availableCredits })}
+                />
+              )}
+
+              {auction.status === 'ACTIVE' && (
+                <AutoBidPanel
+                  auction={auction}
                   subject={subject}
                   {...(availableCredits === undefined ? {} : { availableCredits })}
                 />

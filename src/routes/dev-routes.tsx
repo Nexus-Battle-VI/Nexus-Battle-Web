@@ -96,6 +96,11 @@ if (import.meta.env.DEV) {
       default: module.BiddingDevPreview,
     })),
   )
+  const AutoBidDevPreviewLazy = lazy(() =>
+    import('@/features/auction/auto-bid/dev/AutoBidDevPreview').then((module) => ({
+      default: module.AutoBidDevPreview,
+    })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -132,6 +137,14 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <BiddingDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/auto-bid',
+      element: (
+        <Suspense fallback={null}>
+          <AutoBidDevPreviewLazy />
         </Suspense>
       ),
     },
