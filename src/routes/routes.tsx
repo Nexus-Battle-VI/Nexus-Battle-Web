@@ -19,7 +19,6 @@ import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventory
 import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
-import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -239,11 +238,6 @@ export const routes: RouteObject[] = [
       // `/inventory`: esta pantalla elige el heroe y enseña con que entraria.
       { path: 'heroes', element: <HeroSelectionPage /> },
       { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
-      // Detalle de una subasta para quien la va a comprar (HU-64.1). El
-      // formulario del vendedor para PUBLICAR ('auction' arriba) sigue en
-      // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta hija no
-      // depende de esa fusion.
-      { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.
