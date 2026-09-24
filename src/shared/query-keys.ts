@@ -140,13 +140,33 @@ export const queryKeys = {
     me: ['wallet', 'me'] as const,
   },
   missions: {
+    board: (subject: string | null, category: string | null, status: string | null) =>
+      ['missions', 'board', subject, category, status] as const,
+    detail: (subject: string | null, missionId: string) =>
+      ['missions', 'detail', subject, missionId] as const,
+    availableHeroes: (subject: string | null) => ['missions', 'available-heroes', subject] as const,
+    history: (subject: string | null) => ['missions', 'history', subject] as const,
+    historySummary: (subject: string | null) => ['missions', 'history-summary', subject] as const,
     /**
      * Informe de una misión terminada del jugador (HU-74,
      * `GET /api/v1/missions/me/reports/{enrollmentId}`), con la experiencia de
-     * HU-09 (Task HU-09.5). La matrícula va en la clave porque el informe es el de
+     * HU-09 (Task HU-09.5). La matrícula y el sujeto van en la clave: el informe es el de
      * ESA misión; el jugador sale del testimonio y nunca viaja en la petición.
      */
-    report: (enrollmentId: string) => ['missions', 'report', enrollmentId] as const,
+    report: (subject: string | null, enrollmentId: string) =>
+      ['missions', 'report', subject, enrollmentId] as const,
+    achievements: (subject: string | null) => ['missions', 'achievements', subject] as const,
+    strategy: (subject: string | null, missionId: string, heroId: string) =>
+      ['missions', 'strategy', subject, missionId, heroId] as const,
+    strategyAbilities: (subject: string | null, heroId: string) =>
+      ['missions', 'strategy-abilities', subject, heroId] as const,
+    /**
+     * Niveles de dificultad de una mision para el jugador autenticado (HU-75,
+     * `GET /api/v1/missions/:missionId/difficulties`). Lleva la identidad: el
+     * desbloqueo es propio de cada jugador y no debe reutilizarse entre sesiones.
+     */
+    difficulties: (subject: string | null, missionId: string) =>
+      ['missions', 'difficulties', subject, missionId] as const,
   },
   notifications: {
     /**

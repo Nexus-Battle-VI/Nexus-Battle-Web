@@ -87,6 +87,11 @@ if (import.meta.env.DEV) {
       default: module.ChatPanelDevPreview,
     })),
   )
+  const DifficultySelectorDevPreviewLazy = lazy(() =>
+    import('@/features/missions/dev/DifficultySelectorDevPreview').then((module) => ({
+      default: module.DifficultySelectorDevPreview,
+    })),
+  )
 
   const ImmediatePurchaseDevPreviewLazy = lazy(() =>
     import('@/features/auction/immediate-purchase/dev/ImmediatePurchaseDevPreview').then(
@@ -309,6 +314,17 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <ChatPanelDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-75.3: el selector de dificultad se usa en el detalle y la matricula
+    // de HU-70.3. El preview monta el mismo componente con fixtures del contrato,
+    // sin red ni sesion. NO es evidencia E2E.
+    {
+      path: '__dev/hu75/dificultad',
+      element: (
+        <Suspense fallback={null}>
+          <DifficultySelectorDevPreviewLazy />
         </Suspense>
       ),
     },

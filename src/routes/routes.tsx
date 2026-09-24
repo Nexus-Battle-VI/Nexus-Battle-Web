@@ -13,13 +13,17 @@ import { accountSectionRoutes } from '@/features/account/routes'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
 import { BattleRoomsPage } from '@/features/battle-rooms/BattleRoomsPage'
-import { MissionReportPage } from '@/features/missions/MissionReportPage'
 import { BattleRoomLobbyPage } from '@/features/battle-rooms/BattleRoomLobbyPage'
 import { BattleWithChat } from '@/features/battle-rooms/BattleWithChat'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
+import { MissionBoardPage } from '@/features/missions/MissionBoardPage'
+import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
+import { MissionContentEditorPage } from '@/features/missions/MissionContentEditorPage'
+import { MissionHistoryPage } from '@/features/missions/MissionHistoryPage'
+import { MissionReportPage } from '@/features/missions/MissionReportPage'
 import { PendingClaimsPage } from '@/features/auction/pending-claims/PendingClaimsPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
@@ -84,6 +88,7 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
   { path: '/play', label: 'Jugar Online' },
   { path: '/missions', label: 'Misiones' },
+  { path: '/admin/missions', label: 'Editar misiones', requiredPrimaryRole: 'ADMINISTRATOR' },
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
   // HU-07 ya NO tiene entrada propia (2026-09-22, retiro de "Mi Héroe" por
@@ -235,12 +240,18 @@ export const routes: RouteObject[] = [
       { path: 'play/rooms/:roomId', element: <BattleRoomLobbyPage /> },
       // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
       { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
-      { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
-      // Informe de una misión terminada (HU-74) con la experiencia de sus derrotas
-      // (HU-09, Task HU-09.5). NO entra en `NAVIGATION` ni sustituye al marcador de
-      // `/missions`: se llega con una matrícula concreta en la mano, y el tablón de
-      // misiones sigue siendo de otra task.
+      { path: 'missions', element: <MissionBoardPage /> },
+      { path: 'missions/history', element: <MissionHistoryPage /> },
       { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
+      { path: 'missions/:missionId', element: <MissionDetailPage /> },
+      {
+        path: 'admin/missions',
+        element: (
+          <RequireAdministrator>
+            <MissionContentEditorPage />
+          </RequireAdministrator>
+        ),
+      },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,

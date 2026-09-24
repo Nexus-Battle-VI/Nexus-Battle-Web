@@ -70,7 +70,12 @@ describe('useMissionReport — activacion y contrato (HU-09.5)', () => {
       expect(result.current.isSuccess).toBe(true)
     })
 
-    expect(queryKeys.missions.report(ENROLLMENT_ID)).toEqual(['missions', 'report', ENROLLMENT_ID])
+    expect(queryKeys.missions.report(null, ENROLLMENT_ID)).toEqual([
+      'missions',
+      'report',
+      null,
+      ENROLLMENT_ID,
+    ])
     expect(fetchImpl).toHaveBeenCalledWith(
       `/api/v1/missions/me/reports/${ENROLLMENT_ID}`,
       expect.objectContaining({ method: 'GET' }),
