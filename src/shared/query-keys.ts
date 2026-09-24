@@ -100,6 +100,18 @@ export const queryKeys = {
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /** Lista privada del jugador autenticado (HU-68). */
+    watchlist: ['auction', 'watchlist'] as const,
+    /**
+     * Productos ganados pendientes de reclamo del titular autenticado
+     * (HU-69.2/HU-69.7, `GET /v1/auctions/me/pending-claims`). Sin
+     * parametros: el servicio deduce el titular del testimonio, igual
+     * criterio que `wallet.me`. La consulta del badge de la cabecera y la de
+     * la pantalla de listado comparten esta misma clave a proposito: reclamar
+     * un producto invalida una sola entrada y ambas superficies se
+     * refrescan.
+     */
+    pendingClaims: ['auction', 'pending-claims'] as const,
   },
   battleRooms: {
     /**

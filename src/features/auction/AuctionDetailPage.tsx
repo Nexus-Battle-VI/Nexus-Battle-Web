@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Card } from '@/components/ui/Card'
@@ -43,6 +43,7 @@ const MAX_AUTOMATIC_RETRIES = 3
  */
 export const AuctionDetailPage = (): React.JSX.Element => {
   const { auctionId = '' } = useParams()
+  const navigate = useNavigate()
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
   const [confirmed, setConfirmed] = useState(false)
@@ -175,6 +176,9 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                         onGoToBid={() => {
                           /* El panel de pujar (`AuctionBidPanel`, HU-63.8) ya vive en esta
                            * misma pantalla, justo debajo: no hace falta navegar a ningun lado. */
+                        }}
+                        onViewPending={() => {
+                          void navigate('/auction/pending-claims')
                         }}
                       />
                     )}
