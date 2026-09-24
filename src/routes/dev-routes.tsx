@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react'
 import { Navigate } from 'react-router'
 import type { RouteObject } from 'react-router'
 
+import { AppLayout } from '@/app/AppLayout'
+
 /**
  * Harnesses de verificacion tecnica, no pantallas del producto (ver
  * `src/shared/visual-library/heroes/HeroesDevPreview.tsx` para EN-026.3 y
@@ -91,6 +93,11 @@ if (import.meta.env.DEV) {
       (module) => ({ default: module.ImmediatePurchaseDevPreview }),
     ),
   )
+  const AuctionWatchlistDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionWatchlistDevPreview').then((module) => ({
+      default: module.AuctionWatchlistDevPreview,
+    })),
+  )
   const BiddingDevPreviewLazy = lazy(() =>
     import('@/features/auction/bidding/dev/BiddingDevPreview').then((module) => ({
       default: module.BiddingDevPreview,
@@ -99,6 +106,11 @@ if (import.meta.env.DEV) {
   const AutoBidDevPreviewLazy = lazy(() =>
     import('@/features/auction/auto-bid/dev/AutoBidDevPreview').then((module) => ({
       default: module.AutoBidDevPreview,
+    })),
+  )
+  const PendingClaimsDevPreviewLazy = lazy(() =>
+    import('@/features/auction/pending-claims/dev/PendingClaimsDevPreview').then((module) => ({
+      default: module.PendingClaimsDevPreview,
     })),
   )
 
@@ -122,6 +134,15 @@ if (import.meta.env.DEV) {
   ]
 
   resolvedPublicDevRoutes = [
+    // HU-68: lista de seguimiento real con respuestas simuladas de Auction.
+    {
+      path: '__dev/hu68/watchlist',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionWatchlistDevPreviewLazy />
+        </Suspense>
+      ),
+    },
     // HU-64.1: la tarjeta de compra inmediata se monta con datos de ejemplo y sin
     // red, para revisar en claro y oscuro los estados de Figma antes de HU-64.6.
     {
@@ -147,6 +168,29 @@ if (import.meta.env.DEV) {
           <AutoBidDevPreviewLazy />
         </Suspense>
       ),
+    },
+    // HU-69.7: productos pendientes de reclamo. Vive tras `RequireSession` y
+    // necesita Auction respondiendo de verdad; el preview intercepta `fetch`
+    // para `/api/v1/auctions/me/pending-claims*` y `/api/v1/catalog/products/*`
+    // y falsea una sesion, mismo criterio que `ModerationQueueDevPreview`.
+    // A diferencia de esos otros previews, este SI se monta dentro de
+    // `AppLayout` (header incluido): la sesion falsa que fija el preview la
+    // lee tambien `AppHeader` (`PendingClaimsBadge`, `CreditsBadge`,
+    // `SessionControl`), asi que el resultado se ve identico a la pantalla
+    // real dentro del shell autenticado, no solo el contenido aislado.
+    {
+      path: '__dev/auction/pending-claims',
+      element: <AppLayout />,
+      children: [
+        {
+          index: true,
+          element: (
+            <Suspense fallback={null}>
+              <PendingClaimsDevPreviewLazy />
+            </Suspense>
+          ),
+        },
+      ],
     },
     {
       path: '__dev/account',
