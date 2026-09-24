@@ -8,6 +8,8 @@ export type CatalogNotificationChangeType =
   | 'PRODUCT_SUSPENDED'
   | 'PRODUCT_REACTIVATED'
   | 'PRODUCT_PREMIUM_CONFIGURED'
+  | 'AUCTION_CHANGED'
+  | 'AUCTION_CLOSING_SOON'
 
 /**
  * Ya consolidada por el backend: `notificationIds` puede representar varias

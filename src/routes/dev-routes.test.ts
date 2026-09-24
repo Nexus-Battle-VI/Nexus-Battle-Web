@@ -22,8 +22,21 @@ describe('devRoutes', () => {
     // novedades/banner de catalogo (HU-38, Task #181/#185) y el lobby de
     // preparacion de sala de batalla (HU-15.3), el medidor de Poder (HU-11),
     // que aun no esta montado en ninguna pantalla del producto, la pantalla de
-    // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket.
+    // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket, y
+    // la tarjeta de compra inmediata (HU-64.1), el registro de puja (HU-63.8)
+    // y la configuracion de puja automatica (HU-67.6) con datos de ejemplo,
+    // revisables en claro y oscuro sin depender de una subasta real, y los
+    // productos ganados pendientes de reclamo (HU-69.7), que ademas de datos
+    // de ejemplo falsea una sesion (necesita Auction real) y se monta dentro
+    // de `AppLayout` para revisar tambien el header (badge de pendientes), y
+    // la lista de seguimiento de subastas (HU-68) con Auction falseado, y el
+    // selector de dificultad (HU-75.3), que espera la matricula de HU-70.3.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
+      '__dev/hu68/watchlist',
+      '__dev/auction/immediate-purchase',
+      '__dev/auction/bidding',
+      '__dev/auction/auto-bid',
+      '__dev/auction/pending-claims',
       '__dev/account',
       '__dev/admin/products/new',
       '__dev/heroes',
@@ -35,6 +48,7 @@ describe('devRoutes', () => {
       '__dev/hu11/poder',
       '__dev/hu17/battle',
       '__dev/hu13/chat',
+      '__dev/hu75/dificultad',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 

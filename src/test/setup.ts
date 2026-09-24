@@ -3,6 +3,9 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
+import { clearAvatarCache } from '@/components/ui/avatarCache'
+import { resetLanguageForTests } from '@/shared/i18n/testing'
+
 // jsdom no implementa la apertura/cierre modal nativo. La aplicacion sigue
 // usando HTMLDialogElement; solo el entorno de pruebas refleja su estado open.
 Object.defineProperties(HTMLDialogElement.prototype, {
@@ -27,4 +30,10 @@ Object.defineProperties(HTMLDialogElement.prototype, {
 // siguiente y las consultas devuelven elementos del caso anterior.
 afterEach(() => {
   cleanup()
+  // Los avatares se cachean por ruta durante la sesion: una prueba no debe
+  // heredar la descarga (ni el 404) de la anterior.
+  clearAvatarCache()
+  // Cada prueba arranca en español, el idioma por defecto del producto: una
+  // prueba que cambia de idioma no debe dejar la siguiente en otro.
+  resetLanguageForTests()
 })

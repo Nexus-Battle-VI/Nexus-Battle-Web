@@ -9,6 +9,7 @@ import {
   occupancyOf,
   teamByLetter,
 } from './presentation'
+import type { JoinBattleRoomFailure } from './presentation'
 import type { BattleRoom } from './types'
 
 const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
@@ -179,7 +180,7 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
     )
 
     expect(failure.message).toContain('héroe')
-    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/inventory' })
   })
 
   it('422 con blockers HERO_CLASS_NOT_ALLOWED_FOR_FORMAT explica la restriccion de clase/modalidad, sin action de inventario', () => {
@@ -200,7 +201,7 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
 
     expect(failure.message).toContain('1 contra 1')
     expect(failure.message).not.toContain('texto interno')
-    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/inventory' })
   })
 
   it.each(['EQUIPPED_PRODUCT_NOT_OWNED', 'EQUIPPED_PRODUCT_NOT_ACTIVE'])(
@@ -231,7 +232,7 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
     )
 
     expect(failure.message).toContain('no está disponible')
-    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/heroes' })
+    expect(failure.action).toEqual({ label: 'Revisar Mi Héroe', to: '/inventory' })
   })
 
   it('prioriza HERO_CLASS_NOT_ALLOWED_FOR_FORMAT cuando concurre con un blocker de equipamiento', () => {
@@ -296,5 +297,29 @@ describe('joinBattleRoomFailure (HU-16.3, rechazos de elegibilidad precombate)',
     })
 
     expect(describeJoinBattleRoomFailure(error)).toBe(joinBattleRoomFailure(error).message)
+  })
+})
+
+describe('joinBattleRoomFailure (HU-23, rechazos de la apuesta)', () => {
+  const withCode = (code: string): JoinBattleRoomFailure =>
+    joinBattleRoomFailure(
+      new HttpError(422, 'texto crudo del backend', {
+        statusCode: 422,
+        message: 'texto crudo del backend',
+        code,
+      }),
+    )
+
+  it('INSUFFICIENT_AVAILABLE_BALANCE explica el saldo sin mostrar el texto del backend', () => {
+    const failure = withCode('INSUFFICIENT_AVAILABLE_BALANCE')
+
+    expect(failure.message).toContain('disponibles')
+    expect(failure.message).not.toContain('texto crudo')
+    expect(failure.action).toBeNull()
+  })
+
+  it('STAKE_NOT_ALLOWED_IN_PVE y INVALID_AMOUNT tienen su propio mensaje', () => {
+    expect(withCode('STAKE_NOT_ALLOWED_IN_PVE').message).toContain('JcE')
+    expect(withCode('INVALID_AMOUNT').message).toContain('entero')
   })
 })

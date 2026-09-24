@@ -1,15 +1,20 @@
 import type { RealtimeConnectionState } from '../realtime'
-import type { LastAttack, LastSkill } from './battleReducer'
+import type { LastAttack, LastHealSkill, LastSkill } from './battleReducer'
 import {
-  EFFECT_LABELS,
+  DETAIL_SEPARATOR,
+  attackVersusDefense,
   combatantHealth,
   combatantName,
+  damageImpact,
   describeLastAttack,
   describeTurn,
+  effectWithPercent,
   findEntry,
   findSelf,
   hasCombatState,
   hasHealth,
+  lifeChange,
+  type ActionFeedback,
 } from './presentation'
 import type {
   BattleView,
@@ -53,9 +58,9 @@ export const describeSkillStatus = (skill: SkillView): string => {
     case 'READY':
       return 'Disponible'
     case 'RECHARGING':
-      return `En recarga: ${skill.cooldownRemaining === 1 ? 'falta' : 'faltan'} ${describeTurns(skill.cooldownRemaining)}`
+      return `Disponible en ${describeTurns(skill.cooldownRemaining)}`
     case 'UNSUPPORTED':
-      return 'Todavía no disponible'
+      return 'Esta habilidad todavía no está disponible en combate'
   }
 }
 
@@ -105,7 +110,7 @@ export const skillAvailability = ({
   skill,
 }: SkillAvailabilityInput): SkillAvailability => {
   if (skill.status === 'UNSUPPORTED') {
-    return { enabled: false, hint: 'Todavía no está disponible.' }
+    return { enabled: false, hint: `${describeSkillStatus(skill)}.` }
   }
 
   if (skill.status === 'RECHARGING') {
@@ -161,10 +166,7 @@ export const describeSkillRejection = (code: string): string => {
   }
 }
 
-export interface SkillFeedback {
-  readonly headline: string
-  readonly detail: string
-}
+export type SkillFeedback = ActionFeedback
 
 const nameOf = (entry: TurnOrderEntry | null, fallback: string): string =>
   entry === null ? fallback : combatantName(entry)
@@ -179,60 +181,88 @@ export const describeLastSkill = (last: LastSkill, battle: BattleView): SkillFee
   const target = nameOf(findEntry(battle, last.target), 'su objetivo')
   const { resolution } = last
   const headline = `${actor} usó ${last.skill.name} contra ${target}`
-  const power = `Poder de ${actor}: ${String(last.power.before)} → ${String(last.power.after)}.`
-  const recharge = `La habilidad queda en recarga: ${describeTurns(last.cooldown.remainingTurns)}.`
-  const bonuses = [
-    last.bonus.attack > 0 ? `Bono de Ataque de la habilidad: +${String(last.bonus.attack)}.` : null,
+  const secondary = [
+    last.bonus.attack > 0 ? `Bono de Ataque +${String(last.bonus.attack)}` : null,
     last.bonus.damage !== null && last.bonus.damage > 0
-      ? `Bono de Daño de la habilidad: +${String(last.bonus.damage)}.`
+      ? `Bono de Daño +${String(last.bonus.damage)}`
       : null,
+    `Poder ${String(last.power.before)} → ${String(last.power.after)}`,
+    `Recarga ${describeTurns(last.cooldown.remainingTurns)}`,
   ].filter((text): text is string => text !== null)
-  const compared = (verb: string): string =>
-    `El Ataque (${String(resolution.attackValue)}) ${verb} la Defensa (${String(resolution.defenseValue)}).`
+  const compared = attackVersusDefense(resolution.attackValue, resolution.defenseValue)
 
   if (!resolution.effective || resolution.effect === null) {
     return {
-      headline: `${headline}: sin efecto`,
-      detail: [compared('no superó'), ...bonuses, power, recharge].join(' '),
+      headline: `${headline}, pero no superó su Defensa`,
+      impact: 'Sin daño',
+      tone: 'neutral',
+      life: null,
+      detail: [compared, ...secondary].join(DETAIL_SEPARATOR),
     }
   }
 
   if (resolution.effect === 'NO_DAMAGE') {
     return {
-      headline: `${headline}: ${EFFECT_LABELS.NO_DAMAGE}`,
-      detail: [
-        `${compared('superó')} El efecto fue «no causa daño».`,
-        ...bonuses,
-        power,
-        recharge,
-      ].join(' '),
+      headline: `${headline}: alcanzó, pero no causó daño`,
+      impact: 'Sin pérdida de Vida',
+      tone: 'neutral',
+      life: null,
+      detail: [compared, 'Efecto: sin daño', ...secondary].join(DETAIL_SEPARATOR),
     }
   }
 
-  const percent = resolution.percent === null ? '' : ` (${String(resolution.percent)} %)`
-
   return {
-    headline: `${headline}: ${EFFECT_LABELS[resolution.effect]}${percent}`,
-    detail: [
-      `${compared('superó')} Daño aplicado: ${String(resolution.appliedDamage)}.`,
-      `Vida de ${target}: ${String(last.targetHealth.before)} → ${String(last.targetHealth.after)}.`,
-      ...bonuses,
-      power,
-      recharge,
-    ].join(' '),
+    headline,
+    impact: damageImpact(resolution.appliedDamage),
+    tone: resolution.appliedDamage > 0 ? 'damage' : 'neutral',
+    life: lifeChange(target, last.targetHealth.before, last.targetHealth.after),
+    detail: [compared, effectWithPercent(resolution.effect, resolution.percent), ...secondary].join(
+      DETAIL_SEPARATOR,
+    ),
   }
 }
 
 /**
- * Lo ultimo que paso, sea un ataque basico, una habilidad o un ataque basico que sustituyo a una
- * habilidad: gana el de `seq` mayor (el servidor los numera en orden). `null` si no hubo ninguno.
+ * Texto de la ultima curacion (excepcion de HU-12, sin Task de Management): SOLO lo que Combat
+ * envio, sin resolucion de golpe (curar no lo tiene). El monto sanado y la Vida «antes → despues»
+ * vienen ya calculados por Combat.
+ */
+export const describeLastHealSkill = (last: LastHealSkill, battle: BattleView): SkillFeedback => {
+  const actor = nameOf(findEntry(battle, last.actor), 'Un participante')
+  const target = nameOf(findEntry(battle, last.target), 'su objetivo')
+
+  return {
+    headline: `${actor} usó ${last.skill.name} sobre ${target}`,
+    impact: `+${String(last.heal.amount)} Vida`,
+    tone: 'heal',
+    life: lifeChange(target, last.targetHealth.before, last.targetHealth.after),
+    detail: [
+      `Poder ${String(last.power.before)} → ${String(last.power.after)}`,
+      `Recarga ${describeTurns(last.cooldown.remainingTurns)}`,
+    ].join(DETAIL_SEPARATOR),
+  }
+}
+
+/**
+ * Lo ultimo que paso, sea un ataque basico, una habilidad, una curacion (excepcion de HU-12) o un
+ * ataque basico que sustituyo a una habilidad: gana el de `seq` mayor (el servidor los numera en
+ * orden). `null` si no hubo ninguno.
  */
 export const describeLatestAction = (
   lastAttack: LastAttack | null,
   lastSkill: LastSkill | null,
   battle: BattleView,
+  lastHealSkill: LastHealSkill | null = null,
 ): SkillFeedback | null => {
-  if (lastSkill !== null && (lastAttack === null || lastSkill.seq > lastAttack.seq)) {
+  const attackSeq = lastAttack?.seq ?? 0
+  const skillSeq = lastSkill?.seq ?? 0
+  const healSeq = lastHealSkill?.seq ?? 0
+
+  if (lastHealSkill !== null && healSeq > attackSeq && healSeq > skillSeq) {
+    return describeLastHealSkill(lastHealSkill, battle)
+  }
+
+  if (lastSkill !== null && skillSeq > attackSeq) {
     return describeLastSkill(lastSkill, battle)
   }
 
@@ -254,15 +284,13 @@ export const describeDegradedAttack = (
     return null
   }
 
-  const attacker = nameOf(findEntry(battle, last.attacker), 'Un participante')
   const skillName =
     combatantSkills(battle, last.attacker).find(
       (skill) => skill.abilityId === last.degradedFrom?.abilityId,
     )?.name ?? 'la habilidad'
-  const attack = describeLastAttack(last, battle)
 
   return {
-    headline: `${attacker} no tenía Poder suficiente para ${skillName}: se usó un ataque básico`,
-    detail: `${attack.headline}. ${attack.detail} La habilidad no se gastó ni quedó en recarga.`,
+    ...describeLastAttack(last, battle),
+    notice: `No había Poder suficiente para ${skillName}. Se ejecutó un ataque básico en su lugar; la habilidad no se gastó ni quedó en recarga.`,
   }
 }

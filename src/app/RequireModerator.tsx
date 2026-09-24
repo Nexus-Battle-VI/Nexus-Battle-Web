@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { canModerateComments } from '@/shared/rbac'
@@ -17,14 +18,13 @@ export interface RequireModeratorProps {
  */
 export const RequireModerator = ({ children }: RequireModeratorProps): React.JSX.Element => {
   const roles = useSession((state) => state.roles)
+  const { t } = useTranslation()
 
   if (!canModerateComments(roles)) {
     return (
-      <Card title="Acceso denegado">
+      <Card title={t('app:access.deniedTitle')}>
         <p role="alert" className="text-sm text-muted">
-          Acceso denegado. Solo un Moderador, Administrador o Super Administrador puede acceder a la
-          cola de moderación. El servicio también valida este permiso y rechazará la operación con
-          estado 403.
+          {t('app:access.moderator')}
         </p>
       </Card>
     )

@@ -123,9 +123,14 @@ describe('el ataque basico no se decide en Web (HU-18)', () => {
       /\b(current|before|after)\s*-[^>]|\bhealth\b[^;\n]*-=/u,
     ],
   ])('no hay %s', (_name, pattern) => {
-    // `realtime.ts` es la conexion compartida (su backoff usa `Math.min`): no es combate.
+    // `realtime.ts` es la conexion compartida (su backoff usa `Math.min`), y
+    // `battleClock.ts` es el UNICO modulo autorizado a redondear el reloj de
+    // VISUALIZACION (HU-21); ninguno es combate. Hay una prueba que comprueba que
+    // `battleClock.ts` no habla de Vida, dano, ataque ni Poder.
+    const mathExceptions = new Set(['realtime.ts', 'battleClock.ts'])
+
     for (const { file, code } of productionSources().filter(
-      (source) => source.file !== 'realtime.ts',
+      (source) => !mathExceptions.has(source.file),
     )) {
       expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
     }
@@ -319,5 +324,206 @@ describe('las habilidades no se deciden en Web (HU-19)', () => {
         found: false,
       })
     }
+  })
+})
+
+/**
+ * Excepcion de curacion de HU-12 (Tabla 7, sin Task de Management): Combat decide
+ * el monto sanado y quien puede ser objetivo; Web solo ofrece un selector de
+ * companero y pinta lo que Combat ya resolvio. Estas guardas fallan si aparece un
+ * calculo de curacion en el codigo de produccion de la batalla.
+ */
+describe('la curacion no se decide en Web (HU-12, excepcion de sanadores)', () => {
+  const HEAL_FILES = [
+    'SkillList.tsx',
+    'skillPresentation.ts',
+    'presentation.ts',
+    'battleReducer.ts',
+  ]
+
+  const sources = (files: readonly string[]) =>
+    productionSources().filter((source) => files.includes(source.file))
+
+  it('recorre los archivos que tocan la excepcion de curacion', () => {
+    expect(productionSources().map((source) => source.file)).toEqual(
+      expect.arrayContaining(HEAL_FILES),
+    )
+  })
+
+  it.each([
+    [
+      'aritmetica sobre el monto sanado (`heal.amount` se muestra, no se recalcula)',
+      /\bheal\b\.amount\s*[-+*/](?!=)|[-+*/]\s*[\w.()[\]]*\bheal\b\.amount\b/u,
+    ],
+    [
+      'aritmetica sobre la Vida del objetivo de curacion (`targetHealth`)',
+      /\btargetHealth\b\.(before|after)\s*[-+*/](?!=)|[-+*/]\s*[\w.()[\]]*\btargetHealth\b\.(before|after)/u,
+    ],
+    [
+      'Math.* sobre la curacion (no hay redondeo ni acotacion en Web)',
+      /Math\.(floor|ceil|round|trunc|min|max)\(/u,
+    ],
+  ])('no hay %s', (_name, pattern) => {
+    for (const { file, code } of sources(HEAL_FILES)) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('healableAllies no filtra por Vida: un companero caido sigue siendo un objetivo valido', () => {
+    const code = productionSources().find((source) => source.file === 'presentation.ts')?.code ?? ''
+    const start = code.indexOf('export const healableAllies')
+    const end = code.indexOf('export const EFFECT_LABELS')
+
+    expect(start).toBeGreaterThan(-1)
+    expect(end).toBeGreaterThan(start)
+    expect(code.slice(start, end)).not.toMatch(/hasHealth|combatantHealth/u)
+  })
+
+  it('el selector de companero es un `radio` nativo, igual que el objetivo del ataque basico', () => {
+    const code = productionSources().find((source) => source.file === 'SkillList.tsx')?.code ?? ''
+
+    expect(code).toMatch(/type="radio"/u)
+  })
+})
+
+/**
+ * HU-21: el resultado y los tiempos los decide Combat. Estas guardas comprueban
+ * que el reloj de visualizacion es SOLO de presentacion, que no habla de combate
+ * y que el unico temporizador nuevo vive en `BattleTimers.tsx` (el hook sigue sin
+ * temporizadores; `realtime.ts` ya tenia su reconexion).
+ */
+describe('el resultado no se decide en Web (HU-21)', () => {
+  const clockFile = (): { readonly file: string; readonly code: string } => {
+    const source = productionSources().find((entry) => entry.file === 'battleClock.ts')
+
+    if (source === undefined) {
+      throw new Error('battleClock.ts no esta entre las fuentes de produccion')
+    }
+
+    return source
+  }
+
+  it('battleClock.ts no menciona Vida, dano, ataque, Poder ni ganador', () => {
+    const { code } = clockFile()
+
+    expect(code).not.toMatch(/health|damage|attack|power|percent|winner/iu)
+  })
+
+  it('battleClock.ts usa un reloj monotono inyectable y NO Date.now()', () => {
+    const { code } = clockFile()
+
+    expect(code).toMatch(/performance\.now/u)
+    expect(code).not.toMatch(/Date\.now\(/u)
+    expect(code).not.toMatch(/new Date\(/u)
+  })
+
+  it('ningun archivo de produccion de batalla construye un BattleResult ni fija ganador', () => {
+    for (const { file, code } of productionSources()) {
+      // `fixtures.ts` no es produccion y `types.ts` VALIDA la forma (declara el
+      // tipo del resultado y lo comprueba); ninguno construye un resultado.
+      if (file === 'fixtures.ts' || file === 'types.ts') {
+        continue
+      }
+
+      // Solo se prohibe CONSTRUIR (clave de objeto o asignacion), no leer el
+      // resultado que llega de Combat.
+      expect({ file, found: /winnerTeamLabel\s*:/u.test(code) }).toEqual({ file, found: false })
+      expect({ file, found: /\boutcome\s*:\s*['"]/u.test(code) }).toEqual({ file, found: false })
+      expect({
+        file,
+        found: /\breason\s*:\s*['"](ELIMINATION|DISCONNECTION|TIME_LIMIT)/u.test(code),
+      }).toEqual({ file, found: false })
+    }
+  })
+
+  it('los temporizadores nuevos solo estan en BattleTimers.tsx', () => {
+    const withTimers = productionSources()
+      .filter(({ code }) => /setInterval|setTimeout/u.test(code))
+      .map(({ file }) => file)
+      .sort()
+
+    expect(withTimers).toEqual(['BattleTimers.tsx', 'realtime.ts'])
+  })
+})
+
+/**
+ * HU-23: Combat y Wallet deciden la apuesta (reserva, pozo, reparto,
+ * liquidacion y saldo). Web solo manda la INTENCION (monto al crear/unirse) y
+ * pinta lo que el servidor devolvio. Estas guardas fallan si aparece un
+ * calculo de economia en el codigo de produccion de la feature.
+ */
+describe('la apuesta no se calcula en Web (HU-23)', () => {
+  const STAKE_FILES = ['stakePresentation.ts', 'useBattleStake.ts', 'StakePanel.tsx']
+  const ROOM_STAKE_FILES = [
+    'BattleRoomCard.tsx',
+    'CreateBattleRoomPanel.tsx',
+    'AvailableBattleRoomsPanel.tsx',
+    'BattleRoomLobbyPage.tsx',
+  ]
+
+  const roomDir = path.resolve(__dirname, '..')
+
+  /** Archivos de produccion de la feature fuera de `battle/` (tarjeta, crear, lobby). */
+  const roomSources = (): readonly { readonly file: string; readonly code: string }[] =>
+    readdirSync(roomDir)
+      .filter((name) => /\.(ts|tsx)$/u.test(name))
+      .filter((name) => !/\.test\.(ts|tsx)$/u.test(name) && name !== 'presentation.ts')
+      .map((name) => ({
+        file: name,
+        code: readFileSync(path.join(roomDir, name), 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//gu, '')
+          .replace(/(^|[^:])\/\/.*$/gmu, '$1'),
+      }))
+
+  const stakeSources = (): readonly { readonly file: string; readonly code: string }[] => [
+    ...productionSources().filter((source) => STAKE_FILES.includes(source.file)),
+    ...roomSources().filter((source) => ROOM_STAKE_FILES.includes(source.file)),
+  ]
+
+  it('recorre los archivos nuevos de HU-23', () => {
+    expect(productionSources().map((source) => source.file)).toEqual(
+      expect.arrayContaining(STAKE_FILES),
+    )
+    expect(roomSources().map((source) => source.file)).toEqual(
+      expect.arrayContaining(ROOM_STAKE_FILES),
+    )
+  })
+
+  it.each([
+    [
+      'aritmetica sobre el monto de la apuesta (el monto se muestra, no se recalcula)',
+      /\.amount\s*[-+*/](?!=)|[-+*/]\s*[\w.()[\]]*\.amount\b/u,
+    ],
+    ['agregacion propia del pozo (`reduce`, `sum`)', /\breduce\s*\(|\bsum\s*\(/u],
+    [
+      'aritmetica sobre el saldo (Web nunca suma ni resta creditos)',
+      /\bbalance\b\s*[-+*/](?!=)|[-+*/]\s*\bbalance\b/u,
+    ],
+    [
+      'decisiones de ganador (el resultado llega decidido de Combat)',
+      /winnerTeamLabel\s*:|\boutcome\s*:\s*['"]|stakePool\??\s*:/u,
+    ],
+  ])('no hay %s', (_name, pattern) => {
+    for (const { file, code } of stakeSources()) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('el resumen agregado del pozo solo se LEE: la unica declaracion vive en types.ts', () => {
+    const declarers = [...productionSources(), ...roomSources()]
+      .filter(({ code }) => /stakePool\??\s*:/u.test(code))
+      .map(({ file }) => file)
+
+    // `types.ts` declara el TIPO (no construye nada) y por eso queda fuera de
+    // `stakeSources`; cualquier OTRO archivo que lo declare seria un calculo.
+    expect(declarers).toEqual(['types.ts'])
+    expect(readFileSync(path.join(roomDir, 'types.ts'), 'utf8')).toMatch(/stakePool\?/u)
+  })
+
+  it('el monto de la apuesta se envia tal cual lo escribio la persona, sin transformarlo', () => {
+    const panel = roomSources().find((source) => source.file === 'CreateBattleRoomPanel.tsx')
+
+    expect(panel?.code).toMatch(/stake:\s*\{\s*amount:\s*stakeAmount/u)
+    expect(panel?.code).not.toMatch(/Math\.(floor|round|ceil|max|min)\(/u)
   })
 })

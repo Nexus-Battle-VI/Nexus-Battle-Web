@@ -59,8 +59,9 @@ export interface HttpClientOptions {
 export interface RequestOptions {
   readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   readonly body?: unknown
-  readonly signal?: AbortSignal
+  /** Cabeceras adicionales de la operacion (por ejemplo Idempotency-Key). */
   readonly headers?: Readonly<Record<string, string>>
+  readonly signal?: AbortSignal
 }
 
 export interface HttpDownload {

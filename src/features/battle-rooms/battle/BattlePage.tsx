@@ -1,15 +1,11 @@
-import { useEffect } from 'react'
-import { useMutation } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 
-import { Button } from '@/components/ui/Button'
 import { useSession } from '@/shared/session'
 import type { CommandIdFactory } from '../commandId'
 import type { SocketFactory, TicketProvider } from '../realtime'
 
-import { startBattle } from './api'
 import { BattleScreen } from './BattleScreen'
-import { describeRejection, describeStartBattleFailure } from './presentation'
+import { describeRejection } from './presentation'
 import { useBattleRealtime } from './useBattleRealtime'
 
 export interface BattlePageProps {
@@ -53,10 +49,13 @@ const Notice = ({
  *
  * La transicion a la batalla depende SIEMPRE del servidor:
  *
- *  - `PREPARING`: la sala se lleno y todavia no hay cola. Esta pantalla pide el
- *    inicio (`POST .../start`, sin cuerpo e idempotente: puede pedirlo cualquiera de
- *    los dos clientes a la vez) y espera el `battleStarted` por WebSocket. Nunca
- *    muestra una batalla antes.
+ *  - `PREPARING`: el LOBBY (`BattleRoomLobbyPage`) es quien pide el inicio ahora
+ *    -- solo el propietario, con un boton explicito (control de inicio del
+ *    propietario, 2026-09-22) -- y solo navega aqui cuando Combat ya publico
+ *    `IN_BATTLE`. Esta pantalla YA NO llama a `POST .../start`: si de todos
+ *    modos llega aqui con la sala aun `PREPARING` (enlace directo, recarga
+ *    antes del evento realtime) simplemente espera el `battleStarted` por
+ *    WebSocket, nunca lo dispara ella misma.
  *  - `IN_BATTLE`: pinta la cola y el turno que Combat publica.
  *
  * El heroe y el nombre que se ven salen del estado real autorizado (la cola), no
@@ -71,14 +70,6 @@ export const BattlePage = ({
   const { roomId = null } = useParams<{ roomId: string }>()
   const subject = useSession((state) => state.subject)
   const realtime = useBattleRealtime(roomId, socketFactory, ticketProvider, createCommandId)
-  const start = useMutation({ mutationFn: (id: string) => startBattle(id) })
-  const { mutate: requestStart, isIdle: startIdle } = start
-
-  useEffect(() => {
-    if (roomId !== null && realtime.synced && realtime.roomStatus === 'PREPARING' && startIdle) {
-      requestStart(roomId)
-    }
-  }, [roomId, realtime.synced, realtime.roomStatus, startIdle, requestStart])
 
   if (roomId === null) {
     return <Notice alert>No se indicó ninguna batalla.</Notice>
@@ -92,6 +83,12 @@ export const BattlePage = ({
     return <Notice alert>{describeRejection(realtime.rejected)}</Notice>
   }
 
+  // HU-21: una sala FINISHED sin `result` es de un Combat anterior a HU-21; se
+  // avisa sin inventar un resultado.
+  if (realtime.roomStatus === 'FINISHED' && realtime.result === null) {
+    return <Notice>La batalla terminó.</Notice>
+  }
+
   if (realtime.battle !== null) {
     return (
       <BattleScreen
@@ -101,6 +98,10 @@ export const BattlePage = ({
         synced={realtime.synced}
         lastAttack={realtime.lastAttack}
         lastSkill={realtime.lastSkill}
+        lastHealSkill={realtime.lastHealSkill}
+        result={realtime.result}
+        lastTurnTimeout={realtime.lastTurnTimeout}
+        serverClock={realtime.serverClock}
         combat={{
           attack: realtime.attack,
           onAttack: realtime.sendAttack,
@@ -131,27 +132,13 @@ export const BattlePage = ({
   }
 
   if (realtime.roomStatus === 'PREPARING') {
+    // El lobby es quien pide el inicio ahora; esta pantalla solo espera el
+    // `battleStarted` por WebSocket (ver docstring de `BattlePage`).
     return (
       <section aria-label="Batalla" className="flex flex-col items-start gap-3">
         <p role="status" className="text-sm text-muted">
-          {start.isError ? 'La batalla no pudo comenzar.' : 'Preparando la batalla…'}
+          Preparando la batalla…
         </p>
-        {start.isError && (
-          <>
-            <p role="alert" className="text-sm text-danger">
-              {describeStartBattleFailure(start.error)}
-            </p>
-            <Button
-              variant="secondary"
-              className="min-h-11"
-              onClick={() => {
-                start.reset()
-              }}
-            >
-              Reintentar
-            </Button>
-          </>
-        )}
         <BackToRooms />
       </section>
     )

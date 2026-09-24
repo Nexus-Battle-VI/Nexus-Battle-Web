@@ -97,6 +97,22 @@ export const queryKeys = {
     /** Solo el nombre visible (HU-41, `GET /accounts/:id/display-name`), no `detail`. */
     displayName: (accountId: string) => ['account', accountId, 'display-name'] as const,
   },
+  auction: {
+    /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
+    detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /** Lista privada del jugador autenticado (HU-68). */
+    watchlist: ['auction', 'watchlist'] as const,
+    /**
+     * Productos ganados pendientes de reclamo del titular autenticado
+     * (HU-69.2/HU-69.7, `GET /v1/auctions/me/pending-claims`). Sin
+     * parametros: el servicio deduce el titular del testimonio, igual
+     * criterio que `wallet.me`. La consulta del badge de la cabecera y la de
+     * la pantalla de listado comparten esta misma clave a proposito: reclamar
+     * un producto invalida una sola entrada y ambas superficies se
+     * refrescan.
+     */
+    pendingClaims: ['auction', 'pending-claims'] as const,
+  },
   battleRooms: {
     /**
      * Listado de salas esperando jugadores (HU-14,
@@ -105,8 +121,68 @@ export const queryKeys = {
      * filtro de la UI se aplica client-side sobre este mismo resultado.
      */
     list: ['battle-rooms', 'list'] as const,
+    /**
+     * Salas activas del jugador autenticado (`GET /api/v1/combat/me/rooms`):
+     * "volver a mi sala" en Jugar Online. El jugador sale del testimonio.
+     */
+    mine: ['battle-rooms', 'mine'] as const,
     /** Una sala concreta para sus participantes (HU-17, `GET /api/v1/combat/rooms/:roomId`). */
     detail: (roomId: string) => ['battle-rooms', 'detail', roomId] as const,
+    /**
+     * Estado de creditos/cofre de HU-22 para el jugador autenticado en ESA
+     * batalla (`GET /api/v1/combat/rooms/:roomId/reward`). Clave distinta de
+     * `detail`: es un recurso aparte (RewardWorkflow), no parte de la sala.
+     */
+    reward: (roomId: string) => ['battle-rooms', 'reward', roomId] as const,
+  },
+  wallet: {
+    /** Saldo y progreso de cofre propios (HU-22, `GET /api/v1/wallet/me`). El servicio deduce el jugador del testimonio. */
+    me: ['wallet', 'me'] as const,
+  },
+  missions: {
+    board: (subject: string | null, category: string | null, status: string | null) =>
+      ['missions', 'board', subject, category, status] as const,
+    detail: (subject: string | null, missionId: string) =>
+      ['missions', 'detail', subject, missionId] as const,
+    availableHeroes: (subject: string | null) => ['missions', 'available-heroes', subject] as const,
+    history: (subject: string | null) => ['missions', 'history', subject] as const,
+    historySummary: (subject: string | null) => ['missions', 'history-summary', subject] as const,
+    /**
+     * Informe de una misión terminada del jugador (HU-74,
+     * `GET /api/v1/missions/me/reports/{enrollmentId}`), con la experiencia de
+     * HU-09 (Task HU-09.5). La matrícula y el sujeto van en la clave: el informe es el de
+     * ESA misión; el jugador sale del testimonio y nunca viaja en la petición.
+     */
+    report: (subject: string | null, enrollmentId: string) =>
+      ['missions', 'report', subject, enrollmentId] as const,
+    achievements: (subject: string | null) => ['missions', 'achievements', subject] as const,
+    strategy: (subject: string | null, missionId: string, heroId: string) =>
+      ['missions', 'strategy', subject, missionId, heroId] as const,
+    strategyAbilities: (subject: string | null, heroId: string) =>
+      ['missions', 'strategy-abilities', subject, heroId] as const,
+    /**
+     * Niveles de dificultad de una mision para el jugador autenticado (HU-75,
+     * `GET /api/v1/missions/:missionId/difficulties`). Lleva la identidad: el
+     * desbloqueo es propio de cada jugador y no debe reutilizarse entre sesiones.
+     */
+    difficulties: (subject: string | null, missionId: string) =>
+      ['missions', 'difficulties', subject, missionId] as const,
+    /** Misiones en curso del jugador (diseño «misiones jugables», P-J6). */
+    active: (subject: string | null) => ['missions', 'active', subject] as const,
+    /** Bitácora revelada de una misión en curso (P-J6). */
+    progress: (subject: string | null, enrollmentId: string) =>
+      ['missions', 'progress', subject, enrollmentId] as const,
+    /**
+     * Probabilidad de éxito (P-J7). La versión de la estrategia va en la clave:
+     * guardar otra estrategia cambia la estimación.
+     */
+    estimate: (
+      subject: string | null,
+      missionId: string,
+      heroId: string,
+      difficulty: string,
+      strategyVersion: number | null,
+    ) => ['missions', 'estimate', subject, missionId, heroId, difficulty, strategyVersion] as const,
   },
   notifications: {
     /**

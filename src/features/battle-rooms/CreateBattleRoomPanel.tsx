@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +14,8 @@ import {
   TEAM_FORMATS,
   describeBattleRoomFailure,
 } from './presentation'
+import { useWallet } from './battle/useWallet'
+import { availableWarning, parseStakeInput } from './battle/stakePresentation'
 import type { BattleRoomMode, CreateBattleRoomInput, CreateTeamConfigInput } from './types'
 
 const MODE_OPTIONS = Object.keys(MODE_LABELS) as BattleRoomMode[]
@@ -28,14 +31,34 @@ const aiOpponentTeam = (capacity: number): CreateTeamConfigInput => ({
   initialParticipants: Array.from({ length: capacity }, () => ({ kind: 'AI' as const })),
 })
 
+/**
+ * Body real de `POST /rooms`. HU-23: cuando el creador apuesta, se declara a si
+ * mismo como participante `HUMAN` (el unico declarable al crear) con su monto:
+ * la apuesta necesita un participante que la sostenga, y Combat la reserva de
+ * forma sincrona antes de crear la sala. Sin apuesta el cuerpo es EXACTAMENTE
+ * el de antes de HU-23 (la sala nace vacia y el creador se une despues).
+ */
 const buildPayload = (
   mode: BattleRoomMode,
   capacity: number,
   amount: number,
+  stakeAmount: number | null,
 ): CreateBattleRoomInput => ({
   mode,
   teamConfigs:
-    mode === 'PVE' ? [{ capacity }, aiOpponentTeam(capacity)] : [{ capacity }, { capacity }],
+    mode === 'PVE'
+      ? [{ capacity }, aiOpponentTeam(capacity)]
+      : [
+          {
+            capacity,
+            ...(stakeAmount === null
+              ? {}
+              : {
+                  initialParticipants: [{ kind: 'HUMAN' as const, stake: { amount: stakeAmount } }],
+                }),
+          },
+          { capacity },
+        ],
   reward: { amount },
 })
 
@@ -44,21 +67,37 @@ const buildPayload = (
  * automaticamente como participante (la auditoria HU-14.4 lo advierte
  * explicitamente: no hay evidencia de esa regla en Combat) — esta pantalla
  * crea la sala vacia (o con el equipo de IA en `PVE`) y "unirse" queda para
- * HU-15.
+ * HU-15. Unica excepcion (HU-23): si el creador apuesta, SI se declara como
+ * participante con su monto, porque la reserva necesita un participante que la
+ * sostenga.
  *
  * Modalidad y formato se presentan como tarjetas seleccionables (no `select`):
  * solo hay dos/tres alternativas y el producto pidio que ambas fueran visibles
  * a la vez. El VALOR que viaja al backend sigue siendo exactamente el que
  * exige el contrato (`'PVP'`/`'PVE'`, `capacity: number`) — el cambio es
  * puramente de presentacion.
+ *
+ * HU-23: "Apostar créditos (opcional)" es un campo NUEVO, separado de
+ * "Recompensa de la sala" (D7: `reward.amount` no se toca). Solo aparece en
+ * JcJ: las salas JcE no admiten apuesta (D4). El tope real es el saldo
+ * DISPONIBLE que publica Wallet; si no alcanza se avisa, pero quien decide
+ * sigue siendo el backend.
  */
 export const CreateBattleRoomPanel = (): React.JSX.Element => {
   const [mode, setMode] = useState<BattleRoomMode>('PVP')
   const [capacity, setCapacity] = useState(1)
   const [rewardInput, setRewardInput] = useState('0')
   const [rewardError, setRewardError] = useState<string | undefined>(undefined)
+  const [stakeInput, setStakeInput] = useState('0')
+  const [stakeError, setStakeError] = useState<string | undefined>(undefined)
 
   const createRoom = useCreateBattleRoom()
+  const navigate = useNavigate()
+  const wallet = useWallet()
+
+  const stake = parseStakeInput(stakeInput)
+  const stakeWarning =
+    stake.amount === null ? null : availableWarning(stake.amount, wallet.data?.available)
 
   const handleSubmit = (event: React.SyntheticEvent): void => {
     event.preventDefault()
@@ -70,8 +109,19 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
       return
     }
 
+    if (stake.error !== null) {
+      setStakeError(stake.error)
+      return
+    }
+
     setRewardError(undefined)
-    createRoom.mutate(buildPayload(mode, capacity, amount))
+    setStakeError(undefined)
+    // Igual que al unirse: tras crear, directo al lobby de la sala nueva.
+    createRoom.mutate(buildPayload(mode, capacity, amount, stake.amount), {
+      onSuccess: (room) => {
+        void navigate(`/play/rooms/${room.id}`)
+      },
+    })
   }
 
   return (
@@ -97,6 +147,11 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
                 description={MODE_DESCRIPTIONS[option]}
                 onSelect={() => {
                   setMode(option)
+                  // HU-23 (D4): la apuesta no existe en JcE; al volver a JcJ el
+                  // campo reaparece con lo ultimo escrito (no se pierde).
+                  if (option === 'PVE') {
+                    setStakeError(undefined)
+                  }
                 }}
               />
             ))}
@@ -166,6 +221,51 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
           )}
         </div>
 
+        {mode === 'PVP' && (
+          <div>
+            <label htmlFor="battle-room-stake" className={FIELD_LABEL_CLASS}>
+              Apostar créditos (opcional)
+            </label>
+            <div className="relative mt-1.5">
+              <Coins
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+              />
+              <input
+                id="battle-room-stake"
+                type="number"
+                min={0}
+                step="1"
+                inputMode="numeric"
+                value={stakeInput}
+                aria-invalid={stakeError !== undefined}
+                aria-describedby={
+                  stakeError === undefined ? 'battle-room-stake-hint' : 'battle-room-stake-error'
+                }
+                onChange={(event) => {
+                  setStakeInput(event.target.value)
+                }}
+                className={`${FIELD_CLASS} pl-9`}
+              />
+            </div>
+            {stakeError === undefined ? (
+              <p id="battle-room-stake-hint" className="mt-1 text-xs text-muted">
+                Se reserva de tu saldo disponible y se liquida al terminar la batalla. 0 = no
+                apostar.
+              </p>
+            ) : (
+              <p id="battle-room-stake-error" role="alert" className="mt-1 text-xs text-danger">
+                {stakeError}
+              </p>
+            )}
+            {stakeWarning !== null && (
+              <p role="status" className="mt-1 text-xs text-warning">
+                {stakeWarning}
+              </p>
+            )}
+          </div>
+        )}
+
         {createRoom.isError && (
           <p role="alert" className="text-sm text-danger">
             {describeBattleRoomFailure(createRoom.error)}
@@ -174,7 +274,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
 
         {createRoom.isSuccess && (
           <p role="status" className="text-sm text-success">
-            Sala creada. Ya aparece en el listado de salas disponibles.
+            Sala creada. Entrando al lobby…
           </p>
         )}
 

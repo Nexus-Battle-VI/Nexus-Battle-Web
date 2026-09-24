@@ -40,7 +40,18 @@ export interface PlayerAchievement {
   readonly description?: string
   /** ISO 8601. Sólo para mostrar ("Obtenido el …"); la vista no calcula con él. */
   readonly obtainedAt?: string
+  readonly recognition?: {
+    readonly name: string
+    readonly status: 'RECORDED' | 'PENDING' | 'CREDITED' | 'FAILED' | null
+  }
 }
+
+/** Los logros de Missions pueden cargarse aunque las métricas de HU-06 sigan pendientes. */
+export type AchievementsPanelState =
+  | { readonly status: 'pending' }
+  | { readonly status: 'loading' }
+  | { readonly status: 'error'; readonly message: string }
+  | { readonly status: 'ready'; readonly items: readonly PlayerAchievement[] }
 
 /**
  * Estado de presentación del panel. Unión discriminada mínima: cubre los seis

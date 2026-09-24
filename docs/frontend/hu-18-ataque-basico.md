@@ -127,12 +127,12 @@ En 1366×768 el encabezado global de la app mide 67 px (medido) más el relleno 
 
 ## Fuera de alcance (no se inventó)
 
-| Punto                                              | Estado                                                                                            |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Poder (`currentPower`, costo, recarga)             | Combat aún no lo modela; el ataque básico no lo usa. HU-11 / HU-19                                |
-| Habilidades y épica                                | HU-19 / HU-31; el panel solo lo avisa                                                             |
-| Fin de batalla, ganador, «derrotado»               | HU-21: una Vida en 0 solo se muestra como «Sin Vida»; Web no decide nada                          |
-| Bonos de daño del equipamiento; participantes `AI` | Pendientes de Combat (ver su documento); Web pinta lo que llegue                                  |
-| Chamán y Médico                                    | Su ataque lo rechaza Combat (`UNSUPPORTED_COMBAT_PROFILE`) y Web lo explica; el PO debe definirlo |
-| Detalle del último golpe tras recargar             | No se persiste en el cliente ni viaja en el `snapshot`; se recupera la Vida y el turno            |
-| Varios objetivos o área                            | Fuera del RF-18: el objetivo es siempre uno                                                       |
+| Punto                                              | Estado                                                                                                                                                                                       |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Poder (`currentPower`, costo, recarga)             | Combat aún no lo modela; el ataque básico no lo usa. HU-11 / HU-19                                                                                                                           |
+| Habilidades y épica                                | HU-19 / HU-31; el panel solo lo avisa                                                                                                                                                        |
+| Fin de batalla, ganador, «derrotado»               | HU-21: Web pinta el resultado que publica Combat (`battleFinished`/`snapshot`), muestra el «Sin Vida» y no decide nada; ver [`hu-21-resultado-de-batalla.md`](hu-21-resultado-de-batalla.md) |
+| Bonos de daño del equipamiento; participantes `AI` | Pendientes de Combat (ver su documento); Web pinta lo que llegue                                                                                                                             |
+| Chamán y Médico                                    | Su ataque lo rechaza Combat (`UNSUPPORTED_COMBAT_PROFILE`) y Web lo explica; el PO debe definirlo                                                                                            |
+| Detalle del último golpe tras recargar             | No se persiste en el cliente ni viaja en el `snapshot`; se recupera la Vida y el turno                                                                                                       |
+| Varios objetivos o área                            | Fuera del RF-18: el objetivo es siempre uno                                                                                                                                                  |

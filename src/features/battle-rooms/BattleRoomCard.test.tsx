@@ -113,7 +113,7 @@ describe('BattleRoomCard', () => {
 
     screen.getByRole('button', { name: /Equipo A/u }).click()
 
-    expect(onJoin).toHaveBeenCalledWith(room().id, 'A')
+    expect(onJoin).toHaveBeenCalledWith(room().id, 'A', null)
   })
 
   it('permite unirse al Equipo B con capacidad disponible', () => {
@@ -122,7 +122,7 @@ describe('BattleRoomCard', () => {
 
     screen.getByRole('button', { name: /Equipo B/u }).click()
 
-    expect(onJoin).toHaveBeenCalledWith(room().id, 'B')
+    expect(onJoin).toHaveBeenCalledWith(room().id, 'B', null)
   })
 
   it('deshabilita visualmente el boton de un equipo lleno', () => {
@@ -145,6 +145,13 @@ describe('BattleRoomCard', () => {
 
   it('deshabilita ambos botones de union cuando la sala no admite union (PREPARING)', () => {
     renderCard(room({ status: 'PREPARING' }))
+
+    expect(screen.getByRole('button', { name: /Equipo A/u })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /Equipo B/u })).toBeDisabled()
+  })
+
+  it('HU-21: una sala FINISHED tampoco se ofrece para unirse', () => {
+    renderCard(room({ status: 'FINISHED' }))
 
     expect(screen.getByRole('button', { name: /Equipo A/u })).toBeDisabled()
     expect(screen.getByRole('button', { name: /Equipo B/u })).toBeDisabled()

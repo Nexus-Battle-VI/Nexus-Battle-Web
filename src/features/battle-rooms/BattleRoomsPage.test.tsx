@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
+import { Route, Routes } from 'react-router'
 import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
@@ -21,11 +22,18 @@ vi.mock('./ChatPanel', () => ({
   ),
 }))
 
+/**
+ * Respuesta falsa REUTILIZABLE: `httpClient` lee el cuerpo con `text()`, y un
+ * `Response` real solo se puede consumir una vez. Varias consultas
+ * concurrentes de la pagina (listado de salas y saldo de Wallet, HU-23)
+ * comparten el mismo doble, asi que el cuerpo se devuelve en cada lectura.
+ */
 const jsonResponse = (status: number, body: unknown): Response =>
-  new Response(JSON.stringify(body), {
+  ({
     status,
-    headers: { 'content-type': 'application/json' },
-  })
+    ok: status >= 200 && status < 300,
+    text: () => Promise.resolve(JSON.stringify(body)),
+  }) as unknown as Response
 
 const room = (overrides: Partial<BattleRoom> = {}): BattleRoom => ({
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -556,5 +564,49 @@ describe('BattleRoomsPage — cancelacion', () => {
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('La sala ya no se puede cancelar.')
+  })
+})
+
+describe('BattleRoomsPage — volver a mi sala', () => {
+  it('muestra "Partida en curso" con la sala activa que devuelve el servidor', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string) =>
+        Promise.resolve(
+          jsonResponse(200, input.endsWith('/me/rooms') ? [room({ status: 'IN_BATTLE' })] : []),
+        ),
+      ),
+    )
+
+    renderWithProviders(<BattleRoomsPage />)
+
+    expect(await screen.findByRole('region', { name: 'Partida en curso' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Continuar batalla' })).toBeInTheDocument()
+  })
+
+  it('tras crear la sala navega directo a su lobby (igual que al unirse)', async () => {
+    const created = room({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_input: string, init?: RequestInit) =>
+        Promise.resolve(
+          init?.method === 'POST' ? jsonResponse(201, created) : jsonResponse(200, []),
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/play" element={<BattleRoomsPage />} />
+        <Route path="/play/rooms/:roomId" element={<p>Lobby de la sala nueva</p>} />
+      </Routes>,
+      { route: '/play' },
+    )
+    await screen.findByText(/No hay salas esperando jugadores/u)
+
+    await user.click(screen.getByRole('button', { name: 'Crear sala de batalla' }))
+
+    expect(await screen.findByText('Lobby de la sala nueva')).toBeInTheDocument()
   })
 })

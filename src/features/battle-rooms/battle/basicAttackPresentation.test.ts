@@ -146,23 +146,33 @@ const last = (resolution = RESOLUTION, before = 44, after = 38): LastAttack => (
   targetHealth: { before, after },
 })
 
-describe('describeLastAttack — solo con lo que envio el servidor', () => {
+describe('describeLastAttack — solo con lo que envio el servidor, jerarquia quien/que/cuanto/Vida', () => {
   const view = combatBattle(1)
 
-  it('golpe efectivo: efecto, porcentaje, dano aplicado y Vida antes -> despues', () => {
+  it('golpe critico: titular, impacto, Vida y detalle tecnico secundario', () => {
     const text = describeLastAttack(last(), view)
 
-    expect(text.headline).toBe('Bruno atacó a Ana: Golpe crítico (137 %)')
-    expect(text.detail).toBe(
-      'El Ataque (14) superó la Defensa (11). Daño aplicado: 6. Vida de Ana: 44 → 38.',
-    )
+    expect(text.headline).toBe('¡Golpe crítico de Bruno a Ana!')
+    expect(text.impact).toBe('−6 Vida')
+    expect(text.tone).toBe('damage')
+    expect(text.life).toBe('Ana: 44 → 38')
+    expect(text.detail).toBe('Ataque 14 vs Defensa 11 · Golpe crítico 137 %')
   })
 
-  it('golpe que no supera la Defensa (igualdad incluida): sin efecto, con los dos valores', () => {
+  it('daño normal: "Bruno golpeó a Ana"', () => {
+    const text = describeLastAttack(last({ ...RESOLUTION, effect: 'DAMAGE', percent: 100 }), view)
+
+    expect(text.headline).toBe('Bruno golpeó a Ana')
+    expect(text.detail).toBe('Ataque 14 vs Defensa 11 · Daño normal 100 %')
+  })
+
+  it('golpe que no supera la Defensa (igualdad incluida): sin daño, con los dos valores', () => {
     const text = describeLastAttack(last(MISS, 44, 44), view)
 
-    expect(text.headline).toBe('Bruno atacó a Ana: sin efecto')
-    expect(text.detail).toBe('El Ataque (11) no superó la Defensa (11).')
+    expect(text.headline).toBe('Bruno atacó a Ana, pero no superó su Defensa')
+    expect(text.impact).toBe('Sin daño')
+    expect(text.life).toBeNull()
+    expect(text.detail).toBe('Ataque 11 vs Defensa 11 · el Ataque debe superar la Defensa')
   })
 
   it('efecto «no causa daño» (0 %): lo dice y no muestra Vida cambiada', () => {
@@ -182,9 +192,10 @@ describe('describeLastAttack — solo con lo que envio el servidor', () => {
       view,
     )
 
-    expect(text.headline).toBe('Bruno atacó a Ana: No causa daño')
-    expect(text.detail).toContain('El efecto fue «no causa daño»')
-    expect(text.detail).not.toContain('Vida de')
+    expect(text.headline).toBe('El ataque de Bruno alcanzó a Ana, pero no causó daño')
+    expect(text.impact).toBe('Sin pérdida de Vida')
+    expect(text.life).toBeNull()
+    expect(text.detail).toBe('Ataque 14 vs Defensa 11 · Efecto: sin daño')
   })
 
   it('cuando la Vida se acota en 0 (dano aplicado menor que el calculado) lo aclara', () => {
@@ -193,25 +204,42 @@ describe('describeLastAttack — solo con lo que envio el servidor', () => {
       view,
     )
 
-    expect(text.detail).toContain('Daño aplicado: 4 (calculado 20: la Vida no baja de 0)')
-    expect(text.detail).toContain('Vida de Ana: 4 → 0.')
+    expect(text.impact).toBe('−4 Vida')
+    expect(text.life).toBe('Ana: 4 → 0')
+    expect(text.detail).toContain('daño calculado 20 (la Vida no baja de 0)')
   })
 
   it.each([
-    ['DAMAGE', 'Daño normal'],
-    ['EVADE', 'Evasión'],
-    ['RESIST', 'Resistencia'],
-    ['ESCAPE', 'Escape'],
-  ] as const)('el efecto %s se nombra «%s»', (effect, label) => {
-    expect(
-      describeLastAttack(last({ ...RESOLUTION, effect, percent: 80 }), view).headline,
-    ).toContain(label)
-  })
+    ['EVADE', 5, 'Ana redujo el impacto del ataque de Bruno', 'Evasión 80 %'],
+    ['EVADE', 0, 'Ana esquivó el ataque de Bruno', 'Evasión 80 %'],
+    ['RESIST', 5, 'Ana resistió parte del ataque de Bruno', 'Resistencia 80 %'],
+    ['RESIST', 0, 'Ana resistió el ataque de Bruno', 'Resistencia 80 %'],
+    ['ESCAPE', 5, 'Ana escapó en parte del ataque de Bruno', 'Escape 80 %'],
+    ['ESCAPE', 0, 'Ana escapó del ataque de Bruno', 'Escape 80 %'],
+  ] as const)(
+    '%s con %i de daño: el titular no exagera ("%s")',
+    (effect, applied, headline, detail) => {
+      const text = describeLastAttack(
+        last(
+          { ...RESOLUTION, effect, percent: 80, calculatedDamage: applied, appliedDamage: applied },
+          44,
+          44 - applied,
+        ),
+        view,
+      )
+
+      expect(text.headline).toBe(headline)
+      expect(text.impact).toBe(applied > 0 ? `−${String(applied)} Vida` : 'Sin daño')
+      expect(text.detail).toContain(detail)
+    },
+  )
 
   it('NUNCA muestra identificadores tecnicos', () => {
-    const { headline, detail } = describeLastAttack(last(), view)
+    const { headline, impact, life, detail } = describeLastAttack(last(), view)
 
-    expect(`${headline} ${detail}`).not.toMatch(/sujeto-|heroe-|cmd-1/u)
+    expect(`${headline} ${String(impact)} ${String(life)} ${detail}`).not.toMatch(
+      /sujeto-|heroe-|cmd-1/u,
+    )
   })
 })
 

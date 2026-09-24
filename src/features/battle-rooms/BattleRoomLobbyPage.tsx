@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Navigate, useNavigate, useParams } from 'react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -8,10 +8,14 @@ import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
 import { Coins } from '@/components/ui/icons'
 import { ChatPanel } from './ChatPanel'
+import { avatarPathForSubject } from '@/shared/avatar'
 import { queryKeys } from '@/shared/query-keys'
+import { useRefreshWalletOn } from '@/shared/wallet'
 import { useSession } from '@/shared/session'
 
-import { fetchBattleRoom } from './battle/api'
+import { fetchBattleRoom, startBattle } from './battle/api'
+import { describeStartBattleFailure } from './battle/presentation'
+import { describeOwnStake, ownStakeOf } from './battle/stakePresentation'
 import { useBattleRooms, useCancelBattleRoom, useLeaveBattleRoom } from './hooks'
 import { useBattleRoomRealtime } from './useBattleRoomRealtime'
 import { describeBattleRoomFailure, modeLabel, teamByLetter } from './presentation'
@@ -70,7 +74,9 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
             // respuesta de la sala: la posicion es la unica clave disponible.
             <li key={`${participant.kind}-${String(index)}`} className="flex items-center gap-2">
               <Avatar
-                avatarUrl={null}
+                avatarUrl={
+                  participant.kind === 'HUMAN' ? avatarPathForSubject(participant.playerId) : null
+                }
                 alt={label}
                 initials={initialsOfDisplayName(label)}
                 size="sm"
@@ -112,38 +118,83 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
  *
  * LIMITACION DE CONTRATO, documentada explicitamente: `GET /v1/combat/rooms`
  * solo devuelve salas `WAITING_FOR_PLAYERS` (`ListAvailableBattleRooms`,
- * Combat) -- en cuanto la sala pasa a `PREPARING` (se lleno normalmente) o a
- * `CANCELLED`, desaparece de esa lista por igual y esta pantalla deja de
- * tener datos de equipos/participantes para mostrar (no existe un
- * `GET /rooms/:id` que los reponga, y esta pantalla no inventa uno). Lo
- * unico que SI se puede distinguir sin un endpoint nuevo es el `status` del
- * ultimo evento `battle-room.updated` recibido por WebSocket
- * (`useBattleRoomRealtime`): se usa solo para elegir el MENSAJE correcto
- * ("cancelada por su propietario" vs. "se llenó, preparando"), nunca para
- * reconstruir datos de participantes que el contrato ya no expone.
+ * Combat) -- en cuanto la sala pasa a `PREPARING` (se lleno normalmente),
+ * `CANCELLED`, `IN_BATTLE` o `FINISHED`, desaparece de esa lista. Para esos
+ * casos se cae a `GET /rooms/:roomId` (`fetchBattleRoom`, solo participantes),
+ * que SI trae el detalle completo (equipos, `createdBy`).
+ *
+ * HU-17 (2026-09-22, control de inicio del propietario): `PREPARING` YA NO
+ * navega automaticamente a `/battle` -- todos los participantes permanecen
+ * en ESTE lobby, usando el detalle de `GET /rooms/:roomId` en lugar del
+ * listado, hasta que el propietario pulsa "Iniciar partida"
+ * (`POST /rooms/:roomId/start`, ver `battle/api.ts`). Solo `IN_BATTLE` y
+ * `FINISHED` navegan a la pantalla de batalla, y lo hacen para CUALQUIER
+ * participante en cuanto Combat publica `battle-room.updated` (WebSocket) --
+ * nunca por temporizador ni por quien pulso el boton.
  */
 export const BattleRoomLobbyPage = (): React.JSX.Element => {
   const { roomId = null } = useParams<{ roomId: string }>()
   const subject = useSession((state) => state.subject)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const rooms = useBattleRooms()
   const realtime = useBattleRoomRealtime(roomId)
   const cancelRoom = useCancelBattleRoom()
   const leaveRoom = useLeaveBattleRoom()
+  // Invalida ademas de lo que ya hace `battle-room.updated` por WebSocket
+  // (`useBattleRoomRealtime`): red de seguridad si la conexion en tiempo real
+  // esta reconectando justo cuando el propietario recibe el 200 de `/start`.
+  const startRoom = useMutation({
+    mutationFn: (id: string) => startBattle(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.list })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.mine })
+      if (roomId !== null) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.battleRooms.detail(roomId) })
+      }
+    },
+  })
   const [actionError, setActionError] = useState<string | null>(null)
 
-  const room = rooms.data?.find((candidate) => candidate.id === roomId) ?? null
+  const listRoom = rooms.data?.find((candidate) => candidate.id === roomId) ?? null
 
   // HU-17: `GET /rooms` solo lista salas esperando jugadores. Cuando la sala deja
   // de estar en esa lista (se lleno, esta en batalla o se cancelo) se lee por
   // `GET /rooms/:roomId` (solo participantes) para saber a donde llevar a la
   // persona, en lugar de quedarse sin datos.
+  //
+  // HU-23: ademas, mientras la sala es terminal y la apuesta propia sigue
+  // `ACTIVE`, se sondea corto para ver el paso a `RELEASED`/`CAPTURED` que
+  // confirma Wallet -- sin afirmar "recuperado" antes de que el dato lo diga.
   const detail = useQuery({
     queryKey: queryKeys.battleRooms.detail(roomId ?? ''),
     queryFn: ({ signal }) => fetchBattleRoom(roomId ?? '', signal),
-    enabled: roomId !== null && rooms.isSuccess && room === null,
+    enabled: roomId !== null && rooms.isSuccess && listRoom === null,
     retry: false,
+    refetchInterval: (query) => {
+      const data = query.state.data
+
+      if (data === undefined) {
+        return false
+      }
+
+      const terminal = data.status === 'CANCELLED' || data.status === 'FINISHED'
+      const stake = ownStakeOf(data, subject)
+
+      return terminal && stake?.status === 'ACTIVE' ? 2_000 : false
+    },
   })
+
+  // HU-17: una sala PREPARING ya no esta en `rooms.data` (arriba), pero SI tiene
+  // detalle completo -- se sigue mostrando ESTE lobby (equipos, chat, control de
+  // inicio) con esos datos, en vez de saltar a /battle antes de que el propietario
+  // decida iniciar.
+  const room = listRoom ?? (detail.data?.status === 'PREPARING' ? detail.data : null)
+
+  // HU-23: cuando Wallet confirma la liberacion de la apuesta propia (sala
+  // cancelada o abandonada), la cabecera relee el saldo disponible.
+  const ownStakeStatus = ownStakeOf(detail.data ?? null, subject)?.status ?? null
+  useRefreshWalletOn(ownStakeStatus === 'RELEASED' ? ownStakeStatus : null)
 
   if (rooms.isPending) {
     return (
@@ -162,9 +213,10 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   }
 
   if (room === null) {
-    if (detail.data?.status === 'PREPARING' || detail.data?.status === 'IN_BATTLE') {
-      // La sala se lleno: la batalla continua en su propia pantalla. El servidor
-      // decide cuando empieza; esta pantalla solo lleva a quien participa.
+    if (detail.data?.status === 'IN_BATTLE' || detail.data?.status === 'FINISHED') {
+      // La batalla ya empezo (o ya termino): esa pantalla vive aparte. `PREPARING`
+      // YA NO navega aqui -- se queda en ESTE lobby (ver `room` arriba) hasta que
+      // el propietario inicia y Combat publica el evento realtime.
       return <Navigate to={`/play/rooms/${encodeURIComponent(roomId ?? '')}/battle`} replace />
     }
 
@@ -177,10 +229,21 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     }
 
     if (detail.data?.status === 'CANCELLED' || realtime.lastRoomStatus === 'CANCELLED') {
+      const cancelledStake = describeOwnStake(ownStakeOf(detail.data ?? null, subject))
+
       return (
-        <p role="alert" className="text-sm text-danger">
-          La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
-        </p>
+        <section className="flex flex-col gap-2">
+          <p role="alert" className="text-sm text-danger">
+            La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
+          </p>
+          {/* HU-23: el estado REAL que publico Combat; "liberándose" mientras
+              Wallet no confirme, nunca "recuperado" por adelantado. */}
+          {cancelledStake !== null && (
+            <p role="status" className="text-sm text-muted">
+              {cancelledStake}
+            </p>
+          )}
+        </section>
       )
     }
 
@@ -193,6 +256,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     room.teams.some((team) =>
       team.participants.some((participant) => participant.playerId === subject),
     )
+  const ownStakeLine = describeOwnStake(ownStakeOf(room, subject))
 
   const handleCancel = (): void => {
     setActionError(null)
@@ -211,6 +275,18 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
       },
       onError: (error) => {
         setActionError(describeBattleRoomFailure(error))
+      },
+    })
+  }
+
+  const handleStart = (): void => {
+    setActionError(null)
+    startRoom.mutate(room.id, {
+      onError: (error) => {
+        // Mensajes propios por codigo (403 no-propietario, 422 elegibilidad/
+        // composicion de equipos, etc.), nunca el texto crudo de Combat: ver
+        // `describeStartBattleFailure`.
+        setActionError(describeStartBattleFailure(error))
       },
     })
   }
@@ -259,13 +335,42 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             el orden de los turnos.
           </p>
 
+          {/*
+           * Seccion 12 del prompt maestro de estabilizacion: revisar la propia
+           * preparacion sin abandonar la sala. Un modal que reutilizara
+           * `HeroConfigurator` no es viable aqui -- ninguna feature importa
+           * componentes de otra (`eslint.config.js`); la comunicacion es por
+           * rutas. Enlazar a Mi Inventario NO abandona la sala (no llama
+           * `leave`); Combat sigue siendo quien de verdad protege el `start`
+           * contra un equipamiento vencido (HU-16, `HERO_CHANGED_SINCE_JOIN`/
+           * `HERO_LOADOUT_CHANGED`, ya traducido arriba en `actionError`). No
+           * se construye aqui ningun bloqueo nuevo -eso es HU-29, todavia en
+           * dos PR abiertos (Player-Inventory #26, Web #90): revisar este
+           * enlace cuando esos se integren, por si entonces conviene enlazar
+           * a algo mas especifico que el inventario general.
+           */}
+          {isParticipant && (
+            <Link
+              to="/inventory"
+              className="self-start text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              Revisar mi equipamiento
+            </Link>
+          )}
+
+          {ownStakeLine !== null && (
+            <p role="status" className="text-sm font-medium text-brand">
+              {ownStakeLine}
+            </p>
+          )}
+
           {actionError !== null && (
             <p role="alert" className="text-xs text-danger">
               {actionError}
             </p>
           )}
 
-          {isParticipant && (
+          {isParticipant && room.status === 'WAITING_FOR_PLAYERS' && (
             <div className="flex flex-wrap items-center gap-2">
               {isOwner ? (
                 <Button variant="danger" loading={cancelRoom.isPending} onClick={handleCancel}>
@@ -275,6 +380,31 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
                 <Button variant="secondary" loading={leaveRoom.isPending} onClick={handleLeave}>
                   Abandonar sala
                 </Button>
+              )}
+            </div>
+          )}
+
+          {/*
+           * HU-17: solo el propietario puede iniciar (Combat lo exige server-side,
+           * este boton es UX -- ver `StartBattle.execute`). El resto ve un texto de
+           * espera y conserva la salida de "Abandonar sala" (Combat SI permite
+           * `leave` en PREPARING; solo `cancel` queda restringido a WAITING).
+           */}
+          {isParticipant && room.status === 'PREPARING' && (
+            <div className="flex flex-wrap items-center gap-2">
+              {isOwner ? (
+                <Button loading={startRoom.isPending} onClick={handleStart}>
+                  Iniciar partida
+                </Button>
+              ) : (
+                <>
+                  <p role="status" className="text-sm text-muted">
+                    Esperando a que el creador inicie la partida…
+                  </p>
+                  <Button variant="secondary" loading={leaveRoom.isPending} onClick={handleLeave}>
+                    Abandonar sala
+                  </Button>
+                </>
               )}
             </div>
           )}

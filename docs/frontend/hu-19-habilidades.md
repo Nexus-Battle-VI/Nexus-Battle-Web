@@ -22,6 +22,8 @@ de Combat.
 
 Web **nunca** envía costo, Poder, efectos, Ataque, Defensa, daño, Vida, semilla ni turno, y **no usa aleatoriedad de juego**.
 
+Tras el final de la batalla (HU-21) el panel de acciones y las habilidades **desaparecen** (no se muestran deshabilitadas) y en su lugar aparece el resultado que publica Combat; ver [`hu-21-resultado-de-batalla.md`](hu-21-resultado-de-batalla.md).
+
 ## Qué hay
 
 | Pieza                | Dónde                         | Qué hace                                                                                                                        |

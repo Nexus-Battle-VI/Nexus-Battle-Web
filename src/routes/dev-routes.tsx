@@ -85,6 +85,44 @@ if (import.meta.env.DEV) {
       default: module.ChatPanelDevPreview,
     })),
   )
+  const DifficultySelectorDevPreviewLazy = lazy(() =>
+    import('@/features/missions/dev/DifficultySelectorDevPreview').then((module) => ({
+      default: module.DifficultySelectorDevPreview,
+    })),
+  )
+
+  const ImmediatePurchaseDevPreviewLazy = lazy(() =>
+    import('@/features/auction/immediate-purchase/dev/ImmediatePurchaseDevPreview').then(
+      (module) => ({ default: module.ImmediatePurchaseDevPreview }),
+    ),
+  )
+  const AuctionWatchlistDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionWatchlistDevPreview').then((module) => ({
+      default: module.AuctionWatchlistDevPreview,
+    })),
+  )
+  const BiddingDevPreviewLazy = lazy(() =>
+    import('@/features/auction/bidding/dev/BiddingDevPreview').then((module) => ({
+      default: module.BiddingDevPreview,
+    })),
+  )
+  const AutoBidDevPreviewLazy = lazy(() =>
+    import('@/features/auction/auto-bid/dev/AutoBidDevPreview').then((module) => ({
+      default: module.AutoBidDevPreview,
+    })),
+  )
+  const PendingClaimsDevPreviewLazy = lazy(() =>
+    import('@/features/auction/pending-claims/dev/PendingClaimsDevPreview').then((module) => ({
+      default: module.PendingClaimsDevPreview,
+    })),
+  )
+  // Perezoso a proposito: `AppLayout` importa `@/routes/routes`, y `routes.tsx`
+  // espera este modulo con `await` de nivel superior. Una importacion estatica
+  // cierra el ciclo y el navegador deja la aplicacion en blanco con `npm run dev`
+  // (Vitest no lo reproduce: su cargador tolera el ciclo).
+  const AppLayoutLazy = lazy(() =>
+    import('@/app/AppLayout').then((module) => ({ default: module.AppLayout })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -106,6 +144,68 @@ if (import.meta.env.DEV) {
   ]
 
   resolvedPublicDevRoutes = [
+    // HU-68: lista de seguimiento real con respuestas simuladas de Auction.
+    {
+      path: '__dev/hu68/watchlist',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionWatchlistDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-64.1: la tarjeta de compra inmediata se monta con datos de ejemplo y sin
+    // red, para revisar en claro y oscuro los estados de Figma antes de HU-64.6.
+    {
+      path: '__dev/auction/immediate-purchase',
+      element: (
+        <Suspense fallback={null}>
+          <ImmediatePurchaseDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/bidding',
+      element: (
+        <Suspense fallback={null}>
+          <BiddingDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/auto-bid',
+      element: (
+        <Suspense fallback={null}>
+          <AutoBidDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-69.7: productos pendientes de reclamo. Vive tras `RequireSession` y
+    // necesita Auction respondiendo de verdad; el preview intercepta `fetch`
+    // para `/api/v1/auctions/me/pending-claims*` y `/api/v1/catalog/products/*`
+    // y falsea una sesion, mismo criterio que `ModerationQueueDevPreview`.
+    // A diferencia de esos otros previews, este SI se monta dentro de
+    // `AppLayout` (header incluido): la sesion falsa que fija el preview la
+    // lee tambien `AppHeader` (`PendingClaimsBadge`, `CreditsBadge`,
+    // `SessionControl`), asi que el resultado se ve identico a la pantalla
+    // real dentro del shell autenticado, no solo el contenido aislado.
+    {
+      path: '__dev/auction/pending-claims',
+      element: (
+        <Suspense fallback={null}>
+          <AppLayoutLazy />
+        </Suspense>
+      ),
+      children: [
+        {
+          index: true,
+          element: (
+            <Suspense fallback={null}>
+              <PendingClaimsDevPreviewLazy />
+            </Suspense>
+          ),
+        },
+      ],
+    },
     {
       path: '__dev/account',
       element: (
@@ -223,6 +323,17 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <ChatPanelDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-75.3: el selector de dificultad se usa en el detalle y la matricula
+    // de HU-70.3. El preview monta el mismo componente con fixtures del contrato,
+    // sin red ni sesion. NO es evidencia E2E.
+    {
+      path: '__dev/hu75/dificultad',
+      element: (
+        <Suspense fallback={null}>
+          <DifficultySelectorDevPreviewLazy />
         </Suspense>
       ),
     },

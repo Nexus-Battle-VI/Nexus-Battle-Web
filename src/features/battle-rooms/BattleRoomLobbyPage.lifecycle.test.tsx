@@ -191,6 +191,17 @@ describe('BattleRoomLobbyPage — propietario/invitado', () => {
           return Promise.resolve(jsonResponse(200, room({ status: 'WAITING_FOR_PLAYERS' })))
         }
 
+        // `GET /rooms` (listado) y `GET /rooms/:id` (detalle) comparten prefijo:
+        // hay que distinguirlos por URL, no responder el mismo cuerpo a los dos.
+        // Tras abandonar, la sala sale del listado (HU-15) pero el detalle sigue
+        // siendo un unico `BattleRoom` real, nunca un array -- si no se distingue,
+        // `detail` (habilitada porque la sala ya no esta en el listado) recibe un
+        // array donde espera un objeto y `ownStakeOf`/HU-23 revienta al iterar
+        // `.teams`.
+        if (url.endsWith(`/rooms/${ROOM_ID}`)) {
+          return Promise.resolve(jsonResponse(200, room({ status: 'WAITING_FOR_PLAYERS' })))
+        }
+
         return Promise.resolve(jsonResponse(200, left ? [] : [room()]))
       }),
     )
@@ -257,19 +268,88 @@ describe('BattleRoomLobbyPage — deteccion de cancelacion vs. sala llena (HU-15
       Promise.resolve(urlOf(input).endsWith(`/rooms/${ROOM_ID}`) ? detail : jsonResponse(200, [])),
     )
 
-  it('sala llena (PREPARING): el participante pasa a la pantalla de batalla, decide el servidor (HU-17)', async () => {
+  it('sala llena (PREPARING): el invitado se queda en el lobby (NO navega a /battle) y ve el texto de espera', async () => {
     useSession.setState({ subject: GUEST, accessToken: null, expiresAt: null })
     mockedRealtime.mockReturnValue({ connection: 'disabled', lastRoomStatus: 'PREPARING' })
     vi.stubGlobal('fetch', fetchWithDetail(jsonResponse(200, room({ status: 'PREPARING' }))))
 
     montar()
 
-    expect(await screen.findByText('Pantalla de batalla')).toBeInTheDocument()
     expect(
-      screen.queryByText(
-        'La sala fue cancelada por su propietario. Selecciona otra sala para continuar.',
-      ),
-    ).not.toBeInTheDocument()
+      await screen.findByText('Esperando a que el creador inicie la partida…'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Pantalla de batalla')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Abandonar sala' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Iniciar partida' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar sala' })).not.toBeInTheDocument()
+  })
+
+  it('sala llena (PREPARING): el propietario ve "Iniciar partida" (no "Cancelar sala") y lo pide via POST /start', async () => {
+    useSession.setState({ subject: OWNER, accessToken: null, expiresAt: null })
+    mockedRealtime.mockReturnValue({ connection: 'disabled', lastRoomStatus: 'PREPARING' })
+    let started = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = urlOf(input)
+
+        if (init?.method === 'POST' && url.endsWith('/start')) {
+          started = true
+          return Promise.resolve(jsonResponse(200, room({ status: 'IN_BATTLE' })))
+        }
+
+        if (url.endsWith(`/rooms/${ROOM_ID}`)) {
+          return Promise.resolve(jsonResponse(200, room({ status: 'PREPARING' })))
+        }
+
+        return Promise.resolve(jsonResponse(200, []))
+      }),
+    )
+
+    montar()
+    expect(screen.queryByRole('button', { name: 'Cancelar sala' })).not.toBeInTheDocument()
+    const button = await screen.findByRole('button', { name: 'Iniciar partida' })
+    button.click()
+
+    await waitFor(() => {
+      expect(started).toBe(true)
+    })
+  })
+
+  it('un fallo al iniciar (403 de Combat, con roomId tecnico crudo) muestra un mensaje propio sin exponer el UUID', async () => {
+    useSession.setState({ subject: OWNER, accessToken: null, expiresAt: null })
+    mockedRealtime.mockReturnValue({ connection: 'disabled', lastRoomStatus: 'PREPARING' })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = urlOf(input)
+
+        if (init?.method === 'POST' && url.endsWith('/start')) {
+          // Forma real de `RoomAccessForbiddenError`: interpola el roomId crudo.
+          // El mensaje mostrado NUNCA debe reenviar esto tal cual (ver
+          // `describeStartBattleFailure`).
+          return Promise.resolve(
+            jsonResponse(403, { message: `No eres participante de la sala "${ROOM_ID}".` }),
+          )
+        }
+
+        if (url.endsWith(`/rooms/${ROOM_ID}`)) {
+          return Promise.resolve(jsonResponse(200, room({ status: 'PREPARING' })))
+        }
+
+        return Promise.resolve(jsonResponse(200, []))
+      }),
+    )
+
+    montar()
+    const button = await screen.findByRole('button', { name: 'Iniciar partida' })
+    button.click()
+
+    const alert = await screen.findByRole('alert')
+
+    expect(alert).toHaveTextContent('Solo quien creó la sala puede iniciar la partida.')
+    expect(alert).not.toHaveTextContent(ROOM_ID)
+    expect(screen.queryByText('Pantalla de batalla')).not.toBeInTheDocument()
   })
 
   it('sala ya en batalla (IN_BATTLE): tambien lleva a la pantalla de batalla', async () => {

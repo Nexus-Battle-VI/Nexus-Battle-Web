@@ -16,12 +16,20 @@ import { BattleRoomsPage } from '@/features/battle-rooms/BattleRoomsPage'
 import { BattleRoomLobbyPage } from '@/features/battle-rooms/BattleRoomLobbyPage'
 import { BattleWithChat } from '@/features/battle-rooms/BattleWithChat'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
-import { HeroSelectionPage } from '@/features/player-inventory/HeroSelectionPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
+import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
+import { MissionBoardPage } from '@/features/missions/MissionBoardPage'
+import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
+import { MissionContentEditorPage } from '@/features/missions/MissionContentEditorPage'
+import { MissionHistoryPage } from '@/features/missions/MissionHistoryPage'
+import { MissionProgressPage } from '@/features/missions/MissionProgressPage'
+import { MissionReportPage } from '@/features/missions/MissionReportPage'
+import { PendingClaimsPage } from '@/features/auction/pending-claims/PendingClaimsPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
+import { AuctionPage } from '@/features/auction/AuctionPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
@@ -30,7 +38,7 @@ import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPa
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
-import { AuctionPage } from '@/features/auction/AuctionPage'
+import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
   ? await import('./dev-routes')
@@ -82,13 +90,15 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
   { path: '/play', label: 'Jugar Online' },
   { path: '/missions', label: 'Misiones' },
+  { path: '/admin/missions', label: 'Editar misiones', requiredPrimaryRole: 'ADMINISTRATOR' },
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
-  // HU-07. Entra en la navegacion porque preparar al heroe es un paso previo a
-  // jugar y no cuelga de ningun otro flujo: sin acceso propio solo se llegaria
-  // escribiendo la URL. El prototipo de Figma no la enumera porque su barra de
-  // navegacion es anterior a la que HU-02 dejo acordada.
-  { path: '/heroes', label: 'Mi Héroe' },
+  // HU-07 ya NO tiene entrada propia (2026-09-22, retiro de "Mi Héroe" por
+  // pedido del profesor): elegir héroe se consolidó dentro de "Mi Inventario"
+  // -- `PlayerInventoryPage`/`HeroConfigurator` ya mostraba la galería de
+  // héroes y el equipamiento; ahora también prepara ("Confirmar para
+  // batalla"). `/heroes` sigue montada como redirect (ver más abajo) para no
+  // romper un enlace guardado.
   { path: '/auction', label: 'Subasta' },
   // "Mi Cuenta" ya no vive en la navegacion central (HU-05.4): el acceso a la
   // cuenta es `SessionControl`. La ruta `/account` sigue montada mas abajo.
@@ -232,13 +242,40 @@ export const routes: RouteObject[] = [
       { path: 'play/rooms/:roomId', element: <BattleRoomLobbyPage /> },
       // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
       { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
-      { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
+      { path: 'missions', element: <MissionBoardPage /> },
+      { path: 'missions/history', element: <MissionHistoryPage /> },
+      { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
+      { path: 'missions/progress/:enrollmentId', element: <MissionProgressPage /> },
+      { path: 'missions/:missionId', element: <MissionDetailPage /> },
+      {
+        path: 'admin/missions',
+        element: (
+          <RequireAdministrator>
+            <MissionContentEditorPage />
+          </RequireAdministrator>
+        ),
+      },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
-      // Seleccion y preparacion del heroe (HU-07). Equipar sigue viviendo en
-      // `/inventory`: esta pantalla elige el heroe y enseña con que entraria.
-      { path: 'heroes', element: <HeroSelectionPage /> },
+      // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,
+      // verlo y equiparlo viven ahora en la misma pantalla (`/inventory`).
+      // `/heroes` se conserva como redirect -no se borra la ruta de golpe-
+      // por si un enlace externo o guardado sigue apuntando ahi.
+      { path: 'heroes', element: <Navigate to="/inventory" replace /> },
+      // Lista privada de subastas en seguimiento del jugador autenticado
+      // (HU-68).
       { path: 'auction', element: <AuctionPage /> },
+      // Formulario del vendedor para publicar un producto propio en subasta
+      // (HU-62.5). Ruta propia -no `/auction`- para no competir con la lista
+      // de seguimiento de HU-68, que ya ocupa ese nombre.
+      { path: 'auction/publish', element: <PublishAuctionPage /> },
+      // Detalle de una subasta para quien la va a comprar (HU-64.1).
+      { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
+      // Productos ganados pendientes de reclamo (HU-69.7). Ruta estatica:
+      // React Router la prioriza sobre 'auction/:auctionId' sin importar el
+      // orden de declaracion, asi que 'pending-claims' nunca se interpreta
+      // como un auctionId. Lo mismo aplica a 'publish' arriba.
+      { path: 'auction/pending-claims', element: <PendingClaimsPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.

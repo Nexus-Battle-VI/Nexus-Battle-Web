@@ -4,17 +4,24 @@ import type { RealtimeConnectionState } from '../realtime'
 
 import { AttackPanel, type CombatControls } from './AttackPanel'
 import { ArenaSide } from './BattleArena'
-import type { LastAttack, LastSkill } from './battleReducer'
+import { BattleResultView } from './BattleResultView'
+import { RewardPanel } from './RewardPanel'
+import { StakePanel } from './StakePanel'
+import { BattleTimers } from './BattleTimers'
+import type { ServerClock } from './battleClock'
+import type { LastAttack, LastHealSkill, LastSkill, LastTurnTimeout } from './battleReducer'
 import {
   combatantHealth,
+  combatantName,
   describeTurn,
   findSelf,
   groupCombatants,
   hasCombatState,
+  type ActionFeedback,
 } from './presentation'
 import { describeLatestAction } from './skillPresentation'
 import { TurnOrderStrip } from './TurnOrderStrip'
-import type { BattleView, HealthView, TurnOrderEntry } from './types'
+import type { BattleResult, BattleView, HealthView, TurnOrderEntry } from './types'
 
 export interface BattleScreenProps {
   readonly battle: BattleView
@@ -28,10 +35,21 @@ export interface BattleScreenProps {
   /** La ultima habilidad que publico el servidor (HU-19); `null` si aun no hubo ninguna. */
   readonly lastSkill?: LastSkill | null
   /**
+   * La ultima curacion que publico el servidor (excepcion de HU-12, sin Task
+   * de Management); `null` si aun no hubo ninguna.
+   */
+  readonly lastHealSkill?: LastHealSkill | null
+  /**
    * Acciones de combate (HU-18). Sin ellas la pantalla es de solo lectura: se ve la Vida y
    * el turno, pero no se ofrece ningun boton.
    */
   readonly combat?: CombatControls
+  /** HU-21: el resultado unico si la batalla termino; `null` mientras siga en curso. */
+  readonly result?: BattleResult | null
+  /** HU-21: el ultimo turno perdido por tiempo (franja de resultado). */
+  readonly lastTurnTimeout?: LastTurnTimeout | null
+  /** HU-21: reloj de visualizacion; sin el no se muestran cuentas atras. */
+  readonly serverClock?: ServerClock | null
 }
 
 /** Estado de la conexion en TEXTO (el punto de color solo lo refuerza). */
@@ -65,9 +83,16 @@ export const BattleScreen = ({
   synced,
   lastAttack = null,
   lastSkill = null,
+  lastHealSkill = null,
   combat,
+  result = null,
+  lastTurnTimeout = null,
+  serverClock = null,
 }: BattleScreenProps): React.JSX.Element => {
-  const turn = describeTurn(battle, subject)
+  const finished = result !== null
+  const turn = finished
+    ? { isMyTurn: false, headline: 'Batalla terminada', detail: `Ronda ${String(battle.round)}` }
+    : describeTurn(battle, subject)
   const self = findSelf(battle, subject)
   const { allies, opponents } = groupCombatants(battle, subject)
   const isCurrent = (entry: TurnOrderEntry): boolean =>
@@ -78,7 +103,27 @@ export const BattleScreen = ({
   const withHealth = hasCombatState(battle)
   const healthOf = (entry: TurnOrderEntry): HealthView | null | undefined =>
     withHealth ? combatantHealth(battle, entry) : undefined
-  const feedback = describeLatestAction(lastAttack, lastSkill, battle)
+  const timeoutAfterActions =
+    lastTurnTimeout !== null &&
+    lastTurnTimeout.seq > (lastAttack?.seq ?? 0) &&
+    lastTurnTimeout.seq > (lastSkill?.seq ?? 0) &&
+    lastTurnTimeout.seq > (lastHealSkill?.seq ?? 0)
+  const timeoutEntry = battle.turnOrder.find(
+    (entry) =>
+      entry.teamLabel === lastTurnTimeout?.timedOut.teamLabel &&
+      entry.seat === lastTurnTimeout.timedOut.seat,
+  )
+  // Mismo nombre que en el resto de la pantalla: una IA es "Oponente IA", nunca "Asiento N".
+  const timeoutName = timeoutEntry === undefined ? 'Un participante' : combatantName(timeoutEntry)
+  const feedback: ActionFeedback | null = timeoutAfterActions
+    ? {
+        headline: `${timeoutName} perdió su turno por tiempo.`,
+        impact: null,
+        tone: 'neutral',
+        life: null,
+        detail: '',
+      }
+    : describeLatestAction(lastAttack, lastSkill, battle, lastHealSkill)
   // Con 1 o 2 participantes por lado la arena ya cabe en horizontal desde `md` (tablet); con 3
   // hace falta `lg`. Depende solo de cuantos son, no de nombres ni de la modalidad.
   const horizontalFrom =
@@ -119,6 +164,15 @@ export const BattleScreen = ({
           {connectionLabel(connection, reconnecting)}
         </p>
       </div>
+
+      {!finished && battle.deadlines !== undefined && serverClock !== null && (
+        <BattleTimers
+          battle={battle}
+          serverClock={serverClock}
+          isMyTurn={turn.isMyTurn}
+          synced={synced}
+        />
+      )}
 
       {reconnecting && (
         <p role="status" className="text-center text-xs text-muted">
@@ -165,6 +219,15 @@ export const BattleScreen = ({
         />
       </div>
 
+      {/* HU-21: la vista de resultado va ENTRE la arena y el resto; el orden del DOM es
+          el orden de lectura (sin `order` ni posiciones absolutas). HU-22: el panel de
+          recompensa es ADITIVO, justo despues -- BattleResultView nunca muestra creditos (D4). */}
+      {finished && <BattleResultView result={result} subject={subject} />}
+      {finished && <RewardPanel battleId={battle.battleId} subject={subject} />}
+      {/* HU-23: la apuesta propia, solo si la hubo (el panel no se renderiza
+          cuando no hay nada que contar). */}
+      {finished && <StakePanel roomId={battle.battleId} subject={subject} />}
+
       {/* La region viva existe siempre (los lectores de pantalla anuncian los cambios de una
           region que ya estaba en la pagina) y, vacia, no ocupa ni reserva altura. */}
       <div
@@ -178,29 +241,55 @@ export const BattleScreen = ({
         )}
       >
         {feedback !== null && (
-          <p className="text-sm sm:text-base">
-            <span className="font-semibold text-ink">{feedback.headline}</span>{' '}
-            <span className="text-muted">{feedback.detail}</span>
-          </p>
+          <div className="flex flex-col items-center gap-0.5">
+            {feedback.notice !== undefined && (
+              <p className="text-sm font-medium text-warning">{feedback.notice}</p>
+            )}
+            <p className="text-sm font-semibold text-ink sm:text-base">{feedback.headline}</p>
+            {(feedback.impact !== null || feedback.life !== null) && (
+              <p className="flex flex-wrap items-baseline justify-center gap-x-3">
+                {feedback.impact !== null && (
+                  <span
+                    className={clsx(
+                      'text-lg font-bold tabular-nums',
+                      feedback.tone === 'damage'
+                        ? 'text-danger'
+                        : feedback.tone === 'heal'
+                          ? 'text-success'
+                          : 'text-ink',
+                    )}
+                  >
+                    {feedback.impact}
+                  </span>
+                )}
+                {feedback.life !== null && (
+                  <span className="text-sm tabular-nums text-ink">{feedback.life}</span>
+                )}
+              </p>
+            )}
+            {feedback.detail !== '' && <p className="text-xs text-muted">{feedback.detail}</p>}
+          </div>
         )}
       </div>
 
-      {combat === undefined ? (
-        <p
-          aria-label="Acciones de combate"
-          className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted"
-        >
-          Las acciones de combate no están disponibles en esta vista.
-        </p>
-      ) : (
-        <AttackPanel
-          battle={battle}
-          subject={subject}
-          connection={connection}
-          synced={synced}
-          combat={combat}
-        />
-      )}
+      {/* HU-21: tras el final las acciones NO existen (no se muestran deshabilitadas). */}
+      {!finished &&
+        (combat === undefined ? (
+          <p
+            aria-label="Acciones de combate"
+            className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted"
+          >
+            Las acciones de combate no están disponibles en esta vista.
+          </p>
+        ) : (
+          <AttackPanel
+            battle={battle}
+            subject={subject}
+            connection={connection}
+            synced={synced}
+            combat={combat}
+          />
+        ))}
 
       <TurnOrderStrip battle={battle} isSelf={isSelf} isCurrent={isCurrent} />
     </section>

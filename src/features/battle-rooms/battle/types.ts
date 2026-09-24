@@ -65,6 +65,16 @@ export const SKILL_STATUSES = ['READY', 'RECHARGING', 'UNSUPPORTED'] as const
 
 export type SkillStatus = (typeof SKILL_STATUSES)[number]
 
+/**
+ * A quien puede dirigirse una habilidad (excepcion de curacion de HU-12, sin
+ * Task de Management): `OPPONENT` es el default de siempre (HU-19); `ALLY`
+ * SOLO para la excepcion nombrada de curacion (Reanimacion). Lo decide
+ * Combat, nunca el cliente.
+ */
+export const SKILL_TARGET_AUDIENCES = ['OPPONENT', 'ALLY'] as const
+
+export type SkillTargetAudience = (typeof SKILL_TARGET_AUDIENCES)[number]
+
 /** Una habilidad del heroe tal como la ve el cliente: nunca lleva sus efectos. */
 export interface SkillView {
   /** `productId` de Catalog: es lo unico que se envia en `useSkill`. */
@@ -74,6 +84,7 @@ export interface SkillView {
   readonly chargeTurns: number
   /** Turnos propios que le faltan; `0` si esta disponible. */
   readonly cooldownRemaining: number
+  readonly targetAudience: SkillTargetAudience
   readonly status: SkillStatus
 }
 
@@ -86,6 +97,17 @@ export interface CombatantView extends TargetRef {
   readonly health: HealthView | null
   readonly power?: PowerView | null
   readonly skills?: readonly SkillView[]
+}
+
+/**
+ * HU-21 (`hu-21-battle-finish-v1.md`): instantes ABSOLUTOS en que vencen el turno
+ * y la batalla, para que Web muestre cuentas atras con el reloj del servidor.
+ * Solo presentacion: llegar a 0 no ejecuta nada (Combat publica los eventos).
+ * Ausente en la vista final y en un Combat anterior a HU-21.
+ */
+export interface BattleViewDeadlines {
+  readonly turnEndsAt: string
+  readonly battleEndsAt: string
 }
 
 export interface BattleView {
@@ -101,6 +123,8 @@ export interface BattleView {
    * HU-18) o vacio (batalla iniciada antes de HU-18) significa «sin estado de combate».
    */
   readonly combatants?: readonly CombatantView[]
+  /** HU-21 (aditivo): vencimientos para MOSTRAR; ausente en la vista final. */
+  readonly deadlines?: BattleViewDeadlines
 }
 
 export interface BattleStartedMessage {
@@ -212,8 +236,119 @@ export interface SkillUsedMessage {
   readonly battle: BattleView
 }
 
+/**
+ * Excepcion de curacion de HU-12 (Tabla 7, sin Task de Management): una
+ * habilidad de curacion ejecutada sobre un aliado, con el `battle` posterior
+ * (Vida, Poder, recargas y turno ya actualizados), con un solo `seq`. Distinto
+ * de `SkillUsedMessage`: sin `resolution` ni `bonus` (curar no resuelve un
+ * golpe), con `heal` en su lugar.
+ */
+export interface HealSkillUsedMessage {
+  readonly type: 'healSkillUsed'
+  readonly seq: number
+  readonly roomId: string
+  readonly occurredAt: string
+  /** El `commandId` del actor: correlaciona el comando con su resultado. */
+  readonly commandId: string
+  readonly completedPosition: number
+  readonly actor: TargetRef
+  readonly target: TargetRef
+  readonly skill: {
+    readonly abilityId: string
+    readonly name: string
+    readonly powerCost: PowerCost
+    readonly chargeTurns: number
+  }
+  /** Poder del actor antes y despues de pagar el costo. */
+  readonly power: { readonly before: number; readonly after: number }
+  /** Turnos propios que le faltan a ESTA habilidad tras la accion. */
+  readonly cooldown: { readonly remainingTurns: number }
+  /** Monto de Vida restaurado al objetivo, ya acotado a su maximo (sin overheal). */
+  readonly heal: { readonly amount: number }
+  readonly targetHealth: { readonly before: number; readonly after: number }
+  readonly battle: BattleView
+}
+
 export type BattleEventMessage =
-  BattleStartedMessage | TurnAdvancedMessage | BasicAttackResolvedMessage | SkillUsedMessage
+  | BattleStartedMessage
+  | TurnAdvancedMessage
+  | BasicAttackResolvedMessage
+  | SkillUsedMessage
+  | HealSkillUsedMessage
+  | TurnTimedOutMessage
+  | BattleFinishedMessage
+
+/**
+ * HU-21: el turno vigente vencio sin accion y el avance salto al siguiente
+ * participante con Vida. La vista ya trae el turno avanzado y `deadlines` nuevos.
+ */
+export interface TurnTimedOutMessage {
+  readonly type: 'turnTimedOut'
+  readonly seq: number
+  readonly roomId: string
+  readonly occurredAt: string
+  readonly completedPosition: number
+  readonly timedOut: TargetRef
+  readonly battle: BattleView
+}
+
+/** HU-21: la batalla termino; la vista es la FINAL (sin `deadlines`). */
+export interface BattleFinishedMessage {
+  readonly type: 'battleFinished'
+  readonly seq: number
+  readonly roomId: string
+  readonly occurredAt: string
+  readonly result: BattleResult
+  readonly battle: BattleView
+}
+
+/**
+ * Resultado unico de la batalla (HU-21, contrato §5). Web NO lo calcula ni lo
+ * corrige: lo recibe y lo pinta. `credits` no viaja aqui (HU-22/23/30).
+ */
+export const BATTLE_FINISH_REASONS = ['ELIMINATION', 'DISCONNECTION', 'TIME_LIMIT'] as const
+export type BattleFinishReason = (typeof BATTLE_FINISH_REASONS)[number]
+
+export const BATTLE_OUTCOMES = ['WIN', 'NO_WINNER'] as const
+export type BattleOutcome = (typeof BATTLE_OUTCOMES)[number]
+
+export const TIEBREAK_RULES = ['LIFE_PERCENT', 'ABSOLUTE_LIFE'] as const
+export type TiebreakRule = (typeof TIEBREAK_RULES)[number]
+
+export const PARTICIPANT_RESULTS = ['WON', 'LOST', 'NO_WINNER'] as const
+export type ParticipantResult = (typeof PARTICIPANT_RESULTS)[number]
+
+export type DisconnectedSeat = TargetRef
+
+export interface TeamStanding {
+  readonly teamLabel: string
+  readonly remainingHealth: number
+  readonly maxHealth: number
+  /** Solo para mostrar, tal cual lo publica Combat (no se recalcula). */
+  readonly lifePercent: number
+  readonly eliminated: boolean
+}
+
+export interface ParticipantOutcome {
+  readonly teamLabel: string
+  readonly seat: number
+  readonly kind: 'HUMAN' | 'AI'
+  readonly playerId: string | null
+  readonly displayName: string | null
+  readonly heroId: string | null
+  readonly result: ParticipantResult
+}
+
+export interface BattleResult {
+  readonly reason: BattleFinishReason
+  readonly outcome: BattleOutcome
+  readonly winnerTeamLabel: string | null
+  readonly finishedAt: string
+  readonly tiebreak: TiebreakRule | null
+  readonly disconnected: DisconnectedSeat | null
+  readonly teams: readonly [TeamStanding, TeamStanding]
+  readonly participants: readonly ParticipantOutcome[]
+}
 
 /** Instantanea completa del estado visible (respuesta de `resume` cuando no hay replay). */
 export interface SnapshotMessage {
@@ -222,12 +357,16 @@ export interface SnapshotMessage {
   readonly seq: number
   readonly status: string
   readonly battle: BattleView | null
+  /** HU-21 (aditivo): el resultado si la sala esta `FINISHED`; `null` en otro caso. */
+  readonly result?: BattleResult | null
 }
 
 export interface ResumeOkMessage {
   readonly type: 'resume.ok'
   readonly roomId: string
   readonly seq: number
+  /** HU-21 (aditivo): instante del servidor para las cuentas atras de Web. */
+  readonly serverTime?: string
 }
 
 /** Rechazo de un comando: llega solo a quien lo envio, con un codigo estable. */
@@ -303,6 +442,9 @@ const isPowerCost = (value: unknown): value is PowerCost =>
 const isSkillStatus = (value: unknown): value is SkillStatus =>
   typeof value === 'string' && (SKILL_STATUSES as readonly string[]).includes(value)
 
+const isSkillTargetAudience = (value: unknown): value is SkillTargetAudience =>
+  typeof value === 'string' && (SKILL_TARGET_AUDIENCES as readonly string[]).includes(value)
+
 /**
  * Una habilidad, campo por campo y coherente con ella misma: disponible no tiene recarga y en
  * recarga siempre le faltan turnos. Una `UNSUPPORTED` puede traer cualquier recarga. No se calcula
@@ -316,6 +458,7 @@ const isSkill = (value: unknown): value is SkillView =>
   isNonNegativeInteger(value.chargeTurns) &&
   value.chargeTurns >= 1 &&
   isNonNegativeInteger(value.cooldownRemaining) &&
+  isSkillTargetAudience(value.targetAudience) &&
   isSkillStatus(value.status) &&
   (value.status === 'READY'
     ? value.cooldownRemaining === 0
@@ -406,9 +549,147 @@ export const isBattleView = (value: unknown): value is BattleView => {
   return (
     order.every((entry, index) => entry.position === index) &&
     order.some((entry) => isSameEntry(entry, current)) &&
-    hasCoherentCombatants(value.combatants, order)
+    hasCoherentCombatants(value.combatants, order) &&
+    (value.deadlines === undefined || isDeadlines(value.deadlines))
   )
 }
+
+/** HU-21: los dos vencimientos, ambos instantes ISO. Solo presentacion. */
+const isDeadlines = (value: unknown): value is BattleViewDeadlines =>
+  isRecord(value) && isTimestamp(value.turnEndsAt) && isTimestamp(value.battleEndsAt)
+
+const isBattleFinishReason = (value: unknown): value is BattleFinishReason =>
+  typeof value === 'string' && (BATTLE_FINISH_REASONS as readonly string[]).includes(value)
+
+const isBattleOutcome = (value: unknown): value is BattleOutcome =>
+  typeof value === 'string' && (BATTLE_OUTCOMES as readonly string[]).includes(value)
+
+const isTiebreakRule = (value: unknown): value is TiebreakRule =>
+  typeof value === 'string' && (TIEBREAK_RULES as readonly string[]).includes(value)
+
+const isParticipantResult = (value: unknown): value is ParticipantResult =>
+  typeof value === 'string' && (PARTICIPANT_RESULTS as readonly string[]).includes(value)
+
+const isLifePercent = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100
+
+const isTeamStanding = (value: unknown): value is TeamStanding =>
+  isRecord(value) &&
+  isNonEmptyString(value.teamLabel) &&
+  isNonNegativeInteger(value.remainingHealth) &&
+  isNonNegativeInteger(value.maxHealth) &&
+  value.remainingHealth <= value.maxHealth &&
+  isLifePercent(value.lifePercent) &&
+  typeof value.eliminated === 'boolean'
+
+const isParticipantOutcome = (value: unknown): value is ParticipantOutcome =>
+  isRecord(value) &&
+  isNonEmptyString(value.teamLabel) &&
+  isNonNegativeInteger(value.seat) &&
+  (value.kind === 'HUMAN' ? isNonEmptyString(value.playerId) : value.kind === 'AI') &&
+  (value.kind === 'HUMAN' || value.playerId === null) &&
+  isStringOrNull(value.displayName) &&
+  isStringOrNull(value.heroId) &&
+  isParticipantResult(value.result)
+
+/**
+ * HU-21: valida la FORMA y la coherencia INTERNA del resultado; NO recalcula
+ * quien debio ganar (eso es de Combat y ya viene decidido). Un mensaje mal
+ * formado se ignora, nunca se pinta.
+ */
+export const isBattleResult = (value: unknown): value is BattleResult => {
+  if (!isRecord(value) || !isBattleFinishReason(value.reason) || !isBattleOutcome(value.outcome)) {
+    return false
+  }
+
+  const winner = value.winnerTeamLabel
+
+  if (!(winner === null || isNonEmptyString(winner)) || !isTimestamp(value.finishedAt)) {
+    return false
+  }
+
+  if (!(
+    value.tiebreak === null ||
+    value.tiebreak === undefined ||
+    isTiebreakRule(value.tiebreak)
+  )) {
+    return false
+  }
+
+  if (
+    !Array.isArray(value.teams) ||
+    value.teams.length !== 2 ||
+    !value.teams.every(isTeamStanding) ||
+    !Array.isArray(value.participants) ||
+    value.participants.length === 0 ||
+    !value.participants.every(isParticipantOutcome)
+  ) {
+    return false
+  }
+
+  const labels = value.teams.map((team) => team.teamLabel)
+
+  if (value.outcome === 'WIN' && winner === null) {
+    return false
+  }
+
+  if (winner !== null && !labels.includes(winner)) {
+    return false
+  }
+
+  if (value.outcome === 'NO_WINNER') {
+    if (winner !== null || !value.participants.every((p) => p.result === 'NO_WINNER')) {
+      return false
+    }
+  }
+
+  if (!value.participants.every((participant) => labels.includes(participant.teamLabel))) {
+    return false
+  }
+
+  const disconnected = value.disconnected
+
+  if (!(disconnected === null || disconnected === undefined || isTargetRef(disconnected))) {
+    return false
+  }
+
+  if (value.reason === 'DISCONNECTION') {
+    if (disconnected === null || disconnected === undefined) {
+      return false
+    }
+  } else if (disconnected !== null && disconnected !== undefined) {
+    return false
+  }
+
+  // El desempate solo existe con `TIME_LIMIT` y ganador.
+  if (
+    value.tiebreak !== null &&
+    value.tiebreak !== undefined &&
+    !(value.reason === 'TIME_LIMIT' && value.outcome === 'WIN')
+  ) {
+    return false
+  }
+
+  return true
+}
+
+/** HU-21: `turnTimedOut` con el turno avanzado y `deadlines` nuevos. */
+export const isTurnTimedOutMessage = (value: unknown): value is TurnTimedOutMessage =>
+  isRecord(value) &&
+  value.type === 'turnTimedOut' &&
+  hasEventEnvelope(value) &&
+  isNonNegativeInteger(value.completedPosition) &&
+  isTargetRef(value.timedOut) &&
+  isBattleView(value.battle) &&
+  isInQueue(value.battle, value.timedOut)
+
+/** HU-21: `battleFinished` con el resultado unico y la vista FINAL. */
+export const isBattleFinishedMessage = (value: unknown): value is BattleFinishedMessage =>
+  isRecord(value) &&
+  value.type === 'battleFinished' &&
+  hasEventEnvelope(value) &&
+  isBattleResult(value.result) &&
+  isBattleView(value.battle)
 
 /** Tope del porcentaje de efecto (critico maximo, HU-25). */
 const MAX_EFFECT_PERCENT = 180
@@ -446,6 +727,13 @@ const isTargetHealth = (value: unknown): value is { before: number; after: numbe
   isNonNegativeInteger(value.before) &&
   isNonNegativeInteger(value.after) &&
   value.after <= value.before
+
+/** Vida que solo puede SUBIR (o quedar igual, si ya estaba al maximo): la direccion de curar. */
+const isHealedHealth = (value: unknown): value is { before: number; after: number } =>
+  isRecord(value) &&
+  isNonNegativeInteger(value.before) &&
+  isNonNegativeInteger(value.after) &&
+  value.after >= value.before
 
 const isInQueue = (battle: BattleView, ref: TargetRef): boolean =>
   battle.turnOrder.some((entry) => entry.teamLabel === ref.teamLabel && entry.seat === ref.seat)
@@ -520,13 +808,48 @@ export const isSkillUsedMessage = (value: unknown): value is SkillUsedMessage =>
   isInQueue(value.battle, value.actor) &&
   isInQueue(value.battle, value.target)
 
+/**
+ * `healSkillUsed` (excepcion de curacion, HU-12): validacion ESTRICTA, mismo criterio que
+ * `skillUsed` pero sin `resolution` ni `bonus` -- curar no resuelve un golpe -- y con `heal`
+ * (entero no negativo) en su lugar. Actor y objetivo deben existir en la cola del `battle`.
+ */
+export const isHealSkillUsedMessage = (value: unknown): value is HealSkillUsedMessage =>
+  isRecord(value) &&
+  value.type === 'healSkillUsed' &&
+  hasEventEnvelope(value) &&
+  isCommandId(value.commandId) &&
+  isNonNegativeInteger(value.completedPosition) &&
+  isTargetRef(value.actor) &&
+  isTargetRef(value.target) &&
+  isRecord(value.skill) &&
+  isNonEmptyString(value.skill.abilityId) &&
+  isNonEmptyString(value.skill.name) &&
+  isPowerCost(value.skill.powerCost) &&
+  isNonNegativeInteger(value.skill.chargeTurns) &&
+  value.skill.chargeTurns >= 1 &&
+  isRecord(value.power) &&
+  isNonNegativeInteger(value.power.before) &&
+  isNonNegativeInteger(value.power.after) &&
+  value.power.after <= value.power.before &&
+  isRecord(value.cooldown) &&
+  isNonNegativeInteger(value.cooldown.remainingTurns) &&
+  isRecord(value.heal) &&
+  isNonNegativeInteger(value.heal.amount) &&
+  isHealedHealth(value.targetHealth) &&
+  isBattleView(value.battle) &&
+  isInQueue(value.battle, value.actor) &&
+  isInQueue(value.battle, value.target)
+
 export const isBattleEventMessage = (value: unknown): value is BattleEventMessage =>
   isRecord(value) &&
   ((hasEventEnvelope(value) &&
     (value.type === 'battleStarted' ||
       (value.type === 'turnAdvanced' && isNonNegativeInteger(value.completedPosition)))) ||
     isBasicAttackResolvedMessage(value) ||
-    isSkillUsedMessage(value))
+    isSkillUsedMessage(value) ||
+    isHealSkillUsedMessage(value) ||
+    isTurnTimedOutMessage(value) ||
+    isBattleFinishedMessage(value))
 
 export const isSnapshotMessage = (value: unknown): value is SnapshotMessage =>
   isRecord(value) &&
@@ -534,13 +857,15 @@ export const isSnapshotMessage = (value: unknown): value is SnapshotMessage =>
   isNonEmptyString(value.roomId) &&
   isNonNegativeInteger(value.seq) &&
   isNonEmptyString(value.status) &&
-  (value.battle === null || isBattleView(value.battle))
+  (value.battle === null || isBattleView(value.battle)) &&
+  (value.result === undefined || value.result === null || isBattleResult(value.result))
 
 export const isResumeOkMessage = (value: unknown): value is ResumeOkMessage =>
   isRecord(value) &&
   value.type === 'resume.ok' &&
   isNonEmptyString(value.roomId) &&
-  isNonNegativeInteger(value.seq)
+  isNonNegativeInteger(value.seq) &&
+  (value.serverTime === undefined || isTimestamp(value.serverTime))
 
 export const isCommandRejectedMessage = (value: unknown): value is CommandRejectedMessage =>
   isRecord(value) &&

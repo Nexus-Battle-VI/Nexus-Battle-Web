@@ -1,5 +1,6 @@
 import type {
   BasicAttackResolution,
+  BattleResult,
   BattleView,
   SkillView,
   TargetRef,
@@ -74,7 +75,16 @@ export const snapshot = (
   seq: number,
   status: string,
   view: BattleView | null,
-): Record<string, unknown> => ({ type: 'snapshot', roomId: ROOM_ID, seq, status, battle: view })
+  /** HU-21 (opcional): el resultado si la sala esta `FINISHED`. */
+  result?: BattleResult | null,
+): Record<string, unknown> => ({
+  type: 'snapshot',
+  roomId: ROOM_ID,
+  seq,
+  status,
+  battle: view,
+  ...(result === undefined ? {} : { result }),
+})
 
 /** Vida por posicion de la cola: `[actual, maxima]`, o `null` si el participante no tiene perfil. */
 export type HealthByPosition = readonly (readonly [number, number] | null)[]
@@ -179,6 +189,7 @@ export const SHIELD_STRIKE: SkillView = {
   powerCost: { mode: 'FIXED', amount: 2 },
   chargeTurns: 1,
   cooldownRemaining: 0,
+  targetAudience: 'OPPONENT',
   status: 'READY',
 }
 
@@ -189,6 +200,7 @@ export const STONE_HAND: SkillView = {
   powerCost: { mode: 'FIXED', amount: 4 },
   chargeTurns: 1,
   cooldownRemaining: 0,
+  targetAudience: 'OPPONENT',
   status: 'UNSUPPORTED',
 }
 
@@ -199,6 +211,22 @@ export const ALL_IN: SkillView = {
   powerCost: { mode: 'ALL_AVAILABLE' },
   chargeTurns: 1,
   cooldownRemaining: 0,
+  targetAudience: 'OPPONENT',
+  status: 'READY',
+}
+
+/**
+ * Reanimacion (Medico): excepcion de curacion de HU-12 (sin Task de
+ * Management). `targetAudience: 'ALLY'` -- se dirige a un companero, no a un
+ * rival -- y cuesta todo el Poder disponible (Tabla 7).
+ */
+export const REANIMATE: SkillView = {
+  abilityId: 'hab-reanimacion',
+  name: 'Reanimación',
+  powerCost: { mode: 'ALL_AVAILABLE' },
+  chargeTurns: 1,
+  cooldownRemaining: 0,
+  targetAudience: 'ALLY',
   status: 'READY',
 }
 
@@ -299,6 +327,53 @@ export const skillUsed = (input: SkillEventInput): Record<string, unknown> => {
   }
 }
 
+/**
+ * Entrada de `healSkillUsed` (excepcion de curacion, HU-12, sin Task de
+ * Management): mismo criterio que `SkillEventInput`, SIN `bonus` ni
+ * `resolution` (curar no resuelve un golpe) y CON `heal`.
+ */
+export interface HealSkillEventInput {
+  readonly seq: number
+  readonly commandId: string
+  readonly actor: TargetRef
+  readonly target: TargetRef
+  readonly skill?: SkillView
+  readonly power: { readonly before: number; readonly after: number }
+  readonly cooldownRemaining?: number
+  readonly heal: number
+  readonly before: number
+  readonly after: number
+  readonly view: BattleView
+  readonly completedPosition?: number
+}
+
+/** `healSkillUsed` con la forma EXACTA del contrato (excepcion de curacion de HU-12). */
+export const healSkillUsed = (input: HealSkillEventInput): Record<string, unknown> => {
+  const skill = input.skill ?? REANIMATE
+
+  return {
+    type: 'healSkillUsed',
+    seq: input.seq,
+    roomId: ROOM_ID,
+    occurredAt: '2026-09-21T10:01:00.000Z',
+    commandId: input.commandId,
+    completedPosition: input.completedPosition ?? 1,
+    actor: input.actor,
+    target: input.target,
+    skill: {
+      abilityId: skill.abilityId,
+      name: skill.name,
+      powerCost: skill.powerCost,
+      chargeTurns: skill.chargeTurns,
+    },
+    power: input.power,
+    cooldown: { remainingTurns: input.cooldownRemaining ?? skill.chargeTurns },
+    heal: { amount: input.heal },
+    targetHealth: { before: input.before, after: input.after },
+    battle: input.view,
+  }
+}
+
 /** Rechazo de una habilidad: llega solo al remitente, con `command: 'useSkill'` y el codigo estable. */
 export const skillRejected = (code: string, commandId?: string): Record<string, unknown> => ({
   type: 'command.rejected',
@@ -313,4 +388,104 @@ export const degradedAttackResolved = (
 ): Record<string, unknown> => ({
   ...basicAttackResolved(input),
   degradedFrom: { command: 'useSkill', abilityId: input.abilityId, reason: 'INSUFFICIENT_POWER' },
+})
+
+/**
+ * HU-21: resultados y eventos del fin de batalla con la forma exacta del
+ * contrato (`hu-21-battle-finish-v1.md` §5 y §6).
+ */
+export const DEADLINES = {
+  turnEndsAt: '2026-09-21T10:00:30.000Z',
+  battleEndsAt: '2026-09-21T10:06:00.000Z',
+} as const
+
+export const withDeadlines = (view: BattleView): BattleView => ({ ...view, deadlines: DEADLINES })
+
+export const winResult = (): BattleResult => ({
+  reason: 'ELIMINATION',
+  outcome: 'WIN',
+  winnerTeamLabel: 'A',
+  finishedAt: '2026-09-21T10:05:00.000Z',
+  tiebreak: null,
+  disconnected: null,
+  teams: [
+    { teamLabel: 'A', remainingHealth: 44, maxHealth: 44, lifePercent: 100, eliminated: false },
+    { teamLabel: 'B', remainingHealth: 0, maxHealth: 44, lifePercent: 0, eliminated: true },
+  ],
+  participants: [
+    {
+      teamLabel: 'A',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-ana',
+      displayName: 'Ana',
+      heroId: 'heroe-1',
+      result: 'WON',
+    },
+    {
+      teamLabel: 'B',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-bruno',
+      displayName: 'Bruno',
+      heroId: 'heroe-0',
+      result: 'LOST',
+    },
+  ],
+})
+
+export const noWinnerResult = (): BattleResult => ({
+  reason: 'TIME_LIMIT',
+  outcome: 'NO_WINNER',
+  winnerTeamLabel: null,
+  finishedAt: '2026-09-21T10:06:00.000Z',
+  tiebreak: null,
+  disconnected: null,
+  teams: [
+    { teamLabel: 'A', remainingHealth: 22, maxHealth: 44, lifePercent: 50, eliminated: false },
+    { teamLabel: 'B', remainingHealth: 22, maxHealth: 44, lifePercent: 50, eliminated: false },
+  ],
+  participants: [
+    {
+      teamLabel: 'A',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-ana',
+      displayName: 'Ana',
+      heroId: 'heroe-1',
+      result: 'NO_WINNER',
+    },
+    {
+      teamLabel: 'B',
+      seat: 0,
+      kind: 'HUMAN',
+      playerId: 'sujeto-bruno',
+      displayName: 'Bruno',
+      heroId: 'heroe-0',
+      result: 'NO_WINNER',
+    },
+  ],
+})
+
+export const turnTimedOut = (view: BattleView = battle(1), seq = 2): Record<string, unknown> => ({
+  type: 'turnTimedOut',
+  seq,
+  roomId: ROOM_ID,
+  occurredAt: '2026-09-21T10:00:30.000Z',
+  completedPosition: 0,
+  timedOut: { teamLabel: 'B', seat: 0 },
+  battle: view,
+})
+
+export const battleFinished = (
+  result: BattleResult = winResult(),
+  view: BattleView = battle(),
+  seq = 3,
+): Record<string, unknown> => ({
+  type: 'battleFinished',
+  seq,
+  roomId: ROOM_ID,
+  occurredAt: result.finishedAt,
+  result,
+  battle: view,
 })
