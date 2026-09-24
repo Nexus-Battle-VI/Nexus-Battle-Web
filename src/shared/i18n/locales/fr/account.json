@@ -1,0 +1,22 @@
+{
+  "preferences": {
+    "theme": {
+      "title": "Thème de l'interface",
+      "description": "S'applique immédiatement à toute l'application et est mémorisé dans ce navigateur.",
+      "light": "Clair",
+      "lightHint": "Fond minéral clair avec accent bleu Nexus.",
+      "dark": "Sombre",
+      "darkHint": "Fond profond avec accent violet Nexus."
+    },
+    "active": "Actif",
+    "language": {
+      "title": "Langue",
+      "description": "Langue de toute l'interface. S'applique immédiatement et est enregistrée dans votre compte.",
+      "group": "Langue de l'interface",
+      "saving": "Enregistrement de la langue…",
+      "saved": "Langue enregistrée dans votre compte.",
+      "failed": "La langue n'a pas pu être enregistrée dans votre compte. La langue précédente a été rétablie ; veuillez réessayer.",
+      "contentNote": "Les noms des produits, des héros et des compétences, ainsi que les messages du chat, sont affichés tels qu’ils ont été créés."
+    }
+  }
+}

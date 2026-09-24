@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { useTheme, type Theme } from '@/shared/theme'
 
@@ -15,9 +16,9 @@ import { useTheme, type Theme } from '@/shared/theme'
  * contrato accesible ni sus pruebas.
  */
 
-const OPTIONS: readonly { readonly value: Theme; readonly label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+const OPTIONS: readonly { readonly value: Theme; readonly labelKey: string }[] = [
+  { value: 'light', labelKey: 'common:theme.light' },
+  { value: 'dark', labelKey: 'common:theme.dark' },
 ]
 
 export interface ThemeToggleProps {
@@ -27,11 +28,12 @@ export interface ThemeToggleProps {
 export const ThemeToggle = ({ className }: ThemeToggleProps): React.JSX.Element => {
   const theme = useTheme((state) => state.theme)
   const setTheme = useTheme((state) => state.setTheme)
+  const { t } = useTranslation()
 
   return (
     <div
       role="group"
-      aria-label="Tema de la interfaz"
+      aria-label={t('common:theme.group')}
       className={clsx(
         'inline-flex items-center gap-1 rounded-full border border-border bg-surface-raised p-1',
         className,
@@ -51,7 +53,7 @@ export const ThemeToggle = ({ className }: ThemeToggleProps): React.JSX.Element 
             theme === option.value ? 'bg-brand text-brand-ink' : 'text-muted hover:text-ink',
           )}
         >
-          {option.label}
+          {t(option.labelKey)}
         </button>
       ))}
     </div>

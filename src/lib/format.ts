@@ -1,3 +1,5 @@
+import { formatLocale } from '@/shared/i18n/format'
+
 /**
  * Formato de importes.
  *
@@ -12,7 +14,11 @@ const MINOR_UNITS: Readonly<Record<string, number>> = {
   EUR: 2,
 }
 
-export const formatMoney = (amount: number, currency: string, locale = 'es-CO'): string => {
+/**
+ * `locale` por defecto: el del idioma activo (`es-CO`, `en-US`, `fr-FR`,
+ * `pt-BR`). Cambia como se lee el importe, nunca el importe.
+ */
+export const formatMoney = (amount: number, currency: string, locale = formatLocale()): string => {
   const digits = MINOR_UNITS[currency] ?? 2
 
   return new Intl.NumberFormat(locale, {
@@ -23,7 +29,7 @@ export const formatMoney = (amount: number, currency: string, locale = 'es-CO'):
   }).format(amount / 10 ** digits)
 }
 
-export const formatDateTime = (iso: string, locale = 'es-CO'): string => {
+export const formatDateTime = (iso: string, locale = formatLocale()): string => {
   const date = new Date(iso)
 
   if (Number.isNaN(date.getTime())) {
