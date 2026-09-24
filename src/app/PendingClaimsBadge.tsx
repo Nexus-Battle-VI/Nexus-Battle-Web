@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Package } from '@/components/ui/icons'
 import { fetchPendingClaims } from '@/features/auction/pending-claims/api'
@@ -21,6 +22,7 @@ import { useSession } from '@/shared/session'
  */
 export const PendingClaimsBadge = (): React.JSX.Element | null => {
   const subject = useSession((state) => state.subject)
+  const { t } = useTranslation()
 
   const query = useQuery({
     queryKey: queryKeys.auction.pendingClaims,
@@ -38,12 +40,12 @@ export const PendingClaimsBadge = (): React.JSX.Element | null => {
   return (
     <Link
       to="/auction/pending-claims"
-      aria-label={`Pendientes de recoger: ${String(count)}`}
-      title={`Pendientes de recoger: ${String(count)}`}
+      aria-label={t('app:pendingClaims.label', { total: count })}
+      title={t('app:pendingClaims.label', { total: count })}
       className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 text-sm font-semibold tabular-nums text-ink hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       <Package aria-hidden="true" className="h-4 w-4 text-brand" />
-      <span className="hidden sm:inline">Pendientes</span>
+      <span className="hidden sm:inline">{t('app:pendingClaims.short')}</span>
       <span>{count}</span>
     </Link>
   )

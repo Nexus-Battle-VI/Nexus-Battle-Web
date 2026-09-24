@@ -1,0 +1,61 @@
+{
+  "nav": {
+    "label": "Principal",
+    "ecommerce": "E-commerce",
+    "play": "Jugar Online",
+    "missions": "Misiones",
+    "tournament": "Torneo",
+    "inventory": "Mi Inventario",
+    "auction": "Subasta",
+    "createProduct": "Crear producto",
+    "banners": "Gestionar banner",
+    "roles": "Gestionar roles",
+    "moderation": "Moderación de comentarios"
+  },
+  "session": {
+    "signUp": "Crear cuenta",
+    "signIn": "Iniciar sesion",
+    "menu": "Menú de cuenta",
+    "menuOptions": "Opciones de cuenta",
+    "myAccount": "Mi cuenta",
+    "myInventory": "Mi inventario",
+    "signOut": "Cerrar sesión",
+    "fallbackName": "Jugador Nexus",
+    "fallbackHandle": "jugador"
+  },
+  "credits": {
+    "available": "Créditos disponibles: {{available}}.",
+    "withReserved": "Créditos disponibles: {{available}}. Saldo total: {{balance}}. Reservado en apuestas o pujas: {{reserved}}."
+  },
+  "pendingClaims": {
+    "label": "Pendientes de recoger: {{total}}",
+    "short": "Pendientes"
+  },
+  "signIn": {
+    "title": "Para continuar",
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta"
+  },
+  "access": {
+    "deniedTitle": "Acceso denegado",
+    "administrator": "Acceso denegado. Solo un Administrador o Super Administrador puede acceder a esta seccion administrativa. El servicio tambien valida este permiso y rechazara la operacion con estado 403.",
+    "moderator": "Acceso denegado. Solo un Moderador, Administrador o Super Administrador puede acceder a la cola de moderación. El servicio también valida este permiso y rechazará la operación con estado 403.",
+    "superAdministrator": "Solo el Super Administrador puede gestionar roles. El servicio tambien valida este permiso y rechazara la operacion con estado 403."
+  },
+  "notFound": {
+    "title": "Pagina no encontrada",
+    "body": "La ruta solicitada no existe en esta aplicacion.",
+    "back": "Volver al catalogo"
+  },
+  "callback": {
+    "working": "Completando el inicio de sesion",
+    "verifying": "Verificando la respuesta del proveedor de identidad.",
+    "failedTitle": "No se pudo iniciar sesion",
+    "providerRejected": "El proveedor de identidad rechazo el inicio de sesion.",
+    "notInProgress": "Esta direccion no corresponde a un inicio de sesion en curso.",
+    "stateMismatch": "La respuesta no corresponde a la peticion que hizo esta pestana.",
+    "notConfigured": "No hay proveedor de identidad configurado en esta compilacion.",
+    "unusableToken": "El testimonio recibido no es utilizable.",
+    "failed": "No se pudo completar el inicio de sesion."
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "status": {
+    "badRequest": "La solicitud no es válida. Revisa los datos e inténtalo de nuevo.",
+    "unauthorized": "Tu sesión no es válida o ha caducado. Vuelve a iniciar sesión.",
+    "forbidden": "No tienes permiso para realizar esta acción.",
+    "notFound": "No se encontró lo que buscabas.",
+    "conflict": "La operación entra en conflicto con el estado actual. Actualiza e inténtalo de nuevo.",
+    "unprocessable": "La operación no se puede aplicar con estos datos.",
+    "tooManyRequests": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
+    "unavailable": "El servicio no está disponible en este momento. Inténtalo de nuevo en unos minutos.",
+    "server": "El servicio tuvo un problema al procesar la solicitud. Inténtalo de nuevo."
+  },
+  "network": "No se pudo conectar con el servicio. Revisa tu conexión e inténtalo de nuevo.",
+  "unexpected": "Ocurrio un error inesperado al consultar el servicio."
+}
