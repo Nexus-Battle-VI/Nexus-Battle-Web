@@ -22,6 +22,8 @@ import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
 import { MissionBoardPage } from '@/features/missions/MissionBoardPage'
 import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
 import { MissionContentEditorPage } from '@/features/missions/MissionContentEditorPage'
+import { MissionHistoryPage } from '@/features/missions/MissionHistoryPage'
+import { MissionReportPage } from '@/features/missions/MissionReportPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -237,6 +239,8 @@ export const routes: RouteObject[] = [
       // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
       { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
       { path: 'missions', element: <MissionBoardPage /> },
+      { path: 'missions/history', element: <MissionHistoryPage /> },
+      { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
       { path: 'missions/:missionId', element: <MissionDetailPage /> },
       {
         path: 'admin/missions',
