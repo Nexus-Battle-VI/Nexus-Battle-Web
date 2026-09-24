@@ -2,7 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpError } from '@/lib/http'
 import { jsonResponse, showcaseProduct } from '@/test/commerce-fixtures'
-import { fetchShowcase, isShowcaseType, NO_FILTERS, SHOWCASE_PRODUCT_TYPES, showcaseQuery } from './api'
+import {
+  fetchShowcase,
+  isShowcaseType,
+  NO_FILTERS,
+  SHOWCASE_PRODUCT_TYPES,
+  showcaseQuery,
+} from './api'
 
 afterEach(() => {
   vi.unstubAllGlobals()

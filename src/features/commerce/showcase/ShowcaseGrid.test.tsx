@@ -211,7 +211,9 @@ describe('Agotado y suspendido son informativos: se muestran deshabilitados, no 
 
     const card = screen.getByTestId('product-agotado')
     expect(card).toBeInTheDocument()
-    const button = within(card).getByRole('button', { name: 'Anadir Arco corto agotado al carrito' })
+    const button = within(card).getByRole('button', {
+      name: 'Anadir Arco corto agotado al carrito',
+    })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Agotado')
   })

@@ -315,7 +315,11 @@ export const CheckoutPanel = ({
                   }
                   onChange={handleFieldChange(field)}
                   ref={
-                    field === 'number' ? numberInputRef : field === 'expiry' ? expiryInputRef : undefined
+                    field === 'number'
+                      ? numberInputRef
+                      : field === 'expiry'
+                        ? expiryInputRef
+                        : undefined
                   }
                   className="w-full min-w-0 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 />

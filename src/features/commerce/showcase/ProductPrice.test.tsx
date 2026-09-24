@@ -13,9 +13,7 @@ import { ProductPrice } from './ProductPrice'
  */
 describe('Precio del producto', () => {
   it('formatea los creditos con separador de miles', () => {
-    renderWithProviders(
-      <ProductPrice product={showcaseProduct({ creditsPrice: 1_234_567 })} />,
-    )
+    renderWithProviders(<ProductPrice product={showcaseProduct({ creditsPrice: 1_234_567 })} />)
 
     expect(screen.getByText('1.234.567 créditos')).toBeInTheDocument()
   })
