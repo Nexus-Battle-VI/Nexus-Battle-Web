@@ -1,10 +1,30 @@
 import { useLayoutEffect, useRef } from 'react'
 import { NavLink, matchPath, useLocation } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { navigationForPrimaryRole } from '@/routes/routes'
 import { primaryRole } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
+
+/**
+ * Etiqueta traducida de cada acceso, por ruta. `routes.tsx` conserva su
+ * `label` en español como respaldo: asi este cambio no toca la lista de rutas
+ * (que otras features editan) y un acceso nuevo sin traduccion sigue
+ * mostrandose, en español, en lugar de desaparecer.
+ */
+const NAV_LABEL_KEYS: Readonly<Record<string, string>> = {
+  '/ecommerce': 'app:nav.ecommerce',
+  '/play': 'app:nav.play',
+  '/missions': 'app:nav.missions',
+  '/tournament': 'app:nav.tournament',
+  '/inventory': 'app:nav.inventory',
+  '/auction': 'app:nav.auction',
+  '/admin/products/new': 'app:nav.createProduct',
+  '/admin/banners': 'app:nav.banners',
+  '/admin/roles': 'app:nav.roles',
+  '/admin/comments/moderation': 'app:nav.moderation',
+}
 
 export interface PrimaryNavProps {
   readonly className?: string
@@ -29,6 +49,7 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
   const roles = useSession((state) => state.roles)
   const navigation = navigationForPrimaryRole(primaryRole(roles))
   const { pathname } = useLocation()
+  const { t } = useTranslation()
 
   const listRef = useRef<HTMLUListElement>(null)
   const pillRef = useRef<HTMLSpanElement>(null)
@@ -78,7 +99,7 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
   }, [activePath, navigation.length])
 
   return (
-    <nav aria-label="Principal" className={className}>
+    <nav aria-label={t('app:nav.label')} className={className}>
       {/*
        * Carril segmentado: `grid` de columnas `1fr` (via `minmax(max-content, 1fr)`)
        * reparte los seis modulos por TODO el ancho disponible sin anchos en
@@ -99,32 +120,36 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
           ref={listRef}
           className="nb-nav-rail grid auto-cols-[minmax(max-content,1fr)] grid-flow-col p-1"
         >
-          {navigation.map((item) => (
-            <li
-              key={item.path}
-              ref={(element) => {
-                if (element === null) {
-                  itemRefs.current.delete(item.path)
-                } else {
-                  itemRefs.current.set(item.path, element)
-                }
-              }}
-              className="relative z-10"
-            >
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  clsx(
-                    'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',
-                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                    isActive ? 'font-medium text-brand-ink' : 'text-muted',
-                  )
-                }
+          {navigation.map((item) => {
+            const labelKey = NAV_LABEL_KEYS[item.path]
+
+            return (
+              <li
+                key={item.path}
+                ref={(element) => {
+                  if (element === null) {
+                    itemRefs.current.delete(item.path)
+                  } else {
+                    itemRefs.current.set(item.path, element)
+                  }
+                }}
+                className="relative z-10"
               >
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    clsx(
+                      'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+                      isActive ? 'font-medium text-brand-ink' : 'text-muted',
+                    )
+                  }
+                >
+                  {labelKey === undefined ? item.label : t(labelKey)}
+                </NavLink>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </nav>

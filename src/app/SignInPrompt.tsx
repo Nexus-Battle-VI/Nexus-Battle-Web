@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 export interface SignInPromptProps {
   /** Por que hace falta identificarse en este punto concreto. */
@@ -36,36 +37,40 @@ export const SignInPrompt = ({
   cancelHref,
   onCancel,
   headingTag: Heading = 'h2',
-}: SignInPromptProps): React.JSX.Element => (
-  <div className="w-full max-w-sm text-center">
-    <Heading className="text-xl font-semibold text-ink">Para continuar</Heading>
-    <p className="mt-2 text-sm text-muted">{description}</p>
+}: SignInPromptProps): React.JSX.Element => {
+  const { t } = useTranslation()
 
-    <div className="mt-6 flex flex-col gap-3">
-      <Link to="/login" className={`${CTA_CLASS} bg-brand text-brand-ink`}>
-        Iniciar sesión
-      </Link>
-      <Link
-        to="/register"
-        className={`${CTA_CLASS} border border-border bg-surface-raised text-ink`}
-      >
-        Crear cuenta
-      </Link>
+  return (
+    <div className="w-full max-w-sm text-center">
+      <Heading className="text-xl font-semibold text-ink">{t('app:signIn.title')}</Heading>
+      <p className="mt-2 text-sm text-muted">{description}</p>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <Link to="/login" className={`${CTA_CLASS} bg-brand text-brand-ink`}>
+          {t('app:signIn.signIn')}
+        </Link>
+        <Link
+          to="/register"
+          className={`${CTA_CLASS} border border-border bg-surface-raised text-ink`}
+        >
+          {t('app:signIn.signUp')}
+        </Link>
+      </div>
+
+      {cancelHref !== undefined && (
+        <Link to={cancelHref} className="mt-4 inline-block text-sm text-muted underline">
+          {t('common:cancel')}
+        </Link>
+      )}
+      {onCancel !== undefined && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-4 inline-block text-sm text-muted underline"
+        >
+          {t('common:cancel')}
+        </button>
+      )}
     </div>
-
-    {cancelHref !== undefined && (
-      <Link to={cancelHref} className="mt-4 inline-block text-sm text-muted underline">
-        Cancelar
-      </Link>
-    )}
-    {onCancel !== undefined && (
-      <button
-        type="button"
-        onClick={onCancel}
-        className="mt-4 inline-block text-sm text-muted underline"
-      >
-        Cancelar
-      </button>
-    )}
-  </div>
-)
+  )
+}

@@ -1,4 +1,5 @@
 import { httpClient, type HttpDownload } from '@/lib/http'
+import type { Language } from '@/shared/i18n/languages'
 
 /**
  * Transporte de la cuenta propia contra Account (HU-05.4).
@@ -41,6 +42,12 @@ export interface OwnAccount {
    * campo falta, se trata igual que `null`.
    */
   readonly avatarUrl?: string | null
+  /**
+   * Idioma de interfaz guardado en Account (HU-05 CA-04): `es` | `en` | `fr` |
+   * `pt`, o `null` si la persona nunca eligio. Opcional: una version anterior de
+   * Account no lo envia, y eso equivale a `null`.
+   */
+  readonly preferredLanguage?: string | null
 }
 
 export const fetchOwnAccount = async (signal?: AbortSignal): Promise<OwnAccount> =>
@@ -128,6 +135,14 @@ export const updateOwnAccount = async (edit: OwnAccountEdit): Promise<OwnAccount
  * delimitadores en los extremos), pero la AUTORIDAD sigue siendo el servicio:
  * un apodo reservado u ofensivo solo lo sabe su lista negra, y llega como 400.
  */
+/**
+ * Guarda SOLO el idioma de la interfaz. Account acepta un PATCH parcial: el
+ * apodo y el pais no viajan y se conservan.
+ */
+export const updateOwnPreferredLanguage = async (
+  preferredLanguage: Language,
+): Promise<OwnAccount> => httpClient.patch<OwnAccount>('/accounts/me', { preferredLanguage })
+
 export const DISPLAY_NAME_MIN_LENGTH = 3
 export const DISPLAY_NAME_MAX_LENGTH = 32
 

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { Coins } from '@/components/ui/icons'
 import { useSession } from '@/shared/session'
 import { spendableCredits, useWallet } from '@/shared/wallet'
@@ -23,6 +25,9 @@ import { compactCredits, fullCredits } from './creditsFormat'
 export const CreditsBadge = (): React.JSX.Element | null => {
   const subject = useSession((state) => state.subject)
   const wallet = useWallet()
+  // Suscribe el badge al cambio de idioma: separadores y textos se vuelven a
+  // formatear sin recargar.
+  const { t } = useTranslation()
 
   if (subject === null || wallet.isError) {
     return null
@@ -42,8 +47,12 @@ export const CreditsBadge = (): React.JSX.Element | null => {
   const reserved = wallet.data.reserved ?? 0
   const detail =
     reserved > 0
-      ? `Créditos disponibles: ${fullCredits(available)}. Saldo total: ${fullCredits(wallet.data.balance)}. Reservado en apuestas o pujas: ${fullCredits(reserved)}.`
-      : `Créditos disponibles: ${fullCredits(available)}.`
+      ? t('app:credits.withReserved', {
+          available: fullCredits(available),
+          balance: fullCredits(wallet.data.balance),
+          reserved: fullCredits(reserved),
+        })
+      : t('app:credits.available', { available: fullCredits(available) })
 
   return (
     <span

@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 
+import type { Language } from '@/shared/i18n/languages'
 import { queryKeys } from '@/shared/query-keys'
 import {
   fetchOwnAccount,
   fetchOwnPersonalData,
   updateOwnAccount,
+  updateOwnPreferredLanguage,
   type OwnAccount,
   type OwnAccountEdit,
   type OwnPersonalData,
@@ -67,6 +69,24 @@ export const useUpdateOwnAccount = (
       queryClient.setQueryData(queryKeys.account.me, updated)
       void queryClient.invalidateQueries({ queryKey: queryKeys.account.privacy })
       void queryClient.invalidateQueries({ queryKey: queryKeys.account.me })
+    },
+  })
+}
+
+/**
+ * Guarda el idioma en Account. La respuesta es la cuenta completa y consistente:
+ * se escribe en la cache de `GET /accounts/me`, de modo que la sincronizacion de
+ * idioma (`useAccountLanguageSync`) ve el valor nuevo y no lo revierte.
+ */
+export const useUpdatePreferredLanguage = (
+  transport: (language: Language) => Promise<OwnAccount> = updateOwnPreferredLanguage,
+): UseMutationResult<OwnAccount, unknown, Language> => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (language: Language) => transport(language),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKeys.account.me, updated)
     },
   })
 }

@@ -1,0 +1,22 @@
+{
+  "preferences": {
+    "theme": {
+      "title": "Tema da interface",
+      "description": "É aplicado imediatamente a todo o aplicativo e fica salvo neste navegador.",
+      "light": "Claro",
+      "lightHint": "Fundo mineral claro com destaque azul Nexus.",
+      "dark": "Escuro",
+      "darkHint": "Fundo profundo com destaque violeta Nexus."
+    },
+    "active": "Ativo",
+    "language": {
+      "title": "Idioma",
+      "description": "Idioma de toda a interface. É aplicado imediatamente e salvo na sua conta.",
+      "group": "Idioma da interface",
+      "saving": "Salvando o idioma…",
+      "saved": "Idioma salvo na sua conta.",
+      "failed": "Não foi possível salvar o idioma na sua conta. O idioma anterior foi restaurado; tente novamente.",
+      "contentNote": "Os nomes de produtos, heróis e habilidades, e as mensagens do chat, são exibidos exatamente como foram criados."
+    }
+  }
+}

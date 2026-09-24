@@ -1,0 +1,61 @@
+{
+  "nav": {
+    "label": "Principal",
+    "ecommerce": "E-commerce",
+    "play": "Jogar online",
+    "missions": "Missões",
+    "tournament": "Torneio",
+    "inventory": "Meu inventário",
+    "auction": "Leilão",
+    "createProduct": "Criar produto",
+    "banners": "Gerenciar banner",
+    "roles": "Gerenciar funções",
+    "moderation": "Moderação de comentários"
+  },
+  "session": {
+    "signUp": "Criar conta",
+    "signIn": "Entrar",
+    "menu": "Menu da conta",
+    "menuOptions": "Opções da conta",
+    "myAccount": "Minha conta",
+    "myInventory": "Meu inventário",
+    "signOut": "Sair",
+    "fallbackName": "Jogador Nexus",
+    "fallbackHandle": "jogador"
+  },
+  "credits": {
+    "available": "Créditos disponíveis: {{available}}.",
+    "withReserved": "Créditos disponíveis: {{available}}. Saldo total: {{balance}}. Reservado em apostas ou lances: {{reserved}}."
+  },
+  "pendingClaims": {
+    "label": "Aguardando retirada: {{total}}",
+    "short": "Pendentes"
+  },
+  "signIn": {
+    "title": "Para continuar",
+    "signIn": "Entrar",
+    "signUp": "Criar conta"
+  },
+  "access": {
+    "deniedTitle": "Acesso negado",
+    "administrator": "Acesso negado. Somente um Administrador ou Superadministrador pode acessar esta seção administrativa. O serviço também valida essa permissão e rejeitará a operação com status 403.",
+    "moderator": "Acesso negado. Somente um Moderador, Administrador ou Superadministrador pode acessar a fila de moderação. O serviço também valida essa permissão e rejeitará a operação com status 403.",
+    "superAdministrator": "Somente o Superadministrador pode gerenciar funções. O serviço também valida essa permissão e rejeitará a operação com status 403."
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "body": "A página solicitada não existe neste aplicativo.",
+    "back": "Voltar ao catálogo"
+  },
+  "callback": {
+    "working": "Concluindo o login",
+    "verifying": "Verificando a resposta do provedor de identidade.",
+    "failedTitle": "Não foi possível entrar",
+    "providerRejected": "O provedor de identidade recusou o login.",
+    "notInProgress": "Este endereço não corresponde a um login em andamento.",
+    "stateMismatch": "A resposta não corresponde à solicitação feita por esta aba.",
+    "notConfigured": "Não há provedor de identidade configurado nesta versão.",
+    "unusableToken": "O token recebido não pode ser usado.",
+    "failed": "Não foi possível concluir o login."
+  }
+}
