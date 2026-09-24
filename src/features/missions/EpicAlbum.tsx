@@ -43,14 +43,13 @@ export const EpicAlbum = ({
             {entry.generalEffect !== null && <p className="text-ink">{entry.generalEffect}</p>}
             {entry.epicEffect !== null && <p className="text-ink">{entry.epicEffect}</p>}
             <p className="text-muted">
-              La entrega {entry.masterName} en{' '}
+              Máster: {entry.masterName} ·{' '}
               <Link
                 to={`/missions/${encodeURIComponent(entry.missionId)}`}
                 className="text-brand hover:underline"
               >
                 {entry.missionName}
               </Link>
-              .
             </p>
           </li>
         ))}

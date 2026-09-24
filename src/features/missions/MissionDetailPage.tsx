@@ -95,7 +95,7 @@ const RewardsCard = ({ detail }: { readonly detail: MissionDetail }): React.JSX.
             <ul className="mt-1 list-inside list-disc">
               {epics.map((item) => (
                 <li key={item.master}>
-                  {item.epic}, si derrotas a {item.master}
+                  {item.epic} · Máster: {item.master}
                 </li>
               ))}
             </ul>

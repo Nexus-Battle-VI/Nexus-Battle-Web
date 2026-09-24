@@ -321,8 +321,8 @@ describe('álbum de épicas (P-J3)', () => {
               epicEffect: null,
               heroType: 'GUERRERO_TANQUE',
               masterName: 'Coloso de Obsidiana',
-              missionId: 'msn_templo_olvidado',
-              missionName: 'El Templo Olvidado',
+              missionId: 'msn_camara_sellada',
+              missionName: 'La Cámara Sellada',
               obtained: false,
             },
           ]}
@@ -334,9 +334,15 @@ describe('álbum de épicas (P-J3)', () => {
     expect(screen.getByText('Obtenida')).toBeInTheDocument()
     expect(screen.getByText('Por conseguir')).toBeInTheDocument()
     expect(screen.getByText('Potencia a: Pícaro Veneno')).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'El Templo Olvidado' })[0]).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'El Templo Olvidado' })).toHaveAttribute(
       'href',
       '/missions/msn_templo_olvidado',
+    )
+    // Sin frases que pidan artículo: «Máster: nombre · misión».
+    expect(screen.getByText('Máster: Coloso de Obsidiana ·')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'La Cámara Sellada' })).toHaveAttribute(
+      'href',
+      '/missions/msn_camara_sellada',
     )
   })
 

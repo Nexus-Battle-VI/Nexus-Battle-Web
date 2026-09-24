@@ -92,7 +92,7 @@ export const MissionHistoryPage = (): React.JSX.Element => {
                         {item.name}
                         {item.masterName === undefined || item.masterName === null
                           ? ''
-                          : `, de ${item.masterName}`}{' '}
+                          : ` · Máster: ${item.masterName}`}{' '}
                         · {rewardStatusLabel[item.status]}
                       </li>
                     ))}
