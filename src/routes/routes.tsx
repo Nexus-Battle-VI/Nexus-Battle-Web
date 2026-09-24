@@ -38,6 +38,7 @@ import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPa
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
+import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
   ? await import('./dev-routes')
@@ -262,19 +263,18 @@ export const routes: RouteObject[] = [
       // por si un enlace externo o guardado sigue apuntando ahi.
       { path: 'heroes', element: <Navigate to="/inventory" replace /> },
       // Lista privada de subastas en seguimiento del jugador autenticado
-      // (HU-68). El formulario del vendedor para PUBLICAR sigue en
-      // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta no depende
-      // de esa fusion.
+      // (HU-68).
       { path: 'auction', element: <AuctionPage /> },
-      // Detalle de una subasta para quien la va a comprar (HU-64.1). El
-      // formulario del vendedor para PUBLICAR ('auction' arriba) sigue en
-      // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta hija no
-      // depende de esa fusion.
+      // Formulario del vendedor para publicar un producto propio en subasta
+      // (HU-62.5). Ruta propia -no `/auction`- para no competir con la lista
+      // de seguimiento de HU-68, que ya ocupa ese nombre.
+      { path: 'auction/publish', element: <PublishAuctionPage /> },
+      // Detalle de una subasta para quien la va a comprar (HU-64.1).
       { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
       // Productos ganados pendientes de reclamo (HU-69.7). Ruta estatica:
       // React Router la prioriza sobre 'auction/:auctionId' sin importar el
       // orden de declaracion, asi que 'pending-claims' nunca se interpreta
-      // como un auctionId.
+      // como un auctionId. Lo mismo aplica a 'publish' arriba.
       { path: 'auction/pending-claims', element: <PendingClaimsPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver

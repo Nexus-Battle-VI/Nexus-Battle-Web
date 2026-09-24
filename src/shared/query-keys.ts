@@ -200,4 +200,7 @@ export const queryKeys = {
     /** Listado administrativo (`GET /api/v1/admin/banners`). */
     adminBanners: ['notifications', 'banners', 'admin'] as const,
   },
+  auctions: {
+    active: ['auctions', 'active'] as const,
+  },
 } as const

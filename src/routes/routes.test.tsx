@@ -420,6 +420,33 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     }
   })
 
+  /** HU-62.5: el formulario del vendedor vive en su propia ruta, no en `/auction`. */
+  it('/auction/publish monta el flujo real de publicación', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ items: [], page: 1, pageSize: 16, totalItems: 0, totalPages: 0 }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+        ),
+    )
+
+    try {
+      renderRoute('/auction/publish')
+
+      expect(
+        await screen.findByRole('heading', { name: 'Publicar en subasta' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   /**
    * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un
    * `fetch` real stubbeado (no un mock manual) porque la pantalla real hace
