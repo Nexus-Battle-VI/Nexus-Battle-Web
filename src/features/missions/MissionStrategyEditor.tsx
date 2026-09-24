@@ -16,6 +16,7 @@ import {
   type Rotation,
   type RotationStep,
 } from './missionStrategyApi'
+import type { EstimatedAbility } from './missionPlayApi'
 
 const PRIORITIES = ['HIGH', 'MEDIUM', 'LOW'] as const
 const PRIORITY_LABELS = ['Alta', 'Media', 'Baja'] as const
@@ -32,13 +33,22 @@ export interface MissionStrategyEditorProps {
   readonly hero: AvailableHero
   /** `ready=false` bloquea la matrícula mientras hay una edición sin guardar o un fallo. */
   readonly onVersionChange: (version: number | null, ready: boolean) => void
+  /**
+   * Qué habilidades sirven en misiones, según Combat (P-J4). Opcional: sin estimación
+   * todavía, las opciones se muestran sin marcar.
+   */
+  readonly abilityChecks?: readonly EstimatedAbility[] | undefined
 }
 
 export const MissionStrategyEditor = ({
   missionId,
   hero,
   onVersionChange,
+  abilityChecks,
 }: MissionStrategyEditorProps): React.JSX.Element => {
+  const unusable = new Set(
+    (abilityChecks ?? []).filter((ability) => !ability.usable).map((ability) => ability.abilityId),
+  )
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
   const strategyKey = queryKeys.missions.strategy(subject, missionId, hero.heroId)
@@ -186,6 +196,7 @@ export const MissionStrategyEditor = ({
                         {abilityOptions.map((ability) => (
                           <option key={ability.abilityId} value={ability.abilityId}>
                             {ability.name}
+                            {unusable.has(ability.abilityId) ? ' (no funciona en misiones)' : ''}
                           </option>
                         ))}
                         {step.kind === 'ABILITY' &&

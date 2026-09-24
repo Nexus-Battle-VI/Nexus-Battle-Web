@@ -19,6 +19,14 @@ export interface MissionDifficulty {
   /** Factor sobre las estadisticas enemigas. `null` en MYTHIC mientras el PO no fije un valor. */
   readonly enemyStatMultiplier: number | null
   readonly rewardTier: RewardTier
+  /**
+   * Lo que el nivel cambia además de las estadísticas (diseño «misiones jugables»,
+   * P-J8). Opcionales: un Missions anterior no los envía y la interfaz los omite.
+   */
+  readonly extraEnemiesPerEncounter?: number
+  readonly bossEnrageBonus?: number
+  readonly lootBonusPercent?: number
+  readonly masterBonusPercent?: number
 }
 
 export interface MissionDifficulties {

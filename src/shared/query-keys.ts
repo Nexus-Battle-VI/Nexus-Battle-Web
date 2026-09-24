@@ -167,6 +167,22 @@ export const queryKeys = {
      */
     difficulties: (subject: string | null, missionId: string) =>
       ['missions', 'difficulties', subject, missionId] as const,
+    /** Misiones en curso del jugador (diseño «misiones jugables», P-J6). */
+    active: (subject: string | null) => ['missions', 'active', subject] as const,
+    /** Bitácora revelada de una misión en curso (P-J6). */
+    progress: (subject: string | null, enrollmentId: string) =>
+      ['missions', 'progress', subject, enrollmentId] as const,
+    /**
+     * Probabilidad de éxito (P-J7). La versión de la estrategia va en la clave:
+     * guardar otra estrategia cambia la estimación.
+     */
+    estimate: (
+      subject: string | null,
+      missionId: string,
+      heroId: string,
+      difficulty: string,
+      strategyVersion: number | null,
+    ) => ['missions', 'estimate', subject, missionId, heroId, difficulty, strategyVersion] as const,
   },
   notifications: {
     /**

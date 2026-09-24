@@ -34,6 +34,8 @@ export interface MissionHistorySummary {
   }[]
   readonly bestTimes: readonly {
     readonly missionId: string
+    /** El nombre de la misión (P-J10); un Missions anterior no lo envía. */
+    readonly missionName?: string
     readonly difficulty: DifficultyLevel
     readonly simulatedDuration: string
     readonly enrollmentId: string
@@ -42,9 +44,12 @@ export interface MissionHistorySummary {
     readonly epicRef: string
     readonly name: string
     readonly masterRef: string | null
+    readonly masterName?: string | null
     readonly obtainedAt: string
     readonly status: RewardStatus
   }[]
+  /** Cada épica que se puede ganar y si ya se tiene: la meta a largo plazo (P-J3). */
+  readonly epicAlbum?: readonly MissionEpicAlbumEntry[]
   readonly lootCollection: readonly {
     readonly label: string
     readonly productId: string | null
@@ -53,9 +58,38 @@ export interface MissionHistorySummary {
   readonly narrativeProgress: readonly {
     readonly chainId: string
     readonly missions: readonly string[]
+    /** En el mismo orden que `missions` (P-J10). */
+    readonly missionNames?: readonly string[]
     readonly completed: number
     readonly total: number
   }[]
+}
+
+/** Una épica del álbum: dónde se gana y si ya se tiene (P-J3). */
+export interface MissionEpicAlbumEntry {
+  readonly epicRef: string
+  readonly name: string
+  readonly generalEffect: string | null
+  readonly epicEffect: string | null
+  readonly heroType: string
+  readonly masterName: string
+  readonly missionId: string
+  readonly missionName: string
+  readonly obtained: boolean
+}
+
+/** Qué hizo la estrategia en la misión (P-J5); falta en reportes anteriores. */
+export interface MissionReportStrategy {
+  readonly abilities: readonly {
+    readonly abilityId: string
+    readonly name: string
+    /** Veces que se usó. */
+    readonly used: number
+    /** Veces que se saltó, por motivo (`UNSUPPORTED_EFFECT`, `ON_COOLDOWN`...). */
+    readonly skipped: Readonly<Record<string, number>>
+  }[]
+  readonly basicAttacks: number
+  readonly fallbackAttacks: number
 }
 
 export interface MissionReport {
@@ -87,7 +121,12 @@ export interface MissionReport {
     readonly damageTaken: number | null
     readonly criticalEffects: number | null
     readonly skillsUsed: readonly { readonly abilityId: string; readonly count: number }[]
+    /** Vida que curaron las habilidades (P-J4). */
+    readonly healingDone?: number | null
+    /** Daño directo y reflejado de las habilidades (P-J4). */
+    readonly abilityDamage?: number | null
   }
+  readonly strategy?: MissionReportStrategy
   readonly enemies: {
     readonly defeated: readonly {
       readonly enemyRef: string
@@ -124,7 +163,8 @@ export interface MissionReport {
     readonly rarity: string | null
     readonly quantity: number
     readonly status: RewardStatus
-    readonly source: 'HU-10' | 'HU-73'
+    /** Quién escribió la línea: créditos (HU-10), épica (HU-73), experiencia (HU-09) o botín (HU-72). */
+    readonly source: 'HU-10' | 'HU-73' | 'HU-09' | 'HU-72'
   }[]
   readonly generatedAt: string
 }

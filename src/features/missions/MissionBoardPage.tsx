@@ -8,6 +8,8 @@ import { QueryState } from '@/components/ui/QueryState'
 import { useSession } from '@/shared/session'
 import { queryKeys } from '@/shared/query-keys'
 
+import { ActiveMissionsPanel } from './ActiveMissionsPanel'
+import { MissionArt } from './art/MissionArt'
 import { fetchMissionBoard, type MissionCategory, type PlayerMissionStatus } from './missionApi'
 import { categoryLabel, durationLabel, missionStatusLabel } from './missionPresentation'
 
@@ -46,6 +48,8 @@ export const MissionBoardPage = (): React.JSX.Element => {
           Ver mi historial
         </Link>
       </header>
+
+      <ActiveMissionsPanel />
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm text-ink">
@@ -101,6 +105,11 @@ export const MissionBoardPage = (): React.JSX.Element => {
           {items.map((mission) => (
             <li key={mission.missionId}>
               <Card title={mission.name} className="h-full">
+                <MissionArt
+                  imageRef={mission.imageRef}
+                  category={mission.category}
+                  className="mb-3 h-24 rounded-md"
+                />
                 <div className="flex flex-col gap-3 text-sm">
                   <p className="text-muted">{mission.summary}</p>
                   <p className="text-ink">
@@ -118,7 +127,12 @@ export const MissionBoardPage = (): React.JSX.Element => {
                   )}
                   {mission.lockReason !== null && <p className="text-ink">{mission.lockReason}</p>}
                   {mission.activeEnrollmentId !== null && (
-                    <p className="text-muted">Matrícula activa: {mission.activeEnrollmentId}</p>
+                    <Link
+                      to={`/missions/progress/${encodeURIComponent(mission.activeEnrollmentId)}`}
+                      className="w-fit font-medium text-brand underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+                    >
+                      Seguir la misión en curso
+                    </Link>
                   )}
                   <Link
                     to={`/missions/${encodeURIComponent(mission.missionId)}`}

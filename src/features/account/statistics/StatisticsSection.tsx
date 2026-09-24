@@ -42,7 +42,11 @@ export const StatisticsSection = ({ state }: StatisticsSectionProps = {}): React
         ? { status: 'loading' }
         : achievements.isError
           ? { status: 'error', message: achievements.error.message }
-          : { status: 'ready', items: toPlayerAchievements(achievements.data) }
+          : // Missions lista todo su catálogo, conseguido o no: vacío es que aún no hay
+            // logros definidos (diseño «misiones jugables», P-J3). No se promete nada.
+            achievements.data.items.length === 0
+            ? { status: 'pending' }
+            : { status: 'ready', items: toPlayerAchievements(achievements.data) }
 
   return (
     <section aria-labelledby="account-statistics-heading" className="space-y-5">

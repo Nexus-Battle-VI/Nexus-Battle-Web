@@ -78,8 +78,12 @@ describe('reporte de misión', () => {
 
     expect(await screen.findByRole('heading', { name: 'Reporte: El templo' })).toBeInTheDocument()
     expect(screen.getByText('Sin dato')).toBeInTheDocument()
-    expect(screen.getByText(/50 créditos × 50 · Pendiente de entrega/u)).toBeInTheDocument()
-    expect(screen.queryByText(/50 créditos × 50 · Entregada/u)).not.toBeInTheDocument()
+    expect(
+      screen.getByText(/Créditos: 50 créditos\s*·\s*Pendiente de entrega/u),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/50 créditos\s*·\s*Entregada/u)).not.toBeInTheDocument()
+    // P-J10: la cantidad de un crédito o una experiencia no se escribe como «× N».
+    expect(screen.queryByText(/× 50/u)).not.toBeInTheDocument()
   })
 })
 

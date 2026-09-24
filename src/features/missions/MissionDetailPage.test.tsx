@@ -66,6 +66,26 @@ describe('detalle y matrícula de misión', () => {
             jsonResponse(200, [{ heroId: HERO_ID, name: 'Heroína', abilities: [] }]),
           )
         }
+        if (url.includes('/estimate?')) {
+          return Promise.resolve(
+            jsonResponse(200, {
+              missionId: MISSION_ID,
+              heroId: HERO_ID,
+              difficulty: 'NORMAL',
+              strategyVersion: null,
+              runs: 30,
+              successPercent: 73,
+              defeatPercent: 20,
+              timeoutPercent: 7,
+              risk: 'MEDIUM',
+              riskLabel: 'Pareja',
+              averageTurns: 41,
+              averageMinHealthPercent: 36,
+              masterAppearancePercent: 0,
+              abilities: [],
+            }),
+          )
+        }
         if (url.includes('/strategies/')) {
           return Promise.resolve(
             jsonResponse(404, { code: 'STRATEGY_NOT_FOUND', message: 'Sin estrategia.' }),
@@ -110,6 +130,9 @@ describe('detalle y matrícula de misión', () => {
       await screen.findByText('Sin estrategia guardada: la IA usará ataque básico.'),
     ).toBeInTheDocument()
     await user.click(await screen.findByRole('radio', { name: 'Normal' }))
+    // P-J7: la probabilidad de éxito se ve antes de enviar al héroe.
+    expect(await screen.findByText('73 %')).toBeInTheDocument()
+    expect(screen.getByText('Pareja')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Iniciar misión' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('La reserva está pendiente')
@@ -124,7 +147,15 @@ describe('detalle y matrícula de misión', () => {
       { heroId: HERO_ID, difficulty: 'NORMAL', strategyVersion: null },
       { heroId: HERO_ID, difficulty: 'NORMAL', strategyVersion: null },
     ])
-    expect(await screen.findByRole('status')).toHaveTextContent('Matrícula enr_uno creada')
+    // P-J6 y P-J10: sin identificadores técnicos, con un acceso a seguir la misión.
+    expect(await screen.findByText('¡Misión iniciada!')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Seguir la misión' })).toHaveAttribute(
+      'href',
+      '/missions/progress/enr_uno',
+    )
+    expect(screen.queryByText(/enr_uno/u)).not.toBeInTheDocument()
+    // La hora con «a. m.» ya trae su punto: no se añade otro.
+    expect(screen.getByText(/^Termina el /u)).not.toHaveTextContent(/\.\.$/u)
     expect(screen.getByRole('button', { name: 'Iniciar misión' })).toBeDisabled()
   })
 })

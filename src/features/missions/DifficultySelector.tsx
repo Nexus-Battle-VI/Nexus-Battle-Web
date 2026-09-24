@@ -2,7 +2,12 @@ import { useId } from 'react'
 import clsx from 'clsx'
 
 import type { DifficultyLevel, MissionDifficulty } from './api'
-import { difficultyName, enemyScalingText, rewardTierText } from './difficultyPresentation'
+import {
+  compositionTexts,
+  difficultyName,
+  enemyScalingText,
+  rewardTierText,
+} from './difficultyPresentation'
 
 export interface DifficultySelectorProps {
   readonly items: readonly MissionDifficulty[]
@@ -116,6 +121,9 @@ const DifficultyOption = ({
       </span>
       <span id={detailId} className="flex flex-col gap-0.5 text-xs text-muted">
         <span>{enemyScalingText(item.enemyStatMultiplier)}</span>
+        {compositionTexts(item).map((text) => (
+          <span key={text}>{text}</span>
+        ))}
         <span>{rewardTierText(item.rewardTier)}</span>
         {item.lockReason !== null && <span className="text-ink">{item.lockReason}</span>}
       </span>
