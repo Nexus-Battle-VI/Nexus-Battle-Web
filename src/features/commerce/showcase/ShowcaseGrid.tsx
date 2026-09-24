@@ -17,6 +17,17 @@ export interface ShowcaseGridProps {
   readonly wishlistUnavailable?: boolean
 }
 
+/**
+ * Un producto no-premium o sin `realMoneyPrice` NUNCA es candidato de compra
+ * con dinero (ver "Elegibilidad de comercializacion premium" en
+ * `docs/contracts/ecommerce-integration-v1.md` de Infrastructure): no es un
+ * estado temporal como agotado o suspendido, es estructural. Mostrarlo como
+ * tarjeta deshabilitada "No disponible" llenaria la vitrina de productos que
+ * jamas se podran comprar aqui, asi que se omiten en vez de listarlos.
+ */
+const isPurchasable = (product: ShowcaseProduct): boolean =>
+  product.premium && product.realMoneyPrice !== null
+
 export const ShowcaseGrid = ({
   products,
   onAddToCart,
@@ -31,7 +42,7 @@ export const ShowcaseGrid = ({
   wishlistUnavailable = false,
 }: ShowcaseGridProps): React.JSX.Element => (
   <ul aria-label="Productos" className="commerce-product-grid">
-    {products.map((product) => {
+    {products.filter(isPurchasable).map((product) => {
       const wished = isWished?.(product.productId) ?? false
       const owned = isOwned?.(product.productId) ?? false
       // Un heroe no se puede poseer dos veces (Commerce lo rechaza igual del
@@ -42,20 +53,21 @@ export const ShowcaseGrid = ({
         cartCurrency !== null &&
         product.realMoneyPrice !== null &&
         product.realMoneyPrice.currency !== cartCurrency
-      const unavailable =
-        ownedUnique ||
-        !product.premium ||
-        product.realMoneyPrice === null ||
-        product.availableUnits === 0 ||
-        product.lifecycleStatus !== 'ACTIVE'
+      // Agotado o suspendido SI se muestran (deshabilitados): a diferencia de
+      // no-premium/sin precio, son estados temporales del propio producto
+      // comercializable, e informar "agotado" o "suspendido" es util para
+      // quien compra. Lo unico que se omite es lo que nunca fue comercializable.
+      const soldOut = product.availableUnits === 0
+      const suspended = product.lifecycleStatus !== 'ACTIVE'
+      const unavailable = ownedUnique || soldOut || suspended
       const reason = ownedUnique
         ? 'Ya tienes este héroe.'
         : otherCurrency
           ? `Tu carrito está en ${cartCurrency}. Vacíalo antes de elegir otra moneda.`
-          : !product.premium
-            ? 'La compra con dinero está disponible para productos premium.'
-            : unavailable
-              ? 'Este producto no está disponible para comprar.'
+          : suspended
+            ? 'Este producto está suspendido temporalmente.'
+            : soldOut
+              ? 'Este producto está agotado.'
               : undefined
       return (
         <li key={product.productId} className="min-h-0 min-w-0">
@@ -151,10 +163,10 @@ export const ShowcaseGrid = ({
                 ? 'Ya lo tienes'
                 : otherCurrency
                   ? 'Otra moneda'
-                  : product.availableUnits === 0
+                  : soldOut
                     ? 'Agotado'
-                    : unavailable
-                      ? 'No disponible'
+                    : suspended
+                      ? 'Suspendido'
                       : 'Añadir al carrito'}
             </Button>
             {reason !== undefined && (

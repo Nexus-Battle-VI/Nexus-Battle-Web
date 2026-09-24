@@ -1,3 +1,4 @@
+import { fullCredits } from '@/app/creditsFormat'
 import { formatMoney } from '@/lib/format'
 import type { ShowcaseProduct } from './api'
 
@@ -7,9 +8,7 @@ export const ProductPrice = ({
   readonly product: ShowcaseProduct
 }): React.JSX.Element => (
   <div className="flex flex-col gap-1 text-sm tabular-nums">
-    <p className="font-semibold text-ink">
-      {product.creditsPrice.toLocaleString('es-CO')} créditos
-    </p>
+    <p className="font-semibold text-ink">{fullCredits(product.creditsPrice)} créditos</p>
     {product.realMoneyPrice !== null && (
       <p className="font-semibold text-brand">
         {formatMoney(product.realMoneyPrice.amount, product.realMoneyPrice.currency)}{' '}

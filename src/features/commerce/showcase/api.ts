@@ -10,6 +10,29 @@ export const PRODUCT_TYPE_LABELS: Readonly<Record<ProductType, string>> = {
   ITEM: 'Ítem',
   EPICA: 'Épica',
 }
+
+/**
+ * Tipos que el dominio de E-commerce puede comercializar (PDF §7.2.2 +
+ * aclaracion del PO 2026-09-24; ver "Elegibilidad de comercializacion premium"
+ * en `docs/contracts/ecommerce-integration-v1.md` de Infrastructure). `ITEM` y
+ * `EPICA` siguen existiendo en Catalog/Player-Inventory/Missions -la epica se
+ * obtiene por Mision/Master, no por compra- pero nunca son candidatos de
+ * compra: la vitrina no debe ofrecerlos ni como filtro ni como tarjeta.
+ *
+ * La autoridad de esta regla es Commerce, no esta constante: aqui solo se usa
+ * para no listar dos tipos que el propio dominio del E-commerce nunca vende,
+ * con el campo `type` que Catalog ya entrega por producto.
+ */
+export const SHOWCASE_PRODUCT_TYPES = [
+  'HEROE',
+  'HABILIDAD',
+  'ARMA',
+  'ARMADURA',
+] as const satisfies readonly ProductType[]
+export type ShowcaseProductType = (typeof SHOWCASE_PRODUCT_TYPES)[number]
+const SHOWCASE_TYPE_SET = new Set<ProductType>(SHOWCASE_PRODUCT_TYPES)
+/** `true` si Catalog marca `type` como comercializable en la vitrina de E-commerce. */
+export const isShowcaseType = (type: ProductType): boolean => SHOWCASE_TYPE_SET.has(type)
 export type Currency = 'COP' | 'USD' | 'EUR'
 export interface ShowcaseMoney {
   readonly amount: number
@@ -105,7 +128,18 @@ export const fetchShowcase = async (query: string, signal?: AbortSignal): Promis
     items.push(...second.items.slice(0, SHOWCASE_PAGE_SIZE - firstCount))
   }
 
-  return { items, page, pageSize: SHOWCASE_PAGE_SIZE, total: first.total }
+  // Catalog solo admite un valor en `type` (confirmado por auditoria) y no
+  // filtra por `premium`, asi que no hay forma de pedirle de una sola vez "los
+  // 4 tipos comercializables": se excluyen aqui ITEM y EPICA, que el dominio
+  // del E-commerce nunca vende (ver `isShowcaseType`). `total`/`pageSize`
+  // siguen siendo los que reporta Catalog (incluyen ITEM/EPICA), asi que una
+  // pagina visible puede traer menos de `SHOWCASE_PAGE_SIZE` tarjetas cuando
+  // el lote traia productos no comercializables; no es una segunda fuente de
+  // verdad del precio/elegibilidad, solo evita listar tipos que este dominio
+  // nunca ofrece.
+  const visible = items.filter((item) => isShowcaseType(item.type))
+
+  return { items: visible, page, pageSize: SHOWCASE_PAGE_SIZE, total: first.total }
 }
 export const fetchProduct = (reference: string, signal?: AbortSignal): Promise<ShowcaseProduct> =>
   httpClient.get<ShowcaseProduct>(`/v1/catalog/products/${encodeURIComponent(reference)}`, signal)
