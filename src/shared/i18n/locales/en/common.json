@@ -22,5 +22,10 @@
     "turns_other": "{{value}} turns",
     "rooms_one": "{{value}} room",
     "rooms_other": "{{value}} rooms"
+  },
+  "hero3d": {
+    "loading": "Loading preview…",
+    "unavailable": "3D preview is not available in this environment.",
+    "unavailableFor": "Preview not available for \"{{id}}\"."
   }
 }

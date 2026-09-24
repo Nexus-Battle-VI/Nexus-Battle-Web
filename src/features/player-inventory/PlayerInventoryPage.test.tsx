@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
+import { setLanguage } from '@/shared/i18n/language'
 import { renderWithProviders } from '@/test/render'
 import { PlayerInventoryPage } from './PlayerInventoryPage'
 
@@ -61,6 +62,24 @@ const detail = (itemId: string, name: string) => ({
 /** Nadie ha preparado ningun heroe: `fetchHeroSelection` trata el 404 como `null`, no como error. */
 const NO_SELECTION = (): Response => jsonResponse({ message: 'Sin seleccion.' }, 404)
 
+const BASE_STATS = { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null }
+
+/** Heroe POSEIDO tal como lo devuelve `GET /inventories/me/heroes` (HU-07). */
+const ownedHero = (reference: string, name: string, subtype: string) => ({
+  heroId: `pid-${reference}`,
+  reference,
+  subtype,
+  name,
+  imageUrl: `https://assets.example.test/${reference}.png`,
+  lifecycleStatus: 'ACTIVE',
+  baseStats: BASE_STATS,
+  abilities: [],
+  selected: false,
+})
+
+const GUERRERO = ownedHero('guerrero-tanque', 'Guerrero Tanque', 'GUERRERO_TANQUE')
+const isHeroList = (url: string): boolean => url.endsWith('/inventories/me/heroes')
+
 describe('PlayerInventoryPage', () => {
   // Cada prueba de este archivo configura `fetchMock` pensando SOLO en el
   // inventario (HU-27/HU-28); ahora que la pantalla tambien consulta
@@ -69,9 +88,16 @@ describe('PlayerInventoryPage', () => {
   // inventario a esa respuesta. En vez de tocar cada prueba existente, el
   // `fetch` global intercepta esa URL con un 404 ("nada preparado todavia") y
   // delega el resto, sin cambiar, a `fetchMock`.
+  //
+  // Lo mismo con la lista de heroes propios (`GET /inventories/me/heroes`), que
+  // desde el rediseño alimenta el selector de heroes: responde `ownedHeroes`,
+  // que cada prueba puede fijar.
   const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>>()
+  let ownedHeroes: unknown[] = []
   const globalFetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     const url = urlOf(input)
+
+    if (isHeroList(url)) return Promise.resolve(jsonResponse(ownedHeroes))
 
     return url.includes('/heroes/selection')
       ? Promise.resolve(NO_SELECTION())
@@ -81,6 +107,7 @@ describe('PlayerInventoryPage', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', globalFetch)
     fetchMock.mockReset()
+    ownedHeroes = []
   })
 
   afterEach(() => {
@@ -129,7 +156,9 @@ describe('PlayerInventoryPage', () => {
     expect(
       await within(detailPanel).findByText('Ficha completa de Espada Larga'),
     ).toBeInTheDocument()
-    expect(within(detailPanel).getByText(/DAMAGE/u)).toBeInTheDocument()
+    // Los efectos se leen en palabras, no como codigos de Catalog.
+    expect(within(detailPanel).getByText('Daño 5 al rival')).toBeInTheDocument()
+    expect(within(detailPanel).queryByText(/DAMAGE|OPPONENT/u)).toBeNull()
     // Sin calificación ni comentarios: no pertenecen a Mi Inventario.
     expect(within(detailPanel).queryByText(/estrella|calificaci|comentario/iu)).toBeNull()
   })
@@ -227,14 +256,14 @@ describe('PlayerInventoryPage', () => {
     expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('page=2'))).toBe(true)
   })
 
-  it('sin héroes visibles, el configurador de HU-28 no ofrece equipar', async () => {
+  it('sin héroes propios, el configurador de HU-28 lo dice y no ofrece equipar', async () => {
     fetchMock.mockResolvedValue(jsonResponse(page([summary('espada-larga', 'Espada Larga')])))
 
     render()
     await screen.findByText('Espada Larga')
 
     expect(screen.getByRole('heading', { name: 'Configurar héroe' })).toBeInTheDocument()
-    expect(screen.getByText(/No tienes héroes en esta vista del inventario/u)).toBeInTheDocument()
+    expect(await screen.findByText(/Todavía no tienes héroes/u)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Equipar$/u })).toBeNull()
     // No hay auto-equip ni HU-29/épicas en la vista.
     expect(screen.queryByText(/batalla|épica|epic/iu)).toBeNull()
@@ -278,6 +307,7 @@ describe('PlayerInventoryPage', () => {
     }
 
     let equipped = false
+    ownedHeroes = [GUERRERO]
     fetchMock.mockImplementation((input, init) => {
       const url = urlOf(input)
       if (url.includes('/heroes/guerrero-tanque/equipment') && init?.method === 'PUT') {
@@ -303,7 +333,7 @@ describe('PlayerInventoryPage', () => {
     render()
     await screen.findByText('Espada de Fuego')
 
-    await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
     await user.click(screen.getByTestId('inventory-item-espada-de-fuego'))
 
@@ -357,6 +387,9 @@ describe('PlayerInventoryPage', () => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
 
+        if (isHeroList(url)) {
+          return Promise.resolve(jsonResponse([GUERRERO]))
+        }
         if (url.includes('/heroes/selection')) {
           return Promise.resolve(jsonResponse(selection))
         }
@@ -373,5 +406,87 @@ describe('PlayerInventoryPage', () => {
 
     expect(await screen.findByText('Héroe preparado:')).toBeInTheDocument()
     expect(screen.getByText('Guerrero Tanque ✓')).toBeInTheDocument()
+  })
+  /**
+   * Regresion del defecto del rediseño: antes los heroes del configurador se
+   * derivaban de la pagina VISIBLE del inventario, y desaparecian al filtrar,
+   * buscar o cambiar de pagina. Ahora salen de `GET /inventories/me/heroes`.
+   */
+  describe('el selector de heroes no depende del filtro, la busqueda ni la pagina', () => {
+    const onlyWeapons = () =>
+      Promise.resolve(jsonResponse(page([summary('espada-larga', 'Espada Larga', 'ARMA')])))
+
+    it('con el filtro Armas, el heroe propio sigue disponible', async () => {
+      const user = userEvent.setup()
+      ownedHeroes = [GUERRERO]
+      fetchMock.mockImplementation(onlyWeapons)
+
+      render()
+      await screen.findByText('Espada Larga')
+      await user.click(screen.getByRole('button', { name: 'Armas' }))
+
+      expect(
+        await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }),
+      ).toBeInTheDocument()
+    })
+
+    it('con una busqueda que no lo incluye, el heroe propio sigue disponible', async () => {
+      const user = userEvent.setup()
+      ownedHeroes = [GUERRERO]
+      fetchMock.mockImplementation(onlyWeapons)
+
+      render()
+      await screen.findByText('Espada Larga')
+      await user.type(screen.getByLabelText('Buscar por nombre'), 'espada')
+
+      await waitFor(() => {
+        expect(fetchMock.mock.calls.some(([input]) => urlOf(input).includes('q=espada'))).toBe(true)
+      })
+      expect(
+        screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }),
+      ).toBeInTheDocument()
+    })
+
+    it('en la pagina 2 del inventario, el heroe propio sigue disponible', async () => {
+      const user = userEvent.setup()
+      ownedHeroes = [GUERRERO]
+      fetchMock.mockImplementation((input) => {
+        const second = urlOf(input).includes('page=2')
+        return Promise.resolve(
+          jsonResponse(
+            page([summary(second ? 'objeto-2' : 'objeto-1', second ? 'Objeto 2' : 'Objeto 1')], {
+              page: second ? 2 : 1,
+              totalItems: 17,
+              totalPages: 2,
+            }),
+          ),
+        )
+      })
+
+      render()
+      await screen.findByText('Objeto 1')
+      await user.click(screen.getByRole('button', { name: 'Página 2' }))
+      await screen.findByText('Objeto 2')
+
+      expect(
+        screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }),
+      ).toBeInTheDocument()
+    })
+  })
+
+  it('traduce la pantalla al cambiar de idioma sin traducir los nombres de productos', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockResolvedValue(
+      jsonResponse(page([summary('daga-de-fuego', 'Daga de fuego', 'ARMA')])),
+    )
+    await setLanguage('fr')
+
+    render()
+
+    expect(await screen.findByRole('heading', { name: 'Mon inventaire' })).toBeInTheDocument()
+    // El nombre del producto es contenido de Catalog: no se traduce.
+    expect(await screen.findByText('Daga de fuego')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Armes' }))
+    expect(screen.getByRole('button', { name: 'Armes' })).toHaveAttribute('aria-pressed', 'true')
   })
 })

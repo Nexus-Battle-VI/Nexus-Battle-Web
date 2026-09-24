@@ -1,30 +1,42 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { QueryState } from '@/components/ui/QueryState'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { countLabel } from '@/shared/i18n/format'
+
 import type { ProductType } from './api'
 import type { EquipmentSlotId } from './equipment/api'
-import { HeroConfigurator, type OwnedHero } from './equipment/HeroConfigurator'
+import { HeroConfigurator } from './equipment/HeroConfigurator'
 import { SLOT_META_BY_ID } from './equipment/slots'
-import { useHeroSelection } from './useHeroSelection'
 import { InventoryGrid } from './InventoryGrid'
 import { InventoryPagination } from './InventoryPagination'
 import { InventoryToolbar } from './InventoryToolbar'
 import { ItemDetailPanel } from './ItemDetailPanel'
+import { typeLabel } from './typeLabels'
+import { useHeroSelection } from './useHeroSelection'
 import { effectiveSearch, useOwnedInventory } from './useOwnedInventory'
 
+/** Ancla de la ficha: en pantallas estrechas va debajo del listado. */
+const DETAIL_ANCHOR = 'inventory-item-detail'
+
 /**
- * "Mi Inventario" y "Configurar héroe" (HU-27 / HU-27.3 / HU-28).
+ * "Mi Inventario" (HU-27 / HU-27.3 / HU-28 / HU-07), en cuatro zonas:
  *
- * Consulta paginada (16), búsqueda por nombre desde 4 caracteres y filtro por
- * tipo. En la MISMA vista conviven el configurador de equipamiento del héroe, el
- * listado y la ficha de detalle, para minimizar el scroll. Elegir una ranura en
- * el configurador realza los productos compatibles del listado; con un producto
- * propio compatible seleccionado, "Equipar" ejecuta la operación en el backend,
- * que es la autoridad de las capacidades 2/6/2 y de la compatibilidad
- * ranura/tipo.
+ * ┌ A. Gestion del heroe ─┬ B. Gestor de equipamiento ──┐
+ * ├ C. Inventario ────────┴─────────────┬ D. Ficha ─────┤
+ *
+ * Solo cambia la COMPOSICION. Consulta paginada (16), busqueda desde 4
+ * caracteres y filtro por tipo; elegir una ranura realza los productos
+ * compatibles; con un producto compatible elegido, "Equipar" ejecuta la
+ * operacion en Player-Inventory, que sigue siendo la autoridad de las
+ * capacidades 2/6/2, la compatibilidad, las estadisticas y la preparacion.
+ *
+ * Escritorio: 2×2. Tablet: A|B y debajo inventario y ficha a ancho completo.
+ * Movil: A, B, C, D apilados, sin scroll interno.
  */
 export const PlayerInventoryPage = (): React.JSX.Element => {
+  const { t } = useTranslation()
   const selectionQuery = useHeroSelection()
   const preparedHeroName = selectionQuery.data?.configuration.hero.name ?? null
 
@@ -55,31 +67,22 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
   const items = data?.items ?? []
   const totalItems = data?.totalItems ?? 0
 
-  // Los héroes configurables son los productos de tipo HEROE visibles en esta
-  // vista del inventario. La pertenencia final la confirma el backend al
-  // consultar el equipamiento; aquí no se finge ninguna.
-  const ownedHeroes: OwnedHero[] = items
-    .filter((item) => item.product?.type === 'HEROE')
-    .map((item) => ({ reference: item.itemId, name: item.product?.name ?? item.itemId }))
-
   const highlightType =
     selectedSlot === null ? null : (SLOT_META_BY_ID.get(selectedSlot)?.productType ?? null)
-  const selectedProductType =
-    items.find((item) => item.itemId === selectedItemId)?.product?.type ?? null
+  const selectedItem = items.find((item) => item.itemId === selectedItemId)
+  const selectedProductType = selectedItem?.product?.type ?? null
+  const selectedProductName = selectedItem?.product?.name ?? null
 
   return (
-    <section aria-label="Mi Inventario" className="flex flex-col gap-4">
+    <section aria-label={t('inventory:page.title')} className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised p-5">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Mi Inventario</h1>
-          <p className="mt-1 text-sm text-muted">
-            Los objetos que posees y en qué cantidad. Selecciona uno para ver su ficha o para
-            equiparlo en un héroe.
-          </p>
+          <h1 className="text-xl font-semibold text-ink">{t('inventory:page.title')}</h1>
+          <p className="mt-1 text-sm text-muted">{t('inventory:page.description')}</p>
         </div>
         {preparedHeroName !== null && (
           <p className="shrink-0 text-sm font-medium text-ink">
-            Héroe preparado:{' '}
+            {t('inventory:page.prepared')}{' '}
             <span className="rounded-full bg-success/15 px-2 py-0.5 text-success">
               {preparedHeroName} ✓
             </span>
@@ -87,30 +90,46 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
         )}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_19rem] lg:items-start">
-        <div className="lg:sticky lg:top-4">
-          <HeroConfigurator
-            ownedHeroes={ownedHeroes}
-            selectedProductReference={selectedItemId}
-            selectedProductType={selectedProductType}
-            selectedSlot={selectedSlot}
-            onSelectSlot={setSelectedSlot}
-          />
-        </div>
+      {/* A | B */}
+      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <HeroConfigurator
+          selectedProductReference={selectedItemId}
+          selectedProductName={selectedProductName}
+          selectedProductType={selectedProductType}
+          selectedSlot={selectedSlot}
+          onSelectSlot={setSelectedSlot}
+        />
+      </div>
 
-        <div className="flex flex-col gap-3">
+      {/* C | D */}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <section
+          aria-label={t('inventory:catalog.label')}
+          className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
+        >
           <InventoryToolbar term={term} type={type} onTermChange={setTerm} onTypeChange={setType} />
 
-          <p role="status" className="text-xs text-muted">
-            {query.isFetching && !query.isLoading ? 'Actualizando… ' : ''}
-            {totalItems} objeto{totalItems === 1 ? '' : 's'}
-            {data !== undefined && data.totalPages > 1 && (
-              <>
-                {' '}
-                · página {data.page} de {data.totalPages}
-              </>
+          <p role="status" className="flex flex-wrap items-center gap-x-1 text-xs text-muted">
+            <span>
+              {query.isFetching && !query.isLoading ? t('inventory:catalog.updating') : ''}
+              {countLabel(t, 'inventory:catalog.count', totalItems)}
+              {data !== undefined &&
+                data.totalPages > 1 &&
+                t('inventory:catalog.pageOf', {
+                  page: String(data.page),
+                  total: String(data.totalPages),
+                })}
+              {highlightType !== null &&
+                t('inventory:catalog.highlighted', { type: typeLabel(highlightType) })}
+            </span>
+            {selectedItemId !== null && (
+              <a
+                href={`#${DETAIL_ANCHOR}`}
+                className="ml-auto inline-flex min-h-11 items-center rounded px-2 font-medium text-brand underline lg:hidden"
+              >
+                {t('inventory:catalog.viewDetail')}
+              </a>
             )}
-            {highlightType !== null && <> · compatibles con {highlightType} resaltados</>}
           </p>
 
           <QueryState
@@ -119,17 +138,20 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
             isEmpty={data !== undefined && items.length === 0}
             emptyMessage={
               searching || type !== null
-                ? 'Ningún objeto de tu inventario coincide con la búsqueda o el filtro.'
-                : 'Tu inventario está vacío.'
+                ? t('inventory:catalog.emptyFiltered')
+                : t('inventory:catalog.empty')
             }
           >
             <>
-              <InventoryGrid
-                items={items}
-                selectedItemId={selectedItemId}
-                highlightType={highlightType}
-                onSelect={setSelectedItemId}
-              />
+              {/* Scroll interno solo desde tablet: en movil, scroll normal de pagina. */}
+              <div className="md:max-h-[28rem] md:overflow-y-auto md:pr-1">
+                <InventoryGrid
+                  items={items}
+                  selectedItemId={selectedItemId}
+                  highlightType={highlightType}
+                  onSelect={setSelectedItemId}
+                />
+              </div>
 
               {data !== undefined && (
                 <InventoryPagination
@@ -140,10 +162,10 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
               )}
             </>
           </QueryState>
-        </div>
+        </section>
 
-        <div className="lg:sticky lg:top-4">
-          <ItemDetailPanel itemReference={selectedItemId} />
+        <div id={DETAIL_ANCHOR} className="min-w-0 scroll-mt-4 lg:sticky lg:top-4">
+          <ItemDetailPanel itemReference={selectedItemId} selectedSlot={selectedSlot} />
         </div>
       </div>
     </section>

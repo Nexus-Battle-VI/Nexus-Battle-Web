@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import type { OwnedInventoryItem } from './api'
 import { ProductThumb } from './ProductThumb'
@@ -26,45 +27,51 @@ export const InventoryGrid = ({
   selectedItemId,
   highlightType = null,
   onSelect,
-}: InventoryGridProps): React.JSX.Element => (
-  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-    {items.map((item) => {
-      const selected = item.itemId === selectedItemId
-      const name = item.product?.name ?? item.itemId
-      const compatible = highlightType === null || item.product?.type === highlightType
+}: InventoryGridProps): React.JSX.Element => {
+  const { t } = useTranslation()
 
-      return (
-        <li key={item.itemId}>
-          <button
-            type="button"
-            onClick={() => {
-              onSelect(item.itemId)
-            }}
-            aria-pressed={selected}
-            data-testid={`inventory-item-${item.itemId}`}
-            data-compatible={highlightType === null ? undefined : String(compatible)}
-            className={clsx(
-              'flex h-full w-full flex-col gap-2 rounded-lg border bg-surface-raised p-3 text-left transition-colors',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-              selected ? 'border-brand ring-1 ring-brand' : 'border-border hover:border-brand',
-              !compatible && 'opacity-40',
-            )}
-          >
-            <ProductThumb src={item.product?.imageUrl ?? null} alt={name} />
+  return (
+    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      {items.map((item) => {
+        const selected = item.itemId === selectedItemId
+        const name = item.product?.name ?? item.itemId
+        const compatible = highlightType === null || item.product?.type === highlightType
 
-            <div className="min-w-0">
-              <h3 className="truncate text-sm font-semibold text-ink" title={name}>
-                {name}
-              </h3>
-              <p className="mt-0.5 text-xs text-muted">
-                {item.product === null ? 'Producto no disponible' : typeLabel(item.product.type)}
-                {' · '}
-                <span className="tabular-nums">x{item.quantity}</span>
-              </p>
-            </div>
-          </button>
-        </li>
-      )
-    })}
-  </ul>
-)
+        return (
+          <li key={item.itemId}>
+            <button
+              type="button"
+              onClick={() => {
+                onSelect(item.itemId)
+              }}
+              aria-pressed={selected}
+              data-testid={`inventory-item-${item.itemId}`}
+              data-compatible={highlightType === null ? undefined : String(compatible)}
+              className={clsx(
+                'flex h-full w-full flex-col gap-2 rounded-lg border bg-surface-raised p-3 text-left transition-colors',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+                selected ? 'border-brand ring-1 ring-brand' : 'border-border hover:border-brand',
+                !compatible && 'opacity-40',
+              )}
+            >
+              <ProductThumb src={item.product?.imageUrl ?? null} alt={name} />
+
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-semibold text-ink" title={name}>
+                  {name}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted">
+                  {item.product === null
+                    ? t('inventory:catalog.unavailableProduct')
+                    : typeLabel(item.product.type)}
+                  {' · '}
+                  <span className="tabular-nums">x{item.quantity}</span>
+                </p>
+              </div>
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}

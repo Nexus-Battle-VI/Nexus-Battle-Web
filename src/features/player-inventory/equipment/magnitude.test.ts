@@ -39,7 +39,7 @@ describe('describeMagnitudeRange — traduccion para personas, sin tirar dados',
   })
 
   it('la unidad se puede cambiar (sanacion: por uso)', () => {
-    expect(describeMagnitudeRange({ mode: 'DICE', count: 1, sides: 6 }, 'por uso')).toBe(
+    expect(describeMagnitudeRange({ mode: 'DICE', count: 1, sides: 6 }, 'use')).toBe(
       '1 dado de 6 caras · Rango base: 1–6 por uso',
     )
   })

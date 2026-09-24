@@ -1,3 +1,8 @@
+import { i18n } from '@/shared/i18n/i18n'
+
+import type { Magnitude } from './equipment/api'
+import { describeEquipmentEffect } from './equipment/effectPresentation'
+
 /**
  * Lee el sobre de atributos canónicos de Catalog de forma defensiva.
  *
@@ -20,6 +25,21 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
 
 const asString = (value: unknown): string | null => (typeof value === 'string' ? value : null)
 
+const asMagnitude = (value: unknown): Magnitude | undefined => {
+  const record = asRecord(value)
+  const mode = asString(record?.mode)
+
+  return record !== null && (mode === 'FIXED' || mode === 'PERCENTAGE' || mode === 'DICE')
+    ? (record as unknown as Magnitude)
+    : undefined
+}
+
+/**
+ * Un efecto del producto EN PALABRAS («Daño 5 al rival»), con la misma
+ * presentacion que los efectos del equipamiento. Antes se mostraban los codigos
+ * crudos («DAMAGE · OPPONENT»). Solo describe lo que dice Catalog: si el dato es
+ * extraño (p. ej. daño a un aliado) se muestra tal cual, no se corrige aqui.
+ */
 const describeEffect = (raw: unknown): string | null => {
   const effect = asRecord(raw)
   if (effect === null) return null
@@ -27,11 +47,17 @@ const describeEffect = (raw: unknown): string | null => {
   const kind = asString(effect.kind)
   if (kind === null) return null
 
-  const target = asString(effect.target)
   const statistic = asString(effect.statistic)
   const operation = asString(effect.operation)
+  const magnitude = asMagnitude(effect.magnitude)
 
-  return [kind, statistic, operation, target].filter((part) => part !== null).join(' · ')
+  return describeEquipmentEffect({
+    kind,
+    target: asString(effect.target) ?? '',
+    ...(statistic === null ? {} : { statistic }),
+    ...(operation === null ? {} : { operation }),
+    ...(magnitude === undefined ? {} : { magnitude }),
+  })
 }
 
 export const summarizeAttributes = (attributes: unknown): AttributesSummary => {
@@ -54,7 +80,7 @@ export const summarizeAttributes = (attributes: unknown): AttributesSummary => {
     heroSubtype: asString(values?.heroSubtype) ?? asString(values?.compatibleHeroSubtype),
     compatibility:
       compatibilityScope === 'ALL_HEROES'
-        ? 'Todos los héroes'
+        ? i18n.t('inventory:detail.allHeroes')
         : compatibleSubtypes.length > 0
           ? compatibleSubtypes.join(', ')
           : null,

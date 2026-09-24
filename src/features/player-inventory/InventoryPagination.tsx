@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { visiblePages } from './paginationRange'
 
@@ -13,6 +14,8 @@ export const InventoryPagination = ({
   totalPages,
   onChange,
 }: InventoryPaginationProps): React.JSX.Element | null => {
+  const { t } = useTranslation()
+
   if (totalPages <= 1) {
     return null
   }
@@ -27,7 +30,7 @@ export const InventoryPagination = ({
 
   return (
     <nav
-      aria-label="Paginación del inventario"
+      aria-label={t('inventory:catalog.pagination')}
       className="flex flex-wrap items-center justify-center gap-1"
     >
       <button
@@ -36,8 +39,8 @@ export const InventoryPagination = ({
           go(page - 1)
         }}
         disabled={page === 1}
-        aria-label="Página anterior"
-        className="rounded-md border border-border px-2 py-1 text-sm text-ink transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        aria-label={t('inventory:catalog.previousPage')}
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-2 text-sm text-ink transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <span aria-hidden="true">‹</span>
       </button>
@@ -49,10 +52,10 @@ export const InventoryPagination = ({
           onClick={() => {
             go(target)
           }}
-          aria-label={`Página ${String(target)}`}
+          aria-label={t('inventory:catalog.goToPage', { page: String(target) })}
           aria-current={target === page ? 'page' : undefined}
           className={clsx(
-            'min-w-8 rounded-md border px-2 py-1 text-sm tabular-nums transition-colors',
+            'min-h-11 min-w-11 rounded-md border px-2 text-sm tabular-nums transition-colors',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
             target === page
               ? 'border-brand bg-brand text-brand-ink'
@@ -69,8 +72,8 @@ export const InventoryPagination = ({
           go(page + 1)
         }}
         disabled={page === totalPages}
-        aria-label="Página siguiente"
-        className="rounded-md border border-border px-2 py-1 text-sm text-ink transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        aria-label={t('inventory:catalog.nextPage')}
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border px-2 text-sm text-ink transition-colors hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <span aria-hidden="true">›</span>
       </button>
