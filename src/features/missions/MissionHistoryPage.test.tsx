@@ -33,6 +33,7 @@ describe('historial de misiones', () => {
               byCategory: [],
               bestTimes: [],
               epicCollection: [],
+              lootCollection: [],
               narrativeProgress: [],
             }),
           )

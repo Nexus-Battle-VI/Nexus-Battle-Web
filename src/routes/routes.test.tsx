@@ -29,6 +29,7 @@ describe('NAVIGATION', () => {
       '/ecommerce',
       '/play',
       '/missions',
+      '/admin/missions',
       '/tournament',
       '/inventory',
       // HU-07 (2026-09-22): "Mi Héroe" se retiro de la navegacion -se

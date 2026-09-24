@@ -116,6 +116,22 @@ const ReportContent = ({ report }: { readonly report: MissionReport }): React.JS
           </ul>
         )}
       </Card>
+
+      {report.loot !== undefined && (
+        <Card title="Botín del jefe">
+          {report.loot.length === 0 ? (
+            <p className="text-sm text-muted">No se obtuvo botín del jefe.</p>
+          ) : (
+            <ul className="flex flex-col gap-2 text-sm text-ink">
+              {report.loot.map((drop) => (
+                <li key={`${drop.label}-${drop.productId ?? 'sin-producto'}`}>
+                  {drop.label} × {drop.quantity}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
     </div>
   </>
 )
