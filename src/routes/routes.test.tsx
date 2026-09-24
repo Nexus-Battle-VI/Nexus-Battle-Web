@@ -312,8 +312,31 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     }
   })
 
-  /** HU-68 reemplaza el marcador de subastas por la lista de seguimiento real. */
-  it('/auction renderiza la lista de seguimiento', async () => {
+  /**
+   * HU-66.6: `/auction` paso de ser la lista de seguimiento (HU-68) al
+   * listado priorizado de subastas activas -el punto de entrada real que
+   * exige HU-62 (CA-01)-. La lista de seguimiento se movio a
+   * `/auction/watchlist` (ver el siguiente caso).
+   */
+  it('/auction renderiza el listado de subastas activas', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ items: [], page: 1, pageSize: 12, total: 0 }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+    renderRoute('/auction')
+
+    expect(await screen.findByRole('heading', { name: 'Subastas activas' })).toBeInTheDocument()
+    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
+
+  /** HU-68: la lista de seguimiento se movio de `/auction` a `/auction/watchlist`. */
+  it('/auction/watchlist renderiza la lista de seguimiento', async () => {
     useSession.setState(AUTHENTICATED_STATE)
     vi.stubGlobal(
       'fetch',
@@ -324,7 +347,7 @@ describe('Proteccion visual de rutas (HU-02)', () => {
         }),
       ),
     )
-    renderRoute('/auction')
+    renderRoute('/auction/watchlist')
 
     expect(
       await screen.findByRole('heading', { name: 'Subastas en seguimiento' }),
@@ -467,28 +490,6 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(
       screen.queryByRole('heading', { name: 'Publicar como Maestro de Juego' }),
     ).not.toBeInTheDocument()
-  })
-
-  /** HU-66.6: listado priorizado, ruta propia -no `/auction`, que ya es la watchlist de HU-68-. */
-  it('/auction/marketplace monta el listado priorizado', async () => {
-    useSession.setState(AUTHENTICATED_STATE)
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ items: [], page: 1, pageSize: 12, total: 0 }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
-      ),
-    )
-
-    try {
-      renderRoute('/auction/marketplace')
-
-      expect(await screen.findByRole('heading', { name: 'Subastas activas' })).toBeInTheDocument()
-    } finally {
-      vi.unstubAllGlobals()
-    }
   })
 
   /**

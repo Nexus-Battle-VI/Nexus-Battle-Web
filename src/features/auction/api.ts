@@ -134,6 +134,14 @@ export const followAuction = (auctionId: string): Promise<unknown> =>
 export const unfollowAuction = (auctionId: string): Promise<unknown> =>
   httpClient.delete(`/v1/auctions/watchlist/${encodeURIComponent(auctionId)}`)
 
+/** Traduce el rechazo de `followAuction` (HU-68), compartido entre las pantallas que ofrecen "Seguir". */
+export const describeFollowError = (error: unknown): string => {
+  if (error instanceof HttpError && error.status === 409) return 'Ya sigues esta subasta.'
+  if (error instanceof HttpError && (error.status === 404 || error.status === 422))
+    return 'La subasta no está disponible para seguimiento.'
+  return 'No se pudo seguir la subasta. Inténtalo de nuevo.'
+}
+
 export const publishOfficialAuction = (
   input: PublishOfficialAuctionInput,
   operationId: string,

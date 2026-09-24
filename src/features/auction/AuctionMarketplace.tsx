@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router'
 import { BadgeDollarSign, Coins } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
 import { formatMoney } from '@/lib/format'
+import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
+import { useSession } from '@/shared/session'
 import { listActiveAuctions, type ActiveAuction } from './api'
 
 const priceOf = (auction: ActiveAuction): string =>
@@ -50,12 +53,19 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
           </dd>
         </div>
       </dl>
+      <Link
+        to={`/auction/${auction.id}`}
+        className="mt-3 inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      >
+        Ver detalle
+      </Link>
     </article>
   )
 }
 
 export const AuctionMarketplace = (): React.JSX.Element => {
   const [page, setPage] = useState(1)
+  const roles = useSession((state) => state.roles)
   const query = useQuery({
     queryKey: queryKeys.auctions.activePage(page),
     queryFn: ({ signal }) => listActiveAuctions(page, signal),
@@ -64,13 +74,42 @@ export const AuctionMarketplace = (): React.JSX.Element => {
 
   return (
     <section aria-labelledby="active-auctions-title" className="mt-8 space-y-4">
-      <header>
-        <h2 id="active-auctions-title" className="text-xl font-semibold text-ink">
-          Subastas activas
-        </h2>
-        <p className="mt-1 text-sm text-muted">
-          Las publicaciones oficiales aparecen primero según el orden definido por Auction.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 id="active-auctions-title" className="text-xl font-semibold text-ink">
+            Subastas activas
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Las publicaciones oficiales aparecen primero según el orden definido por Auction.
+          </p>
+        </div>
+        {/*
+         * Enlaces contextuales, no un acceso nuevo en NAVIGATION (HU-02 fija
+         * esa lista aparte): quien ya esta viendo subastas es a quien mas le
+         * sirve moverse a su seguimiento o a publicar la suya.
+         */}
+        <nav aria-label="Otras vistas de subastas" className="flex flex-wrap gap-2">
+          <Link
+            to="/auction/watchlist"
+            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
+          >
+            Mis subastas seguidas
+          </Link>
+          <Link
+            to="/auction/publish"
+            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
+          >
+            Publicar mi subasta
+          </Link>
+          {canPublishOfficialAuctions(roles) && (
+            <Link
+              to="/auction/publish-official"
+              className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
+            >
+              Publicar producto oficial
+            </Link>
+          )}
+        </nav>
       </header>
       <QueryState
         isLoading={query.isLoading}
