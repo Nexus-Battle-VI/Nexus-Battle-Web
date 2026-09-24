@@ -55,6 +55,10 @@ export interface MissionDetail {
     readonly stats: Readonly<Record<string, number>>
   }
   readonly masterEncounter: {
+    /**
+     * Probabilidad de que aparezca un Máster en la misión, calculada por Missions
+     * (el PO fijó un 15 % por misión). 0 si la misión no tiene Máster.
+     */
     readonly probability: number
     readonly candidates: readonly {
       readonly name: string

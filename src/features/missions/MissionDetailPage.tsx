@@ -271,8 +271,9 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                   <div className="mt-3 text-sm text-ink">
                     <h3 className="font-medium">Posibles Máster</h3>
                     <p className="text-muted">
-                      Aparecen al azar, dos niveles por encima de tu héroe. Derrótalos para ganar su
-                      épica.
+                      Hay un {probabilityLabel(detail.masterEncounter.probability)} de probabilidad
+                      de que aparezca uno, dos niveles por encima de tu héroe. Derrótalo para ganar
+                      su épica.
                     </p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {detail.masterEncounter.candidates.map((candidate) => (

@@ -158,4 +158,58 @@ describe('detalle y matrícula de misión', () => {
     expect(screen.getByText(/^Termina el /u)).not.toHaveTextContent(/\.\.$/u)
     expect(screen.getByRole('button', { name: 'Iniciar misión' })).toBeDisabled()
   })
+
+  it('muestra la probabilidad de Máster de la misión que calcula Missions y la de cada uno', async () => {
+    signIn()
+    const epic = { name: 'Frío concentrado', generalEffect: null, epicEffect: null }
+    const withMasters: MissionDetail = {
+      ...detail,
+      // Decisión del PO: 15 % por misión, repartido entre dos candidatos.
+      masterEncounter: {
+        probability: 0.1499,
+        candidates: [
+          {
+            name: 'Hechicera del Sello',
+            heroType: 'MAGO_HIELO',
+            probabilityByHeroType: { '*': 0.078 },
+            epic,
+          },
+          {
+            name: 'Coloso de Obsidiana',
+            heroType: 'GUERRERO_TANQUE',
+            probabilityByHeroType: { '*': 0.078 },
+            epic: null,
+          },
+        ],
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        if (url.endsWith('/difficulties')) {
+          return Promise.resolve(jsonResponse(200, difficultiesWithoutProgress()))
+        }
+        if (url.endsWith('/inventories/me/heroes')) {
+          return Promise.resolve(jsonResponse(200, []))
+        }
+        return Promise.resolve(jsonResponse(200, withMasters))
+      }),
+    )
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/missions/:missionId" element={<MissionDetailPage />} />
+      </Routes>,
+      { route: `/missions/${MISSION_ID}` },
+    )
+
+    // Intl puede separar el signo con un espacio de no separación o no separarlo.
+    expect(
+      await screen.findByText(/^Hay un 15\s?% de probabilidad de que aparezca uno/u),
+    ).toBeInTheDocument()
+    expect(screen.getAllByText(/^7,8\s?% de aparecer$/u)).toHaveLength(2)
+    expect(screen.getByText('Su épica aún no se puede entregar.')).toBeInTheDocument()
+  })
 })

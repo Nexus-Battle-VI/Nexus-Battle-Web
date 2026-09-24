@@ -53,13 +53,11 @@ describe('lo que cambia cada dificultad (P-J8)', () => {
         extraEnemiesPerEncounter: 1,
         bossEnrageBonus: 2,
         lootBonusPercent: 50,
-        masterBonusPercent: 50,
       }),
     ).toEqual([
       '+1 enemigo en cada encuentro',
       'Jefe furioso: +2 de ataque',
       'Botín del jefe: +50 % de probabilidad',
-      'Máster: +50 % de probabilidad',
     ])
     expect(
       compositionTexts({ ...base, difficulty: 'MYTHIC', extraEnemiesPerEncounter: 2 }),
@@ -74,7 +72,6 @@ describe('lo que cambia cada dificultad (P-J8)', () => {
         extraEnemiesPerEncounter: 0,
         bossEnrageBonus: 0,
         lootBonusPercent: 0,
-        masterBonusPercent: 0,
       }),
     ).toEqual([])
     expect(compositionTexts({ ...base, difficulty: 'HEROIC' })).toEqual([])

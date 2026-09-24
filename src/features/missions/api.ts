@@ -26,7 +26,6 @@ export interface MissionDifficulty {
   readonly extraEnemiesPerEncounter?: number
   readonly bossEnrageBonus?: number
   readonly lootBonusPercent?: number
-  readonly masterBonusPercent?: number
 }
 
 export interface MissionDifficulties {
