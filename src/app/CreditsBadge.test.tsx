@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 
+import { setLanguage } from '@/shared/i18n/language'
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
 import type { WalletSnapshot } from '@/shared/wallet'
@@ -35,6 +36,30 @@ afterEach(() => {
 })
 
 describe('CreditsBadge', () => {
+  it('al cambiar de idioma, vuelve a formatear la MISMA cifra con el separador del nuevo idioma', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(wallet({ reserved: 0 }))))
+
+    renderWithProviders(<CreditsBadge />)
+    expect(
+      await screen.findByRole('img', { name: 'Créditos disponibles: 49.800.' }),
+    ).toBeInTheDocument()
+
+    await act(async () => {
+      await setLanguage('fr')
+    })
+
+    const badge = await screen.findByRole('img', { name: 'Crédits disponibles : 49 800.' })
+    expect(badge).toHaveTextContent(/49\s800/u)
+
+    await act(async () => {
+      await setLanguage('en')
+    })
+
+    expect(
+      await screen.findByRole('img', { name: 'Available credits: 49,800.' }),
+    ).toHaveTextContent('49,800')
+  })
+
   it('muestra los creditos DISPONIBLES que devuelve Wallet (no el saldo total)', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(wallet()))
     vi.stubGlobal('fetch', fetchMock)

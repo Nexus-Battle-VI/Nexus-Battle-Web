@@ -68,10 +68,13 @@ export const setLanguage = async (language: Language): Promise<void> => {
     return
   }
 
-  await i18n.changeLanguage(language)
+  // El store va PRIMERO: al cambiar i18next se vuelven a pintar los
+  // componentes, y los que formatean numeros o fechas leen el locale del store.
+  // Si fuera al reves, pintarian con el separador del idioma anterior.
+  useLanguage.setState({ language })
   reflectInDocument(language)
   persistLanguage(language)
-  useLanguage.setState({ language })
+  await i18n.changeLanguage(language)
 }
 
 /**
