@@ -85,6 +85,11 @@ if (import.meta.env.DEV) {
       default: module.ChatPanelDevPreview,
     })),
   )
+  const DifficultySelectorDevPreviewLazy = lazy(() =>
+    import('@/features/missions/dev/DifficultySelectorDevPreview').then((module) => ({
+      default: module.DifficultySelectorDevPreview,
+    })),
+  )
 
   const ImmediatePurchaseDevPreviewLazy = lazy(() =>
     import('@/features/auction/immediate-purchase/dev/ImmediatePurchaseDevPreview').then(
@@ -265,6 +270,17 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <ChatPanelDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // HU-75.3: el selector de dificultad se montara en el detalle y la matricula
+    // de una mision (HU-70.3), que aun no existen. El preview monta el componente
+    // de produccion con los fixtures del contrato, sin red. NO es evidencia E2E.
+    {
+      path: '__dev/hu75/dificultad',
+      element: (
+        <Suspense fallback={null}>
+          <DifficultySelectorDevPreviewLazy />
         </Suspense>
       ),
     },

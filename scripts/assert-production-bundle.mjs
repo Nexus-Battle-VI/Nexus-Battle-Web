@@ -40,6 +40,11 @@ const FORBIDDEN_MARKERS = [
   '__dev/hu13',
   'ChatPanelDevPreview',
   'ticket-de-vista-previa',
+  // Artefactos exclusivamente DEV del selector de dificultad (HU-75.3): la ruta
+  // `__dev/hu75/dificultad` y su preview con los fixtures del contrato. El
+  // componente `DifficultySelector` en si si puede llegar cuando HU-70.3 lo monte.
+  '__dev/hu75',
+  'DifficultySelectorDevPreview',
 ]
 
 /**

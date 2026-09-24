@@ -25,7 +25,8 @@ describe('devRoutes', () => {
     // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket, y
     // la tarjeta de compra inmediata (HU-64.1), el registro de puja (HU-63.8)
     // y la configuracion de puja automatica (HU-67.6) con datos de ejemplo,
-    // revisables en claro y oscuro sin depender de una subasta real.
+    // revisables en claro y oscuro sin depender de una subasta real, y el
+    // selector de dificultad (HU-75.3), que espera la matricula de HU-70.3.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/auction/immediate-purchase',
       '__dev/auction/bidding',
@@ -41,6 +42,7 @@ describe('devRoutes', () => {
       '__dev/hu11/poder',
       '__dev/hu17/battle',
       '__dev/hu13/chat',
+      '__dev/hu75/dificultad',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 

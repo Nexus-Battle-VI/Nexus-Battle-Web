@@ -3,7 +3,12 @@ import clsx from 'clsx'
 
 import { Card } from '@/components/ui/Card'
 import { Gamepad2, Swords, Trophy, TrendingUp } from '@/components/ui/icons'
-import type { PlayerAchievement, PlayerStatistics, StatisticsPanelState } from './types'
+import type {
+  AchievementsPanelState,
+  PlayerAchievement,
+  PlayerStatistics,
+  StatisticsPanelState,
+} from './types'
 
 /**
  * Panel de estadísticas y logros (HU-06.4) — COMPONENTE PRESENTACIONAL PURO.
@@ -21,6 +26,12 @@ import type { PlayerAchievement, PlayerStatistics, StatisticsPanelState } from '
 
 const CARD_SURFACE = 'rounded-lg border border-border bg-surface-raised p-5'
 const PENDING_HINT = 'text-xs text-muted'
+const RECOGNITION_STATUS = {
+  RECORDED: 'Registrado',
+  PENDING: 'Entrega pendiente',
+  CREDITED: 'Entregado',
+  FAILED: 'Entrega fallida',
+} as const
 
 /**
  * Microinteracción de profundidad (HU-06.4).
@@ -94,16 +105,27 @@ const AchievementItem = ({
       {achievement.description !== undefined && (
         <p className="text-xs text-muted">{achievement.description}</p>
       )}
+      {achievement.recognition !== undefined && (
+        <p className="text-xs text-muted">
+          Reconocimiento: {achievement.recognition.name} ·{' '}
+          {achievement.recognition.status === null
+            ? 'Estado no informado'
+            : RECOGNITION_STATUS[achievement.recognition.status]}
+        </p>
+      )}
+      {achievement.obtainedAt !== undefined && (
+        <p className="text-xs text-muted">
+          Obtenido el {new Date(achievement.obtainedAt).toLocaleDateString('es-CO')}
+        </p>
+      )}
     </div>
   </li>
 )
 
 const AchievementsBlock = ({
-  achievements,
-  pending,
+  state,
 }: {
-  readonly achievements: readonly PlayerAchievement[]
-  readonly pending: boolean
+  readonly state: AchievementsPanelState
 }): React.JSX.Element => (
   <section aria-labelledby="account-achievements-heading" className="space-y-3">
     <div className="flex items-center gap-2">
@@ -113,7 +135,7 @@ const AchievementsBlock = ({
       </h3>
     </div>
 
-    {pending ? (
+    {state.status === 'pending' ? (
       <Card>
         <p className="text-sm font-medium text-ink">Aún no disponible</p>
         <p className="mt-1 text-xs text-muted">
@@ -121,13 +143,25 @@ const AchievementsBlock = ({
           registra.
         </p>
       </Card>
-    ) : achievements.length === 0 ? (
+    ) : state.status === 'loading' ? (
+      <Card>
+        <p role="status" className="text-sm text-muted">
+          Cargando logros...
+        </p>
+      </Card>
+    ) : state.status === 'error' ? (
+      <Card>
+        <p role="alert" className="text-sm text-danger">
+          {state.message}
+        </p>
+      </Card>
+    ) : state.items.length === 0 ? (
       <Card>
         <p className="text-sm text-muted">Aún no tienes logros registrados.</p>
       </Card>
     ) : (
       <ul className="grid gap-3 sm:grid-cols-2">
-        {achievements.map((achievement) => (
+        {state.items.map((achievement) => (
           <AchievementItem key={achievement.id} achievement={achievement} />
         ))}
       </ul>
@@ -173,9 +207,13 @@ const StatsGrid = ({
 
 export interface StatisticsPanelProps {
   readonly state: StatisticsPanelState
+  readonly achievementsState?: AchievementsPanelState
 }
 
-export const StatisticsPanel = ({ state }: StatisticsPanelProps): React.JSX.Element => {
+export const StatisticsPanel = ({
+  state,
+  achievementsState,
+}: StatisticsPanelProps): React.JSX.Element => {
   if (state.status === 'loading') {
     return (
       <p role="status" className="text-sm">
@@ -198,11 +236,14 @@ export const StatisticsPanel = ({ state }: StatisticsPanelProps): React.JSX.Elem
   }
 
   const pending = state.status === 'pending'
+  const visibleAchievements: AchievementsPanelState =
+    achievementsState ??
+    (pending ? { status: 'pending' } : { status: 'ready', items: state.achievements })
 
   return (
     <div className="space-y-6">
       <StatsGrid statistics={pending ? null : state.statistics} pending={pending} />
-      <AchievementsBlock achievements={pending ? [] : state.achievements} pending={pending} />
+      <AchievementsBlock state={visibleAchievements} />
     </div>
   )
 }
