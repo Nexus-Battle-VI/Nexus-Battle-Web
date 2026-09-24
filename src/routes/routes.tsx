@@ -7,6 +7,7 @@ import { RequireSession } from '@/app/RequireSession'
 import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
 import { RequireModerator } from '@/app/RequireModerator'
+import { RequireGameMaster } from '@/app/RequireGameMaster'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
@@ -39,6 +40,8 @@ import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePa
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
+import { OfficialAuctionPublisher } from '@/features/auction/OfficialAuctionPublisher'
+import { AuctionMarketplace } from '@/features/auction/AuctionMarketplace'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
   ? await import('./dev-routes')
@@ -269,12 +272,30 @@ export const routes: RouteObject[] = [
       // (HU-62.5). Ruta propia -no `/auction`- para no competir con la lista
       // de seguimiento de HU-68, que ya ocupa ese nombre.
       { path: 'auction/publish', element: <PublishAuctionPage /> },
+      // Formulario del Maestro de Juego para publicar una subasta oficial en
+      // dinero real (HU-66.5/66.6). Ruta propia -no `auction/publish`- por la
+      // misma razon que Auction separa el endpoint de PLAYER del de
+      // GAME_MASTER (HU-66.5): mezclarlas arriesgaria abrir, sin darse
+      // cuenta, una via de escalamiento hacia dinero real.
+      {
+        path: 'auction/publish-official',
+        element: (
+          <RequireGameMaster>
+            <OfficialAuctionPublisher />
+          </RequireGameMaster>
+        ),
+      },
+      // Listado priorizado de subastas activas, oficiales y de jugador
+      // (HU-66.6). No entra en NAVIGATION todavia: HU-02 fija esa lista y
+      // agregar un acceso nuevo es una decision de producto aparte.
+      { path: 'auction/marketplace', element: <AuctionMarketplace /> },
       // Detalle de una subasta para quien la va a comprar (HU-64.1).
       { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
       // Productos ganados pendientes de reclamo (HU-69.7). Ruta estatica:
       // React Router la prioriza sobre 'auction/:auctionId' sin importar el
       // orden de declaracion, asi que 'pending-claims' nunca se interpreta
-      // como un auctionId. Lo mismo aplica a 'publish' arriba.
+      // como un auctionId. Lo mismo aplica a 'publish', 'publish-official' y
+      // 'marketplace' arriba.
       { path: 'auction/pending-claims', element: <PendingClaimsPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver

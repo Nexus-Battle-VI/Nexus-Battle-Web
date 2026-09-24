@@ -40,7 +40,8 @@
     "deniedTitle": "Accès refusé",
     "administrator": "Accès refusé. Seul un administrateur ou un super administrateur peut accéder à cette section d'administration. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403.",
     "moderator": "Accès refusé. Seul un modérateur, un administrateur ou un super administrateur peut accéder à la file de modération. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403.",
-    "superAdministrator": "Seul le super administrateur peut gérer les rôles. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403."
+    "superAdministrator": "Seul le super administrateur peut gérer les rôles. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403.",
+    "gameMaster": "Accès refusé. Seul le Maître de Jeu (UPB-COMPANY) peut publier des enchères officielles. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403."
   },
   "notFound": {
     "title": "Page introuvable",

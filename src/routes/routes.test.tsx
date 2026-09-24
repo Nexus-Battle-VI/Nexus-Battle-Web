@@ -447,6 +447,50 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     }
   })
 
+  /** HU-66.5/66.6: ruta propia del Maestro de Juego, separada de `/auction/publish`. */
+  it('/auction/publish-official monta el formulario para GAME_MASTER', async () => {
+    useSession.setState({ ...AUTHENTICATED_STATE, roles: ['GAME_MASTER'] })
+
+    renderRoute('/auction/publish-official')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Publicar como Maestro de Juego' }),
+    ).toBeInTheDocument()
+  })
+
+  it('/auction/publish-official deniega el acceso a un jugador', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+
+    renderRoute('/auction/publish-official')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Publicar como Maestro de Juego' }),
+    ).not.toBeInTheDocument()
+  })
+
+  /** HU-66.6: listado priorizado, ruta propia -no `/auction`, que ya es la watchlist de HU-68-. */
+  it('/auction/marketplace monta el listado priorizado', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ items: [], page: 1, pageSize: 12, total: 0 }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+
+    try {
+      renderRoute('/auction/marketplace')
+
+      expect(await screen.findByRole('heading', { name: 'Subastas activas' })).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   /**
    * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un
    * `fetch` real stubbeado (no un mock manual) porque la pantalla real hace

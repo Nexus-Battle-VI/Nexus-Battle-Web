@@ -21,6 +21,71 @@ export interface AuctionPublication {
   readonly closesAt: string
 }
 
+export interface PublishOfficialAuctionInput {
+  readonly productId: string
+  readonly durationHours: 24 | 48
+  readonly currency: string
+  readonly minimumBidAmountMinor: number
+  readonly buyNowAmountMinor?: number
+}
+
+export interface OfficialAuctionPublication {
+  readonly id: string
+  readonly publisherId: string
+  readonly publisherType: 'GAME_MASTER'
+  readonly productId: string
+  readonly durationHours: 24 | 48
+  readonly publicationFeeCredits: 0
+  readonly currency: string
+  readonly minimumBidAmountMinor: number
+  readonly buyNowAmountMinor: number | null
+  readonly mark: 'OFFICIAL' | 'PREMIUM'
+  readonly status: 'ACTIVE'
+  readonly publishedAt: string
+  readonly closesAt: string
+}
+
+interface ActiveAuctionBase {
+  readonly id: string
+  readonly sellerId: string
+  readonly productId: string
+  readonly status: 'ACTIVE'
+  readonly publishedAt: string
+  readonly closesAt: string
+  readonly currentBidAmount: number | null
+}
+
+export interface PlayerActiveAuction extends ActiveAuctionBase {
+  readonly publisherType: 'PLAYER'
+  readonly priceKind: 'CREDITS'
+  readonly minimumBidCredits: number
+  readonly buyNowCredits: number | null
+  readonly currency: null
+  readonly minimumBidAmountMinor: null
+  readonly buyNowAmountMinor: null
+  readonly officialMark: null
+}
+
+export interface OfficialActiveAuction extends ActiveAuctionBase {
+  readonly publisherType: 'GAME_MASTER'
+  readonly priceKind: 'REAL_MONEY'
+  readonly minimumBidCredits: null
+  readonly buyNowCredits: null
+  readonly currency: string
+  readonly minimumBidAmountMinor: number
+  readonly buyNowAmountMinor: number | null
+  readonly officialMark: 'OFFICIAL' | 'PREMIUM'
+}
+
+export type ActiveAuction = PlayerActiveAuction | OfficialActiveAuction
+
+export interface ActiveAuctionPage {
+  readonly items: readonly ActiveAuction[]
+  readonly page: number
+  readonly pageSize: number
+  readonly total: number
+}
+
 interface AuctionErrorBody {
   readonly code?: unknown
 }
@@ -36,6 +101,8 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   INSUFFICIENT_FUNDS: 'No tienes créditos suficientes para pagar la comisión seleccionada.',
   DEPENDENCY_UNAVAILABLE:
     'No pudimos verificar todos los datos. Conservamos el formulario para reintentar.',
+  PRODUCT_NOT_ELIGIBLE:
+    'Catalog indica que el producto no es exclusivo o no está disponible para publicación oficial.',
 }
 
 export const describeAuctionError = (error: unknown): string => {
@@ -66,3 +133,17 @@ export const followAuction = (auctionId: string): Promise<unknown> =>
 /** Elimina el seguimiento sin afectar la subasta ni sus pujas. */
 export const unfollowAuction = (auctionId: string): Promise<unknown> =>
   httpClient.delete(`/v1/auctions/watchlist/${encodeURIComponent(auctionId)}`)
+
+export const publishOfficialAuction = (
+  input: PublishOfficialAuctionInput,
+  operationId: string,
+): Promise<OfficialAuctionPublication> =>
+  httpClient.post<OfficialAuctionPublication>('/v1/official-auctions', input, {
+    'Idempotency-Key': operationId,
+  })
+
+export const listActiveAuctions = (
+  page: number,
+  signal?: AbortSignal,
+): Promise<ActiveAuctionPage> =>
+  httpClient.get<ActiveAuctionPage>(`/v1/auctions?page=${String(page)}&pageSize=12`, signal)
