@@ -28,8 +28,10 @@ describe('devRoutes', () => {
     // revisables en claro y oscuro sin depender de una subasta real, y los
     // productos ganados pendientes de reclamo (HU-69.7), que ademas de datos
     // de ejemplo falsea una sesion (necesita Auction real) y se monta dentro
-    // de `AppLayout` para revisar tambien el header (badge de pendientes).
+    // de `AppLayout` para revisar tambien el header (badge de pendientes), y
+    // la lista de seguimiento de subastas (HU-68) con Auction falseado.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
+      '__dev/hu68/watchlist',
       '__dev/auction/immediate-purchase',
       '__dev/auction/bidding',
       '__dev/auction/auto-bid',

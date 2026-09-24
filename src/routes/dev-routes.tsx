@@ -93,6 +93,11 @@ if (import.meta.env.DEV) {
       (module) => ({ default: module.ImmediatePurchaseDevPreview }),
     ),
   )
+  const AuctionWatchlistDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionWatchlistDevPreview').then((module) => ({
+      default: module.AuctionWatchlistDevPreview,
+    })),
+  )
   const BiddingDevPreviewLazy = lazy(() =>
     import('@/features/auction/bidding/dev/BiddingDevPreview').then((module) => ({
       default: module.BiddingDevPreview,
@@ -129,6 +134,15 @@ if (import.meta.env.DEV) {
   ]
 
   resolvedPublicDevRoutes = [
+    // HU-68: lista de seguimiento real con respuestas simuladas de Auction.
+    {
+      path: '__dev/hu68/watchlist',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionWatchlistDevPreviewLazy />
+        </Suspense>
+      ),
+    },
     // HU-64.1: la tarjeta de compra inmediata se monta con datos de ejemplo y sin
     // red, para revisar en claro y oscuro los estados de Figma antes de HU-64.6.
     {

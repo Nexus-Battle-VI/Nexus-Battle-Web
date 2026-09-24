@@ -100,6 +100,8 @@ export const queryKeys = {
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /** Lista privada del jugador autenticado (HU-68). */
+    watchlist: ['auction', 'watchlist'] as const,
     /**
      * Productos ganados pendientes de reclamo del titular autenticado
      * (HU-69.2/HU-69.7, `GET /v1/auctions/me/pending-claims`). Sin
