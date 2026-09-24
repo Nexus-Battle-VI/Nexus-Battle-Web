@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
 
 import { renderWithProviders } from '@/test/render'
+import { useSession } from '@/shared/session'
 import { AuctionMarketplace } from './AuctionMarketplace'
 
 const jsonResponse = (body: unknown, status = 200): Response =>
@@ -11,7 +12,10 @@ const jsonResponse = (body: unknown, status = 200): Response =>
   })
 
 describe('AuctionMarketplace HU-66.6', () => {
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    useSession.setState({ roles: [] })
+  })
 
   it('presenta el orden del backend, etiquetas textuales y dinero localizado', async () => {
     vi.stubGlobal(
@@ -72,6 +76,49 @@ describe('AuctionMarketplace HU-66.6', () => {
     expect(within(cards[0]!).getByText(/900/u)).toBeInTheDocument()
     expect(within(cards[1]!).getByText('10 créditos')).toBeInTheDocument()
     expect(screen.getByText(/publicaciones oficiales aparecen primero/u)).toBeInTheDocument()
+    expect(within(cards[1]!).getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
+      'href',
+      '/auction/player-1',
+    )
+  })
+
+  /**
+   * HU-66.6: el listado es el punto de entrada real; desde aqui hay que
+   * poder llegar a seguir subastas (HU-68) y a publicar la propia (HU-62.5)
+   * sin escribir ninguna URL a mano.
+   */
+  it('ofrece navegar a seguimiento y a publicar', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse({ items: [], page: 1, pageSize: 12, total: 0 }))),
+    )
+    renderWithProviders(<AuctionMarketplace />)
+
+    expect(await screen.findByRole('link', { name: 'Mis subastas seguidas' })).toHaveAttribute(
+      'href',
+      '/auction/watchlist',
+    )
+    expect(screen.getByRole('link', { name: 'Publicar mi subasta' })).toHaveAttribute(
+      'href',
+      '/auction/publish',
+    )
+    expect(
+      screen.queryByRole('link', { name: 'Publicar producto oficial' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('el Maestro de Juego ve ademas el acceso a publicar oficial', async () => {
+    useSession.setState({ roles: ['GAME_MASTER'] })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse({ items: [], page: 1, pageSize: 12, total: 0 }))),
+    )
+    renderWithProviders(<AuctionMarketplace />)
+
+    expect(await screen.findByRole('link', { name: 'Publicar producto oficial' })).toHaveAttribute(
+      'href',
+      '/auction/publish-official',
+    )
   })
 
   it('distingue los estados de carga, vacio y error', async () => {

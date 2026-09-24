@@ -265,12 +265,21 @@ export const routes: RouteObject[] = [
       // `/heroes` se conserva como redirect -no se borra la ruta de golpe-
       // por si un enlace externo o guardado sigue apuntando ahi.
       { path: 'heroes', element: <Navigate to="/inventory" replace /> },
+      // Listado priorizado de subastas activas, oficiales y de jugador
+      // (HU-66.6). Vive en la ruta principal del modulo -no en
+      // `auction/marketplace`- porque es el punto de entrada real: HU-62
+      // (CA-01) exige que una subasta publicada "quede visible en el
+      // listado", y el acceso "Subasta" de NAVIGATION debe llevar a algo
+      // navegable, no a la lista privada de quien ya sigue subastas.
+      { path: 'auction', element: <AuctionMarketplace /> },
       // Lista privada de subastas en seguimiento del jugador autenticado
-      // (HU-68).
-      { path: 'auction', element: <AuctionPage /> },
+      // (HU-68). Se movio de `/auction` a `/auction/watchlist` (2026-09-24):
+      // esa ruta la ocupa ahora el listado de arriba, que se construyo
+      // despues y por eso no pudo reclamarla desde el principio.
+      { path: 'auction/watchlist', element: <AuctionPage /> },
       // Formulario del vendedor para publicar un producto propio en subasta
-      // (HU-62.5). Ruta propia -no `/auction`- para no competir con la lista
-      // de seguimiento de HU-68, que ya ocupa ese nombre.
+      // (HU-62.5). Ruta propia -no `/auction`- para no competir con el
+      // listado de arriba.
       { path: 'auction/publish', element: <PublishAuctionPage /> },
       // Formulario del Maestro de Juego para publicar una subasta oficial en
       // dinero real (HU-66.5/66.6). Ruta propia -no `auction/publish`- por la
@@ -285,17 +294,13 @@ export const routes: RouteObject[] = [
           </RequireGameMaster>
         ),
       },
-      // Listado priorizado de subastas activas, oficiales y de jugador
-      // (HU-66.6). No entra en NAVIGATION todavia: HU-02 fija esa lista y
-      // agregar un acceso nuevo es una decision de producto aparte.
-      { path: 'auction/marketplace', element: <AuctionMarketplace /> },
       // Detalle de una subasta para quien la va a comprar (HU-64.1).
       { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
       // Productos ganados pendientes de reclamo (HU-69.7). Ruta estatica:
       // React Router la prioriza sobre 'auction/:auctionId' sin importar el
       // orden de declaracion, asi que 'pending-claims' nunca se interpreta
-      // como un auctionId. Lo mismo aplica a 'publish', 'publish-official' y
-      // 'marketplace' arriba.
+      // como un auctionId. Lo mismo aplica a 'watchlist', 'publish' y
+      // 'publish-official' arriba.
       { path: 'auction/pending-claims', element: <PendingClaimsPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
