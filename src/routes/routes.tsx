@@ -19,6 +19,7 @@ import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventory
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
+import { PendingClaimsPage } from '@/features/auction/pending-claims/PendingClaimsPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -246,6 +247,11 @@ export const routes: RouteObject[] = [
       // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta hija no
       // depende de esa fusion.
       { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
+      // Productos ganados pendientes de reclamo (HU-69.7). Ruta estatica:
+      // React Router la prioriza sobre 'auction/:auctionId' sin importar el
+      // orden de declaracion, asi que 'pending-claims' nunca se interpreta
+      // como un auctionId.
+      { path: 'auction/pending-claims', element: <PendingClaimsPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.
