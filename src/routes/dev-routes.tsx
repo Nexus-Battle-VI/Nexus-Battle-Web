@@ -273,9 +273,9 @@ if (import.meta.env.DEV) {
         </Suspense>
       ),
     },
-    // HU-75.3: el selector de dificultad se montara en el detalle y la matricula
-    // de una mision (HU-70.3), que aun no existen. El preview monta el componente
-    // de produccion con los fixtures del contrato, sin red. NO es evidencia E2E.
+    // HU-75.3: el selector de dificultad se usa en el detalle y la matricula
+    // de HU-70.3. El preview monta el mismo componente con fixtures del contrato,
+    // sin red ni sesion. NO es evidencia E2E.
     {
       path: '__dev/hu75/dificultad',
       element: (
