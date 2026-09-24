@@ -176,6 +176,68 @@ describe('Un heroe ya adquirido no se puede volver a comprar', () => {
   })
 })
 
+describe('Productos que nunca son candidatos de compra con dinero se omiten', () => {
+  /**
+   * No-premium o sin `realMoneyPrice` es un estado ESTRUCTURAL (ver
+   * "Elegibilidad de comercializacion premium" en
+   * ecommerce-integration-v1.md): la tarjeta no se pinta como "No disponible",
+   * directamente no ocupa espacio en la vitrina.
+   */
+  it('omite un producto no premium en vez de mostrarlo deshabilitado', () => {
+    const noPremium = product('sin-premium', 'Escudo de madera')
+    renderGrid({ products: [...PRODUCTS, { ...noPremium, premium: false }] })
+
+    expect(screen.queryByTestId('product-sin-premium')).not.toBeInTheDocument()
+    expect(screen.getByTestId('product-espada-de-hierro')).toBeInTheDocument()
+  })
+
+  it('omite un producto premium sin realMoneyPrice en vez de mostrarlo deshabilitado', () => {
+    const sinPrecio = product('sin-precio', 'Yelmo antiguo')
+    renderGrid({ products: [...PRODUCTS, { ...sinPrecio, premium: true, realMoneyPrice: null }] })
+
+    expect(screen.queryByTestId('product-sin-precio')).not.toBeInTheDocument()
+  })
+})
+
+describe('Agotado y suspendido son informativos: se muestran deshabilitados, no se omiten', () => {
+  /**
+   * A diferencia de no-premium/sin precio, agotado y suspendido son estados
+   * TEMPORALES del propio producto comercializable: ocultarlos le quitaria al
+   * comprador informacion legitimamente util (p. ej. que vuelva mas tarde).
+   */
+  it('muestra "Agotado" deshabilitado cuando availableUnits es 0', () => {
+    const agotado = product('agotado', 'Arco corto agotado')
+    renderGrid({ products: [{ ...agotado, availableUnits: 0 }] })
+
+    const card = screen.getByTestId('product-agotado')
+    expect(card).toBeInTheDocument()
+    const button = within(card).getByRole('button', {
+      name: 'Anadir Arco corto agotado al carrito',
+    })
+    expect(button).toBeDisabled()
+    expect(button).toHaveTextContent('Agotado')
+  })
+
+  it('muestra "Suspendido" deshabilitado cuando lifecycleStatus no es ACTIVE', () => {
+    const suspendido = product('suspendido', 'Arma suspendida')
+    renderGrid({ products: [{ ...suspendido, lifecycleStatus: 'SUSPENDED' }] })
+
+    const card = screen.getByTestId('product-suspendido')
+    expect(card).toBeInTheDocument()
+    const button = within(card).getByRole('button', { name: 'Anadir Arma suspendida al carrito' })
+    expect(button).toBeDisabled()
+    expect(button).toHaveTextContent('Suspendido')
+  })
+
+  it('un producto comercializable, disponible y activo se muestra habilitado', () => {
+    renderGrid()
+
+    const button = screen.getByRole('button', { name: 'Anadir Espada de hierro al carrito' })
+    expect(button).toBeEnabled()
+    expect(button).toHaveTextContent('Añadir al carrito')
+  })
+})
+
 describe('La vitrina funciona sin lista de deseos', () => {
   /** Si no se pasan las props de HU-56, la tarjeta no inventa marcadores. */
   it('no muestra corazon ni marcas', () => {
