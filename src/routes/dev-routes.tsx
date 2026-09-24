@@ -2,8 +2,6 @@ import { lazy, Suspense } from 'react'
 import { Navigate } from 'react-router'
 import type { RouteObject } from 'react-router'
 
-import { AppLayout } from '@/app/AppLayout'
-
 /**
  * Harnesses de verificacion tecnica, no pantallas del producto (ver
  * `src/shared/visual-library/heroes/HeroesDevPreview.tsx` para EN-026.3 y
@@ -118,6 +116,13 @@ if (import.meta.env.DEV) {
       default: module.PendingClaimsDevPreview,
     })),
   )
+  // Perezoso a proposito: `AppLayout` importa `@/routes/routes`, y `routes.tsx`
+  // espera este modulo con `await` de nivel superior. Una importacion estatica
+  // cierra el ciclo y el navegador deja la aplicacion en blanco con `npm run dev`
+  // (Vitest no lo reproduce: su cargador tolera el ciclo).
+  const AppLayoutLazy = lazy(() =>
+    import('@/app/AppLayout').then((module) => ({ default: module.AppLayout })),
+  )
 
   resolvedDevRoutes = [
     {
@@ -185,7 +190,11 @@ if (import.meta.env.DEV) {
     // real dentro del shell autenticado, no solo el contenido aislado.
     {
       path: '__dev/auction/pending-claims',
-      element: <AppLayout />,
+      element: (
+        <Suspense fallback={null}>
+          <AppLayoutLazy />
+        </Suspense>
+      ),
       children: [
         {
           index: true,
