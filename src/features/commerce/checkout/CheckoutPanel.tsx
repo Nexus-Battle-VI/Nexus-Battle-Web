@@ -1,8 +1,17 @@
-import { useId, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { CreditCard, ShoppingBag } from 'lucide-react'
 
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
+import {
+  caretPositionForDigitCount,
+  digitsBeforeCursor,
+  formatCardNumber,
+  formatExpiry,
+  sanitizeCardNumber,
+  sanitizeExpiryDigits,
+  sanitizeSecurityCode,
+} from './cardMask'
 import type { CheckoutSummary, PaymentResult } from './api'
 import {
   EMPTY_CARD,
@@ -56,8 +65,80 @@ export const CheckoutPanel = ({
   const [card, setCard] = useState<CardForm>(EMPTY_CARD)
   const [touched, setTouched] = useState(false)
 
+  // Mascara de numero y vencimiento: el DOM controla su propio cursor, pero al
+  // reformatear (insertar/quitar espacios o la barra) React reemplaza el
+  // `value` y el navegador lo manda al final del texto. Estas referencias
+  // guardan, calculada en el `onChange`, la posicion que le corresponde al
+  // cursor en el texto YA reformateado; el efecto la aplica tras el commit,
+  // antes de pintar, para que escribir o borrar en medio del numero no lo
+  // empuje al final.
+  const numberInputRef = useRef<HTMLInputElement | null>(null)
+  const expiryInputRef = useRef<HTMLInputElement | null>(null)
+  const numberCaretRef = useRef<number | null>(null)
+  const expiryCaretRef = useRef<number | null>(null)
+
+  useLayoutEffect(() => {
+    if (numberCaretRef.current !== null && numberInputRef.current !== null) {
+      const position = numberCaretRef.current
+      numberInputRef.current.setSelectionRange(position, position)
+      numberCaretRef.current = null
+    }
+  }, [card.number])
+
+  useLayoutEffect(() => {
+    if (expiryCaretRef.current !== null && expiryInputRef.current !== null) {
+      const position = expiryCaretRef.current
+      expiryInputRef.current.setSelectionRange(position, position)
+      expiryCaretRef.current = null
+    }
+  }, [card.expiry])
+
   const errors: CardErrors = validateCard(card)
   const hasErrors = Object.keys(errors).length > 0
+
+  /**
+   * `card.number` guarda siempre el PAN CANONICO (solo digitos, sin los
+   * espacios de agrupacion): es lo que ve `validateCard` y lo que
+   * `checkout/api.ts` envia al backend. Lo que se ve en el campo -agrupado en
+   * bloques de 4- se calcula solo para mostrarlo, nunca se guarda asi.
+   * `card.expiry` en cambio SI guarda el texto ya formateado ("MM/AA"): asi
+   * viajaba antes de esta correccion y sigue siendo lo que se envia.
+   */
+  const displayValue = (field: CardField): string =>
+    field === 'number' ? formatCardNumber(card.number) : card[field]
+
+  const handleFieldChange =
+    (field: CardField) =>
+    (event: React.ChangeEvent<HTMLInputElement>): void => {
+      const input = event.target
+      const raw = input.value
+      const cursor = input.selectionStart ?? raw.length
+
+      if (field === 'number') {
+        const canonical = sanitizeCardNumber(raw)
+        const formatted = formatCardNumber(canonical)
+        const caretDigits = Math.min(digitsBeforeCursor(raw, cursor), canonical.length)
+        numberCaretRef.current = caretPositionForDigitCount(formatted, caretDigits)
+        setCard({ ...card, number: canonical })
+        return
+      }
+
+      if (field === 'expiry') {
+        const digits = sanitizeExpiryDigits(raw)
+        const formatted = formatExpiry(digits)
+        const caretDigits = Math.min(digitsBeforeCursor(raw, cursor), digits.length)
+        expiryCaretRef.current = caretPositionForDigitCount(formatted, caretDigits)
+        setCard({ ...card, expiry: formatted })
+        return
+      }
+
+      if (field === 'securityCode') {
+        setCard({ ...card, securityCode: sanitizeSecurityCode(raw) })
+        return
+      }
+
+      setCard({ ...card, holder: raw })
+    }
 
   if (processing) {
     return (
@@ -219,7 +300,7 @@ export const CheckoutPanel = ({
                 <input
                   type="text"
                   inputMode={field === 'holder' ? 'text' : 'numeric'}
-                  value={card[field]}
+                  value={displayValue(field)}
                   placeholder={placeholder}
                   // Sin autocompletado: esta pasarela es academica y no cobra
                   // nada. Invitar al navegador a rellenar una tarjeta real seria
@@ -232,9 +313,10 @@ export const CheckoutPanel = ({
                       ? `${headingId}-error-${field}`
                       : undefined
                   }
-                  onChange={(event) => {
-                    setCard({ ...card, [field]: event.target.value })
-                  }}
+                  onChange={handleFieldChange(field)}
+                  ref={
+                    field === 'number' ? numberInputRef : field === 'expiry' ? expiryInputRef : undefined
+                  }
                   className="w-full min-w-0 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 />
               </label>

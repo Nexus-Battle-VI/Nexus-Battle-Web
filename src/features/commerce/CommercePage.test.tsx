@@ -151,9 +151,12 @@ describe('Recorrido de interfaz con contratos HTTP', () => {
     expect(await screen.findByTestId('resumen-total')).toHaveTextContent('300,00')
     expect(screen.queryByRole('dialog', { name: 'Tu carrito' })).not.toBeInTheDocument()
     await userEvent.type(screen.getByLabelText('Nombre del titular'), 'A')
-    await userEvent.type(screen.getByLabelText('Numero de tarjeta'), 'tarjeta-test')
-    await userEvent.type(screen.getByLabelText('Vencimiento'), 'prueba')
-    await userEvent.type(screen.getByLabelText('Codigo de seguridad'), 'x')
+    // El numero, el vencimiento y el CVV solo aceptan digitos (mascara de
+    // entrada de esta correccion): a diferencia de `validateCard`, que sigue
+    // sin exigir formato bancario, el campo en si ya no deja escribir letras.
+    await userEvent.type(screen.getByLabelText('Numero de tarjeta'), '4111111111111111')
+    await userEvent.type(screen.getByLabelText('Vencimiento'), '1230')
+    await userEvent.type(screen.getByLabelText('Codigo de seguridad'), '123')
     await userEvent.click(screen.getByRole('button', { name: 'Confirmar pago' }))
     expect(await screen.findByRole('heading', { name: 'Compra completada' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Seguir comprando' }))
@@ -181,11 +184,13 @@ describe('Recorrido de interfaz con contratos HTTP', () => {
       ([url, init]) => url.endsWith('/payment') && init.method === 'POST',
     )
     expect(payments).toHaveLength(1)
+    // El PAN canonico (sin los espacios de agrupacion de la mascara) es lo
+    // que efectivamente viaja al backend.
     expect(JSON.parse(payments[0]![1].body as string)).toEqual({
       holder: 'A',
-      number: 'tarjeta-test',
-      expiry: 'prueba',
-      securityCode: 'x',
+      number: '4111111111111111',
+      expiry: '12/30',
+      securityCode: '123',
       expectedVersion: 2,
     })
   })

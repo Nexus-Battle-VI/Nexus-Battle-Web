@@ -250,6 +250,93 @@ describe('Formulario de pago simulado', () => {
   })
 })
 
+describe('Mascara de numero, vencimiento y codigo de seguridad', () => {
+  /** El numero se ve agrupado en bloques de 4, para leerlo mejor. */
+  it('agrupa el numero de tarjeta en bloques de 4 al escribirlo', async () => {
+    renderPanel()
+
+    await userEvent.type(screen.getByLabelText('Numero de tarjeta'), '4111111111111111')
+
+    expect(screen.getByLabelText('Numero de tarjeta')).toHaveValue('4111 1111 1111 1111')
+  })
+
+  /** Lo que se ve (con espacios) no es lo que se envia (el PAN canonico). */
+  it('envia el numero sin los espacios de agrupacion', async () => {
+    const onPay = vi.fn()
+    renderPanel({ onPay })
+
+    await userEvent.type(screen.getByLabelText('Numero de tarjeta'), '4111111111111111')
+    await userEvent.type(screen.getByLabelText('Nombre del titular'), 'Ana Gomez')
+    await userEvent.type(screen.getByLabelText('Vencimiento'), '1230')
+    await userEvent.type(screen.getByLabelText('Codigo de seguridad'), '123')
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar pago' }))
+
+    expect(onPay).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ number: '4111111111111111' }),
+    )
+  })
+
+  /** Pegar el numero ya agrupado (con espacios) tambien produce el PAN canonico. */
+  it('normaliza un numero pegado con espacios', async () => {
+    renderPanel()
+
+    // userEvent.type tambien dispara onChange para los espacios: sirve para
+    // comprobar que el resultado normaliza igual que un pegado con espacios.
+    await userEvent.type(screen.getByLabelText('Numero de tarjeta'), '4111 1111 1111 1111')
+
+    expect(screen.getByLabelText('Numero de tarjeta')).toHaveValue('4111 1111 1111 1111')
+  })
+
+  it('no admite letras en el numero de tarjeta', async () => {
+    renderPanel()
+
+    await userEvent.type(screen.getByLabelText('Numero de tarjeta'), 'abc4111cde')
+
+    expect(screen.getByLabelText('Numero de tarjeta')).toHaveValue('4111')
+  })
+
+  it('recorta el numero de tarjeta a 16 digitos canonicos', async () => {
+    renderPanel()
+
+    await userEvent.type(screen.getByLabelText('Numero de tarjeta'), '41111111111111119999')
+
+    expect(screen.getByLabelText('Numero de tarjeta')).toHaveValue('4111 1111 1111 1111')
+  })
+
+  /** El vencimiento se ve MM/AA: la barra se inserta sola tras el mes. */
+  it('inserta la barra del vencimiento automaticamente', async () => {
+    renderPanel()
+
+    await userEvent.type(screen.getByLabelText('Vencimiento'), '1230')
+
+    expect(screen.getByLabelText('Vencimiento')).toHaveValue('12/30')
+  })
+
+  it('no admite letras en el vencimiento', async () => {
+    renderPanel()
+
+    await userEvent.type(screen.getByLabelText('Vencimiento'), 'ab12cd30')
+
+    expect(screen.getByLabelText('Vencimiento')).toHaveValue('12/30')
+  })
+
+  it('no admite letras en el codigo de seguridad y lo recorta a 4 digitos', async () => {
+    renderPanel()
+
+    await userEvent.type(screen.getByLabelText('Codigo de seguridad'), 'a1b2c3d4e5')
+
+    expect(screen.getByLabelText('Codigo de seguridad')).toHaveValue('1234')
+  })
+
+  it('el nombre del titular sigue siendo texto libre, sin mascara', async () => {
+    renderPanel()
+
+    await userEvent.type(screen.getByLabelText('Nombre del titular'), 'Ana 123 Gómez')
+
+    expect(screen.getByLabelText('Nombre del titular')).toHaveValue('Ana 123 Gómez')
+  })
+})
+
 describe('Compra completada (CA-01, CA-03)', () => {
   it('muestra la referencia, el total y los cuatro ultimos digitos', () => {
     renderPanel({ result: RESULT })
