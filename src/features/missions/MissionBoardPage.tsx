@@ -39,6 +39,12 @@ export const MissionBoardPage = (): React.JSX.Element => {
         <p className="text-sm text-muted">
           Elige una misión y revisa sus objetivos antes de iniciar.
         </p>
+        <Link
+          to="/missions/history"
+          className="mt-2 inline-block text-sm text-brand hover:underline"
+        >
+          Ver mi historial
+        </Link>
       </header>
 
       <div className="flex flex-wrap items-end gap-3">
