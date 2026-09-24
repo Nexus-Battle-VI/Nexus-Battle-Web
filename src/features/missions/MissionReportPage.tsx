@@ -3,12 +3,17 @@ import { Link, useParams } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
+import { formatDateTime } from '@/lib/format'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 
 import { difficultyName } from './difficultyPresentation'
 import { categoryLabel, durationLabel, rewardStatusLabel } from './missionPresentation'
+import type { MissionReport as ExperienceReport } from './api'
+import { MissionExperiencePanel } from './MissionExperiencePanel'
+import { experienceLinesOf, readExperience } from './missionReport'
 import { fetchMissionReport, type MissionReport } from './missionReportApi'
+import { useMissionReport } from './useMissionReport'
 
 const OUTCOME_LABEL = {
   COMPLETED: 'Completada',
@@ -21,7 +26,13 @@ const objectiveStatus = (met: boolean | null): string =>
 
 const valueLabel = (value: number | null): string => (value === null ? 'Sin dato' : String(value))
 
-const ReportContent = ({ report }: { readonly report: MissionReport }): React.JSX.Element => (
+const ReportContent = ({
+  report,
+  experienceReport,
+}: {
+  readonly report: MissionReport
+  readonly experienceReport: ExperienceReport | undefined
+}): React.JSX.Element => (
   <>
     <header>
       <p className="text-sm text-muted">
@@ -31,7 +42,7 @@ const ReportContent = ({ report }: { readonly report: MissionReport }): React.JS
       <p className="mt-2 text-sm text-ink">
         {OUTCOME_LABEL[report.summary.outcome]} · Héroe:{' '}
         {report.summary.hero.name ?? report.summary.hero.heroId} · Terminó{' '}
-        {new Date(report.summary.finishedAt).toLocaleString('es-CO')}
+        {formatDateTime(report.summary.finishedAt)}
       </p>
       {report.summary.outcomeReason !== null && (
         <p className="mt-1 text-sm text-muted">{report.summary.outcomeReason}</p>
@@ -42,6 +53,13 @@ const ReportContent = ({ report }: { readonly report: MissionReport }): React.JS
         </p>
       )}
     </header>
+
+    {experienceReport !== undefined && (
+      <MissionExperiencePanel
+        experience={readExperience(experienceReport)}
+        lines={experienceLinesOf(experienceReport)}
+      />
+    )}
 
     <div className="grid gap-4 lg:grid-cols-2">
       <Card title="Combate">
@@ -150,13 +168,17 @@ const Stat = ({
 )
 
 export const MissionReportPage = (): React.JSX.Element => {
-  const { enrollmentId } = useParams()
+  const { enrollmentId } = useParams<{ enrollmentId: string }>()
   const subject = useSession((state) => state.subject)
   const report = useQuery({
     queryKey: queryKeys.missions.report(subject, enrollmentId ?? ''),
     queryFn: ({ signal }) => fetchMissionReport(enrollmentId ?? '', signal),
-    enabled: subject !== null && enrollmentId !== undefined,
+    enabled: enrollmentId !== undefined,
   })
+  // Misma clave que la consulta de arriba: TanStack Query comparte la respuesta.
+  // Este observador lee la experiencia de HU-09 y vuelve a pedir el reporte
+  // mientras quedan derrotas por acreditar.
+  const withExperience = useMissionReport(enrollmentId ?? null)
 
   if (enrollmentId === undefined) {
     return <p role="alert">Falta el identificador de la matrícula.</p>
@@ -168,7 +190,9 @@ export const MissionReportPage = (): React.JSX.Element => {
         ← Volver al historial
       </Link>
       <QueryState isLoading={report.isPending} error={report.error}>
-        {report.data !== undefined && <ReportContent report={report.data} />}
+        {report.data !== undefined && (
+          <ReportContent report={report.data} experienceReport={withExperience.data} />
+        )}
       </QueryState>
     </section>
   )

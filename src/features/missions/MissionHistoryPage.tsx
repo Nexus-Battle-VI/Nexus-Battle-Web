@@ -7,6 +7,7 @@ import { QueryState } from '@/components/ui/QueryState'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 
+import { formatDateTime } from '@/lib/format'
 import { difficultyName } from './difficultyPresentation'
 import { categoryLabel, durationLabel, rewardStatusLabel } from './missionPresentation'
 import {
@@ -22,7 +23,7 @@ const OUTCOME_LABEL: Readonly<Record<MissionOutcome, string>> = {
   VOIDED: 'Anulada',
 }
 
-const dateLabel = (iso: string): string => new Date(iso).toLocaleString('es-CO')
+const dateLabel = (iso: string): string => formatDateTime(iso)
 
 export const MissionHistoryPage = (): React.JSX.Element => {
   const subject = useSession((state) => state.subject)

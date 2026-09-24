@@ -1,0 +1,22 @@
+{
+  "preferences": {
+    "theme": {
+      "title": "Interface theme",
+      "description": "Applies immediately to the whole application and is remembered in this browser.",
+      "light": "Light",
+      "lightHint": "Light mineral background with Nexus blue accent.",
+      "dark": "Dark",
+      "darkHint": "Deep background with Nexus violet accent."
+    },
+    "active": "Active",
+    "language": {
+      "title": "Language",
+      "description": "Language of the whole interface. Applies immediately and is saved to your account.",
+      "group": "Interface language",
+      "saving": "Saving language…",
+      "saved": "Language saved to your account.",
+      "failed": "The language could not be saved to your account. The previous language was restored; please try again.",
+      "contentNote": "Product, hero and skill names, and chat messages, are shown exactly as they were created."
+    }
+  }
+}

@@ -10,6 +10,8 @@ import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 import { queryKeys } from '@/shared/query-keys'
 
+import { formatDateTime } from '@/lib/format'
+import { newIdempotencyKey } from '@/lib/idempotency'
 import type { DifficultyLevel } from './api'
 import { MissionDifficultyPicker } from './MissionDifficultyPicker'
 import { MissionStrategyEditor } from './MissionStrategyEditor'
@@ -101,7 +103,7 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
       previous.difficulty === difficulty &&
       previous.strategyVersion === strategyVersion
         ? previous
-        : { missionId, heroId, difficulty, strategyVersion, idempotencyKey: crypto.randomUUID() }
+        : { missionId, heroId, difficulty, strategyVersion, idempotencyKey: newIdempotencyKey() }
     attemptRef.current = attempt
     enrollment.mutate(attempt)
   }
@@ -267,7 +269,7 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                     Matrícula {enrollment.data.enrollmentId} creada: {enrollment.data.status}.
                     {enrollment.data.endsAt === null
                       ? ''
-                      : ` Finaliza ${new Date(enrollment.data.endsAt).toLocaleString('es-CO')}.`}
+                      : ` Finaliza ${formatDateTime(enrollment.data.endsAt)}.`}
                   </p>
                 )}
                 <Button disabled={!canSubmit} loading={enrollment.isPending} onClick={submit}>

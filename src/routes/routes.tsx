@@ -24,9 +24,11 @@ import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
 import { MissionContentEditorPage } from '@/features/missions/MissionContentEditorPage'
 import { MissionHistoryPage } from '@/features/missions/MissionHistoryPage'
 import { MissionReportPage } from '@/features/missions/MissionReportPage'
+import { PendingClaimsPage } from '@/features/auction/pending-claims/PendingClaimsPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
+import { AuctionPage } from '@/features/auction/AuctionPage'
 import { LoginPage } from '@/features/auth/login/LoginPage'
 import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
@@ -257,12 +259,21 @@ export const routes: RouteObject[] = [
       // `/heroes` se conserva como redirect -no se borra la ruta de golpe-
       // por si un enlace externo o guardado sigue apuntando ahi.
       { path: 'heroes', element: <Navigate to="/inventory" replace /> },
-      { path: 'auction', element: <ModuleUnavailable title="Subasta" /> },
+      // Lista privada de subastas en seguimiento del jugador autenticado
+      // (HU-68). El formulario del vendedor para PUBLICAR sigue en
+      // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta no depende
+      // de esa fusion.
+      { path: 'auction', element: <AuctionPage /> },
       // Detalle de una subasta para quien la va a comprar (HU-64.1). El
       // formulario del vendedor para PUBLICAR ('auction' arriba) sigue en
       // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta hija no
       // depende de esa fusion.
       { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
+      // Productos ganados pendientes de reclamo (HU-69.7). Ruta estatica:
+      // React Router la prioriza sobre 'auction/:auctionId' sin importar el
+      // orden de declaracion, asi que 'pending-claims' nunca se interpreta
+      // como un auctionId.
+      { path: 'auction/pending-claims', element: <PendingClaimsPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.

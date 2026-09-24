@@ -1,6 +1,7 @@
 import { Link, matchPath, useLocation } from 'react-router'
 
 import { CreditsBadge } from './CreditsBadge'
+import { PendingClaimsBadge } from './PendingClaimsBadge'
 import { PrimaryNav } from './PrimaryNav'
 import { SessionControl } from './SessionControl'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -59,6 +60,7 @@ export const AppHeader = (): React.JSX.Element => {
 
         <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <SessionControl />
+          <PendingClaimsBadge />
           <CreditsBadge />
           {!inAccountArea && <ThemeToggle />}
         </div>

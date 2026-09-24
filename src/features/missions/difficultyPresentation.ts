@@ -23,6 +23,8 @@ export const difficultyName = (level: DifficultyLevel): string => NAMES[level]
 
 export const rewardTierText = (tier: RewardTier): string => REWARDS[tier]
 
+const WHOLE_PERCENT = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 })
+
 /**
  * El porcentaje sale del factor que envia Missions (`1.5` es "50 % mas"), no de
  * una tabla propia: si el PO cambia un factor, la interfaz lo refleja sin
@@ -35,9 +37,11 @@ export const enemyScalingText = (multiplier: number | null): string => {
     return 'Dificultad máxima'
   }
 
-  const extra = Math.round((multiplier - 1) * 100)
+  const extra = (multiplier - 1) * 100
+  // Intl redondea a entero para mostrarlo: la feature no usa Math.* (guarda de HU-09.5).
+  const shown = WHOLE_PERCENT.format(extra)
 
-  return extra > 0
-    ? `Enemigos con ${String(extra)} % más estadísticas`
+  return extra > 0 && shown !== '0'
+    ? `Enemigos con ${shown} % más estadísticas`
     : 'Enemigos con sus estadísticas base'
 }

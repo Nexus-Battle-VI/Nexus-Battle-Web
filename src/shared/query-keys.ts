@@ -100,6 +100,18 @@ export const queryKeys = {
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /** Lista privada del jugador autenticado (HU-68). */
+    watchlist: ['auction', 'watchlist'] as const,
+    /**
+     * Productos ganados pendientes de reclamo del titular autenticado
+     * (HU-69.2/HU-69.7, `GET /v1/auctions/me/pending-claims`). Sin
+     * parametros: el servicio deduce el titular del testimonio, igual
+     * criterio que `wallet.me`. La consulta del badge de la cabecera y la de
+     * la pantalla de listado comparten esta misma clave a proposito: reclamar
+     * un producto invalida una sola entrada y ambas superficies se
+     * refrescan.
+     */
+    pendingClaims: ['auction', 'pending-claims'] as const,
   },
   battleRooms: {
     /**
@@ -135,6 +147,12 @@ export const queryKeys = {
     availableHeroes: (subject: string | null) => ['missions', 'available-heroes', subject] as const,
     history: (subject: string | null) => ['missions', 'history', subject] as const,
     historySummary: (subject: string | null) => ['missions', 'history-summary', subject] as const,
+    /**
+     * Informe de una misión terminada del jugador (HU-74,
+     * `GET /api/v1/missions/me/reports/{enrollmentId}`), con la experiencia de
+     * HU-09 (Task HU-09.5). La matrícula y el sujeto van en la clave: el informe es el de
+     * ESA misión; el jugador sale del testimonio y nunca viaja en la petición.
+     */
     report: (subject: string | null, enrollmentId: string) =>
       ['missions', 'report', subject, enrollmentId] as const,
     achievements: (subject: string | null) => ['missions', 'achievements', subject] as const,
