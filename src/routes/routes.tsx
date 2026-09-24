@@ -21,6 +21,7 @@ import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
 import { MissionBoardPage } from '@/features/missions/MissionBoardPage'
 import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
+import { MissionContentEditorPage } from '@/features/missions/MissionContentEditorPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -83,6 +84,7 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
   { path: '/play', label: 'Jugar Online' },
   { path: '/missions', label: 'Misiones' },
+  { path: '/admin/missions', label: 'Editar misiones', requiredPrimaryRole: 'ADMINISTRATOR' },
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
   // HU-07 ya NO tiene entrada propia (2026-09-22, retiro de "Mi Héroe" por
@@ -236,6 +238,14 @@ export const routes: RouteObject[] = [
       { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
       { path: 'missions', element: <MissionBoardPage /> },
       { path: 'missions/:missionId', element: <MissionDetailPage /> },
+      {
+        path: 'admin/missions',
+        element: (
+          <RequireAdministrator>
+            <MissionContentEditorPage />
+          </RequireAdministrator>
+        ),
+      },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,
