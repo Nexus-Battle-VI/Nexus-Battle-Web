@@ -31,6 +31,8 @@ export interface MissionDetail {
   readonly name: string
   readonly category: MissionCategory
   readonly narrative: string
+  /** La ilustración (P-J11); un Missions anterior no la envía y se usa la de la categoría. */
+  readonly imageRef?: string | null
   readonly objectives: readonly {
     readonly id: string
     readonly text: string
@@ -39,6 +41,8 @@ export interface MissionDetail {
   readonly estimatedDuration: string
   readonly recommendedPower: number | null
   readonly prerequisites: readonly string[]
+  /** Las mismas con su nombre (P-J10); un Missions anterior no las envía. */
+  readonly prerequisiteMissions?: readonly { readonly missionId: string; readonly name: string }[]
   readonly enemies: readonly {
     readonly name: string
     readonly count: number
@@ -51,19 +55,29 @@ export interface MissionDetail {
     readonly stats: Readonly<Record<string, number>>
   }
   readonly masterEncounter: {
+    /**
+     * Probabilidad de que aparezca un Máster en la misión, calculada por Missions
+     * (el PO fijó un 15 % por misión). 0 si la misión no tiene Máster.
+     */
     readonly probability: number
     readonly candidates: readonly {
       readonly name: string
       readonly heroType: string
       readonly probabilityByHeroType: Readonly<Record<string, number>>
+      /**
+       * `null` si la épica todavía no es un producto que se pueda entregar (P-J2):
+       * el Máster aparece igual, pero no se promete una recompensa que no llega.
+       */
       readonly epic: {
         readonly name: string
         readonly generalEffect: string | null
         readonly epicEffect: string | null
-      }
+      } | null
     }[]
   }
   readonly rewards: {
+    /** Missions acredita experiencia por cada enemigo derrotado (HU-09). */
+    readonly experience?: boolean
     readonly guaranteed: readonly { readonly label: string }[]
     readonly potential: readonly {
       readonly label: string

@@ -23,6 +23,7 @@ import { MissionBoardPage } from '@/features/missions/MissionBoardPage'
 import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
 import { MissionContentEditorPage } from '@/features/missions/MissionContentEditorPage'
 import { MissionHistoryPage } from '@/features/missions/MissionHistoryPage'
+import { MissionProgressPage } from '@/features/missions/MissionProgressPage'
 import { MissionReportPage } from '@/features/missions/MissionReportPage'
 import { PendingClaimsPage } from '@/features/auction/pending-claims/PendingClaimsPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
@@ -243,6 +244,7 @@ export const routes: RouteObject[] = [
       { path: 'missions', element: <MissionBoardPage /> },
       { path: 'missions/history', element: <MissionHistoryPage /> },
       { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
+      { path: 'missions/progress/:enrollmentId', element: <MissionProgressPage /> },
       { path: 'missions/:missionId', element: <MissionDetailPage /> },
       {
         path: 'admin/missions',

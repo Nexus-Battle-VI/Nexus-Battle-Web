@@ -1,4 +1,4 @@
-import type { DifficultyLevel, RewardTier } from './api'
+import type { DifficultyLevel, MissionDifficulty, RewardTier } from './api'
 
 /**
  * Textos que ve el jugador. Solo presentan lo que responde Missions: ninguna
@@ -44,4 +44,23 @@ export const enemyScalingText = (multiplier: number | null): string => {
   return extra > 0 && shown !== '0'
     ? `Enemigos con ${shown} % más estadísticas`
     : 'Enemigos con sus estadísticas base'
+}
+
+/**
+ * Lo que el nivel cambia además de las estadísticas (diseño «misiones jugables»,
+ * P-J8): más enemigos, un jefe más peligroso y mejor botín. Las cifras llegan de
+ * Missions; un nivel sin cambios, o un Missions anterior, no añade nada. El Máster
+ * no cambia con el nivel: el PO fijó un 15 % por misión.
+ */
+export const compositionTexts = (item: MissionDifficulty): readonly string[] => {
+  const extra = item.extraEnemiesPerEncounter ?? 0
+  const enrage = item.bossEnrageBonus ?? 0
+  const loot = item.lootBonusPercent ?? 0
+  return [
+    ...(extra > 0
+      ? [`+${String(extra)} ${extra === 1 ? 'enemigo' : 'enemigos'} en cada encuentro`]
+      : []),
+    ...(enrage > 0 ? [`Jefe furioso: +${String(enrage)} de ataque`] : []),
+    ...(loot > 0 ? [`Botín del jefe: +${String(loot)} % de probabilidad`] : []),
+  ]
 }

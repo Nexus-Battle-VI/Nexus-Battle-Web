@@ -9,6 +9,7 @@ import { useSession } from '@/shared/session'
 
 import { formatDateTime } from '@/lib/format'
 import { difficultyName } from './difficultyPresentation'
+import { EpicAlbum } from './EpicAlbum'
 import { categoryLabel, durationLabel, rewardStatusLabel } from './missionPresentation'
 import {
   fetchMissionHistory,
@@ -75,7 +76,7 @@ export const MissionHistoryPage = (): React.JSX.Element => {
                   <ul className="mt-1 list-inside list-disc">
                     {summary.data.bestTimes.map((item) => (
                       <li key={item.enrollmentId}>
-                        {item.missionId} · {difficultyName(item.difficulty)} ·{' '}
+                        {item.missionName ?? item.missionId} · {difficultyName(item.difficulty)} ·{' '}
                         {durationLabel(item.simulatedDuration)}
                       </li>
                     ))}
@@ -88,7 +89,11 @@ export const MissionHistoryPage = (): React.JSX.Element => {
                   <ul className="mt-1 list-inside list-disc">
                     {summary.data.epicCollection.map((item) => (
                       <li key={`${item.epicRef}-${item.obtainedAt}`}>
-                        {item.name} · {rewardStatusLabel[item.status]}
+                        {item.name}
+                        {item.masterName === undefined || item.masterName === null
+                          ? ''
+                          : ` · Máster: ${item.masterName}`}{' '}
+                        · {rewardStatusLabel[item.status]}
                       </li>
                     ))}
                   </ul>
@@ -112,7 +117,8 @@ export const MissionHistoryPage = (): React.JSX.Element => {
                   <ul className="mt-1 list-inside list-disc">
                     {summary.data.narrativeProgress.map((item) => (
                       <li key={item.chainId}>
-                        {item.chainId}: {item.completed} de {item.total} misiones completadas
+                        {(item.missionNames ?? item.missions).join(' → ')}: {item.completed} de{' '}
+                        {item.total} misiones completadas
                       </li>
                     ))}
                   </ul>
@@ -122,6 +128,8 @@ export const MissionHistoryPage = (): React.JSX.Element => {
           )}
         </QueryState>
       </Card>
+
+      <EpicAlbum entries={summary.data?.epicAlbum ?? []} />
 
       <Card title="Misiones terminadas">
         <QueryState

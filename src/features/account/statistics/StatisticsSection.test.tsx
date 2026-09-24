@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createMemoryRouter } from 'react-router'
 
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
+import { useSession } from '@/shared/session'
 import { useTheme } from '@/shared/theme'
 import { ECOMMERCE_PATH, NAVIGATION } from '@/routes/routes'
 import { AccountPage } from '../AccountPage'
@@ -56,6 +57,52 @@ const renderAccountAt = (entry: string) => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe('StatisticsSection — logros de misiones (P-J3)', () => {
+  const PENDING_TEXT =
+    'Aquí verás los logros y reconocimientos de tu cuenta cuando exista el servicio que los registra.'
+
+  const withAchievements = (items: readonly unknown[]): void => {
+    useSession.setState({
+      subject: 'sujeto-ana',
+      accessToken: 'jwt-vigente',
+      expiresAt: Date.now() + 900_000,
+    })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, { items })))
+  }
+
+  afterEach(() => {
+    useSession.setState({ subject: null, accessToken: null, expiresAt: null })
+  })
+
+  it('sin logros definidos en Missions no promete ninguno', async () => {
+    withAchievements([])
+
+    renderWithProviders(<StatisticsSection />)
+
+    expect(await screen.findByText(PENDING_TEXT)).toBeInTheDocument()
+    expect(screen.queryByText('Aún no tienes logros registrados.')).not.toBeInTheDocument()
+  })
+
+  it('con logros definidos pero ninguno conseguido, lo dice así', async () => {
+    withAchievements([
+      {
+        achievementId: 'ach-1',
+        name: 'Explorador',
+        criterion: 'ALL_CATEGORY_MISSIONS',
+        status: 'LOCKED',
+        progress: { current: 0, target: 3 },
+        unlockedAt: null,
+        recognition: { kind: 'TITLE', name: 'Explorador', status: null },
+      },
+    ])
+
+    renderWithProviders(<StatisticsSection />)
+
+    expect(await screen.findByText('Aún no tienes logros registrados.')).toBeInTheDocument()
+    expect(screen.queryByText(PENDING_TEXT)).not.toBeInTheDocument()
+  })
 })
 
 describe('StatisticsSection — produccion sin backend (HU-06.4)', () => {
