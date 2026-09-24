@@ -1,0 +1,15 @@
+{
+  "status": {
+    "badRequest": "The request is not valid. Check the data and try again.",
+    "unauthorized": "Your session is not valid or has expired. Please sign in again.",
+    "forbidden": "You do not have permission to do this.",
+    "notFound": "We could not find what you were looking for.",
+    "conflict": "The operation conflicts with the current state. Refresh and try again.",
+    "unprocessable": "The operation cannot be applied with this data.",
+    "tooManyRequests": "Too many requests. Wait a moment and try again.",
+    "unavailable": "The service is not available right now. Try again in a few minutes.",
+    "server": "The service had a problem processing the request. Try again."
+  },
+  "network": "Could not connect to the service. Check your connection and try again.",
+  "unexpected": "An unexpected error occurred while contacting the service."
+}

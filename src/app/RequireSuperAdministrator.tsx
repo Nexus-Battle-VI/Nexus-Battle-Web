@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { primaryRole } from '@/shared/rbac'
@@ -16,13 +17,13 @@ export const RequireSuperAdministrator = ({
   children,
 }: RequireSuperAdministratorProps): React.JSX.Element => {
   const roles = useSession((state) => state.roles)
+  const { t } = useTranslation()
 
   if (primaryRole(roles) !== 'SUPER_ADMINISTRATOR') {
     return (
-      <Card title="Acceso denegado">
+      <Card title={t('app:access.deniedTitle')}>
         <p role="alert" className="text-sm text-muted">
-          Solo el Super Administrador puede gestionar roles. El servicio tambien valida este permiso
-          y rechazara la operacion con estado 403.
+          {t('app:access.superAdministrator')}
         </p>
       </Card>
     )

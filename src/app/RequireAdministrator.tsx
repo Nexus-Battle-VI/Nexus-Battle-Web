@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { canViewAdminUsers } from '@/shared/rbac'
@@ -19,14 +20,13 @@ export const RequireAdministrator = ({
   children,
 }: RequireAdministratorProps): React.JSX.Element => {
   const roles = useSession((state) => state.roles)
+  const { t } = useTranslation()
 
   if (!canViewAdminUsers(roles)) {
     return (
-      <Card title="Acceso denegado">
+      <Card title={t('app:access.deniedTitle')}>
         <p role="alert" className="text-sm text-muted">
-          Acceso denegado. Solo un Administrador o Super Administrador puede acceder a esta seccion
-          administrativa. El servicio tambien valida este permiso y rechazara la operacion con
-          estado 403.
+          {t('app:access.administrator')}
         </p>
       </Card>
     )

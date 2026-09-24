@@ -29,7 +29,8 @@ describe('devRoutes', () => {
     // productos ganados pendientes de reclamo (HU-69.7), que ademas de datos
     // de ejemplo falsea una sesion (necesita Auction real) y se monta dentro
     // de `AppLayout` para revisar tambien el header (badge de pendientes), y
-    // la lista de seguimiento de subastas (HU-68) con Auction falseado.
+    // la lista de seguimiento de subastas (HU-68) con Auction falseado, y el
+    // selector de dificultad (HU-75.3), que espera la matricula de HU-70.3.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/hu68/watchlist',
       '__dev/auction/immediate-purchase',
@@ -47,6 +48,7 @@ describe('devRoutes', () => {
       '__dev/hu11/poder',
       '__dev/hu17/battle',
       '__dev/hu13/chat',
+      '__dev/hu75/dificultad',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 

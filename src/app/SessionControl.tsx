@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { useSession } from '@/shared/session'
 import { primaryRole, roleLabel } from '@/shared/rbac'
 import { ChevronDown, LogOut, Package, User } from '@/components/ui/icons'
 import { Avatar } from '@/components/ui/Avatar'
 import { useOwnAccount } from '@/features/account/useOwnAccount'
+import { useAccountLanguageSync } from '@/shared/i18n/useAccountLanguageSync'
 
 /**
  * Control de sesion de la cabecera (HU-02, HU-03, HU-05.4).
@@ -36,6 +38,10 @@ export const SessionControl = (): React.JSX.Element | null => {
   // Sin sesion no hay testimonio: la consulta se desactiva en lugar de
   // producir un 401 predecible (ver `useOwnAccount`).
   const account = useOwnAccount({ enabled: subject !== null })
+  // Reutiliza la MISMA consulta de la cuenta (ninguna peticion extra): si la
+  // cuenta tiene un idioma guardado, manda sobre el espejo local.
+  useAccountLanguageSync(subject, account.data?.preferredLanguage)
+  const { t } = useTranslation()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent): void => {
@@ -79,14 +85,14 @@ export const SessionControl = (): React.JSX.Element | null => {
           className="rounded-md border border-border px-3 py-1.5 text-sm text-ink"
           data-testid="sign-up"
         >
-          Crear cuenta
+          {t('app:session.signUp')}
         </Link>
         <Link
           to="/login"
           className="rounded-md bg-brand px-3 py-1.5 text-sm text-brand-ink"
           data-testid="sign-in"
         >
-          Iniciar sesion
+          {t('app:session.signIn')}
         </Link>
       </div>
     )
@@ -101,7 +107,7 @@ export const SessionControl = (): React.JSX.Element | null => {
   const userHandle =
     email !== null
       ? `@${email.split('@')[0] ?? ''}`
-      : `@${(displayName ?? 'jugador').toLowerCase().replace(/\s+/g, '_')}`
+      : `@${(displayName ?? t('app:session.fallbackHandle')).toLowerCase().replace(/\s+/g, '_')}`
 
   const handleLogout = async (): Promise<void> => {
     setIsOpen(false)
@@ -116,7 +122,7 @@ export const SessionControl = (): React.JSX.Element | null => {
         type="button"
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        aria-label="Menú de cuenta"
+        aria-label={t('app:session.menu')}
         onClick={() => {
           setIsOpen((prev) => !prev)
         }}
@@ -124,7 +130,7 @@ export const SessionControl = (): React.JSX.Element | null => {
         data-testid="user-menu-trigger"
       >
         <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="sm" />
-        <span className="text-sm font-medium text-ink">Mi cuenta</span>
+        <span className="text-sm font-medium text-ink">{t('app:session.myAccount')}</span>
         <ChevronDown
           className={`h-4 w-4 text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden="true"
@@ -134,7 +140,7 @@ export const SessionControl = (): React.JSX.Element | null => {
       {isOpen && (
         <div
           role="menu"
-          aria-label="Opciones de cuenta"
+          aria-label={t('app:session.menuOptions')}
           className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-surface-raised py-1 shadow-2xl backdrop-blur-md"
           data-testid="user-menu-dropdown"
         >
@@ -143,7 +149,7 @@ export const SessionControl = (): React.JSX.Element | null => {
             <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="md" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink">
-                {displayName ?? 'Jugador Nexus'}
+                {displayName ?? t('app:session.fallbackName')}
               </p>
               <p className="truncate text-xs text-muted">{userHandle}</p>
               {role !== null && (
@@ -165,7 +171,7 @@ export const SessionControl = (): React.JSX.Element | null => {
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-brand/10"
             >
               <User className="h-5 w-5 text-muted" aria-hidden="true" />
-              <span>Mi cuenta</span>
+              <span>{t('app:session.myAccount')}</span>
             </Link>
             <Link
               to="/inventory"
@@ -176,7 +182,7 @@ export const SessionControl = (): React.JSX.Element | null => {
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-brand/10"
             >
               <Package className="h-5 w-5 text-muted" aria-hidden="true" />
-              <span>Mi inventario</span>
+              <span>{t('app:session.myInventory')}</span>
             </Link>
           </div>
 
@@ -194,7 +200,7 @@ export const SessionControl = (): React.JSX.Element | null => {
             data-testid="logout-button"
           >
             <LogOut className="h-5 w-5 text-danger" aria-hidden="true" />
-            <span>Cerrar sesión</span>
+            <span>{t('app:session.signOut')}</span>
           </button>
         </div>
       )}

@@ -1,0 +1,61 @@
+{
+  "nav": {
+    "label": "Principale",
+    "ecommerce": "E-commerce",
+    "play": "Jouer en ligne",
+    "missions": "Missions",
+    "tournament": "Tournoi",
+    "inventory": "Mon inventaire",
+    "auction": "Enchères",
+    "createProduct": "Créer un produit",
+    "banners": "Gérer la bannière",
+    "roles": "Gérer les rôles",
+    "moderation": "Modération des commentaires"
+  },
+  "session": {
+    "signUp": "Créer un compte",
+    "signIn": "Se connecter",
+    "menu": "Menu du compte",
+    "menuOptions": "Options du compte",
+    "myAccount": "Mon compte",
+    "myInventory": "Mon inventaire",
+    "signOut": "Se déconnecter",
+    "fallbackName": "Joueur Nexus",
+    "fallbackHandle": "joueur"
+  },
+  "credits": {
+    "available": "Crédits disponibles : {{available}}.",
+    "withReserved": "Crédits disponibles : {{available}}. Solde total : {{balance}}. Réservé en mises ou en enchères : {{reserved}}."
+  },
+  "pendingClaims": {
+    "label": "En attente de récupération : {{total}}",
+    "short": "En attente"
+  },
+  "signIn": {
+    "title": "Pour continuer",
+    "signIn": "Se connecter",
+    "signUp": "Créer un compte"
+  },
+  "access": {
+    "deniedTitle": "Accès refusé",
+    "administrator": "Accès refusé. Seul un administrateur ou un super administrateur peut accéder à cette section d'administration. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403.",
+    "moderator": "Accès refusé. Seul un modérateur, un administrateur ou un super administrateur peut accéder à la file de modération. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403.",
+    "superAdministrator": "Seul le super administrateur peut gérer les rôles. Le service vérifie aussi cette autorisation et rejettera l'opération avec le statut 403."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "body": "La page demandée n'existe pas dans cette application.",
+    "back": "Retour au catalogue"
+  },
+  "callback": {
+    "working": "Finalisation de la connexion",
+    "verifying": "Vérification de la réponse du fournisseur d'identité.",
+    "failedTitle": "Connexion impossible",
+    "providerRejected": "Le fournisseur d'identité a refusé la connexion.",
+    "notInProgress": "Cette adresse ne correspond à aucune connexion en cours.",
+    "stateMismatch": "La réponse ne correspond pas à la demande faite par cet onglet.",
+    "notConfigured": "Aucun fournisseur d'identité n'est configuré dans cette version.",
+    "unusableToken": "Le jeton reçu n'est pas utilisable.",
+    "failed": "La connexion n'a pas pu aboutir."
+  }
+}

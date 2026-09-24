@@ -1,0 +1,61 @@
+{
+  "nav": {
+    "label": "Main",
+    "ecommerce": "E-commerce",
+    "play": "Play Online",
+    "missions": "Missions",
+    "tournament": "Tournament",
+    "inventory": "My Inventory",
+    "auction": "Auction",
+    "createProduct": "Create product",
+    "banners": "Manage banner",
+    "roles": "Manage roles",
+    "moderation": "Comment moderation"
+  },
+  "session": {
+    "signUp": "Create account",
+    "signIn": "Sign in",
+    "menu": "Account menu",
+    "menuOptions": "Account options",
+    "myAccount": "My account",
+    "myInventory": "My inventory",
+    "signOut": "Sign out",
+    "fallbackName": "Nexus player",
+    "fallbackHandle": "player"
+  },
+  "credits": {
+    "available": "Available credits: {{available}}.",
+    "withReserved": "Available credits: {{available}}. Total balance: {{balance}}. Reserved in stakes or bids: {{reserved}}."
+  },
+  "pendingClaims": {
+    "label": "Waiting to be claimed: {{total}}",
+    "short": "Pending"
+  },
+  "signIn": {
+    "title": "To continue",
+    "signIn": "Sign in",
+    "signUp": "Create account"
+  },
+  "access": {
+    "deniedTitle": "Access denied",
+    "administrator": "Access denied. Only an Administrator or Super Administrator can open this administration section. The service also checks this permission and will reject the operation with status 403.",
+    "moderator": "Access denied. Only a Moderator, Administrator or Super Administrator can open the moderation queue. The service also checks this permission and will reject the operation with status 403.",
+    "superAdministrator": "Only the Super Administrator can manage roles. The service also checks this permission and will reject the operation with status 403."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The requested page does not exist in this application.",
+    "back": "Back to the catalog"
+  },
+  "callback": {
+    "working": "Completing sign-in",
+    "verifying": "Checking the identity provider's response.",
+    "failedTitle": "Could not sign in",
+    "providerRejected": "The identity provider rejected the sign-in.",
+    "notInProgress": "This address does not belong to a sign-in in progress.",
+    "stateMismatch": "The response does not match the request made by this tab.",
+    "notConfigured": "No identity provider is configured in this build.",
+    "unusableToken": "The token received cannot be used.",
+    "failed": "Sign-in could not be completed."
+  }
+}

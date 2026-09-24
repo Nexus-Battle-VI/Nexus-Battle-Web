@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { authConfig } from '@/shared/auth/config'
@@ -21,7 +22,9 @@ export const AuthCallbackPage = (): React.JSX.Element => {
   const navigate = useNavigate()
   const establish = useSession((state) => state.establish)
   const [state, setState] = useState<CallbackState>('working')
+  // Clave de traduccion del motivo, no el texto: asi cambia con el idioma.
   const [detail, setDetail] = useState<string>('')
+  const { t } = useTranslation()
 
   // React monta dos veces en modo estricto. Sin esta guarda, el codigo se
   // canjearia dos veces y el segundo intento fallaria: es de un solo uso.
@@ -45,13 +48,13 @@ export const AuthCallbackPage = (): React.JSX.Element => {
     }
 
     if (providerError !== null) {
-      fail('El proveedor de identidad rechazo el inicio de sesion.')
+      fail('app:callback.providerRejected')
 
       return
     }
 
     if (pending === null || code === null) {
-      fail('Esta direccion no corresponde a un inicio de sesion en curso.')
+      fail('app:callback.notInProgress')
 
       return
     }
@@ -63,13 +66,13 @@ export const AuthCallbackPage = (): React.JSX.Element => {
     // seguridad, y una comprobacion de seguridad no debe depender de que el
     // despliegue este bien configurado.
     if (returnedState !== pending.state) {
-      fail('La respuesta no corresponde a la peticion que hizo esta pestana.')
+      fail('app:callback.stateMismatch')
 
       return
     }
 
     if (authConfig === null) {
-      fail('No hay proveedor de identidad configurado en esta compilacion.')
+      fail('app:callback.notConfigured')
 
       return
     }
@@ -79,7 +82,7 @@ export const AuthCallbackPage = (): React.JSX.Element => {
         const claims = readIdentityClaims(tokens.idToken)
 
         if (claims === null) {
-          fail('El testimonio recibido no es utilizable.')
+          fail('app:callback.unusableToken')
 
           return
         }
@@ -88,21 +91,21 @@ export const AuthCallbackPage = (): React.JSX.Element => {
         void navigate(pending.returnTo, { replace: true })
       })
       .catch(() => {
-        fail('No se pudo completar el inicio de sesion.')
+        fail('app:callback.failed')
       })
   }, [params, navigate, establish])
 
   if (state === 'working') {
     return (
-      <Card title="Completando el inicio de sesion">
-        <p className="text-sm text-muted">Verificando la respuesta del proveedor de identidad.</p>
+      <Card title={t('app:callback.working')}>
+        <p className="text-sm text-muted">{t('app:callback.verifying')}</p>
       </Card>
     )
   }
 
   return (
-    <Card title="No se pudo iniciar sesion">
-      <p className="text-sm text-muted">{detail}</p>
+    <Card title={t('app:callback.failedTitle')}>
+      <p className="text-sm text-muted">{t(detail)}</p>
     </Card>
   )
 }
