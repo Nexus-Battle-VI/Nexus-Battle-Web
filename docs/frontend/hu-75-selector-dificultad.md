@@ -2,7 +2,7 @@
 
 Trazabilidad: `RF-75` → Management `#60` → Task HU-75.3 `#385` → `MissionDifficultyPicker`.
 
-La HU pide que el jugador elija el nivel de dificultad al matricular una misión y vea un mensaje explicativo cuando no cumple la progresión. Este documento describe la parte de interfaz y dice qué falta para verla en el producto. La regla de desbloqueo es de Missions: está en el [contrato hu-75-mission-difficulty-v1](https://github.com/Nexus-Battle-VI/Nexus-Battle-Infrastructure/blob/develop/docs/contracts/hu-75-mission-difficulty-v1.md) y en la implementación de [Missions #9](https://github.com/Nexus-Battle-VI/Nexus-Battle-Missions/pull/9).
+La HU pide que el jugador elija el nivel de dificultad al matricular una misión y vea un mensaje explicativo cuando no cumple la progresión. Este documento describe la parte de interfaz y dice qué falta para verla en el producto. La regla de desbloqueo es de Missions: su consulta está implementada desde [Missions #9](https://github.com/Nexus-Battle-VI/Nexus-Battle-Missions/pull/9) y el [contrato HU-75 actualizado](https://github.com/Nexus-Battle-VI/Nexus-Battle-Infrastructure/pull/154) está en revisión en Infrastructure.
 
 ## Qué hay
 
