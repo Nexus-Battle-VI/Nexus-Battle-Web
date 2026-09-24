@@ -9,10 +9,9 @@ import { DifficultySelector } from '../DifficultySelector'
 /**
  * Vista previa de desarrollo del selector de dificultad (HU-75.3).
  *
- * NO ES UNA PANTALLA DEL PRODUCTO. El selector todavía no está montado: irá en
- * el detalle y la matrícula de una misión, que construye HU-70.3. Esta vista
- * permite revisar el diseño, los estados y la elección sin esperar a esa
- * pantalla ni a que Missions esté desplegado.
+ * NO ES UNA PANTALLA DEL PRODUCTO. El selector se usa en el detalle y la
+ * matrícula de HU-70.3; esta vista aislada permite revisar sus estados y la
+ * elección sin iniciar sesión ni consultar Missions.
  *
  * MONTA EL COMPONENTE DE PRODUCCIÓN, no una copia: si `DifficultySelector`
  * cambia, esta vista cambia con él.
@@ -93,7 +92,7 @@ export const DifficultySelectorDevPreview = (): React.JSX.Element => {
           Vista previa del selector de dificultad (HU-75)
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Vista de desarrollo: el selector aún no está en ninguna pantalla del producto.
+          Vista aislada para revisar el selector usado en el detalle de misión.
         </p>
       </header>
 
