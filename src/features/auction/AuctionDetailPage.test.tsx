@@ -249,7 +249,9 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
   it('HU-68: si ya la sigue, ofrece dejar de seguir en su lugar', async () => {
     vi.spyOn(auctionApi, 'fetchWatchlist').mockResolvedValue({
-      items: [{ auctionId: AUCTION_ID, followedAt: '2026-09-20T12:00:00.000Z', auction: auction() }],
+      items: [
+        { auctionId: AUCTION_ID, followedAt: '2026-09-20T12:00:00.000Z', auction: auction() },
+      ],
     })
     vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
     vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())

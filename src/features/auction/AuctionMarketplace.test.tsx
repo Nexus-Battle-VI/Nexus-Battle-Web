@@ -94,9 +94,10 @@ describe('AuctionMarketplace HU-66.6', () => {
     )
     renderWithProviders(<AuctionMarketplace />)
 
-    expect(
-      await screen.findByRole('link', { name: 'Mis subastas seguidas' }),
-    ).toHaveAttribute('href', '/auction/watchlist')
+    expect(await screen.findByRole('link', { name: 'Mis subastas seguidas' })).toHaveAttribute(
+      'href',
+      '/auction/watchlist',
+    )
     expect(screen.getByRole('link', { name: 'Publicar mi subasta' })).toHaveAttribute(
       'href',
       '/auction/publish',
@@ -114,9 +115,10 @@ describe('AuctionMarketplace HU-66.6', () => {
     )
     renderWithProviders(<AuctionMarketplace />)
 
-    expect(
-      await screen.findByRole('link', { name: 'Publicar producto oficial' }),
-    ).toHaveAttribute('href', '/auction/publish-official')
+    expect(await screen.findByRole('link', { name: 'Publicar producto oficial' })).toHaveAttribute(
+      'href',
+      '/auction/publish-official',
+    )
   })
 
   it('distingue los estados de carga, vacio y error', async () => {
