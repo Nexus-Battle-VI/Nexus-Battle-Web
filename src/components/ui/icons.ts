@@ -34,6 +34,13 @@
  * `Swords` (ya listado arriba para HU-06.4) se reutiliza tal cual, sin
  * reimportar, como acento decorativo del encabezado de "Jugar Online"
  * (HU-14.4): mismo icono, misma política de "decorativo + `aria-hidden`".
+ *
+ * `Clock` se añade para los productos ganados pendientes de reclamo
+ * (HU-69.7): acompaña el plazo restante en cada tarjeta. `Package` (ya
+ * listado arriba) se reutiliza tal cual como icono decorativo de producto en
+ * esas mismas tarjetas y en el contador de la cabecera, mismo criterio que
+ * `Swords` en HU-14.4. Ambos son decorativos (`aria-hidden`): el plazo y el
+ * conteo siempre viajan como texto.
  */
 export {
   ChevronDown,
@@ -52,4 +59,5 @@ export {
   Star,
   RefreshCw,
   Coins,
+  Clock,
 } from 'lucide-react'

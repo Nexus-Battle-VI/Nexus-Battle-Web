@@ -1,13 +1,15 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderWithProviders } from '@/test/render'
 import * as catalogApi from '@/features/catalog/api'
+import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 import { AuctionDetailPage } from './AuctionDetailPage'
 import * as detailApi from './detail-api'
+import type { BuyNowConfirmation } from './detail-api'
 
 const AUCTION_ID = 'auction-123'
 
@@ -41,6 +43,19 @@ const producto = (
   realMoneyPrice: null,
   averageRating: null,
   reviewCount: 0,
+  ...patch,
+})
+
+const confirmacion = (patch: Partial<BuyNowConfirmation> = {}): BuyNowConfirmation => ({
+  transactionId: 'txn-1',
+  auctionId: AUCTION_ID,
+  buyerId: 'buyer-1',
+  sellerId: 'seller-1',
+  productId: 'product-1',
+  debitedCredits: 2500,
+  remainingCredits: 2500,
+  closedAt: '2026-09-22T12:00:00.000Z',
+  replayed: false,
   ...patch,
 })
 
@@ -126,21 +141,76 @@ describe('AuctionDetailPage (HU-64.1)', () => {
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
 
-  it('CA-04: comprar sin marcar la confirmacion pide confirmar y no llega a avisar de la integracion', async () => {
+  it('CA-04: comprar sin marcar la confirmacion pide confirmar y no llega a ejecutar la compra', async () => {
     vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
     vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    const ejecutar = vi.spyOn(detailApi, 'executeBuyNow')
 
     montar()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Comprar ahora' }))
 
     expect(screen.getByRole('alert')).toHaveTextContent('Confirmación requerida')
-    expect(screen.queryByText(/todavia no estan conectados al backend/)).not.toBeInTheDocument()
+    expect(ejecutar).not.toHaveBeenCalled()
   })
 
-  it('con la confirmacion marcada, comprar avisa que el backend real todavia no esta conectado', async () => {
+  it('HU-64.6: con la confirmacion marcada, ejecuta la compra real y muestra la confirmacion', async () => {
     vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
     vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    const ejecutar = vi
+      .spyOn(detailApi, 'executeBuyNow')
+      .mockResolvedValue(confirmacion({ debitedCredits: 2500, remainingCredits: 2500 }))
+
+    montar()
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: 'Confirmo la compra inmediata' }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+    expect(await screen.findByText('¡Compra completada!')).toBeInTheDocument()
+    expect(screen.getByText('txn-1')).toBeInTheDocument()
+    expect(ejecutar).toHaveBeenCalledWith(AUCTION_ID, expect.any(String))
+
+    // Resincroniza con el servidor tras el exito: la subasta y el saldo se vuelven a pedir.
+    await waitFor(() => {
+      expect(detailApi.fetchAuctionDetail).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  it('HU-64.6: cada intento de compra usa una Idempotency-Key distinta', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    const ejecutar = vi.spyOn(detailApi, 'executeBuyNow').mockResolvedValue(confirmacion())
+
+    montar()
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: 'Confirmo la compra inmediata' }),
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+    await waitFor(() => {
+      expect(ejecutar).toHaveBeenCalledTimes(1)
+    })
+
+    const [, primeraLlave] = ejecutar.mock.calls[0] as [string, string]
+
+    expect(primeraLlave.length).toBeGreaterThan(0)
+  })
+
+  it('HU-64.6: un rechazo de negocio (otro comprador se adelanto) muestra el mensaje y no reintenta', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    const ejecutar = vi.spyOn(detailApi, 'executeBuyNow').mockRejectedValue(
+      new HttpError(409, 'La subasta ya se cerro', {
+        statusCode: 409,
+        code: 'BUY_NOW_CONFLICT',
+      }),
+    )
 
     montar()
 
@@ -150,7 +220,8 @@ describe('AuctionDetailPage (HU-64.1)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
 
     expect(
-      screen.getByText(/La compra inmediata todavia no esta conectada al backend/),
+      await screen.findByText('Otro comprador se adelantó: la subasta ya se cerró.'),
     ).toBeInTheDocument()
+    expect(ejecutar).toHaveBeenCalledTimes(1)
   })
 })

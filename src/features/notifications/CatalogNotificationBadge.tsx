@@ -21,6 +21,8 @@ const LABELS: Readonly<Record<string, string>> = {
   PRODUCT_SUSPENDED: 'Suspendido',
   PRODUCT_REACTIVATED: 'Reactivado',
   PRODUCT_PREMIUM_CONFIGURED: 'Premium',
+  AUCTION_CHANGED: 'Subasta actualizada',
+  AUCTION_CLOSING_SOON: 'Cierre próximo',
 }
 
 const TONE: Readonly<Record<string, string>> = {
@@ -29,6 +31,8 @@ const TONE: Readonly<Record<string, string>> = {
   PRODUCT_SUSPENDED: 'bg-danger/15 text-danger',
   PRODUCT_REACTIVATED: 'bg-success/15 text-success',
   PRODUCT_PREMIUM_CONFIGURED: 'bg-brand/15 text-brand',
+  AUCTION_CHANGED: 'bg-brand/15 text-brand',
+  AUCTION_CLOSING_SOON: 'bg-warning/15 text-warning',
 }
 
 export interface CatalogNotificationBadgeProps {
