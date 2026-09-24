@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
+import { useSession } from '@/shared/session'
 
 import { fetchMissionReport, type MissionReport } from './api'
 import { readExperience } from './missionReport'
@@ -22,9 +23,11 @@ const POLL_MS = 1_500
  * bloque de experiencia (un servicio anterior a HU-09.5), no hay motivo para seguir
  * preguntando.
  */
-export const useMissionReport = (enrollmentId: string | null): UseQueryResult<MissionReport> =>
-  useQuery({
-    queryKey: queryKeys.missions.report(enrollmentId ?? ''),
+export const useMissionReport = (enrollmentId: string | null): UseQueryResult<MissionReport> => {
+  const subject = useSession((state) => state.subject)
+
+  return useQuery({
+    queryKey: queryKeys.missions.report(subject, enrollmentId ?? ''),
     queryFn: ({ signal }) => fetchMissionReport(enrollmentId ?? '', signal),
     enabled: enrollmentId !== null,
     refetchInterval: (query) => {
@@ -40,3 +43,4 @@ export const useMissionReport = (enrollmentId: string | null): UseQueryResult<Mi
       return settled ? false : POLL_MS
     },
   })
+}
