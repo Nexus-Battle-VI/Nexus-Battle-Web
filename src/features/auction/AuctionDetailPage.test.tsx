@@ -7,6 +7,7 @@ import { renderWithProviders } from '@/test/render'
 import * as catalogApi from '@/features/catalog/api'
 import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
+import * as auctionApi from './api'
 import { AuctionDetailPage } from './AuctionDetailPage'
 import * as detailApi from './detail-api'
 import type { BuyNowConfirmation } from './detail-api'
@@ -72,6 +73,7 @@ describe('AuctionDetailPage (HU-64.1)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     useSession.setState({ subject: 'buyer-1', accessToken: 'token', expiresAt: null })
+    vi.spyOn(auctionApi, 'fetchWatchlist').mockResolvedValue({ items: [] })
   })
 
   it('muestra la tarjeta de compra inmediata cuando hay precio configurado y saldo suficiente', async () => {
@@ -223,5 +225,53 @@ describe('AuctionDetailPage (HU-64.1)', () => {
       await screen.findByText('Otro comprador se adelantó: la subasta ya se cerró.'),
     ).toBeInTheDocument()
     expect(ejecutar).toHaveBeenCalledTimes(1)
+  })
+
+  /**
+   * HU-68: hoy la unica forma de seguir una subasta era escribir su id a
+   * mano en la pantalla de seguimiento. El boton de aqui es el segundo
+   * camino real -el primero es la tarjeta del listado, HU-66.6-.
+   */
+  it('HU-68: ofrece seguir la subasta y la agrega a la lista de seguimiento', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    const seguir = vi.spyOn(auctionApi, 'followAuction').mockResolvedValue(undefined)
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Seguir esta subasta' }))
+
+    await waitFor(() => {
+      expect(seguir.mock.calls[0]?.[0]).toBe(AUCTION_ID)
+    })
+  })
+
+  it('HU-68: si ya la sigue, ofrece dejar de seguir en su lugar', async () => {
+    vi.spyOn(auctionApi, 'fetchWatchlist').mockResolvedValue({
+      items: [{ auctionId: AUCTION_ID, followedAt: '2026-09-20T12:00:00.000Z', auction: auction() }],
+    })
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    const dejarDeSeguir = vi.spyOn(auctionApi, 'unfollowAuction').mockResolvedValue(undefined)
+
+    montar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Dejar de seguir' }))
+
+    await waitFor(() => {
+      expect(dejarDeSeguir.mock.calls[0]?.[0]).toBe(AUCTION_ID)
+    })
+  })
+
+  it('el propio vendedor no ve el boton de seguir su propia subasta', async () => {
+    useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+
+    montar()
+
+    await screen.findByText('Es tu propia subasta')
+    expect(screen.queryByRole('button', { name: 'Seguir esta subasta' })).not.toBeInTheDocument()
   })
 })

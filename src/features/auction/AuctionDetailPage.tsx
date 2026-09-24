@@ -3,11 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
+import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
+import { describeFollowError } from './api'
 import { AuctionBidPanel } from './bidding/AuctionBidPanel'
 import { AutoBidPanel } from './auto-bid/AutoBidPanel'
 import {
@@ -20,6 +22,7 @@ import {
 } from './detail-api'
 import { newIdempotencyKey } from './idempotencyKey'
 import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCard'
+import { useWatchlist } from './useWatchlist'
 
 const MAX_AUTOMATIC_RETRIES = 3
 
@@ -48,6 +51,23 @@ export const AuctionDetailPage = (): React.JSX.Element => {
   const queryClient = useQueryClient()
   const [confirmed, setConfirmed] = useState(false)
   const [transaction, setTransaction] = useState<BuyNowConfirmation | null>(null)
+  const [followError, setFollowError] = useState<string | null>(null)
+
+  const { items: watchlistItems, follow, unfollow, isSaving: isSavingFollow } = useWatchlist()
+  const isFollowing = watchlistItems.some((item) => item.auction.id === auctionId)
+
+  const toggleFollow = async (): Promise<void> => {
+    setFollowError(null)
+    try {
+      if (isFollowing) {
+        unfollow(auctionId)
+      } else {
+        await follow(auctionId)
+      }
+    } catch (cause: unknown) {
+      setFollowError(describeFollowError(cause))
+    }
+  }
 
   const auctionQuery = useQuery({
     queryKey: queryKeys.auction.detail(auctionId),
@@ -123,6 +143,24 @@ export const AuctionDetailPage = (): React.JSX.Element => {
         <QueryState isLoading={auctionQuery.isPending} error={auctionQuery.error}>
           {auction !== undefined && (
             <>
+              {auction.status === 'ACTIVE' && !isSeller && (
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant={isFollowing ? 'secondary' : 'primary'}
+                    loading={isSavingFollow}
+                    onClick={() => {
+                      void toggleFollow()
+                    }}
+                  >
+                    {isFollowing ? 'Dejar de seguir' : 'Seguir esta subasta'}
+                  </Button>
+                  {followError !== null && (
+                    <p role="alert" className="text-sm text-danger">
+                      {followError}
+                    </p>
+                  )}
+                </div>
+              )}
               {
                 /*
                  * `transaction` manda sobre `auction.status`: al completar la
