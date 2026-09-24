@@ -136,7 +136,7 @@ describe('useBattleRoomRealtime — ADR-020: ticket de un solo uso, nunca el JWT
     expect(socket.sent.join('')).not.toContain(JWT)
   })
 
-  it('invalida el listado y la sala al recibir battle-room.updated de la sala vigilada', async () => {
+  it('invalida el listado, "mis salas" y la sala al recibir battle-room.updated de la sala vigilada', async () => {
     const { wrapper, invalidateSpy, sockets, factory, tickets } = setup()
 
     renderHook(() => useBattleRoomRealtime('room-1', factory, tickets), { wrapper })
@@ -156,6 +156,7 @@ describe('useBattleRoomRealtime — ADR-020: ticket de un solo uso, nunca el JWT
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.battleRooms.list })
     })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.battleRooms.detail('room-1') })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: queryKeys.battleRooms.mine })
   })
 
   it('IGNORA un battle-room.updated de otra sala', async () => {

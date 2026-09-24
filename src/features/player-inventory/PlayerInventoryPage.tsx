@@ -6,6 +6,7 @@ import type { ProductType } from './api'
 import type { EquipmentSlotId } from './equipment/api'
 import { HeroConfigurator, type OwnedHero } from './equipment/HeroConfigurator'
 import { SLOT_META_BY_ID } from './equipment/slots'
+import { useHeroSelection } from './useHeroSelection'
 import { InventoryGrid } from './InventoryGrid'
 import { InventoryPagination } from './InventoryPagination'
 import { InventoryToolbar } from './InventoryToolbar'
@@ -24,6 +25,9 @@ import { effectiveSearch, useOwnedInventory } from './useOwnedInventory'
  * ranura/tipo.
  */
 export const PlayerInventoryPage = (): React.JSX.Element => {
+  const selectionQuery = useHeroSelection()
+  const preparedHeroName = selectionQuery.data?.configuration.hero.name ?? null
+
   const [term, setTerm] = useState('')
   const [type, setType] = useState<ProductType | null>(null)
   const [page, setPage] = useState(1)
@@ -65,12 +69,22 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
 
   return (
     <section aria-label="Mi Inventario" className="flex flex-col gap-4">
-      <div className="rounded-lg border border-border bg-surface-raised p-5">
-        <h1 className="text-xl font-semibold text-ink">Mi Inventario</h1>
-        <p className="mt-1 text-sm text-muted">
-          Los objetos que posees y en qué cantidad. Selecciona uno para ver su ficha o para
-          equiparlo en un héroe.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised p-5">
+        <div>
+          <h1 className="text-xl font-semibold text-ink">Mi Inventario</h1>
+          <p className="mt-1 text-sm text-muted">
+            Los objetos que posees y en qué cantidad. Selecciona uno para ver su ficha o para
+            equiparlo en un héroe.
+          </p>
+        </div>
+        {preparedHeroName !== null && (
+          <p className="shrink-0 text-sm font-medium text-ink">
+            Héroe preparado:{' '}
+            <span className="rounded-full bg-success/15 px-2 py-0.5 text-success">
+              {preparedHeroName} ✓
+            </span>
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[17rem_minmax(0,1fr)_19rem] lg:items-start">

@@ -125,7 +125,7 @@ describe('describeTurn: solo lee currentTurn, nunca calcula turno + 1', () => {
 describe('describeStartBattleFailure: textos propios por codigo, sin filtrar el mensaje crudo', () => {
   it.each([
     [401, 'Tu sesión expiró'],
-    [403, 'No participas en esta batalla.'],
+    [403, 'Solo quien creó la sala puede iniciar la partida.'],
     [404, 'La sala ya no existe.'],
     [409, 'no está lista para comenzar o cambió de estado'],
     [422, 'ya no cumple los requisitos para combatir'],

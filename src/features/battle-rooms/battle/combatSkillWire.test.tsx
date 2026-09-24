@@ -449,11 +449,10 @@ describe('mensajes REALES de Combat (HU-19) — la pantalla de batalla los pinta
       'aria-valuenow',
       '10',
     )
-    expect(resultado()).toHaveTextContent(
-      'Jugador usó Golpe con escudo contra nombre-de-sujeto-b: Daño normal (100 %)',
-    )
-    expect(resultado()).toHaveTextContent('Poder de Jugador: 10 → 8.')
-    expect(resultado()).toHaveTextContent('La habilidad queda en recarga: 1 turno.')
+    expect(resultado()).toHaveTextContent('Jugador usó Golpe con escudo contra nombre-de-sujeto-b')
+    expect(resultado()).toHaveTextContent('Daño normal 100 %')
+    expect(resultado()).toHaveTextContent('Poder 10 → 8')
+    expect(resultado()).toHaveTextContent('Recarga 1 turno')
     expect(screen.queryByRole('button', { name: /^Usar / })).not.toBeInTheDocument()
   })
 
@@ -490,8 +489,8 @@ describe('mensajes REALES de Combat (HU-19) — la pantalla de batalla los pinta
     expect(escudo).toHaveAttribute('aria-disabled', 'true')
     expect(tormenta).toHaveAttribute('aria-disabled', 'false')
     expect(piedra).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getAllByText(/En recarga: falta 1 turno/u).length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Todavía no está disponible.').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Disponible en 1 turno/u).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/todavía no está disponible en combate/u).length).toBeGreaterThan(0)
     expect(screen.getByText('6 de Poder')).toBeInTheDocument()
   })
 
@@ -500,9 +499,9 @@ describe('mensajes REALES de Combat (HU-19) — la pantalla de batalla los pinta
 
     expect(await screen.findByText('Turno de Jugador')).toBeInTheDocument()
     expect(resultado()).toHaveTextContent(
-      'nombre-de-sujeto-b no tenía Poder suficiente para Golpe con escudo: se usó un ataque básico',
+      'No había Poder suficiente para Golpe con escudo. Se ejecutó un ataque básico en su lugar',
     )
-    expect(resultado()).toHaveTextContent('La habilidad no se gastó ni quedó en recarga.')
+    expect(resultado()).toHaveTextContent('la habilidad no se gastó ni quedó en recarga.')
     expect(screen.getByRole('meter', { name: 'Poder de nombre-de-sujeto-b' })).toHaveAttribute(
       'aria-valuemax',
       '1',

@@ -2,8 +2,13 @@ import { useEffect, useRef } from 'react'
 import clsx from 'clsx'
 import { Link } from 'react-router'
 
-import { describeResult, type ResultTone } from './resultPresentation'
-import type { BattleResult, ParticipantOutcome, ParticipantResult } from './types'
+import {
+  describeResult,
+  participantOutcomeName,
+  winnerLine,
+  type ResultTone,
+} from './resultPresentation'
+import type { BattleResult, ParticipantResult } from './types'
 
 const TONE_CLASS: Readonly<Record<ResultTone, string>> = {
   won: 'text-success',
@@ -17,9 +22,6 @@ const RESULT_TEXT: Readonly<Record<ParticipantResult, string>> = {
   LOST: 'Perdió',
   NO_WINNER: 'Empate',
 }
-
-const nameOf = (participant: ParticipantOutcome): string =>
-  participant.displayName ?? `Asiento ${String(participant.seat + 1)}`
 
 export interface BattleResultViewProps {
   readonly result: BattleResult
@@ -40,6 +42,7 @@ export interface BattleResultViewProps {
  */
 export const BattleResultView = ({ result, subject }: BattleResultViewProps): React.JSX.Element => {
   const presentation = describeResult(result, subject)
+  const winners = winnerLine(result)
   const headlineRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -67,6 +70,7 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
       </h2>
       <div className="flex flex-col gap-1 text-center">
         <p className="text-sm text-ink">{presentation.cause}</p>
+        {winners !== null && <p className="text-sm font-semibold text-ink">{winners}</p>}
         {presentation.detail !== null && (
           <p className="text-xs text-muted">{presentation.detail}</p>
         )}
@@ -91,7 +95,7 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
             key={`${participant.teamLabel}-${String(participant.seat)}`}
             className="flex items-baseline justify-between gap-2 text-sm"
           >
-            <span className="text-ink">{nameOf(participant)}</span>
+            <span className="text-ink">{participantOutcomeName(participant)}</span>
             <span className="text-xs font-semibold text-muted">
               Equipo {participant.teamLabel} · {RESULT_TEXT[participant.result]}
             </span>

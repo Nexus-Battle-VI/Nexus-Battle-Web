@@ -102,6 +102,16 @@ export const queryKeys = {
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
     /** Lista privada del jugador autenticado (HU-68). */
     watchlist: ['auction', 'watchlist'] as const,
+    /**
+     * Productos ganados pendientes de reclamo del titular autenticado
+     * (HU-69.2/HU-69.7, `GET /v1/auctions/me/pending-claims`). Sin
+     * parametros: el servicio deduce el titular del testimonio, igual
+     * criterio que `wallet.me`. La consulta del badge de la cabecera y la de
+     * la pantalla de listado comparten esta misma clave a proposito: reclamar
+     * un producto invalida una sola entrada y ambas superficies se
+     * refrescan.
+     */
+    pendingClaims: ['auction', 'pending-claims'] as const,
   },
   battleRooms: {
     /**
@@ -111,6 +121,11 @@ export const queryKeys = {
      * filtro de la UI se aplica client-side sobre este mismo resultado.
      */
     list: ['battle-rooms', 'list'] as const,
+    /**
+     * Salas activas del jugador autenticado (`GET /api/v1/combat/me/rooms`):
+     * "volver a mi sala" en Jugar Online. El jugador sale del testimonio.
+     */
+    mine: ['battle-rooms', 'mine'] as const,
     /** Una sala concreta para sus participantes (HU-17, `GET /api/v1/combat/rooms/:roomId`). */
     detail: (roomId: string) => ['battle-rooms', 'detail', roomId] as const,
     /**

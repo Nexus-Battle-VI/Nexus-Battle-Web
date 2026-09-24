@@ -60,7 +60,9 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
     expect(within(items[0]!).getByText(/Disponible · 1 turno de recarga/u)).toBeInTheDocument()
     expect(within(items[1]!).getByText('Mano de piedra')).toBeInTheDocument()
     expect(within(items[1]!).getByText('4 de Poder')).toBeInTheDocument()
-    expect(within(items[1]!).getByText(/Todavía no disponible/u)).toBeInTheDocument()
+    expect(
+      within(items[1]!).getAllByText(/todavía no está disponible en combate/u).length,
+    ).toBeGreaterThan(0)
   })
 
   it('un costo de todo el Poder se dice con palabras', () => {
@@ -90,18 +92,18 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
     const value = pintar({ battle: skillsOf(recharging(SHIELD_STRIKE, 2)) })
 
     expect(usar('Usar Golpe con escudo')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getAllByText(/En recarga: faltan 2 turnos/u).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Disponible en 2 turnos/u).length).toBeGreaterThan(0)
 
     await userEvent.click(usar('Usar Golpe con escudo'))
 
     expect(value.onUse).not.toHaveBeenCalled()
   })
 
-  it('no soportada: deshabilitada, «Todavía no está disponible.», y el clic no envia nada', async () => {
+  it('no soportada: deshabilitada, explicada como aun no disponible en combate, y el clic no envia nada', async () => {
     const value = pintar({ battle: skillsOf(STONE_HAND) })
 
     expect(usar('Usar Mano de piedra')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByText('Todavía no está disponible.')).toBeInTheDocument()
+    expect(screen.getAllByText(/todavía no está disponible en combate/u)[0]!).toBeInTheDocument()
 
     await userEvent.click(usar('Usar Mano de piedra'))
 

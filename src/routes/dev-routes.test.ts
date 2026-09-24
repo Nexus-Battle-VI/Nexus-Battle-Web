@@ -23,10 +23,19 @@ describe('devRoutes', () => {
     // preparacion de sala de batalla (HU-15.3), el medidor de Poder (HU-11),
     // que aun no esta montado en ninguna pantalla del producto, la pantalla de
     // batalla (HU-17) y el chat (HU-13), que necesitan Combat por WebSocket, y
-    // la tarjeta de compra inmediata (HU-64.1) con datos de ejemplo, revisable
-    // en claro y oscuro sin depender de que exista una subasta real.
+    // la tarjeta de compra inmediata (HU-64.1), el registro de puja (HU-63.8)
+    // y la configuracion de puja automatica (HU-67.6) con datos de ejemplo,
+    // revisables en claro y oscuro sin depender de una subasta real, y los
+    // productos ganados pendientes de reclamo (HU-69.7), que ademas de datos
+    // de ejemplo falsea una sesion (necesita Auction real) y se monta dentro
+    // de `AppLayout` para revisar tambien el header (badge de pendientes), y
+    // la lista de seguimiento de subastas (HU-68) con Auction falseado.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
+      '__dev/hu68/watchlist',
       '__dev/auction/immediate-purchase',
+      '__dev/auction/bidding',
+      '__dev/auction/auto-bid',
+      '__dev/auction/pending-claims',
       '__dev/account',
       '__dev/admin/products/new',
       '__dev/heroes',

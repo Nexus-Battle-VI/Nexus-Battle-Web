@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 
 import { BattleScreen } from './BattleScreen'
-import { combatBattle, noWinnerResult, winResult, withCombatants } from './fixtures'
+import { battle, combatBattle, entry, noWinnerResult, winResult, withCombatants } from './fixtures'
 
 /**
  * Pantalla de batalla tras el final (HU-21): se conserva la arena, desaparecen
@@ -128,7 +128,23 @@ describe('BattleScreen — resultado (HU-21)', () => {
       lastTurnTimeout: { seq: 3, timedOut: { teamLabel: 'B', seat: 0 }, occurredAt: 'x' },
     })
 
-    expect(screen.getByText('Bruno perdió el turno por tiempo.')).toBeInTheDocument()
+    expect(screen.getByText('Bruno perdió su turno por tiempo.')).toBeInTheDocument()
+  })
+
+  it('el turno perdido de una IA se anuncia como «Oponente IA», nunca como «Asiento N»', () => {
+    const aiOrder = [
+      entry(0, { kind: 'AI', playerId: null, displayName: null, heroSubtype: null }),
+      entry(1),
+    ]
+
+    renderFinished({
+      battle: battle(1, aiOrder),
+      result: null,
+      lastTurnTimeout: { seq: 3, timedOut: { teamLabel: 'B', seat: 0 }, occurredAt: 'x' },
+    })
+
+    expect(screen.getByText('Oponente IA perdió su turno por tiempo.')).toBeInTheDocument()
+    expect(screen.queryByText(/Asiento/u)).not.toBeInTheDocument()
   })
 
   it('la vista de resultado va DESPUES de la arena y ANTES de la franja de resultado (orden del DOM)', () => {

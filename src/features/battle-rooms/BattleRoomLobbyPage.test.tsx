@@ -186,7 +186,11 @@ describe('BattleRoomLobbyPage', () => {
     expect(container.innerHTML).not.toContain(ROOM_ID)
   })
 
-  it('no ofrece un boton para iniciar: la batalla comienza cuando la sala se llena y decide Combat (HU-17)', async () => {
+  it('mientras espera jugadores no ofrece "Iniciar partida" (ni al propietario): solo aparece en PREPARING (HU-17)', async () => {
+    // `AUTHENTICATED_NO_SOCKET` autentica como 'sujeto-ana', que en `room()`
+    // TAMBIEN es `createdBy` -- ni siquiera el propietario ve el boton mientras
+    // la sala sigue WAITING_FOR_PLAYERS. Cobertura del boton ya PREPARING (y de
+    // quien no es propietario) vive en `BattleRoomLobbyPage.lifecycle.test.tsx`.
     useSession.setState(AUTHENTICATED_NO_SOCKET)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
 
@@ -195,7 +199,36 @@ describe('BattleRoomLobbyPage', () => {
     expect(
       await screen.findByText(/La batalla comienza cuando la sala se llena/u),
     ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Empezar partida/u })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Iniciar partida' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancelar sala' })).toBeInTheDocument()
+  })
+
+  /**
+   * Seccion 12 del prompt maestro de estabilizacion: revisar la propia
+   * preparacion sin abandonar la sala (sin llamar a `leave`). El enlace va a
+   * Mi Inventario -no a un panel embebido- porque ninguna feature importa
+   * componentes de otra en este proyecto.
+   */
+  it('un participante ve "Revisar mi equipamiento", enlazado a Mi Inventario', async () => {
+    useSession.setState(AUTHENTICATED_NO_SOCKET)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    expect(await screen.findByRole('link', { name: 'Revisar mi equipamiento' })).toHaveAttribute(
+      'href',
+      '/inventory',
+    )
+  })
+
+  it('quien no es participante NO ve "Revisar mi equipamiento"', async () => {
+    useSession.setState({ ...AUTHENTICATED_NO_SOCKET, subject: 'sujeto-ajeno' })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
+
+    montar()
+
+    await screen.findByText('Equipo A')
+    expect(screen.queryByRole('link', { name: 'Revisar mi equipamiento' })).not.toBeInTheDocument()
   })
 
   it('representa un oponente IA sin depender de displayName', async () => {
@@ -229,5 +262,97 @@ describe('BattleRoomLobbyPage', () => {
     montar()
 
     expect(await screen.findByText('Oponente IA')).toBeInTheDocument()
+  })
+  describe('avatar de los participantes (HU-15)', () => {
+    const imageResponse = (): Response =>
+      new Response(new Blob(['png'], { type: 'image/png' }), {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      })
+
+    /** Enruta por URL: la sala para el listado, la imagen/404 para el avatar. */
+    const fetchRouting = (avatar: () => Response) =>
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
+        return Promise.resolve(
+          url.includes('/accounts/by-subject/') ? avatar() : jsonResponse(200, [room()]),
+        )
+      })
+
+    const requestedUrls = (fetchMock: ReturnType<typeof vi.fn>): string[] =>
+      fetchMock.mock.calls.map(([input]) =>
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input as Request).url,
+      )
+
+    it('muestra el avatar REAL de un jugador humano, pedido por su sujeto', async () => {
+      useSession.setState(AUTHENTICATED_NO_SOCKET)
+      vi.stubGlobal('URL', {
+        ...URL,
+        createObjectURL: vi.fn().mockReturnValue('blob:avatar-ana'),
+        revokeObjectURL: vi.fn(),
+      })
+      const fetchMock = fetchRouting(imageResponse)
+      vi.stubGlobal('fetch', fetchMock)
+
+      montar()
+
+      const image = await screen.findByRole('img', { name: 'Ana' })
+      expect(image).toHaveAttribute('src', 'blob:avatar-ana')
+      expect(requestedUrls(fetchMock)).toContainEqual(
+        expect.stringContaining('/accounts/by-subject/sujeto-ana/avatar'),
+      )
+    })
+
+    it('cae a la inicial cuando el jugador no tiene avatar (404 legitimo)', async () => {
+      useSession.setState(AUTHENTICATED_NO_SOCKET)
+      vi.stubGlobal(
+        'fetch',
+        fetchRouting(() => jsonResponse(404, { message: 'sin avatar' })),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Ana')).toBeInTheDocument()
+      expect(await screen.findByText('A')).toBeInTheDocument()
+      expect(screen.queryByRole('img', { name: 'Ana' })).not.toBeInTheDocument()
+    })
+
+    it('un oponente IA no pide avatar', async () => {
+      useSession.setState(AUTHENTICATED_NO_SOCKET)
+      const fetchMock = vi.fn().mockResolvedValue(
+        jsonResponse(200, [
+          room({
+            mode: 'PVE',
+            teams: [
+              { label: 'A', capacity: 1, participants: [] },
+              {
+                label: 'B',
+                capacity: 1,
+                participants: [
+                  {
+                    kind: 'AI',
+                    playerId: null,
+                    heroId: null,
+                    joinedAt: '2026-01-01T00:00:00.000Z',
+                  },
+                ],
+              },
+            ],
+          }),
+        ]),
+      )
+      vi.stubGlobal('fetch', fetchMock)
+
+      montar()
+
+      expect(await screen.findByText('Oponente IA')).toBeInTheDocument()
+      expect(requestedUrls(fetchMock).some((url) => url.includes('/avatar'))).toBe(false)
+    })
   })
 })
