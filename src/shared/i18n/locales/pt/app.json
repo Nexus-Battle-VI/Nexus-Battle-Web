@@ -40,7 +40,8 @@
     "deniedTitle": "Acesso negado",
     "administrator": "Acesso negado. Somente um Administrador ou Superadministrador pode acessar esta seção administrativa. O serviço também valida essa permissão e rejeitará a operação com status 403.",
     "moderator": "Acesso negado. Somente um Moderador, Administrador ou Superadministrador pode acessar a fila de moderação. O serviço também valida essa permissão e rejeitará a operação com status 403.",
-    "superAdministrator": "Somente o Superadministrador pode gerenciar funções. O serviço também valida essa permissão e rejeitará a operação com status 403."
+    "superAdministrator": "Somente o Superadministrador pode gerenciar funções. O serviço também valida essa permissão e rejeitará a operação com status 403.",
+    "gameMaster": "Acesso negado. Somente o Mestre do Jogo (UPB-COMPANY) pode publicar leilões oficiais. O serviço também valida essa permissão e rejeitará a operação com status 403."
   },
   "notFound": {
     "title": "Página não encontrada",

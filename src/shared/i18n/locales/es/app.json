@@ -40,7 +40,8 @@
     "deniedTitle": "Acceso denegado",
     "administrator": "Acceso denegado. Solo un Administrador o Super Administrador puede acceder a esta seccion administrativa. El servicio tambien valida este permiso y rechazara la operacion con estado 403.",
     "moderator": "Acceso denegado. Solo un Moderador, Administrador o Super Administrador puede acceder a la cola de moderación. El servicio también valida este permiso y rechazará la operación con estado 403.",
-    "superAdministrator": "Solo el Super Administrador puede gestionar roles. El servicio tambien valida este permiso y rechazara la operacion con estado 403."
+    "superAdministrator": "Solo el Super Administrador puede gestionar roles. El servicio tambien valida este permiso y rechazara la operacion con estado 403.",
+    "gameMaster": "Acceso denegado. Solo el Maestro de Juego (UPB-COMPANY) puede publicar subastas oficiales. El servicio también valida este permiso y rechazará la operación con estado 403."
   },
   "notFound": {
     "title": "Pagina no encontrada",

@@ -40,7 +40,8 @@
     "deniedTitle": "Access denied",
     "administrator": "Access denied. Only an Administrator or Super Administrator can open this administration section. The service also checks this permission and will reject the operation with status 403.",
     "moderator": "Access denied. Only a Moderator, Administrator or Super Administrator can open the moderation queue. The service also checks this permission and will reject the operation with status 403.",
-    "superAdministrator": "Only the Super Administrator can manage roles. The service also checks this permission and will reject the operation with status 403."
+    "superAdministrator": "Only the Super Administrator can manage roles. The service also checks this permission and will reject the operation with status 403.",
+    "gameMaster": "Access denied. Only the Game Master (UPB-COMPANY) can publish official auctions. The service also checks this permission and will reject the operation with status 403."
   },
   "notFound": {
     "title": "Page not found",
