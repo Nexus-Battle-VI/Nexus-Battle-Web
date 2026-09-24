@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { HttpError } from '@/lib/http'
 import { jsonResponse, showcaseProduct } from '@/test/commerce-fixtures'
-import { fetchShowcase, NO_FILTERS, showcaseQuery } from './api'
+import { fetchShowcase, isShowcaseType, NO_FILTERS, SHOWCASE_PRODUCT_TYPES, showcaseQuery } from './api'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -187,4 +187,38 @@ describe('Paginacion visible de 12 sobre el contrato HTTP de 16', () => {
       expect(fetcher).not.toHaveBeenCalled()
     },
   )
+})
+
+describe('ITEM y EPICA nunca son candidatos de compra en la vitrina', () => {
+  it.each(['HEROE', 'HABILIDAD', 'ARMA', 'ARMADURA'] as const)(
+    '%s es un tipo comercializable',
+    (type) => {
+      expect(isShowcaseType(type)).toBe(true)
+    },
+  )
+
+  it.each(['ITEM', 'EPICA'] as const)('%s nunca es comercializable', (type) => {
+    expect(isShowcaseType(type)).toBe(false)
+  })
+
+  it('SHOWCASE_PRODUCT_TYPES es exactamente HEROE, HABILIDAD, ARMA y ARMADURA', () => {
+    expect(SHOWCASE_PRODUCT_TYPES).toEqual(['HEROE', 'HABILIDAD', 'ARMA', 'ARMADURA'])
+  })
+
+  it('excluye ITEM y EPICA de un lote sin filtro de tipo, sin descartar los demas', () => {
+    const mixed = [
+      showcaseProduct({ productId: 'p-heroe', sku: 'p-heroe', type: 'HEROE' }),
+      showcaseProduct({ productId: 'p-item', sku: 'p-item', type: 'ITEM' }),
+      showcaseProduct({ productId: 'p-epica', sku: 'p-epica', type: 'EPICA' }),
+      showcaseProduct({ productId: 'p-arma', sku: 'p-arma', type: 'ARMA' }),
+    ]
+    const fetcher = vi.fn<(input: string) => Promise<Response>>(() =>
+      Promise.resolve(jsonResponse({ items: mixed, page: 1, pageSize: 16, total: mixed.length })),
+    )
+    vi.stubGlobal('fetch', fetcher)
+
+    return fetchShowcase(showcaseQuery(NO_FILTERS, 1)).then((result) => {
+      expect(result.items.map((item) => item.productId)).toEqual(['p-heroe', 'p-arma'])
+    })
+  })
 })
