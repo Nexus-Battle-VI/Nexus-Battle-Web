@@ -311,6 +311,80 @@ describe('Proteccion visual de rutas (HU-02)', () => {
   })
 
   /**
+   * HU-09 (Task HU-09.5): `/missions/reports/:enrollmentId` es la pantalla REAL del
+   * informe de HU-74, con la experiencia de cada derrota. NO sustituye al marcador
+   * de `/missions` -- el tablón de misiones sigue siendo de otra task -- y la
+   * matrícula es lo único que viaja en la dirección: no hay identificador de
+   * jugador que un cliente pueda cambiar.
+   */
+  it('/missions/reports/:enrollmentId renderiza el informe real con su experiencia', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    // Respuestas NUEVAS por peticion: un `Response` solo se puede leer una vez y el
+    // layout tambien consulta al montar.
+    const report = {
+      schemaVersion: 1,
+      enrollmentId: 'enr_prueba',
+      mission: {
+        missionId: 'msn_templo_olvidado',
+        name: 'El Templo Olvidado',
+        category: 'STORY',
+        difficulty: 'NORMAL',
+      },
+      summary: {
+        outcome: 'COMPLETED',
+        outcomeReason: null,
+        hero: { heroId: 'hero-01', name: null, subtype: null },
+        startedAt: '2026-10-02T03:00:00.000Z',
+        finishedAt: '2026-10-02T15:00:00.000Z',
+        simulatedDuration: 'PT12H',
+      },
+      rewards: [],
+      experience: {
+        defeats: 19,
+        totalXp: 54,
+        credited: 19,
+        pending: 0,
+        failed: 0,
+        level: 3,
+        currentXp: 657,
+        maxLevel: 8,
+        levelsGained: 1,
+        leveledUp: true,
+      },
+      generatedAt: '2026-10-02T15:00:05.000Z',
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        // El shell consulta ademas sus propios contadores (Auction): cada ruta
+        // responde con SU forma, o el layout revienta al pintarlos.
+        const body = url.endsWith('/v1/auctions/me/pending-claims') ? [] : report
+
+        return Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }),
+    )
+
+    try {
+      renderRoute('/missions/reports/enr_prueba')
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Informe de misión' }),
+      ).toBeInTheDocument()
+      expect(await screen.findByText('+54 XP')).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  /**
    * HU-14.4: `/play` deja de ser un marcador de posicion. Se ejercita con un
    * `fetch` real stubbeado (no un mock manual) porque la pantalla real hace
    * una consulta GET al montar.

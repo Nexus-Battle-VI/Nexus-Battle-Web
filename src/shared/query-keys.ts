@@ -139,6 +139,15 @@ export const queryKeys = {
     /** Saldo y progreso de cofre propios (HU-22, `GET /api/v1/wallet/me`). El servicio deduce el jugador del testimonio. */
     me: ['wallet', 'me'] as const,
   },
+  missions: {
+    /**
+     * Informe de una misión terminada del jugador (HU-74,
+     * `GET /api/v1/missions/me/reports/{enrollmentId}`), con la experiencia de
+     * HU-09 (Task HU-09.5). La matrícula va en la clave porque el informe es el de
+     * ESA misión; el jugador sale del testimonio y nunca viaja en la petición.
+     */
+    report: (enrollmentId: string) => ['missions', 'report', enrollmentId] as const,
+  },
   notifications: {
     /**
      * Novedades de catálogo pendientes de presentar (HU-38,

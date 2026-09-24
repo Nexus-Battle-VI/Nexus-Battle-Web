@@ -13,6 +13,7 @@ import { accountSectionRoutes } from '@/features/account/routes'
 import { registerAccount } from '@/features/account/registration/api'
 import { RegistrationPage } from '@/features/account/registration/RegistrationPage'
 import { BattleRoomsPage } from '@/features/battle-rooms/BattleRoomsPage'
+import { MissionReportPage } from '@/features/missions/MissionReportPage'
 import { BattleRoomLobbyPage } from '@/features/battle-rooms/BattleRoomLobbyPage'
 import { BattleWithChat } from '@/features/battle-rooms/BattleWithChat'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
@@ -235,6 +236,11 @@ export const routes: RouteObject[] = [
       // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
       { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
       { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
+      // Informe de una misión terminada (HU-74) con la experiencia de sus derrotas
+      // (HU-09, Task HU-09.5). NO entra en `NAVIGATION` ni sustituye al marcador de
+      // `/missions`: se llega con una matrícula concreta en la mano, y el tablón de
+      // misiones sigue siendo de otra task.
+      { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,
