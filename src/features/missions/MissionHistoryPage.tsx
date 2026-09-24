@@ -93,6 +93,18 @@ export const MissionHistoryPage = (): React.JSX.Element => {
                   </ul>
                 </div>
               )}
+              {summary.data.lootCollection.length > 0 && (
+                <div>
+                  <h3 className="font-medium">Botín de jefes conseguido</h3>
+                  <ul className="mt-1 list-inside list-disc">
+                    {summary.data.lootCollection.map((drop) => (
+                      <li key={`${drop.productId ?? 'material'}-${drop.label}`}>
+                        {drop.label} × {drop.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {summary.data.narrativeProgress.length > 0 && (
                 <div>
                   <h3 className="font-medium">Progreso narrativo</h3>

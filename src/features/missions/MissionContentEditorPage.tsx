@@ -51,6 +51,10 @@ const template: EditableMission = {
     recoveryPercent: 35,
     criticalChance: 0.1,
     criticalMultiplier: 1.5,
+    difficultyMultipliers: { NORMAL: 1, HEROIC: 1.5, LEGENDARY: 2, MYTHIC: 2.5 },
+    supportAttack: 10,
+    supportDamage: 3,
+    supportRegen: 1,
   },
   masterEncounter: null,
   rewards: {

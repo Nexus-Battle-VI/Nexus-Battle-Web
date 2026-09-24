@@ -45,6 +45,11 @@ export interface MissionHistorySummary {
     readonly obtainedAt: string
     readonly status: RewardStatus
   }[]
+  readonly lootCollection: readonly {
+    readonly label: string
+    readonly productId: string | null
+    readonly quantity: number
+  }[]
   readonly narrativeProgress: readonly {
     readonly chainId: string
     readonly missions: readonly string[]
