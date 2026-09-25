@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 
@@ -57,6 +59,7 @@ export const EffectEditor = ({
   onRemove,
 }: EffectEditorProps): React.JSX.Element => {
   const modes = MODES_BY_KIND[value.kind]
+  const { t } = useTranslation()
 
   return (
     <fieldset className="rounded-md border border-border bg-surface/40 p-4">
@@ -68,14 +71,14 @@ export const EffectEditor = ({
             onClick={onRemove}
             className="text-xs font-medium text-danger hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
-            Quitar efecto
+            {t('admin:products.effect.remove')}
           </button>
         )}
       </div>
 
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <SelectField
-          label="Clase de efecto"
+          label={t('admin:products.effect.kind')}
           value={value.kind}
           options={EFFECT_KINDS.map((kind) => ({ value: kind, label: EFFECT_KIND_LABELS[kind] }))}
           onChange={(event) => {
@@ -94,7 +97,7 @@ export const EffectEditor = ({
         />
 
         <SelectField
-          label="Objetivo"
+          label={t('admin:products.effect.target')}
           value={value.target}
           options={EFFECT_TARGETS.map((target) => ({
             value: target,
@@ -108,7 +111,7 @@ export const EffectEditor = ({
         {value.kind === 'STAT_MODIFIER' && (
           <>
             <SelectField
-              label="Estadística"
+              label={t('admin:products.effect.statistic')}
               value={value.statistic}
               options={STATISTICS.map((statistic) => ({
                 value: statistic,
@@ -119,7 +122,7 @@ export const EffectEditor = ({
               }}
             />
             <SelectField
-              label="Operación"
+              label={t('admin:products.effect.operation')}
               value={value.operation}
               options={EFFECT_OPERATIONS.map((operation) => ({
                 value: operation,
@@ -134,10 +137,10 @@ export const EffectEditor = ({
 
         {value.kind === 'IMMUNITY' && (
           <TextField
-            label="Código de inmunidad"
+            label={t('admin:products.effect.immunityCode')}
             value={value.immunityCode}
             error={errors[`${prefix}.immunityCode`]}
-            hint="En MAYÚSCULAS, sin espacios. Ej. VENENO."
+            hint={t('admin:products.effect.immunityHint')}
             onChange={(event) => {
               onChange({ ...value, immunityCode: event.target.value })
             }}
@@ -147,16 +150,16 @@ export const EffectEditor = ({
         {value.kind === 'TEMPORARY_STATUS' && (
           <>
             <TextField
-              label="Código de estado"
+              label={t('admin:products.effect.statusCode')}
               value={value.statusCode}
               error={errors[`${prefix}.statusCode`]}
-              hint="En MAYÚSCULAS, sin espacios. Ej. ATURDIDO."
+              hint={t('admin:products.effect.statusHint')}
               onChange={(event) => {
                 onChange({ ...value, statusCode: event.target.value })
               }}
             />
             <TextField
-              label="Duración en turnos"
+              label={t('admin:products.effect.durationTurns')}
               inputMode="numeric"
               value={value.durationTurns}
               error={errors[`${prefix}.durationTurns`]}
@@ -171,7 +174,7 @@ export const EffectEditor = ({
       {modes.length > 0 && (
         <div className="mt-4">
           <MagnitudeFields
-            legend={`Magnitud de ${title.toLowerCase()}`}
+            legend={t('admin:products.effect.magnitudeOf', { title: title.toLowerCase() })}
             value={value.magnitude}
             errors={errors}
             prefix={`${prefix}.magnitude`}
