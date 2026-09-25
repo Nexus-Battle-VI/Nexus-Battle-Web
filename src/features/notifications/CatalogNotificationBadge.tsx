@@ -23,6 +23,13 @@ const LABELS: Readonly<Record<string, string>> = {
   PRODUCT_PREMIUM_CONFIGURED: 'Premium',
   AUCTION_CHANGED: 'Subasta actualizada',
   AUCTION_CLOSING_SOON: 'Cierre próximo',
+  AUCTION_BID_OUTBID: 'Puja superada',
+  AUCTION_CLOSED_BY_BUY_NOW: 'Compra inmediata',
+  AUCTION_AUTO_BID_LIMIT_REACHED: 'Límite de puja alcanzado',
+  AUCTION_SETTLED_SELLER: 'Subasta vendida',
+  AUCTION_SETTLED_WINNER: 'Ganaste la subasta',
+  AUCTION_SETTLED_LOSER: 'Subasta finalizada',
+  AUCTION_SETTLED_WITHOUT_BIDS: 'Subasta sin pujas',
 }
 
 const TONE: Readonly<Record<string, string>> = {
@@ -33,6 +40,13 @@ const TONE: Readonly<Record<string, string>> = {
   PRODUCT_PREMIUM_CONFIGURED: 'bg-brand/15 text-brand',
   AUCTION_CHANGED: 'bg-brand/15 text-brand',
   AUCTION_CLOSING_SOON: 'bg-warning/15 text-warning',
+  AUCTION_BID_OUTBID: 'bg-warning/15 text-warning',
+  AUCTION_CLOSED_BY_BUY_NOW: 'bg-brand/15 text-brand',
+  AUCTION_AUTO_BID_LIMIT_REACHED: 'bg-warning/15 text-warning',
+  AUCTION_SETTLED_SELLER: 'bg-success/15 text-success',
+  AUCTION_SETTLED_WINNER: 'bg-success/15 text-success',
+  AUCTION_SETTLED_LOSER: 'bg-border text-muted',
+  AUCTION_SETTLED_WITHOUT_BIDS: 'bg-border text-muted',
 }
 
 export interface CatalogNotificationBadgeProps {

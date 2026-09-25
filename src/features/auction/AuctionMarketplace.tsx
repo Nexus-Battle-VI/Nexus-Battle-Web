@@ -53,12 +53,23 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
           </dd>
         </div>
       </dl>
-      <Link
-        to={`/auction/${auction.id}`}
-        className="mt-3 inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-      >
-        Ver detalle
-      </Link>
+      {
+        /*
+         * Solo para PLAYER: el detalle real (`GET /v1/auctions/:id`) resuelve
+         * unicamente subastas de jugador -`findById`, no `findOfficialById`-,
+         * asi que un enlace aqui llevaria a un 404. Pujar y comprar en dinero
+         * real ademas exigen la pasarela de pagos que HU-66 todavia no
+         * implementa (ver el propio issue de la historia).
+         */
+        !official && (
+          <Link
+            to={`/auction/${auction.id}`}
+            className="mt-3 inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            Ver detalle
+          </Link>
+        )
+      }
     </article>
   )
 }
