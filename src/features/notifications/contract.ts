@@ -10,6 +10,13 @@ export type CatalogNotificationChangeType =
   | 'PRODUCT_PREMIUM_CONFIGURED'
   | 'AUCTION_CHANGED'
   | 'AUCTION_CLOSING_SOON'
+  | 'AUCTION_BID_OUTBID'
+  | 'AUCTION_CLOSED_BY_BUY_NOW'
+  | 'AUCTION_AUTO_BID_LIMIT_REACHED'
+  | 'AUCTION_SETTLED_SELLER'
+  | 'AUCTION_SETTLED_WINNER'
+  | 'AUCTION_SETTLED_LOSER'
+  | 'AUCTION_SETTLED_WITHOUT_BIDS'
 
 /**
  * Ya consolidada por el backend: `notificationIds` puede representar varias
