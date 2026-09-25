@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useActiveBanners } from './useActiveBanners'
 
@@ -13,6 +14,7 @@ import { useActiveBanners } from './useActiveBanners'
 export const CatalogBanner = (): React.JSX.Element | null => {
   const { items, isLoading, error } = useActiveBanners()
   const [index, setIndex] = useState(0)
+  const { t } = useTranslation()
 
   if (isLoading) {
     return null
@@ -21,7 +23,7 @@ export const CatalogBanner = (): React.JSX.Element | null => {
   if (error !== null) {
     return (
       <p role="alert" className="text-sm text-danger">
-        No se pudo cargar el aviso del catálogo.
+        {t('notifications:banner.failed')}
       </p>
     )
   }
@@ -47,7 +49,7 @@ export const CatalogBanner = (): React.JSX.Element | null => {
 
   return (
     <section
-      aria-label="Aviso del catálogo"
+      aria-label={t('notifications:banner.label')}
       className="rounded-lg border border-brand/30 bg-brand/10 p-5"
     >
       <div className="flex items-start justify-between gap-4">
@@ -60,7 +62,7 @@ export const CatalogBanner = (): React.JSX.Element | null => {
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              aria-label="Banner anterior"
+              aria-label={t('notifications:banner.previous')}
               onClick={goToPrevious}
               className="rounded-md border border-border bg-surface-raised px-2 py-1 text-sm text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
@@ -71,7 +73,7 @@ export const CatalogBanner = (): React.JSX.Element | null => {
             </span>
             <button
               type="button"
-              aria-label="Banner siguiente"
+              aria-label={t('notifications:banner.next')}
               onClick={goToNext}
               className="rounded-md border border-border bg-surface-raised px-2 py-1 text-sm text-ink hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >

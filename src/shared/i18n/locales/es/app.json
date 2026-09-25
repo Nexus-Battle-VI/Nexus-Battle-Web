@@ -10,7 +10,8 @@
     "createProduct": "Crear producto",
     "banners": "Gestionar banner",
     "roles": "Gestionar roles",
-    "moderation": "Moderación de comentarios"
+    "moderation": "Moderación de comentarios",
+    "editMissions": "Editar misiones"
   },
   "session": {
     "signUp": "Crear cuenta",
@@ -59,5 +60,11 @@
     "notConfigured": "No hay proveedor de identidad configurado en esta compilacion.",
     "unusableToken": "El testimonio recibido no es utilizable.",
     "failed": "No se pudo completar el inicio de sesion."
+  },
+  "community": {
+    "title": "Comunidad",
+    "description": "Hilos de conversacion y mensajes.",
+    "pendingBefore": "Esta pantalla todavia no esta implementada. Su funcionalidad corresponde al servicio",
+    "pendingAfter": "y se desarrollara en su Historia de Usuario."
   }
 }
