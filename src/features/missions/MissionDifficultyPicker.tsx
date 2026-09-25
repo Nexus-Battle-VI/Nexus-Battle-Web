@@ -4,6 +4,7 @@ import { useSession } from '@/shared/session'
 import type { DifficultyLevel } from './api'
 import { DifficultySelector } from './DifficultySelector'
 import { useMissionDifficulties } from './useMissionDifficulties'
+import { useTranslation } from 'react-i18next'
 
 export interface MissionDifficultyPickerProps {
   readonly missionId: string
@@ -25,13 +26,14 @@ export const MissionDifficultyPicker = ({
   value,
   onChange,
 }: MissionDifficultyPickerProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
   const query = useMissionDifficulties(missionId)
 
   if (subject === null) {
     return (
       <p className="text-sm text-muted">
-        Inicia sesión para ver y elegir la dificultad de la misión.
+        {t('missions:picker.loginToChoose')}
       </p>
     )
   }
@@ -43,7 +45,7 @@ export const MissionDifficultyPicker = ({
       isLoading={query.isLoading}
       error={query.error}
       isEmpty={items.length === 0}
-      emptyMessage="Esta misión no ofrece niveles de dificultad."
+      emptyMessage={t('missions:picker.noLevels')}
     >
       <DifficultySelector items={items} value={value} onChange={onChange} />
     </QueryState>
