@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
@@ -23,6 +24,9 @@ import {
   type ModerationQueuePage as ModerationQueuePageDto,
 } from './api'
 import { ModerationActionForm, type ModerationActionKind } from './ModerationActionForm'
+import { i18n } from '@/shared/i18n/i18n'
+import { localizedMessages } from '@/shared/i18n/messages'
+import { countLabel } from '@/shared/i18n/format'
 
 const PAGE_SIZE = 20
 
@@ -38,22 +42,23 @@ interface ActiveAction {
   readonly action: ModerationActionKind
 }
 
+/** `label` es la clave de traduccion del verbo de la accion. */
 const ACTIONS: readonly {
   readonly kind: ModerationActionKind
   readonly label: string
   readonly variant: 'primary' | 'secondary' | 'danger'
 }[] = [
-  { kind: 'approve', label: 'Aprobar', variant: 'primary' },
-  { kind: 'hide', label: 'Ocultar', variant: 'secondary' },
-  { kind: 'delete', label: 'Eliminar', variant: 'danger' },
-  { kind: 'mark', label: 'Marcar', variant: 'secondary' },
-  { kind: 'edit', label: 'Editar', variant: 'secondary' },
+  { kind: 'approve', label: 'admin:moderation.actions.approve', variant: 'primary' },
+  { kind: 'hide', label: 'admin:moderation.actions.hide', variant: 'secondary' },
+  { kind: 'delete', label: 'admin:moderation.actions.delete', variant: 'danger' },
+  { kind: 'mark', label: 'admin:moderation.actions.mark', variant: 'secondary' },
+  { kind: 'edit', label: 'admin:moderation.actions.edit', variant: 'secondary' },
 ]
 
-const SOURCE_LABELS: Readonly<Record<ModerationQueueEntrySource, string>> = {
-  USER_REPORT: 'Reportado por usuarios',
-  AUTOMATIC_FILTER: 'Detectado automáticamente',
-}
+const SOURCE_LABELS: Readonly<Record<ModerationQueueEntrySource, string>> = localizedMessages({
+  USER_REPORT: 'admin:moderation.sources.USER_REPORT',
+  AUTOMATIC_FILTER: 'admin:moderation.sources.AUTOMATIC_FILTER',
+})
 
 /**
  * Texto de origen de una fila (HU-41.10): reportes, detecciones automaticas
@@ -65,23 +70,25 @@ const originSummary = (entry: ModerationQueueEntry): string => {
   const parts: string[] = []
 
   if (entry.reportCount > 0) {
-    const noun = entry.reportCount === 1 ? 'reporte' : 'reportes'
     const suffix =
       entry.lastReportedAt !== null
-        ? ` · último reporte ${formatDateTime(entry.lastReportedAt)}`
+        ? i18n.t('admin:moderation.lastReport', { date: formatDateTime(entry.lastReportedAt) })
         : ''
 
-    parts.push(`${String(entry.reportCount)} ${noun}${suffix}`)
+    parts.push(`${countLabel(i18n.t, 'admin:moderation.reports', entry.reportCount)}${suffix}`)
   }
 
   if (entry.automaticFlagCount > 0) {
-    const noun = entry.automaticFlagCount === 1 ? 'detección automática' : 'detecciones automáticas'
     const suffix =
       entry.lastAutomaticFlaggedAt !== null
-        ? ` · última detección ${formatDateTime(entry.lastAutomaticFlaggedAt)}`
+        ? i18n.t('admin:moderation.lastDetection', {
+            date: formatDateTime(entry.lastAutomaticFlaggedAt),
+          })
         : ''
 
-    parts.push(`${String(entry.automaticFlagCount)} ${noun}${suffix}`)
+    parts.push(
+      `${countLabel(i18n.t, 'admin:moderation.detections', entry.automaticFlagCount)}${suffix}`,
+    )
   }
 
   return parts.join(' · ')
@@ -135,6 +142,7 @@ export const ModerationQueuePage = ({
   listQueue = fetchModerationQueue,
 }: ModerationQueuePageProps = {}): React.JSX.Element => {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
   const [offset, setOffset] = useState(0)
   const [activeAction, setActiveAction] = useState<ActiveAction | null>(null)
   const [overrides, setOverrides] = useState<Readonly<Record<string, ProductComment>>>({})
@@ -199,7 +207,10 @@ export const ModerationQueuePage = ({
     (actionLabel: string) =>
     (updated: ProductComment): void => {
       setOverrides((current) => ({ ...current, [updated.id]: updated }))
-      setBanner({ kind: 'success', message: `${actionLabel}: comentario actualizado.` })
+      setBanner({
+        kind: 'success',
+        message: t('admin:moderation.updated', { action: actionLabel }),
+      })
       closeAction()
     }
 
@@ -214,7 +225,7 @@ export const ModerationQueuePage = ({
     setOverrides((current) =>
       Object.fromEntries(Object.entries(current).filter(([id]) => id !== commentId)),
     )
-    setBanner({ kind: 'success', message: 'Eliminar: comentario eliminado permanentemente.' })
+    setBanner({ kind: 'success', message: t('admin:moderation.deleted') })
     closeAction()
     void queryClient.invalidateQueries({ queryKey: ['community', 'moderation-queue'] })
   }
@@ -222,17 +233,18 @@ export const ModerationQueuePage = ({
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10">
       <Breadcrumb
-        items={[{ label: 'Inicio', to: '/ecommerce' }, { label: 'Moderación de comentarios' }]}
+        items={[
+          { label: t('admin:home'), to: '/ecommerce' },
+          { label: t('admin:moderation.crumb') },
+        ]}
       />
 
       <header className="mt-6 mb-8">
-        <p className="text-xs uppercase tracking-widest text-muted">Moderación</p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink">Cola de moderación</h1>
-        <p className="mt-1 text-sm text-muted">
-          Comentarios reportados por otros jugadores, detectados automáticamente por el filtro de
-          contenido, o ambos. Aprobar, ocultar, editar o marcar no retira la fila; eliminar sí,
-          porque borra el comentario de forma permanente.
+        <p className="text-xs uppercase tracking-widest text-muted">
+          {t('admin:moderation.eyebrow')}
         </p>
+        <h1 className="mt-1 text-2xl font-semibold text-ink">{t('admin:moderation.title')}</h1>
+        <p className="mt-1 text-sm text-muted">{t('admin:moderation.intro')}</p>
       </header>
 
       {banner !== null && (
@@ -252,7 +264,7 @@ export const ModerationQueuePage = ({
         isLoading={query.isPending}
         error={query.error}
         isEmpty={total === 0}
-        emptyMessage="No hay comentarios reportados ni detectados pendientes de revisión."
+        emptyMessage={t('admin:moderation.empty')}
       >
         <ul className="space-y-4">
           {items.map((entry) => {
@@ -265,8 +277,11 @@ export const ModerationQueuePage = ({
                     <div className="min-w-0">
                       <p className="text-sm text-ink">{comment.content}</p>
                       <p className="mt-1 text-xs text-muted">
-                        Autor {authorNameOf(comment.authorId)} · Producto{' '}
-                        {productNameOf(comment.productId)} · {formatDateTime(comment.createdAt)}
+                        {t('admin:moderation.meta', {
+                          author: authorNameOf(comment.authorId),
+                          product: productNameOf(comment.productId),
+                          date: formatDateTime(comment.createdAt),
+                        })}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
@@ -304,7 +319,7 @@ export const ModerationQueuePage = ({
                           )
                         }}
                       >
-                        {label}
+                        {t(label)}
                       </Button>
                     ))}
                   </div>
@@ -314,7 +329,7 @@ export const ModerationQueuePage = ({
                       const meta = ACTIONS.find(
                         (entryAction) => entryAction.kind === activeAction.action,
                       )
-                      const actionLabel = meta?.label ?? 'Acción'
+                      const actionLabel = t(meta?.label ?? 'admin:moderation.actionFallback')
 
                       return (
                         <ModerationActionForm
@@ -342,7 +357,10 @@ export const ModerationQueuePage = ({
         </ul>
 
         {pageCount > 1 && (
-          <nav aria-label="Paginación" className="mt-6 flex items-center justify-center gap-3">
+          <nav
+            aria-label={t('admin:moderation.pagination')}
+            className="mt-6 flex items-center justify-center gap-3"
+          >
             <Button
               variant="secondary"
               disabled={currentPage === 1}
@@ -350,10 +368,13 @@ export const ModerationQueuePage = ({
                 setOffset(Math.max(0, offset - PAGE_SIZE))
               }}
             >
-              Anterior
+              {t('admin:previous')}
             </Button>
             <span className="text-xs text-muted">
-              página {currentPage} de {pageCount}
+              {t('admin:moderation.pageOf', {
+                page: String(currentPage),
+                pages: String(pageCount),
+              })}
             </span>
             <Button
               variant="secondary"
@@ -362,7 +383,7 @@ export const ModerationQueuePage = ({
                 setOffset(offset + PAGE_SIZE)
               }}
             >
-              Siguiente
+              {t('admin:next')}
             </Button>
           </nav>
         )}

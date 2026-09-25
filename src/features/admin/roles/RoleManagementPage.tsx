@@ -1,8 +1,11 @@
 import { useState, type SyntheticEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { primaryRole, roleLabel } from '@/shared/rbac'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import {
   ASSIGNABLE_ROLES,
   assignRole,
@@ -36,6 +39,8 @@ export const RoleManagementPage = ({
   const [changing, setChanging] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
 
   const search = async (rawEmail: string): Promise<void> => {
     setFailure(null)
@@ -46,7 +51,11 @@ export const RoleManagementPage = ({
       setAccount(await onSearch(rawEmail.trim()))
     } catch (error: unknown) {
       setAccount(null)
-      setFailure(error instanceof Error ? error.message : 'No se pudo buscar la cuenta.')
+      setFailure(
+        error instanceof Error
+          ? describeFailure(error, t, language)
+          : t('admin:roles.searchFailed'),
+      )
     } finally {
       setSearching(false)
     }
@@ -77,7 +86,11 @@ export const RoleManagementPage = ({
       setAccount(await onSearch(account.email))
       setSuccess(successMessage)
     } catch (error: unknown) {
-      setFailure(error instanceof Error ? error.message : 'No se pudo actualizar el rol.')
+      setFailure(
+        error instanceof Error
+          ? describeFailure(error, t, language)
+          : t('admin:roles.updateFailed'),
+      )
     } finally {
       setChanging(false)
     }
@@ -89,30 +102,37 @@ export const RoleManagementPage = ({
     }
 
     if (selectedRole === 'ADMINISTRATOR' && !account.mfaEnrolled) {
-      setFailure(
-        'La cuenta debe inscribir su aplicacion autenticadora en Mi Cuenta > Seguridad antes de recibir ADMINISTRATOR.',
-      )
+      setFailure(t('admin:roles.mfaRequired'))
       return
     }
 
-    if (!confirmAction(`Asignar ${roleLabel(selectedRole)} a ${account.email}?`)) {
+    if (
+      !confirmAction(
+        t('admin:roles.confirmAssign', { role: roleLabel(selectedRole), email: account.email }),
+      )
+    ) {
       return
     }
 
     void refreshAfter(
       () => onAssign(account.id, selectedRole),
-      `Se asigno ${roleLabel(selectedRole)} y se actualizo la cuenta.`,
+      t('admin:roles.assigned', { role: roleLabel(selectedRole) }),
     )
   }
 
   const handleRevoke = (role: AssignableRole): void => {
-    if (account === null || !confirmAction(`Retirar ${roleLabel(role)} de ${account.email}?`)) {
+    if (
+      account === null ||
+      !confirmAction(
+        t('admin:roles.confirmRevoke', { role: roleLabel(role), email: account.email }),
+      )
+    ) {
       return
     }
 
     void refreshAfter(
       () => onRevoke(account.id, role),
-      `Se retiro ${roleLabel(role)} y se actualizo la cuenta.`,
+      t('admin:roles.revoked', { role: roleLabel(role) }),
     )
   }
 
@@ -124,13 +144,10 @@ export const RoleManagementPage = ({
 
   return (
     <div className="space-y-4">
-      <Card
-        title="Gestion de roles"
-        description="Busca una cuenta y asigna o retira los roles Moderador y Administrador."
-      >
+      <Card title={t('admin:roles.title')} description={t('admin:roles.description')}>
         <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1 text-sm font-medium text-ink">
-            Correo de la cuenta
+            {t('admin:roles.email')}
             <input
               type="email"
               required
@@ -138,12 +155,12 @@ export const RoleManagementPage = ({
               onChange={(event) => {
                 setEmail(event.target.value)
               }}
-              placeholder="persona@correo.com"
+              placeholder={t('admin:roles.emailPlaceholder')}
               className={`${FIELD_CLASS} mt-1`}
             />
           </label>
           <Button type="submit" loading={searching}>
-            Buscar cuenta
+            {t('admin:roles.search')}
           </Button>
         </form>
       </Card>
@@ -163,33 +180,32 @@ export const RoleManagementPage = ({
         <Card title={account.displayName} description={account.email}>
           <dl className="grid gap-3 text-sm sm:grid-cols-3">
             <div>
-              <dt className="text-muted">Rol vigente</dt>
+              <dt className="text-muted">{t('admin:roles.current')}</dt>
               <dd className="font-medium text-ink">
-                {currentRole === null ? 'Sin rol' : roleLabel(currentRole)}
+                {currentRole === null ? t('admin:roles.none') : roleLabel(currentRole)}
               </dd>
             </div>
             <div>
-              <dt className="text-muted">Estado</dt>
+              <dt className="text-muted">{t('admin:roles.status')}</dt>
               <dd className="font-medium text-ink">{account.status}</dd>
             </div>
             <div>
-              <dt className="text-muted">Aplicacion autenticadora</dt>
+              <dt className="text-muted">{t('admin:roles.authenticator')}</dt>
               <dd className="font-medium text-ink">
-                {account.mfaEnrolled ? 'Inscrita' : 'No inscrita'}
+                {account.mfaEnrolled ? t('admin:roles.enrolled') : t('admin:roles.notEnrolled')}
               </dd>
             </div>
           </dl>
 
           {!account.mfaEnrolled && (
             <p className="mt-4 rounded-md border border-brand bg-brand/10 p-3 text-sm text-ink">
-              Para recibir Administrador, esta persona debe inscribir su autenticador en Mi Cuenta
-              &gt; Seguridad. La asignacion permanece deshabilitada hasta entonces.
+              {t('admin:roles.mfaNotice')}
             </p>
           )}
 
           <div className="mt-5 space-y-3 border-t border-border pt-4">
             <label className="block text-sm font-medium text-ink">
-              Rol a asignar
+              {t('admin:roles.toAssign')}
               <select
                 value={selectedRole}
                 onChange={(event) => {
@@ -197,8 +213,8 @@ export const RoleManagementPage = ({
                 }}
                 className={`${FIELD_CLASS} mt-1 max-w-sm`}
               >
-                <option value="MODERATOR">Moderador</option>
-                <option value="ADMINISTRATOR">Administrador</option>
+                <option value="MODERATOR">{roleLabel('MODERATOR')}</option>
+                <option value="ADMINISTRATOR">{roleLabel('ADMINISTRATOR')}</option>
               </select>
             </label>
             <Button
@@ -206,13 +222,15 @@ export const RoleManagementPage = ({
               loading={changing}
               disabled={administratorBlocked || account.roles.includes(selectedRole)}
             >
-              {account.roles.includes(selectedRole) ? 'Rol ya asignado' : 'Asignar rol'}
+              {account.roles.includes(selectedRole)
+                ? t('admin:roles.alreadyAssigned')
+                : t('admin:roles.assign')}
             </Button>
           </div>
 
           {assignedElevatedRoles.length > 0 && (
             <div className="mt-5 border-t border-border pt-4">
-              <h3 className="text-sm font-semibold text-ink">Roles elevados asignados</h3>
+              <h3 className="text-sm font-semibold text-ink">{t('admin:roles.elevated')}</h3>
               <div className="mt-3 flex flex-wrap gap-2">
                 {assignedElevatedRoles.map((role) => (
                   <Button
@@ -223,7 +241,7 @@ export const RoleManagementPage = ({
                       handleRevoke(role)
                     }}
                   >
-                    Retirar {roleLabel(role)}
+                    {t('admin:roles.revoke', { role: roleLabel(role) })}
                   </Button>
                 ))}
               </div>

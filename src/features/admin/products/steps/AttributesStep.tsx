@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next'
+
 import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/form/CheckboxField'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 import {
   ARMOR_SLOTS,
@@ -16,12 +19,10 @@ import { EffectEditor } from '../EffectEditor'
 import { MagnitudeFields } from '../MagnitudeFields'
 import type { StepProps } from './BasicsStep'
 
-const COMPATIBILITY_LABELS: Readonly<Record<CompatibilityScope, string>> = {
-  ALL_HEROES: 'Todos los héroes',
-  SELECTED_SUBTYPES: 'Solo algunos subtipos',
-}
-
-const SUBTYPE_HINT = 'Separa varios con comas. En MAYÚSCULAS y sin espacios. Ej. GUERRERO, MAGO.'
+const COMPATIBILITY_LABELS: Readonly<Record<CompatibilityScope, string>> = localizedMessages({
+  ALL_HEROES: 'admin:products.attrs.compatibility.ALL_HEROES',
+  SELECTED_SUBTYPES: 'admin:products.attrs.compatibility.SELECTED_SUBTYPES',
+})
 
 /**
  * Paso 2: lo que distingue a un tipo de producto de otro.
@@ -32,10 +33,13 @@ const SUBTYPE_HINT = 'Separa varios con comas. En MAYÚSCULAS y sin espacios. Ej
  * partes de lo que se ve.
  */
 export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JSX.Element => {
+  const { t } = useTranslation()
+  const subtypeHint = t('admin:products.attrs.subtypeHint')
+
   if (draft.type === '') {
     return (
       <p role="alert" className="text-sm text-muted">
-        Vuelve al paso 1 y selecciona un tipo de producto.
+        {t('admin:products.attrs.pickType')}
       </p>
     )
   }
@@ -43,7 +47,7 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
   return (
     <div className="flex flex-col gap-6">
       <p className="rounded-md border border-border bg-surface/40 px-4 py-3 text-sm text-muted">
-        Configurando atributos para:{' '}
+        {t('admin:products.attrs.configuring')}{' '}
         <strong className="text-ink">{PRODUCT_TYPE_LABELS[draft.type]}</strong>.
       </p>
 
@@ -51,17 +55,17 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
         <>
           <div className="grid gap-6 md:grid-cols-3">
             <TextField
-              label="Subtipo de héroe"
+              label={t('admin:products.attrs.heroSubtype')}
               required
               value={draft.heroSubtype}
               error={errors.heroSubtype}
-              hint="En MAYÚSCULAS y sin espacios. Ej. GUERRERO."
+              hint={t('admin:products.attrs.codeHint')}
               onChange={(event) => {
                 onChange({ heroSubtype: event.target.value })
               }}
             />
             <TextField
-              label="Poder base"
+              label={t('admin:products.attrs.basePower')}
               required
               inputMode="numeric"
               value={draft.basePower}
@@ -71,18 +75,18 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
               }}
             />
             <TextField
-              label="Vida base"
+              label={t('admin:products.attrs.baseHealth')}
               required
               inputMode="numeric"
               value={draft.baseHealth}
               error={errors.baseHealth}
-              hint="Mínimo 1."
+              hint={t('admin:products.attrs.min1')}
               onChange={(event) => {
                 onChange({ baseHealth: event.target.value })
               }}
             />
             <TextField
-              label="Defensa base"
+              label={t('admin:products.attrs.baseDefense')}
               required
               inputMode="numeric"
               value={draft.baseDefense}
@@ -92,12 +96,12 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
               }}
             />
             <SelectField
-              label="Perfil"
+              label={t('admin:products.attrs.profile')}
               value={draft.heroProfile}
-              hint="El dominio admite ofensivo o sanador, nunca los dos a la vez."
+              hint={t('admin:products.attrs.profileHint')}
               options={[
-                { value: 'OFFENSIVE', label: 'Ofensivo (ataque y daño)' },
-                { value: 'HEALING', label: 'Sanador (curación)' },
+                { value: 'OFFENSIVE', label: t('admin:products.attrs.offensive') },
+                { value: 'HEALING', label: t('admin:products.attrs.healer') },
               ]}
               onChange={(event) => {
                 onChange({
@@ -110,9 +114,11 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
           {draft.heroProfile === 'OFFENSIVE' ? (
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <p className="mb-2 text-sm font-medium text-ink">Ataque base</p>
+                <p className="mb-2 text-sm font-medium text-ink">
+                  {t('admin:products.attrs.baseAttack')}
+                </p>
                 <MagnitudeFields
-                  legend="Ataque base"
+                  legend={t('admin:products.attrs.baseAttack')}
                   value={draft.baseAttack}
                   errors={errors}
                   prefix="baseAttack"
@@ -123,9 +129,11 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
                 />
               </div>
               <div>
-                <p className="mb-2 text-sm font-medium text-ink">Daño base</p>
+                <p className="mb-2 text-sm font-medium text-ink">
+                  {t('admin:products.attrs.baseDamage')}
+                </p>
                 <MagnitudeFields
-                  legend="Daño base"
+                  legend={t('admin:products.attrs.baseDamage')}
                   value={draft.baseDamage}
                   errors={errors}
                   prefix="baseDamage"
@@ -138,9 +146,11 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
             </div>
           ) : (
             <div>
-              <p className="mb-2 text-sm font-medium text-ink">Curación base</p>
+              <p className="mb-2 text-sm font-medium text-ink">
+                {t('admin:products.attrs.baseHealing')}
+              </p>
               <MagnitudeFields
-                legend="Curación base"
+                legend={t('admin:products.attrs.baseHealing')}
                 value={draft.baseHealing}
                 errors={errors}
                 prefix="baseHealing"
@@ -158,13 +168,11 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
                 // El indice ES la identidad aqui: son tres ranuras fijas, no
                 // una lista que se reordene.
                 key={`ability-${String(index)}`}
-                label={`Habilidad ${String(index + 1)}`}
+                label={t('admin:products.attrs.ability', { index: String(index + 1) })}
                 required
                 value={ability}
                 error={errors[`abilities.${String(index)}`]}
-                {...(index === 0
-                  ? { hint: 'Identificador (UUID) de una habilidad ya creada.' }
-                  : {})}
+                {...(index === 0 ? { hint: t('admin:products.attrs.abilityHint') } : {})}
                 onChange={(event) => {
                   const abilities: [string, string, string] = [...draft.abilities]
                   abilities[index] = event.target.value
@@ -179,21 +187,21 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
       {draft.type === 'HABILIDAD' && (
         <div className="grid gap-6 md:grid-cols-3">
           <TextField
-            label="Subtipos de héroe compatibles"
+            label={t('admin:products.attrs.compatibleSubtypes')}
             required
             value={draft.compatibleHeroSubtypes}
             error={errors.compatibleHeroSubtypes}
-            hint={SUBTYPE_HINT}
+            hint={subtypeHint}
             onChange={(event) => {
               onChange({ compatibleHeroSubtypes: event.target.value })
             }}
           />
           <SelectField
-            label="Coste de poder"
+            label={t('admin:products.attrs.powerCost')}
             value={draft.powerCostMode}
             options={[
-              { value: 'FIXED', label: 'Cantidad fija' },
-              { value: 'ALL_AVAILABLE', label: 'Todo el poder disponible' },
+              { value: 'FIXED', label: t('admin:products.attrs.powerFixed') },
+              { value: 'ALL_AVAILABLE', label: t('admin:products.attrs.powerAll') },
             ]}
             onChange={(event) => {
               onChange({
@@ -203,12 +211,12 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
           />
           {draft.powerCostMode === 'FIXED' && (
             <TextField
-              label="Poder consumido"
+              label={t('admin:products.attrs.powerConsumed')}
               required
               inputMode="numeric"
               value={draft.powerCost}
               error={errors.powerCost}
-              hint="Mínimo 1."
+              hint={t('admin:products.attrs.min1')}
               onChange={(event) => {
                 onChange({ powerCost: event.target.value })
               }}
@@ -220,7 +228,7 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
       {(draft.type === 'ARMA' || draft.type === 'ARMADURA' || draft.type === 'ITEM') && (
         <div className="grid gap-6 md:grid-cols-3">
           <SelectField
-            label="Compatibilidad"
+            label={t('admin:products.attrs.compatibilityLabel')}
             value={draft.compatibilityScope}
             options={COMPATIBILITY_SCOPES.map((scope) => ({
               value: scope,
@@ -233,11 +241,11 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
 
           {draft.compatibilityScope === 'SELECTED_SUBTYPES' && (
             <TextField
-              label="Subtipos compatibles"
+              label={t('admin:products.attrs.compatibleSubtypesShort')}
               required
               value={draft.compatibleHeroSubtypes}
               error={errors.compatibleHeroSubtypes}
-              hint={SUBTYPE_HINT}
+              hint={subtypeHint}
               onChange={(event) => {
                 onChange({ compatibleHeroSubtypes: event.target.value })
               }}
@@ -246,7 +254,7 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
 
           {draft.type === 'ARMADURA' && (
             <SelectField
-              label="Ranura"
+              label={t('admin:products.attrs.slot')}
               value={draft.armorSlot}
               options={ARMOR_SLOTS.map((slot) => ({ value: slot, label: ARMOR_SLOT_LABELS[slot] }))}
               onChange={(event) => {
@@ -257,10 +265,10 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
 
           {draft.type !== 'ITEM' && (
             <TextField
-              label="Código de conjunto (opcional)"
+              label={t('admin:products.attrs.setCode')}
               value={draft.setCode}
               error={errors.setCode}
-              hint="En MAYÚSCULAS, o vacío si no pertenece a un conjunto."
+              hint={t('admin:products.attrs.setCodeHint')}
               onChange={(event) => {
                 onChange({ setCode: event.target.value })
               }}
@@ -273,11 +281,11 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
         <>
           <div className="md:max-w-sm">
             <TextField
-              label="Subtipo de héroe compatible"
+              label={t('admin:products.attrs.compatibleSubtype')}
               required
               value={draft.compatibleHeroSubtype}
               error={errors.compatibleHeroSubtype}
-              hint="En MAYÚSCULAS y sin espacios. Ej. GUERRERO."
+              hint={t('admin:products.attrs.codeHint')}
               onChange={(event) => {
                 onChange({ compatibleHeroSubtype: event.target.value })
               }}
@@ -285,7 +293,7 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
           </div>
 
           <EffectEditor
-            title="Efecto específico"
+            title={t('admin:products.attrs.specificEffect')}
             value={draft.specificEffect}
             errors={errors}
             prefix="specificEffect"
@@ -295,8 +303,8 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
           />
 
           <CheckboxField
-            label="Agregar efecto general opcional"
-            hint="Se aplica a cualquier héroe que use la Épica; el específico solo al subtipo compatible."
+            label={t('admin:products.attrs.addGeneral')}
+            hint={t('admin:products.attrs.addGeneralHint')}
             checked={draft.generalEffectEnabled}
             onChange={(event) => {
               onChange({ generalEffectEnabled: event.target.checked })
@@ -305,7 +313,7 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
 
           {draft.generalEffectEnabled && (
             <EffectEditor
-              title="Efecto general"
+              title={t('admin:products.attrs.generalEffect')}
               value={draft.generalEffect}
               errors={errors}
               prefix="generalEffect"
@@ -320,14 +328,14 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
       {USES_EFFECT_LIST.has(draft.type) && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-ink">Efectos</h3>
+            <h3 className="text-sm font-semibold text-ink">{t('admin:products.attrs.effects')}</h3>
             <Button
               variant="secondary"
               onClick={() => {
                 onChange({ effects: [...draft.effects, emptyEffect()] })
               }}
             >
-              Añadir efecto
+              {t('admin:products.attrs.addEffect')}
             </Button>
           </div>
 
@@ -340,7 +348,7 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
           {draft.effects.map((effect, index) => (
             <EffectEditor
               key={`effect-${String(index)}`}
-              title={`Efecto ${String(index + 1)}`}
+              title={t('admin:products.attrs.effect', { index: String(index + 1) })}
               value={effect}
               errors={errors}
               prefix={`effects.${String(index)}`}
