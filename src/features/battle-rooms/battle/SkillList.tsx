@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import type { RealtimeConnectionState } from '../realtime'
@@ -67,6 +68,7 @@ export const SkillList = ({
 }: SkillListProps): React.JSX.Element | null => {
   const headingId = useId()
   const noteId = useId()
+  const { t } = useTranslation()
   const self = findSelf(battle, subject)
   const skills = self === null ? [] : combatantSkills(battle, self)
   const using = skill.intent
@@ -89,7 +91,7 @@ export const SkillList = ({
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <h3 id={headingId} className="text-xs font-semibold uppercase tracking-widest text-muted">
-        Habilidades
+        {t('battle:skills.title')}
       </h3>
 
       <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
@@ -128,16 +130,12 @@ export const SkillList = ({
       </ul>
 
       <p id={noteId} className="text-xs text-muted">
-        El costo de Poder y la recarga los aplica Combat. Si tu Poder no alcanza, se usa un ataque
-        básico en su lugar y la habilidad no se gasta.
+        {t('battle:skills.note')}
       </p>
 
       {skill.unconfirmed && skill.intent !== null && (
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
-          <p>
-            No se pudo confirmar tu habilidad. Es posible que Combat ya la haya procesado: al
-            reintentar se envía el mismo comando y no se duplica.
-          </p>
+          <p>{t('battle:skills.unconfirmed')}</p>
           <Button
             variant="secondary"
             aria-disabled={!ready}
@@ -148,7 +146,7 @@ export const SkillList = ({
               }
             }}
           >
-            Reintentar habilidad
+            {t('battle:skills.retry')}
           </Button>
         </div>
       )}
@@ -157,7 +155,7 @@ export const SkillList = ({
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
           <p>{describeSkillRejection(skill.rejection)}</p>
           <Button variant="secondary" className="min-h-11" onClick={onDismissRejection}>
-            Entendido
+            {t('battle:understood')}
           </Button>
         </div>
       )}
@@ -194,6 +192,7 @@ const SkillRow = ({
   const stateId = useId()
   const allyLegendId = useId()
   const isHeal = skill.targetAudience === 'ALLY'
+  const { t } = useTranslation()
 
   return (
     <li
@@ -215,7 +214,7 @@ const SkillRow = ({
       {isHeal && allies.length > 1 && (
         <fieldset className="min-w-0">
           <legend id={allyLegendId} className="mb-1 text-xs font-semibold text-muted">
-            Compañero a curar
+            {t('battle:skills.healTarget')}
           </legend>
           <div className="flex flex-wrap gap-2">
             {allies.map((entry) => {
@@ -247,7 +246,10 @@ const SkillRow = ({
                   <span className="text-xs tabular-nums text-muted">
                     {health === null
                       ? ''
-                      : `Vida ${String(health.current)} / ${String(health.max)}`}
+                      : t('battle:health.value', {
+                          current: String(health.current),
+                          max: String(health.max),
+                        })}
                   </span>
                 </label>
               )
@@ -267,7 +269,7 @@ const SkillRow = ({
           }
         }}
       >
-        {busy ? 'Usando…' : `Usar ${skill.name}`}
+        {busy ? t('battle:skills.using') : t('battle:skills.use', { skill: skill.name })}
       </Button>
       {availability.hint !== null && (
         <p id={hintId} className="text-xs text-muted">

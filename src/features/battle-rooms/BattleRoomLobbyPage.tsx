@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -20,6 +21,8 @@ import { useBattleRooms, useCancelBattleRoom, useLeaveBattleRoom } from './hooks
 import { useBattleRoomRealtime } from './useBattleRoomRealtime'
 import { describeBattleRoomFailure, modeLabel, teamByLetter } from './presentation'
 import type { Participant, Team } from './types'
+import { i18n } from '@/shared/i18n/i18n'
+import { formatInteger } from '@/shared/i18n/format'
 
 const initialsOfDisplayName = (name: string): string => {
   const trimmed = name.trim()
@@ -27,7 +30,9 @@ const initialsOfDisplayName = (name: string): string => {
 }
 
 const participantLabel = (participant: Participant): string =>
-  participant.kind === 'AI' ? 'Oponente IA' : (participant.displayName ?? 'Jugador')
+  participant.kind === 'AI'
+    ? i18n.t('battle:ai')
+    : (participant.displayName ?? i18n.t('battle:player'))
 
 interface TeamColumnProps {
   readonly letter: string
@@ -53,11 +58,12 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
   const capacity = team?.capacity ?? 0
   const participants = team?.participants ?? []
   const emptySlots = Math.max(capacity - participants.length, 0)
+  const { t } = useTranslation()
 
   return (
     <div className="flex flex-1 flex-col gap-3 rounded-lg border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">Equipo {letter}</h3>
+        <h3 className="text-sm font-semibold text-ink">{t('battle:team', { team: letter })}</h3>
         <span className="text-xs text-muted">
           {participants.length}/{capacity}
         </span>
@@ -84,7 +90,7 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
               <span className="truncate text-sm text-ink">{label}</span>
               {isRoomOwner && (
                 <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
-                  Propietario
+                  {t('battle:room.owner')}
                 </span>
               )}
             </li>
@@ -96,7 +102,7 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
               aria-hidden="true"
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border"
             />
-            <span className="text-sm text-muted">Esperando jugador…</span>
+            <span className="text-sm text-muted">{t('battle:room.waitingSlot')}</span>
           </li>
         ))}
       </ul>
@@ -136,6 +142,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   const { roomId = null } = useParams<{ roomId: string }>()
   const subject = useSession((state) => state.subject)
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const rooms = useBattleRooms()
   const realtime = useBattleRoomRealtime(roomId)
@@ -199,7 +206,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   if (rooms.isPending) {
     return (
       <p role="status" className="text-sm text-muted">
-        Cargando...
+        {t('battle:loading')}
       </p>
     )
   }
@@ -223,7 +230,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
     if (detail.isLoading) {
       return (
         <p role="status" className="text-sm text-muted">
-          Cargando...
+          {t('battle:loading')}
         </p>
       )
     }
@@ -234,7 +241,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
       return (
         <section className="flex flex-col gap-2">
           <p role="alert" className="text-sm text-danger">
-            La sala fue cancelada por su propietario. Selecciona otra sala para continuar.
+            {t('battle:room.cancelledByOwner')}
           </p>
           {/* HU-23: el estado REAL que publico Combat; "liberándose" mientras
               Wallet no confirme, nunca "recuperado" por adelantado. */}
@@ -247,7 +254,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
       )
     }
 
-    return <p className="text-sm text-muted">Esta sala ya no está disponible.</p>
+    return <p className="text-sm text-muted">{t('battle:room.unavailable')}</p>
   }
 
   const isOwner = subject !== null && subject === room.createdBy
@@ -292,14 +299,10 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   }
 
   return (
-    <section aria-label="Sala de batalla" className="flex flex-col gap-6">
+    <section aria-label={t('battle:room.label')} className="flex flex-col gap-6">
       <Card
-        title="Sala de batalla"
-        description={
-          room.status === 'PREPARING'
-            ? 'La sala se llenó: preparando batalla.'
-            : 'Esperando jugadores.'
-        }
+        title={t('battle:room.label')}
+        description={room.status === 'PREPARING' ? t('battle:room.full') : t('battle:room.waiting')}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -316,11 +319,11 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             </span>
             <span className="flex items-center gap-1 text-sm text-muted">
               <Coins aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
-              {room.reward.amount.toLocaleString('es-CO')}
+              {formatInteger(room.reward.amount)}
             </span>
             {realtime.connection === 'reconnecting' && (
               <span role="status" className="text-xs text-muted">
-                Reconectando en tiempo real…
+                {t('battle:room.reconnecting')}
               </span>
             )}
           </div>
@@ -330,10 +333,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             <TeamColumn letter="B" team={teamByLetter(room, 'B')} ownerPlayerId={room.createdBy} />
           </div>
 
-          <p className="text-xs text-muted">
-            La batalla comienza cuando la sala se llena: Combat valida a los participantes y decide
-            el orden de los turnos.
-          </p>
+          <p className="text-xs text-muted">{t('battle:room.startNote')}</p>
 
           {/*
            * Seccion 12 del prompt maestro de estabilizacion: revisar la propia
@@ -354,7 +354,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
               to="/inventory"
               className="self-start text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              Revisar mi equipamiento
+              {t('battle:room.reviewEquipment')}
             </Link>
           )}
 
@@ -374,11 +374,11 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             <div className="flex flex-wrap items-center gap-2">
               {isOwner ? (
                 <Button variant="danger" loading={cancelRoom.isPending} onClick={handleCancel}>
-                  Cancelar sala
+                  {t('battle:room.cancel')}
                 </Button>
               ) : (
                 <Button variant="secondary" loading={leaveRoom.isPending} onClick={handleLeave}>
-                  Abandonar sala
+                  {t('battle:room.leave')}
                 </Button>
               )}
             </div>
@@ -394,15 +394,15 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             <div className="flex flex-wrap items-center gap-2">
               {isOwner ? (
                 <Button loading={startRoom.isPending} onClick={handleStart}>
-                  Iniciar partida
+                  {t('battle:room.start')}
                 </Button>
               ) : (
                 <>
                   <p role="status" className="text-sm text-muted">
-                    Esperando a que el creador inicie la partida…
+                    {t('battle:room.waitingOwner')}
                   </p>
                   <Button variant="secondary" loading={leaveRoom.isPending} onClick={handleLeave}>
-                    Abandonar sala
+                    {t('battle:room.leave')}
                   </Button>
                 </>
               )}
@@ -410,7 +410,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
           )}
 
           {!isParticipant && (
-            <p className="text-xs text-muted">Aún no eres participante de esta sala.</p>
+            <p className="text-xs text-muted">{t('battle:room.notParticipant')}</p>
           )}
         </div>
       </Card>
@@ -418,8 +418,8 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
       {isParticipant && (
         <ChatPanel
           channel={{ kind: 'room', roomId: room.id }}
-          title="Chat de la sala"
-          description="Solo lo ven los participantes de esta sala."
+          title={t('battle:room.chat')}
+          description={t('battle:room.chatDescription')}
         />
       )}
     </section>

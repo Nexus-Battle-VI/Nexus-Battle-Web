@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Avatar } from '@/components/ui/Avatar'
 import { heroIdFromSubtype } from '@/features/player-inventory/equipment/heroSubtype'
@@ -60,10 +61,16 @@ const CombatantCard = ({
 }: CombatantCardProps): React.JSX.Element => {
   const modelId = entry.heroSubtype === null ? null : heroIdFromSubtype(entry.heroSubtype)
   const name = combatantName(entry)
+  const { t } = useTranslation()
 
   return (
     <li
-      aria-label={`${name}${isSelf ? ' (tú)' : ''}, equipo ${entry.teamLabel}${isActive ? ', turno actual' : ''}`}
+      aria-label={t('battle:battle.combatantLabel', {
+        name,
+        you: isSelf ? ` ${t('battle:you')}` : '',
+        team: entry.teamLabel,
+        current: isActive ? t('battle:battle.currentSuffix') : '',
+      })}
       className={clsx(
         'flex min-w-0 flex-col items-center gap-2 rounded-xl border bg-surface/70 p-3',
         'motion-safe:transition-shadow motion-safe:duration-300',
@@ -95,12 +102,12 @@ const CombatantCard = ({
         <span className="truncate text-base font-semibold text-ink">{name}</span>
         {isSelf && (
           <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-ink ring-1 ring-brand">
-            Tú
+            {t('battle:youBadge')}
           </span>
         )}
         {isActive && (
           <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-brand-ink">
-            Turno actual
+            {t('battle:battle.currentTurn')}
           </span>
         )}
       </div>

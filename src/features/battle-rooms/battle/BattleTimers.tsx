@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import {
   formatRemaining,
@@ -9,6 +10,7 @@ import {
   type ServerClock,
 } from './battleClock'
 import type { BattleView } from './types'
+import { i18n } from '@/shared/i18n/i18n'
 
 /** Cadencia del unico temporizador de visualizacion (250 ms). */
 const TICK_MS = 250
@@ -30,7 +32,8 @@ const WARNING_CLASS: Readonly<Record<'none' | 'low' | 'critical', string>> = {
 }
 
 const nameOf = (battle: BattleView): string =>
-  battle.currentTurn.displayName ?? `Asiento ${String(battle.currentTurn.seat + 1)}`
+  battle.currentTurn.displayName ??
+  i18n.t('battle:seat', { seat: String(battle.currentTurn.seat + 1) })
 
 /**
  * Temporizadores de la batalla (HU-21, contrato §6.4): SOLO visualizacion.
@@ -50,6 +53,7 @@ export const BattleTimers = ({
   monotonicNow = readMonotonicNow,
 }: BattleTimersProps): React.JSX.Element | null => {
   const [now, setNow] = useState(() => monotonicNow())
+  const { t } = useTranslation()
   const announced = useRef({
     turnLow: false,
     turnCritical: false,
@@ -83,18 +87,18 @@ export const BattleTimers = ({
 
     if (turnRemaining <= 10_000 && !flags.turnLow) {
       flags.turnLow = true
-      setAnnouncement(isMyTurn ? 'Quedan 10 segundos de tu turno' : 'Quedan 10 segundos del turno')
+      setAnnouncement(isMyTurn ? t('battle:timers.turn10Yours') : t('battle:timers.turn10'))
     } else if (turnRemaining <= 5_000 && !flags.turnCritical) {
       flags.turnCritical = true
-      setAnnouncement(isMyTurn ? 'Quedan 5 segundos de tu turno' : 'Quedan 5 segundos del turno')
+      setAnnouncement(isMyTurn ? t('battle:timers.turn5Yours') : t('battle:timers.turn5'))
     } else if (battleRemaining <= 60_000 && !flags.battleLow) {
       flags.battleLow = true
-      setAnnouncement('Queda 1 minuto de batalla')
+      setAnnouncement(t('battle:timers.battle60'))
     } else if (battleRemaining <= 10_000 && !flags.battleCritical) {
       flags.battleCritical = true
-      setAnnouncement('Quedan 10 segundos de batalla')
+      setAnnouncement(t('battle:timers.battle10'))
     }
-  }, [synced, deadlines, turnRemaining, battleRemaining, isMyTurn])
+  }, [synced, deadlines, turnRemaining, battleRemaining, isMyTurn, t])
 
   if (deadlines === undefined || !synced) {
     return null
@@ -108,22 +112,33 @@ export const BattleTimers = ({
       <p
         role="timer"
         aria-live="off"
-        aria-label={isMyTurn ? 'Tiempo de tu turno' : `Tiempo del turno de ${nameOf(battle)}`}
+        aria-label={
+          isMyTurn
+            ? t('battle:timers.turnYours')
+            : t('battle:timers.turnOf', { name: nameOf(battle) })
+        }
         className={clsx('font-semibold tabular-nums', WARNING_CLASS[turnTone])}
       >
         <span aria-hidden="true">
-          {isMyTurn ? 'Tu turno' : `Turno de ${nameOf(battle)}`}: {formatRemaining(turnRemaining)}
+          {t('battle:timers.turnValue', {
+            label: isMyTurn
+              ? t('battle:turn.yours')
+              : t('battle:turn.of', { name: nameOf(battle) }),
+            time: formatRemaining(turnRemaining),
+          })}
         </span>
       </p>
       <p
         role="timer"
         aria-live="off"
-        aria-label="Tiempo de batalla"
+        aria-label={t('battle:timers.battle')}
         className={clsx('tabular-nums', WARNING_CLASS[battleTone])}
       >
-        <span aria-hidden="true">Tiempo de batalla: {formatRemaining(battleRemaining)}</span>
+        <span aria-hidden="true">
+          {t('battle:timers.battleValue', { time: formatRemaining(battleRemaining) })}
+        </span>
       </p>
-      {turnRemaining === 0 && <p className="text-muted">Esperando a Combat…</p>}
+      {turnRemaining === 0 && <p className="text-muted">{t('battle:timers.waitingCombat')}</p>}
       <p role="status" aria-live="polite" className="sr-only">
         {announcement}
       </p>

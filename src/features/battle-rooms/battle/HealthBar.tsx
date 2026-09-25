@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { healthFraction, healthTone, type HealthTone } from './presentation'
 import type { HealthView } from './types'
@@ -25,8 +26,10 @@ export interface HealthBarProps {
  * publico: no calcula ni resta Vida.
  */
 export const HealthBar = ({ name, health }: HealthBarProps): React.JSX.Element => {
+  const { t } = useTranslation()
+
   if (health === null) {
-    return <p className="text-center text-xs text-muted">Vida no disponible</p>
+    return <p className="text-center text-xs text-muted">{t('battle:health.unavailable')}</p>
   }
 
   const tone = healthTone(health)
@@ -34,18 +37,21 @@ export const HealthBar = ({ name, health }: HealthBarProps): React.JSX.Element =
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="font-medium text-muted">Vida</span>
+        <span className="font-medium text-muted">{t('battle:health.label')}</span>
         <span className="font-semibold tabular-nums text-ink">
           {health.current} / {health.max}
         </span>
       </div>
       <div
         role="meter"
-        aria-label={`Vida de ${name}`}
+        aria-label={t('battle:health.of', { name })}
         aria-valuemin={0}
         aria-valuemax={health.max}
         aria-valuenow={health.current}
-        aria-valuetext={`${String(health.current)} de ${String(health.max)} de Vida`}
+        aria-valuetext={t('battle:health.spoken', {
+          current: String(health.current),
+          max: String(health.max),
+        })}
         className="h-2.5 w-full overflow-hidden rounded-full border border-muted bg-surface"
       >
         <div
@@ -58,7 +64,7 @@ export const HealthBar = ({ name, health }: HealthBarProps): React.JSX.Element =
         />
       </div>
       {health.current === 0 && (
-        <p className="text-center text-xs font-semibold text-danger">Sin Vida</p>
+        <p className="text-center text-xs font-semibold text-danger">{t('battle:health.none')}</p>
       )}
     </div>
   )

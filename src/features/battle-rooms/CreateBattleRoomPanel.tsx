@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -93,6 +94,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
 
   const createRoom = useCreateBattleRoom()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const wallet = useWallet()
 
   const stake = parseStakeInput(stakeInput)
@@ -105,7 +107,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
     const amount = Number(rewardInput)
 
     if (!Number.isFinite(amount) || amount < 0) {
-      setRewardError('La recompensa debe ser un número mayor o igual a 0.')
+      setRewardError(t('battle:create.rewardError'))
       return
     }
 
@@ -125,14 +127,11 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
   }
 
   return (
-    <Card
-      title="Crear sala de batalla"
-      description="La sala queda esperando jugadores hasta que se llene o se cancele."
-    >
+    <Card title={t('battle:create.title')} description={t('battle:create.description')}>
       <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
         <div>
           <span id="battle-room-mode-label" className={FIELD_LABEL_CLASS}>
-            Modalidad
+            {t('battle:create.mode')}
           </span>
           <div
             role="radiogroup"
@@ -160,7 +159,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
 
         <div>
           <span id="battle-room-format-label" className={FIELD_LABEL_CLASS}>
-            Formato
+            {t('battle:create.format')}
           </span>
           <div
             role="radiogroup"
@@ -180,13 +179,11 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
           </div>
         </div>
 
-        {mode === 'PVE' && (
-          <p className="text-xs text-muted">El equipo contrario será controlado por la IA.</p>
-        )}
+        {mode === 'PVE' && <p className="text-xs text-muted">{t('battle:create.aiTeam')}</p>}
 
         <div>
           <label htmlFor="battle-room-reward" className={FIELD_LABEL_CLASS}>
-            Recompensa de la sala
+            {t('battle:create.reward')}
           </label>
           <div className="relative mt-1.5">
             <Coins
@@ -212,7 +209,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
           </div>
           {rewardError === undefined ? (
             <p id="battle-room-reward-hint" className="mt-1 text-xs text-muted">
-              Monto que se otorga al ganar la batalla.
+              {t('battle:create.rewardHint')}
             </p>
           ) : (
             <p id="battle-room-reward-error" role="alert" className="mt-1 text-xs text-danger">
@@ -224,7 +221,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
         {mode === 'PVP' && (
           <div>
             <label htmlFor="battle-room-stake" className={FIELD_LABEL_CLASS}>
-              Apostar créditos (opcional)
+              {t('battle:card.stakeLabel')}
             </label>
             <div className="relative mt-1.5">
               <Coins
@@ -250,8 +247,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
             </div>
             {stakeError === undefined ? (
               <p id="battle-room-stake-hint" className="mt-1 text-xs text-muted">
-                Se reserva de tu saldo disponible y se liquida al terminar la batalla. 0 = no
-                apostar.
+                {t('battle:create.stakeHint')}
               </p>
             ) : (
               <p id="battle-room-stake-error" role="alert" className="mt-1 text-xs text-danger">
@@ -274,12 +270,12 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
 
         {createRoom.isSuccess && (
           <p role="status" className="text-sm text-success">
-            Sala creada. Entrando al lobby…
+            {t('battle:create.created')}
           </p>
         )}
 
         <Button type="submit" loading={createRoom.isPending}>
-          Crear sala de batalla
+          {t('battle:create.title')}
         </Button>
       </form>
     </Card>

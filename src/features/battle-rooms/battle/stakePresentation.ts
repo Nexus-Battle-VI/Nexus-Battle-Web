@@ -1,4 +1,6 @@
 import type { BattleRoom, ParticipantStake, ParticipantStakeStatus } from '../types'
+import { i18n } from '@/shared/i18n/i18n'
+import { formatInteger } from '@/shared/i18n/format'
 
 /**
  * Textos de la apuesta de HU-23. Modulo PURO: recibe lo que Combat/Wallet ya
@@ -14,22 +16,17 @@ import type { BattleRoom, ParticipantStake, ParticipantStakeStatus } from '../ty
 export const describeStakeStatus = (status: ParticipantStakeStatus): string => {
   switch (status) {
     case 'PENDING_RESERVE':
-      return 'Reservando tu apuesta…'
     case 'ACTIVE':
-      return 'Apuesta reservada'
     case 'RESERVE_FAILED':
-      return 'No se pudo reservar tu apuesta'
     case 'RELEASED':
-      return 'Apuesta liberada'
     case 'CAPTURED':
-      return 'Apuesta perdida'
     case 'SETTLED_WON':
-      return 'Apuesta ganada'
+      return i18n.t(`battle:stake.status.${status}`)
   }
 }
 
 export const creditAmountText = (amount: number): string =>
-  `${amount.toLocaleString('es-CO')} crédito${amount === 1 ? '' : 's'}`
+  i18n.t('common:count.credits', { count: amount, value: formatInteger(amount) })
 
 /**
  * Frase completa de la apuesta propia, con el monto que publico el servidor.
@@ -46,17 +43,12 @@ export const describeOwnStake = (stake: ParticipantStake | undefined): string | 
 
   switch (stake.status) {
     case 'PENDING_RESERVE':
-      return `Reservando tu apuesta de ${amount}…`
     case 'ACTIVE':
-      return `Apuesta reservada: ${amount}`
     case 'RESERVE_FAILED':
-      return `No se pudo reservar tu apuesta de ${amount}`
     case 'RELEASED':
-      return `Se liberó tu apuesta de ${amount}`
     case 'CAPTURED':
-      return `Perdiste tu apuesta de ${amount}`
     case 'SETTLED_WON':
-      return `Apuesta ganada: ${amount}`
+      return i18n.t(`battle:stake.own.${stake.status}`, { amount })
   }
 }
 
@@ -108,7 +100,7 @@ export const parseStakeInput = (raw: string): ParsedStakeInput => {
   if (!Number.isInteger(parsed) || parsed < 0) {
     return {
       amount: null,
-      error: 'El monto debe ser un número entero de créditos (0 = no apostar).',
+      error: i18n.t('battle:stake.invalid'),
     }
   }
 
@@ -125,12 +117,12 @@ export const availableWarning = (amount: number, available: number | undefined):
     return null
   }
 
-  return `Tu saldo disponible es ${creditAmountText(available)}.`
+  return i18n.t('battle:stake.available', { amount: creditAmountText(available) })
 }
 
 /** Texto del paso de confirmacion antes de reservar (D8: la reserva es sincrona). */
 export const describeStakeReservation = (amount: number): string =>
-  `Vas a apostar ${creditAmountText(amount)}; se reservarán de tu saldo al confirmar.`
+  i18n.t('battle:stake.reservation', { amount: creditAmountText(amount) })
 
 /**
  * La sala ya tiene apuestas activas segun el resumen agregado (contrato §10:

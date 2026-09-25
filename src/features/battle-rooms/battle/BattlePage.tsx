@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { useSession } from '@/shared/session'
 import type { CommandIdFactory } from '../commandId'
@@ -16,14 +17,18 @@ export interface BattlePageProps {
   readonly createCommandId?: CommandIdFactory
 }
 
-const BackToRooms = (): React.JSX.Element => (
-  <Link
-    to="/play"
-    className="inline-flex min-h-11 items-center text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-  >
-    Volver a Jugar Online
-  </Link>
-)
+const BackToRooms = (): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <Link
+      to="/play"
+      className="inline-flex min-h-11 items-center text-sm font-medium text-brand underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    >
+      {t('battle:backToPlay')}
+    </Link>
+  )
+}
 
 const Notice = ({
   children,
@@ -31,17 +36,21 @@ const Notice = ({
 }: {
   readonly children: React.ReactNode
   readonly alert?: boolean
-}): React.JSX.Element => (
-  <section aria-label="Batalla" className="flex flex-col items-start gap-3">
-    <p
-      role={alert ? 'alert' : 'status'}
-      className={alert ? 'text-sm text-danger' : 'text-sm text-muted'}
-    >
-      {children}
-    </p>
-    <BackToRooms />
-  </section>
-)
+}): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <section aria-label={t('battle:battle.label')} className="flex flex-col items-start gap-3">
+      <p
+        role={alert ? 'alert' : 'status'}
+        className={alert ? 'text-sm text-danger' : 'text-sm text-muted'}
+      >
+        {children}
+      </p>
+      <BackToRooms />
+    </section>
+  )
+}
 
 /**
  * Pantalla de batalla de una sala (HU-17). Continua el MISMO flujo de Jugar Online
@@ -69,14 +78,15 @@ export const BattlePage = ({
 }: BattlePageProps): React.JSX.Element => {
   const { roomId = null } = useParams<{ roomId: string }>()
   const subject = useSession((state) => state.subject)
+  const { t } = useTranslation()
   const realtime = useBattleRealtime(roomId, socketFactory, ticketProvider, createCommandId)
 
   if (roomId === null) {
-    return <Notice alert>No se indicó ninguna batalla.</Notice>
+    return <Notice alert>{t('battle:battle.none')}</Notice>
   }
 
   if (realtime.connection === 'disabled') {
-    return <Notice alert>Tu sesión expiró. Vuelve a iniciar sesión para ver la batalla.</Notice>
+    return <Notice alert>{t('battle:battle.sessionExpired')}</Notice>
   }
 
   if (realtime.rejected !== null) {
@@ -86,7 +96,7 @@ export const BattlePage = ({
   // HU-21: una sala FINISHED sin `result` es de un Combat anterior a HU-21; se
   // avisa sin inventar un resultado.
   if (realtime.roomStatus === 'FINISHED' && realtime.result === null) {
-    return <Notice>La batalla terminó.</Notice>
+    return <Notice>{t('battle:battle.finishedNotice')}</Notice>
   }
 
   if (realtime.battle !== null) {
@@ -117,15 +127,15 @@ export const BattlePage = ({
   }
 
   if (realtime.roomStatus === 'CANCELLED') {
-    return <Notice alert>La sala fue cancelada. Elige otra sala para continuar.</Notice>
+    return <Notice alert>{t('battle:battle.cancelled')}</Notice>
   }
 
   if (realtime.roomStatus === 'WAITING_FOR_PLAYERS') {
     return (
       <Notice>
-        La sala todavía espera jugadores.{' '}
+        {t('battle:battle.stillWaiting')}{' '}
         <Link to={`/play/rooms/${encodeURIComponent(roomId)}`} className="underline">
-          Volver a la sala
+          {t('battle:backToRoom')}
         </Link>
       </Notice>
     )
@@ -135,9 +145,9 @@ export const BattlePage = ({
     // El lobby es quien pide el inicio ahora; esta pantalla solo espera el
     // `battleStarted` por WebSocket (ver docstring de `BattlePage`).
     return (
-      <section aria-label="Batalla" className="flex flex-col items-start gap-3">
+      <section aria-label={t('battle:battle.label')} className="flex flex-col items-start gap-3">
         <p role="status" className="text-sm text-muted">
-          Preparando la batalla…
+          {t('battle:battle.preparing')}
         </p>
         <BackToRooms />
       </section>
@@ -145,16 +155,14 @@ export const BattlePage = ({
   }
 
   if (realtime.connection === 'failed') {
-    return (
-      <Notice alert>
-        No se pudo autenticar la conexión en tiempo real. Vuelve a entrar a la batalla.
-      </Notice>
-    )
+    return <Notice alert>{t('battle:battle.authFailed')}</Notice>
   }
 
   return (
     <p role="status" className="text-sm text-muted">
-      {realtime.connection === 'reconnecting' ? 'Reconectando…' : 'Conectando con la batalla…'}
+      {realtime.connection === 'reconnecting'
+        ? t('battle:battle.reconnecting')
+        : t('battle:battle.connecting')}
     </p>
   )
 }
