@@ -449,6 +449,40 @@
       "criticalMultiplier": "Le multiplicateur critique va de 1 à 1,8.",
       "difficultyMultiplier": "Le multiplicateur va de 0 à 10.",
       "supportInt": "Doit être un entier de 0 à 100."
+    },
+    "fields": {
+      "damage": "Dégâts",
+      "damageFixed": "Fixe",
+      "damageDice": "Dés",
+      "damagePoints": "Points de dégâts",
+      "dice": "Dés",
+      "diceSides": "Faces",
+      "health": "Vie",
+      "attack": "Attaque",
+      "defense": "Défense",
+      "behavior": "Comportement",
+      "enrageBelow": "S'enrage sous (% de vie)",
+      "enrageBonus": "Attaque supplémentaire en s'enrageant",
+      "remove": "Retirer"
+    },
+    "picker": {
+      "noProduct": "Aucun produit : le joueur ne le voit ni ne le reçoit tant que vous ne le liez pas.",
+      "searchingLinked": "Recherche du produit lié…",
+      "linkedMissing": "Le produit lié n'existe plus dans Catalog. Choisissez-en un autre.",
+      "linkedTo": "Lié à {{name}} ({{type}})",
+      "closeSearch": "Fermer la recherche",
+      "searchProduct": "Rechercher un produit",
+      "change": "Changer",
+      "removeLink": "Retirer le lien",
+      "searchLabel": "Rechercher dans Catalog",
+      "searchPlaceholder": "Tapez au moins 2 lettres",
+      "type": "Type",
+      "allTypes": "Tous",
+      "searching": "Recherche…",
+      "searchFailed": "Impossible de consulter Catalog.",
+      "noMatch": "Aucun produit ne correspond.",
+      "resultsLabel": "Produits trouvés",
+      "choose": "Choisir {{name}}"
     }
   }
 }

@@ -1,22 +1,16 @@
 import { useDeferredValue, useId, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 
 import { fetchCatalogProduct, searchCatalogProducts } from './missionContentApi'
+import { PRODUCT_TYPE_LABELS } from '@/features/admin/products/contract'
 
-const TYPE_LABELS: Readonly<Record<string, string>> = {
-  ARMA: 'Arma',
-  ARMADURA: 'Armadura',
-  ITEM: 'Ítem',
-  EPICA: 'Épica',
-  HEROE: 'Héroe',
-  HABILIDAD: 'Habilidad',
-}
-
-const typeLabel = (type: string): string => TYPE_LABELS[type] ?? type
+const typeLabel = (type: string): string =>
+  (PRODUCT_TYPE_LABELS as Readonly<Record<string, string>>)[type] ?? type
 
 export interface ProductPickerProps {
   readonly label: string
@@ -38,6 +32,7 @@ export const ProductPicker = ({
   onChange,
   error,
 }: ProductPickerProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const headingId = useId()
   const [searching, setSearching] = useState(false)
   const [query, setQuery] = useState('')
@@ -69,19 +64,17 @@ export const ProductPicker = ({
         {label}
       </p>
       {productId === null ? (
-        <p className="text-xs text-muted">
-          Sin producto: el jugador no lo ve ni lo recibe hasta que lo enlaces.
-        </p>
+        <p className="text-xs text-muted">{t('admin:missions.picker.noProduct')}</p>
       ) : linked.isPending ? (
-        <p className="text-xs text-muted">Buscando el producto enlazado…</p>
+        <p className="text-xs text-muted">{t('admin:missions.picker.searchingLinked')}</p>
       ) : linked.data === null || linked.isError ? (
-        <p className="text-xs text-danger">
-          El producto enlazado ya no existe en Catalog. Elige otro.
-        </p>
+        <p className="text-xs text-danger">{t('admin:missions.picker.linkedMissing')}</p>
       ) : (
         <p className="text-sm text-ink">
-          Enlazado a <span className="font-medium">{linked.data.name}</span> (
-          {typeLabel(linked.data.type)})
+          {t('admin:missions.picker.linkedTo', {
+            name: linked.data.name,
+            type: typeLabel(linked.data.type),
+          })}
         </p>
       )}
       {error !== undefined && (
@@ -96,7 +89,11 @@ export const ProductPicker = ({
             setSearching((current) => !current)
           }}
         >
-          {searching ? 'Cerrar búsqueda' : productId === null ? 'Buscar producto' : 'Cambiar'}
+          {searching
+            ? t('admin:missions.picker.closeSearch')
+            : productId === null
+              ? t('admin:missions.picker.searchProduct')
+              : t('admin:missions.picker.change')}
         </Button>
         {productId !== null && (
           <Button
@@ -105,7 +102,7 @@ export const ProductPicker = ({
               onChange(null)
             }}
           >
-            Quitar enlace
+            {t('admin:missions.picker.removeLink')}
           </Button>
         )}
       </div>
@@ -113,18 +110,18 @@ export const ProductPicker = ({
         <div className="flex flex-col gap-2">
           <div className="grid gap-2 sm:grid-cols-2">
             <TextField
-              label="Buscar en Catalog"
+              label={t('admin:missions.picker.searchLabel')}
               value={query}
-              placeholder="Escribe al menos 2 letras"
+              placeholder={t('admin:missions.picker.searchPlaceholder')}
               onChange={(event) => {
                 setQuery(event.target.value)
               }}
             />
             {types.length > 1 && (
               <SelectField
-                label="Tipo"
+                label={t('admin:missions.picker.type')}
                 value={type ?? ''}
-                placeholder="Todos"
+                placeholder={t('admin:missions.picker.allTypes')}
                 options={types.map((value) => ({ value, label: typeLabel(value) }))}
                 onChange={(event) => {
                   setType(event.target.value === '' ? null : event.target.value)
@@ -134,15 +131,15 @@ export const ProductPicker = ({
           </div>
           {term.length >= 2 &&
             (results.isPending ? (
-              <p className="text-xs text-muted">Buscando…</p>
+              <p className="text-xs text-muted">{t('admin:missions.picker.searching')}</p>
             ) : results.isError ? (
               <p role="alert" className="text-xs text-danger">
-                No se pudo consultar Catalog.
+                {t('admin:missions.picker.searchFailed')}
               </p>
             ) : found.length === 0 ? (
-              <p className="text-xs text-muted">Ningún producto coincide.</p>
+              <p className="text-xs text-muted">{t('admin:missions.picker.noMatch')}</p>
             ) : (
-              <ul aria-label="Productos encontrados" className="flex flex-col gap-1">
+              <ul aria-label={t('admin:missions.picker.resultsLabel')} className="flex flex-col gap-1">
                 {found.map((product) => (
                   <li key={product.productId}>
                     <button
@@ -154,7 +151,7 @@ export const ProductPicker = ({
                         setQuery('')
                       }}
                     >
-                      Elegir {product.name}{' '}
+                      {t('admin:missions.picker.choose', { name: product.name })}{' '}
                       <span className="text-muted">· {typeLabel(product.type)}</span>
                     </button>
                   </li>

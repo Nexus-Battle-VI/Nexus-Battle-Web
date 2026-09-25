@@ -449,6 +449,40 @@
       "criticalMultiplier": "El multiplicador de crítico va de 1 a 1,8.",
       "difficultyMultiplier": "El multiplicador va de 0 a 10.",
       "supportInt": "Debe ser un entero de 0 a 100."
+    },
+    "fields": {
+      "damage": "Daño",
+      "damageFixed": "Fijo",
+      "damageDice": "Dados",
+      "damagePoints": "Puntos de daño",
+      "dice": "Dados",
+      "diceSides": "Caras",
+      "health": "Vida",
+      "attack": "Ataque",
+      "defense": "Defensa",
+      "behavior": "Comportamiento",
+      "enrageBelow": "Se enfurece bajo (% de vida)",
+      "enrageBonus": "Ataque de más al enfurecerse",
+      "remove": "Quitar"
+    },
+    "picker": {
+      "noProduct": "Sin producto: el jugador no lo ve ni lo recibe hasta que lo enlaces.",
+      "searchingLinked": "Buscando el producto enlazado…",
+      "linkedMissing": "El producto enlazado ya no existe en Catalog. Elige otro.",
+      "linkedTo": "Enlazado a {{name}} ({{type}})",
+      "closeSearch": "Cerrar búsqueda",
+      "searchProduct": "Buscar producto",
+      "change": "Cambiar",
+      "removeLink": "Quitar enlace",
+      "searchLabel": "Buscar en Catalog",
+      "searchPlaceholder": "Escribe al menos 2 letras",
+      "type": "Tipo",
+      "allTypes": "Todos",
+      "searching": "Buscando…",
+      "searchFailed": "No se pudo consultar Catalog.",
+      "noMatch": "Ningún producto coincide.",
+      "resultsLabel": "Productos encontrados",
+      "choose": "Elegir {{name}}"
     }
   }
 }
