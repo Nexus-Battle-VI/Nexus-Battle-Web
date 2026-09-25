@@ -17,6 +17,7 @@ const NAV_LABEL_KEYS: Readonly<Record<string, string>> = {
   '/ecommerce': 'app:nav.ecommerce',
   '/play': 'app:nav.play',
   '/missions': 'app:nav.missions',
+  '/admin/missions': 'app:nav.editMissions',
   '/tournament': 'app:nav.tournament',
   '/inventory': 'app:nav.inventory',
   '/auction': 'app:nav.auction',
