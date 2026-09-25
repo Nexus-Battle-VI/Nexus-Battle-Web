@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { BadgeDollarSign, ShieldCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 import { formatMoney } from '@/lib/format'
 import { queryKeys } from '@/shared/query-keys'
+import { countLabel } from '@/shared/i18n/format'
 import {
   describeAuctionError,
   publishOfficialAuction,
@@ -27,6 +29,7 @@ const newOperationId = (): string => globalThis.crypto.randomUUID()
 
 export const OfficialAuctionPublisher = (): React.JSX.Element => {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
   const [values, setValues] = useState(INITIAL_VALUES)
   const [submitted, setSubmitted] = useState(false)
   const [operationId, setOperationId] = useState(newOperationId)
@@ -36,7 +39,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
   const preview =
     Number.isSafeInteger(minimum) && minimum > 0
       ? formatMoney(minimum, values.currency)
-      : 'Sin definir'
+      : t('auction:official.undefined')
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -73,18 +76,24 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
           <div className="flex items-center gap-3">
             <ShieldCheck aria-hidden="true" className="size-6 text-success" />
             <h1 id="official-created" className="text-xl font-semibold text-ink">
-              Publicación oficial activa
+              {t('auction:official.activeTitle')}
             </h1>
           </div>
           <p className="mt-2 text-sm text-muted">
-            Marca asignada por Catalog: {created.mark === 'PREMIUM' ? 'Premium' : 'Oficial'}.
+            {t('auction:official.markAssigned', {
+              mark: t(
+                created.mark === 'PREMIUM' ? 'auction:marks.PREMIUM' : 'auction:marks.OFFICIAL',
+              ),
+            })}
           </p>
           <p className="mt-2 font-semibold text-ink">
-            Precio mínimo: {formatMoney(created.minimumBidAmountMinor, created.currency)}
+            {t('auction:official.minimumPrice', {
+              price: formatMoney(created.minimumBidAmountMinor, created.currency),
+            })}
           </p>
         </div>
         <Button variant="secondary" onClick={reset}>
-          Publicar otro producto oficial
+          {t('auction:official.another')}
         </Button>
       </section>
     )
@@ -96,17 +105,14 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
         <div className="flex items-center gap-3">
           <ShieldCheck aria-hidden="true" className="size-6 text-brand" />
           <h1 id="official-auction-title" className="text-xl font-semibold text-ink">
-            Publicar como Maestro de Juego
+            {t('auction:official.title')}
           </h1>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-muted">
-          Catalog valida la exclusividad y asigna la etiqueta Oficial o Premium. Esta operación no
-          cobra comisión en créditos.
-        </p>
+        <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:official.subtitle')}</p>
       </header>
       <form
         noValidate
-        aria-label="Publicación oficial"
+        aria-label={t('auction:official.formLabel')}
         className="grid gap-4 rounded-xl border border-border bg-surface-raised p-5 sm:grid-cols-2"
         onSubmit={(event) => {
           event.preventDefault()
@@ -117,7 +123,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
       >
         <div className="sm:col-span-2">
           <TextField
-            label="Identificador del producto exclusivo"
+            label={t('auction:official.productId')}
             required
             value={values.productId}
             error={errors.productId}
@@ -127,18 +133,18 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
           />
         </div>
         <SelectField
-          label="Duración"
+          label={t('auction:official.duration')}
           value={String(values.durationHours)}
           options={[
-            { value: '24', label: '24 horas' },
-            { value: '48', label: '48 horas' },
+            { value: '24', label: countLabel(t, 'auction:hours', 24) },
+            { value: '48', label: countLabel(t, 'auction:hours', 48) },
           ]}
           onChange={(event) => {
             setValues({ ...values, durationHours: event.target.value === '48' ? 48 : 24 })
           }}
         />
         <SelectField
-          label="Moneda"
+          label={t('auction:official.currency')}
           value={values.currency}
           error={errors.currency}
           options={['COP', 'USD', 'EUR'].map((currency) => ({ value: currency, label: currency }))}
@@ -147,7 +153,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
           }}
         />
         <TextField
-          label="Precio mínimo en unidad menor"
+          label={t('auction:official.minimum')}
           type="number"
           inputMode="numeric"
           min="1"
@@ -155,13 +161,13 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
           required
           value={values.minimumBidAmountMinor}
           error={errors.minimumBidAmountMinor}
-          hint={`Vista previa: ${preview}`}
+          hint={t('auction:official.preview', { preview })}
           onChange={(event) => {
             setValues({ ...values, minimumBidAmountMinor: event.target.value })
           }}
         />
         <TextField
-          label="Compra inmediata en unidad menor (opcional)"
+          label={t('auction:official.buyNow')}
           type="number"
           inputMode="numeric"
           min="1"
@@ -174,8 +180,8 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
         />
         <div className="sm:col-span-2 rounded-lg border border-border p-4">
           <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <BadgeDollarSign aria-hidden="true" className="size-5 text-brand" /> Comisión: 0
-            créditos
+            <BadgeDollarSign aria-hidden="true" className="size-5 text-brand" />{' '}
+            {t('auction:official.fee', { credits: countLabel(t, 'common:count.credits', 0) })}
           </p>
           <label className="mt-3 flex items-start gap-3 text-sm text-ink">
             <input
@@ -186,7 +192,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
               }}
               className="mt-1 accent-brand"
             />
-            <span>Confirmo que Catalog decidirá la elegibilidad y la marca de la publicación.</span>
+            <span>{t('auction:official.confirm')}</span>
           </label>
           {errors.confirmed !== undefined && (
             <p role="alert" className="mt-2 text-sm text-danger">
@@ -199,7 +205,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
             </p>
           )}
           <Button type="submit" loading={mutation.isPending} className="mt-4 w-full sm:w-auto">
-            Publicar producto oficial
+            {t('auction:official.submit')}
           </Button>
         </div>
       </form>

@@ -5,6 +5,8 @@ import { HttpError } from '@/lib/http'
 import type { AuctionDetail } from '../detail-api'
 import { configureAutoBid, type AutoBidConfig } from './api'
 import { AutoBidConfigCard, type AutoBidConfigStage } from './AutoBidConfigCard'
+import { i18n } from '@/shared/i18n/i18n'
+import { currentLanguage } from '@/shared/i18n/language'
 
 interface AutoBidPanelProps {
   readonly auction: AuctionDetail
@@ -54,9 +56,10 @@ const stageFromError = (error: unknown): AutoBidConfigStage => {
 const messageForError = (error: unknown): string | undefined => {
   switch (errorCode(error)) {
     case 'INVALID_AUTO_BID_LIMIT':
-      return 'El límite debe ser un entero mayor que 0.'
+      return i18n.t('auction:autoBid.errors.INVALID_AUTO_BID_LIMIT')
     default:
-      return errorMessage(error)
+      // El mensaje del servicio solo se muestra tal cual en español.
+      return currentLanguage() === 'es' ? errorMessage(error) : undefined
   }
 }
 
@@ -100,9 +103,7 @@ export const AutoBidPanel = ({
       {...(lastError === undefined
         ? {}
         : {
-            errorMessage:
-              messageForError(lastError) ??
-              'El límite no cumple las reglas de la subasta. Revisa el valor e inténtalo de nuevo.',
+            errorMessage: messageForError(lastError) ?? i18n.t('auction:autoBid.defaultError'),
           })}
       onConfigure={(maxAmountCredits) => {
         mutation.mutate({ maxAmountCredits, idempotencyKey: createIdempotencyKey() })
