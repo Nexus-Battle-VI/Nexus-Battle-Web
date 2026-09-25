@@ -444,6 +444,40 @@
       "criticalMultiplier": "The critical multiplier ranges from 1 to 1.8.",
       "difficultyMultiplier": "The multiplier ranges from 0 to 10.",
       "supportInt": "Must be an integer from 0 to 100."
+    },
+    "fields": {
+      "damage": "Damage",
+      "damageFixed": "Fixed",
+      "damageDice": "Dice",
+      "damagePoints": "Damage points",
+      "dice": "Dice",
+      "diceSides": "Sides",
+      "health": "Health",
+      "attack": "Attack",
+      "defense": "Defense",
+      "behavior": "Behavior",
+      "enrageBelow": "Enrages below (% health)",
+      "enrageBonus": "Extra attack when enraged",
+      "remove": "Remove"
+    },
+    "picker": {
+      "noProduct": "No product: the player does not see or receive it until you link it.",
+      "searchingLinked": "Looking up the linked product…",
+      "linkedMissing": "The linked product no longer exists in Catalog. Choose another.",
+      "linkedTo": "Linked to {{name}} ({{type}})",
+      "closeSearch": "Close search",
+      "searchProduct": "Search product",
+      "change": "Change",
+      "removeLink": "Remove link",
+      "searchLabel": "Search in Catalog",
+      "searchPlaceholder": "Type at least 2 letters",
+      "type": "Type",
+      "allTypes": "All",
+      "searching": "Searching…",
+      "searchFailed": "Could not query Catalog.",
+      "noMatch": "No product matches.",
+      "resultsLabel": "Products found",
+      "choose": "Choose {{name}}"
     }
   }
 }
