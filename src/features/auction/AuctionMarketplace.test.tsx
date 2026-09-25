@@ -83,6 +83,49 @@ describe('AuctionMarketplace HU-66.6', () => {
   })
 
   /**
+   * `GET /v1/auctions/:id` solo resuelve subastas de jugador (`findById`,
+   * no `findOfficialById`): un enlace a "Ver detalle" en una tarjeta oficial
+   * llevaria a un 404. Se oculta en vez de ofrecer un enlace roto.
+   */
+  it('no ofrece "Ver detalle" en una tarjeta oficial', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse({
+            page: 1,
+            pageSize: 12,
+            total: 1,
+            items: [
+              {
+                id: 'official-1',
+                sellerId: 'upb-company',
+                publisherType: 'GAME_MASTER',
+                productId: 'exclusive-1',
+                priceKind: 'REAL_MONEY',
+                minimumBidCredits: null,
+                buyNowCredits: null,
+                currency: 'COP',
+                minimumBidAmountMinor: 90_000,
+                buyNowAmountMinor: 120_000,
+                officialMark: 'OFFICIAL',
+                status: 'ACTIVE',
+                currentBidAmount: null,
+                publishedAt: '2026-09-24T12:00:00.000Z',
+                closesAt: '2026-09-26T12:00:00.000Z',
+              },
+            ],
+          }),
+        ),
+      ),
+    )
+    renderWithProviders(<AuctionMarketplace />)
+
+    const card = (await screen.findAllByRole('article'))[0]!
+    expect(within(card).queryByRole('link', { name: 'Ver detalle' })).not.toBeInTheDocument()
+  })
+
+  /**
    * HU-66.6: el listado es el punto de entrada real; desde aqui hay que
    * poder llegar a seguir subastas (HU-68) y a publicar la propia (HU-62.5)
    * sin escribir ninguna URL a mano.
