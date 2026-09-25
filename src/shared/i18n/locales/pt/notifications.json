@@ -1,0 +1,61 @@
+{
+  "home": "Início",
+  "loading": "Carregando...",
+  "history": {
+    "crumb": "Histórico de novidades",
+    "title": "Novidades do catálogo",
+    "subtitle": "Histórico completo das mudanças notificadas.",
+    "failed": "Não foi possível carregar o histórico de novidades.",
+    "empty": "Ainda não há novidades registradas."
+  },
+  "summary": {
+    "loading": "Carregando novidades do catálogo...",
+    "failed": "Não foi possível carregar as novidades do catálogo.",
+    "title": "Novidades do catálogo",
+    "subtitle": "Resumo desde a sua última sessão. Mudanças repetidas no mesmo produto são consolidadas em uma única notificação.",
+    "history": "Ver histórico ›"
+  },
+  "banner": {
+    "failed": "Não foi possível carregar o aviso do catálogo.",
+    "label": "Aviso do catálogo",
+    "previous": "Banner anterior",
+    "next": "Próximo banner"
+  },
+  "changeTypes": {
+    "PRODUCT_CREATED": "Novo",
+    "PRODUCT_INVENTORY_ADJUSTED": "Tiragem atualizada",
+    "PRODUCT_SUSPENDED": "Suspenso",
+    "PRODUCT_REACTIVATED": "Reativado",
+    "PRODUCT_PREMIUM_CONFIGURED": "Premium",
+    "AUCTION_CHANGED": "Leilão atualizado",
+    "AUCTION_CLOSING_SOON": "Encerramento próximo",
+    "AUCTION_BID_OUTBID": "Lance superado",
+    "AUCTION_CLOSED_BY_BUY_NOW": "Compra imediata",
+    "AUCTION_AUTO_BID_LIMIT_REACHED": "Limite de lance atingido",
+    "AUCTION_SETTLED_SELLER": "Leilão vendido",
+    "AUCTION_SETTLED_WINNER": "Você venceu o leilão",
+    "AUCTION_SETTLED_LOSER": "Leilão encerrado",
+    "AUCTION_SETTLED_WITHOUT_BIDS": "Leilão sem lances"
+  },
+  "admin": {
+    "crumb": "Banner informativo",
+    "title": "Banner informativo",
+    "subtitle": "Vigência por datas. Fora da vigência, é excluído silenciosamente.",
+    "titleField": "Título do banner",
+    "content": "Mensagem do banner",
+    "publishAt": "Início da vigência",
+    "expiresAt": "Fim da vigência",
+    "required": "Preencha título, mensagem, início e fim da vigência.",
+    "invalidDates": "As datas de vigência não são válidas.",
+    "dateOrder": "O início da vigência deve ser anterior ou igual ao fim da vigência.",
+    "failed": "Não foi possível publicar o banner.",
+    "published": "Banner publicado.",
+    "publish": "Publicar banner",
+    "list": "Banners gerenciados",
+    "listFailed": "Não foi possível carregar a lista de banners.",
+    "empty": "Nenhum banner foi publicado ainda.",
+    "active": "Vigente",
+    "inactive": "Fora da vigência",
+    "back": "← Voltar"
+  }
+}

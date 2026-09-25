@@ -10,7 +10,8 @@
     "createProduct": "Criar produto",
     "banners": "Gerenciar banner",
     "roles": "Gerenciar funções",
-    "moderation": "Moderação de comentários"
+    "moderation": "Moderação de comentários",
+    "editMissions": "Editar missões"
   },
   "session": {
     "signUp": "Criar conta",
@@ -58,5 +59,11 @@
     "notConfigured": "Não há provedor de identidade configurado nesta versão.",
     "unusableToken": "O token recebido não pode ser usado.",
     "failed": "Não foi possível concluir o login."
+  },
+  "community": {
+    "title": "Comunidade",
+    "description": "Tópicos de conversa e mensagens.",
+    "pendingBefore": "Esta tela ainda não foi implementada. Sua funcionalidade pertence ao serviço",
+    "pendingAfter": "e será desenvolvida na sua História de Usuário."
   }
 }

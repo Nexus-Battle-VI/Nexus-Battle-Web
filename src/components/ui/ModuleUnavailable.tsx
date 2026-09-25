@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Card } from './Card'
 
 export interface ModuleUnavailableProps {
-  readonly title: string
+  /** Titulo ya resuelto; alternativa a `titleKey`. */
+  readonly title?: string
+  /** Clave de traduccion del titulo (se resuelve en el idioma activo). */
+  readonly titleKey?: string
 }
 
 /**
@@ -16,11 +19,14 @@ export interface ModuleUnavailableProps {
  * responsable: ese servicio todavia no existe en la organizacion, y
  * atribuirselo a uno inventado seria peor que no nombrarlo.
  */
-export const ModuleUnavailable = ({ title }: ModuleUnavailableProps): React.JSX.Element => {
+export const ModuleUnavailable = ({
+  title,
+  titleKey,
+}: ModuleUnavailableProps): React.JSX.Element => {
   const { t } = useTranslation()
 
   return (
-    <Card title={title}>
+    <Card title={titleKey === undefined ? (title ?? '') : t(titleKey)}>
       <p className="text-sm text-muted">
         <span className="font-medium text-ink">{t('common:moduleUnavailable.title')}</span>{' '}
         {t('common:moduleUnavailable.body')}
