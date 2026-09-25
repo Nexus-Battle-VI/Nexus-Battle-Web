@@ -357,5 +357,98 @@
       "integrity": "El navegador no puede comprobar la integridad del archivo.",
       "upload": "No se pudo cargar la imagen. Selecciona el archivo e inténtalo de nuevo."
     }
+  },
+  "missions": {
+    "failures": {
+      "session": "Tu sesión venció. Vuelve a iniciar sesión para guardar.",
+      "forbidden": "Tu cuenta no puede editar misiones: hace falta un administrador con segundo factor.",
+      "save": "No se pudo guardar la misión."
+    },
+    "ai": {
+      "AGGRESSIVE": "Agresivo: ataca siempre",
+      "GUARDED": "Defensivo: se protege",
+      "BOSS": "Jefe: se enfurece con poca vida"
+    },
+    "image": {
+      "caminoTemplo": "Camino al templo",
+      "temploOlvidado": "Templo olvidado",
+      "camaraSellada": "Cámara sellada",
+      "arenaCaidos": "Arena de los caídos",
+      "travesiaBosque": "Bosque sombrío"
+    },
+    "objective": {
+      "NONE": "Narrativo (no se evalúa)",
+      "DEFEAT_BOSS": "Derrotar al jefe final",
+      "CLEAR_ENCOUNTERS": "Superar encuentros",
+      "MIN_HEALTH_PERCENT": "Terminar con un mínimo de vida",
+      "DEFEAT_MASTER": "Derrotar al Máster",
+      "COLLECT_LOOT": "Conseguir botín"
+    },
+    "sections": {
+      "general": "General",
+      "objetivos": "Objetivos",
+      "encuentros": "Encuentros",
+      "jefe": "Jefe y botín",
+      "master": "Máster",
+      "recompensas": "Recompensas",
+      "reglas": "Combate",
+      "json": "JSON"
+    },
+    "validation": {
+      "health": "La vida debe ser un entero de 1 o más.",
+      "attack": "El ataque debe ser un entero de 0 o más.",
+      "defense": "La defensa debe ser un entero de 0 o más.",
+      "fixedDamage": "El daño fijo debe ser un entero de 0 o más.",
+      "dice": "Los dados van de 1 a 100 y sus caras de 2 a 8000.",
+      "enrageThreshold": "El umbral de furia va de 1 % a 100 %.",
+      "enrageBonus": "El ataque de más debe ser un entero de 0 o más.",
+      "missionIdFormat": "Usa de 3 a 100 caracteres: minúsculas, números, guion o guion bajo (msn_mi_mision).",
+      "missionIdTaken": "Ya existe una misión con ese identificador.",
+      "name": "Escribe el nombre de la misión.",
+      "summary": "Escribe un resumen para el tablón.",
+      "narrative": "Escribe la historia de la misión.",
+      "duration": "La duración va de 1 minuto a 7 días (10 080 minutos).",
+      "recommendedPower": "El poder recomendado debe ser un entero de 0 o más.",
+      "needObjective": "La misión necesita al menos un objetivo.",
+      "objectiveText": "Escribe el objetivo.",
+      "encountersRange": "Indica de 1 a 50 encuentros.",
+      "minHealthRange": "La vida mínima va de 0 % a 100 %.",
+      "chooseLoot": "Elige un botín del jefe final.",
+      "lootCount": "La cantidad va de 1 a 100.",
+      "duplicateObjectiveIds": "Dos objetivos tienen el mismo identificador.",
+      "enemyName": "Escribe el nombre del enemigo.",
+      "enemyRefMissing": "Falta el identificador.",
+      "enemyRefDuplicate": "Otro enemigo o el jefe ya usan ese identificador.",
+      "enemyUnused": "Este enemigo no aparece en ningún encuentro: añádelo o quítalo.",
+      "tooManyEncounters": "Caben como mucho 49 encuentros antes del jefe.",
+      "needEnemyGroup": "Añade al menos un grupo de enemigos.",
+      "chooseListedEnemy": "Elige un enemigo de la lista.",
+      "countAtLeastOne": "La cantidad debe ser de 1 o más.",
+      "powerStep": "El refuerzo va de 0 % a 200 %.",
+      "bossName": "Escribe el nombre del jefe.",
+      "bossRefMissing": "Falta el identificador del jefe.",
+      "tooManyDrops": "Caben como mucho 50 botines.",
+      "dropLabel": "Escribe el nombre del botín.",
+      "probability": "La probabilidad va de 0 % a 100 %.",
+      "rolls": "Las tiradas van de 1 a 100.",
+      "chooseProduct": "Elige el producto con el buscador.",
+      "needMaster": "Añade al menos un Máster o desactiva el Máster.",
+      "needEvalPoint": "Elige al menos un momento en que puede aparecer.",
+      "evalPointStale": "Un momento elegido ya no existe: revísalos.",
+      "appearancesRange": "Las apariciones van de 1 en adelante.",
+      "masterName": "Escribe el nombre del Máster.",
+      "masterRefInvalid": "El identificador falta o está repetido.",
+      "levelOffset": "Los niveles de más deben ser un entero de 0 o más.",
+      "chooseEpic": "Elige la épica que entrega.",
+      "chooseEpicProduct": "Elige el producto de la épica con el buscador.",
+      "rewardLabel": "Escribe la recompensa.",
+      "turnDuration": "Un turno dura de 1 a 3600 segundos.",
+      "maxTurns": "El tope va de 1 a 1000 turnos.",
+      "recovery": "La recuperación va de 0 % a 100 %.",
+      "criticalChance": "La probabilidad de crítico va de 0 % a 100 %.",
+      "criticalMultiplier": "El multiplicador de crítico va de 1 a 1,8.",
+      "difficultyMultiplier": "El multiplicador va de 0 a 10.",
+      "supportInt": "Debe ser un entero de 0 a 100."
+    }
   }
 }

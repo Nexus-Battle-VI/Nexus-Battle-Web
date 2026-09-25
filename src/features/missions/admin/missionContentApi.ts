@@ -1,6 +1,9 @@
 import { HttpError, httpClient } from '@/lib/http'
 
 import type { MissionContent } from './missionContent'
+import { i18n } from '@/shared/i18n/i18n'
+import { currentLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Rutas de administracion de Missions: solo `ADMINISTRATOR` (y superiores). La
@@ -60,11 +63,9 @@ export const fetchCatalogProduct = async (
 /** El mensaje que ve el administrador cuando Missions rechaza el guardado. */
 export const describeSaveFailure = (error: unknown): string => {
   if (error instanceof HttpError) {
-    if (error.status === 401) return 'Tu sesión venció. Vuelve a iniciar sesión para guardar.'
-    if (error.status === 403) {
-      return 'Tu cuenta no puede editar misiones: hace falta un administrador con segundo factor.'
-    }
-    if (error.status === 400) return error.message
+    if (error.status === 401) return i18n.t('admin:missions.failures.session')
+    if (error.status === 403) return i18n.t('admin:missions.failures.forbidden')
+    if (error.status === 400) return describeFailure(error, i18n.t, currentLanguage())
   }
-  return error instanceof Error ? error.message : 'No se pudo guardar la misión.'
+  return error instanceof Error ? error.message : i18n.t('admin:missions.failures.save')
 }
