@@ -1,3 +1,4 @@
+import { i18n } from '@/shared/i18n/i18n'
 /**
  * Presentación del Poder de un héroe en batalla (HU-11, RF-11).
  *
@@ -45,6 +46,6 @@ export const describePower = (power: HeroPower): PowerDisplay => {
     max,
     percent: max === 0 ? 0 : (current / max) * 100,
     text: `${String(current)}/${String(max)}`,
-    spoken: `${String(current)} de ${String(max)}`,
+    spoken: i18n.t('battle:power.spoken', { current: String(current), max: String(max) }),
   }
 }

@@ -1,4 +1,5 @@
 import { useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { BattlePage, type BattlePageProps } from './battle/BattlePage'
 
@@ -25,6 +26,7 @@ export interface BattleWithChatProps {
  */
 export const BattleWithChat = ({ battle, chat }: BattleWithChatProps): React.JSX.Element => {
   const { roomId = null } = useParams<{ roomId: string }>()
+  const { t } = useTranslation()
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,8 +34,8 @@ export const BattleWithChat = ({ battle, chat }: BattleWithChatProps): React.JSX
       {roomId !== null && (
         <ChatPanel
           channel={{ kind: 'room', roomId }}
-          title="Chat de la sala"
-          description="Solo lo ven los participantes de esta sala."
+          title={t('battle:room.chat')}
+          description={t('battle:room.chatDescription')}
           {...chat}
         />
       )}

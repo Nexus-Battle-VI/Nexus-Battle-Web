@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react'
 import clsx from 'clsx'
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
+
+import { localizedMessages } from '@/shared/i18n/messages'
 
 import {
   describeResult,
@@ -17,11 +20,11 @@ const TONE_CLASS: Readonly<Record<ResultTone, string>> = {
   neutral: 'text-ink',
 }
 
-const RESULT_TEXT: Readonly<Record<ParticipantResult, string>> = {
-  WON: 'Ganó',
-  LOST: 'Perdió',
-  NO_WINNER: 'Empate',
-}
+const RESULT_TEXT: Readonly<Record<ParticipantResult, string>> = localizedMessages({
+  WON: 'battle:result.outcome.WON',
+  LOST: 'battle:result.outcome.LOST',
+  NO_WINNER: 'battle:result.outcome.NO_WINNER',
+})
 
 export interface BattleResultViewProps {
   readonly result: BattleResult
@@ -44,6 +47,7 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
   const presentation = describeResult(result, subject)
   const winners = winnerLine(result)
   const headlineRef = useRef<HTMLHeadingElement>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     headlineRef.current?.focus()
@@ -75,21 +79,25 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
           <p className="text-xs text-muted">{presentation.detail}</p>
         )}
       </div>
-      <ul className="grid grid-cols-2 gap-3" aria-label="Marcador final por equipo">
+      <ul className="grid grid-cols-2 gap-3" aria-label={t('battle:result.scoreboard')}>
         {presentation.standings.map((standing) => (
           <li
             key={standing.teamLabel}
             className="flex flex-col items-center rounded-lg border border-muted p-3"
           >
-            <span className="text-sm font-bold text-ink">Equipo {standing.teamLabel}</span>
+            <span className="text-sm font-bold text-ink">
+              {t('battle:team', { team: standing.teamLabel })}
+            </span>
             <span className="text-xs tabular-nums text-muted">{standing.text}</span>
             {standing.eliminated && (
-              <span className="text-xs font-semibold text-danger">Eliminado</span>
+              <span className="text-xs font-semibold text-danger">
+                {t('battle:result.eliminated')}
+              </span>
             )}
           </li>
         ))}
       </ul>
-      <ul className="flex flex-col gap-1" aria-label="Resultado por participante">
+      <ul className="flex flex-col gap-1" aria-label={t('battle:result.byParticipant')}>
         {result.participants.map((participant) => (
           <li
             key={`${participant.teamLabel}-${String(participant.seat)}`}
@@ -97,7 +105,10 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
           >
             <span className="text-ink">{participantOutcomeName(participant)}</span>
             <span className="text-xs font-semibold text-muted">
-              Equipo {participant.teamLabel} · {RESULT_TEXT[participant.result]}
+              {t('battle:result.participantLine', {
+                team: participant.teamLabel,
+                result: RESULT_TEXT[participant.result],
+              })}
             </span>
           </li>
         ))}
@@ -107,7 +118,7 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
           to="/play"
           className="rounded-lg border border-brand px-4 py-2 text-sm font-semibold text-brand"
         >
-          Volver a Jugar Online
+          {t('battle:backToPlay')}
         </Link>
       </div>
     </section>

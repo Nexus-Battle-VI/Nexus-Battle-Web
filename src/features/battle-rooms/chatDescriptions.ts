@@ -1,4 +1,5 @@
 import type { ChatFailure } from './chatState'
+import { i18n } from '@/shared/i18n/i18n'
 
 /**
  * Textos del chat para la persona (HU-13). Los codigos del servidor son el
@@ -19,29 +20,31 @@ const seconds = (ms: number): number => Math.max(1, Math.ceil(ms / 1000))
 export const describeChatFailure = (failure: ChatFailure): string => {
   switch (failure.code) {
     case 'EMPTY_MESSAGE':
-      return 'El mensaje está vacío.'
+      return i18n.t('battle:chat.errors.EMPTY_MESSAGE')
     case 'MESSAGE_TOO_LONG':
       return failure.maxLength === null
-        ? 'El mensaje es demasiado largo.'
-        : `El mensaje supera los ${String(failure.maxLength)} caracteres.`
+        ? i18n.t('battle:chat.errors.tooLong')
+        : i18n.t('battle:chat.errors.tooLongMax', { max: String(failure.maxLength) })
     case 'INVALID_CHARACTERS':
-      return 'El mensaje contiene caracteres que no se admiten.'
+      return i18n.t('battle:chat.errors.INVALID_CHARACTERS')
     case 'RATE_LIMITED':
       return failure.retryAfterMs === null
-        ? 'Estás escribiendo demasiado rápido.'
-        : `Estás escribiendo demasiado rápido. Inténtalo de nuevo en ${String(seconds(failure.retryAfterMs))} s.`
+        ? i18n.t('battle:chat.errors.rateLimited')
+        : i18n.t('battle:chat.errors.rateLimitedRetry', {
+            seconds: String(seconds(failure.retryAfterMs)),
+          })
     case 'NOT_A_PARTICIPANT':
     case 'ROOM_NOT_ACTIVE':
     case 'ROOM_NOT_FOUND':
-      return 'Ya no tienes acceso al chat de esta sala.'
+      return i18n.t('battle:chat.errors.noAccess')
     case 'NOT_SUBSCRIBED':
-      return 'Todavía no estás conectado al chat.'
+      return i18n.t('battle:chat.errors.NOT_SUBSCRIBED')
     case 'ACCOUNT_PROFILE_NOT_FOUND':
-      return 'Necesitas completar tu cuenta para escribir en el chat.'
+      return i18n.t('battle:chat.errors.ACCOUNT_PROFILE_NOT_FOUND')
     case 'CHAT_UNAVAILABLE':
-      return 'El chat no está disponible en este momento. Inténtalo de nuevo.'
+      return i18n.t('battle:chat.errors.CHAT_UNAVAILABLE')
     default:
-      return 'No se pudo enviar el mensaje.'
+      return i18n.t('battle:chat.sendFailed')
   }
 }
 
@@ -50,12 +53,12 @@ export const describeClosedReason = (reason: string): string => {
   switch (reason) {
     case 'NOT_A_PARTICIPANT':
     case 'ROOM_NOT_FOUND':
-      return 'No eres participante de esta sala, así que no puedes ver su chat.'
+      return i18n.t('battle:chat.closed.notParticipant')
     case 'ROOM_NOT_ACTIVE':
-      return 'La sala ya no está activa: su chat está cerrado.'
+      return i18n.t('battle:chat.closed.ROOM_NOT_ACTIVE')
     case 'ACCOUNT_PROFILE_NOT_FOUND':
-      return 'Necesitas completar tu cuenta para usar el chat.'
+      return i18n.t('battle:chat.closed.ACCOUNT_PROFILE_NOT_FOUND')
     default:
-      return 'El chat no está disponible en este momento.'
+      return i18n.t('battle:chat.closed.default')
   }
 }

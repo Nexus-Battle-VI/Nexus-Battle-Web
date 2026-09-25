@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import clsx from 'clsx'
 import { useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
@@ -44,6 +45,7 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
   const [search, setSearch] = useState('')
   const subject = useSession((state) => state.subject)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   const rooms = useBattleRooms()
   const cancelRoom = useCancelBattleRoom()
@@ -108,10 +110,7 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
   }
 
   return (
-    <Card
-      title="Salas disponibles"
-      description="Salas esperando jugadores, en tiempo real de tu ultima consulta."
-    >
+    <Card title={t('battle:available.title')} description={t('battle:available.description')}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <BattleRoomFilters
@@ -132,7 +131,7 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
               aria-hidden="true"
               className={clsx('h-4 w-4', rooms.isFetching && 'motion-safe:animate-spin')}
             />
-            Refrescar
+            {t('battle:available.refresh')}
           </Button>
         </div>
 
@@ -149,8 +148,8 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
             isEmpty={visibleRooms.length === 0}
             emptyMessage={
               (rooms.data?.length ?? 0) === 0
-                ? 'No hay salas esperando jugadores en este momento. Crea la primera sala de batalla.'
-                : 'Ninguna sala coincide con el filtro o la busqueda actual.'
+                ? t('battle:available.emptyAll')
+                : t('battle:available.emptyFiltered')
             }
           >
             <ul className="flex flex-col gap-3">

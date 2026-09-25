@@ -24,6 +24,8 @@ import type {
   TargetRef,
   TurnOrderEntry,
 } from './types'
+import { i18n } from '@/shared/i18n/i18n'
+import { formatInteger } from '@/shared/i18n/format'
 
 // ---------------------------------------------------------------------------------
 // HU-19: Poder, habilidades y recarga. Solo LEE lo que publica Combat: no decide si una
@@ -44,23 +46,26 @@ export const combatantSkills = (battle: BattleView, ref: TargetRef): readonly Sk
 
 /** Costo de Poder en texto: «2 de Poder» o «Todo el Poder». */
 export const describePowerCost = (cost: PowerCost): string =>
-  cost.mode === 'ALL_AVAILABLE' ? 'Todo el Poder' : `${String(cost.amount)} de Poder`
+  cost.mode === 'ALL_AVAILABLE'
+    ? i18n.t('battle:skills.allPower')
+    : i18n.t('battle:skills.powerCost', { amount: String(cost.amount) })
 
 const describeTurns = (turns: number): string =>
-  turns === 1 ? '1 turno' : `${String(turns)} turnos`
+  i18n.t('battle:skills.turns', { count: turns, value: formatInteger(turns) })
 
 /** Recarga de una habilidad ya usada, en texto. */
-export const describeRecharge = (turns: number): string => `${describeTurns(turns)} de recarga`
+export const describeRecharge = (turns: number): string =>
+  i18n.t('battle:skills.recharge', { turns: describeTurns(turns) })
 
 /** Estado de una habilidad en TEXTO (el color solo lo refuerza); el estado lo decide Combat. */
 export const describeSkillStatus = (skill: SkillView): string => {
   switch (skill.status) {
     case 'READY':
-      return 'Disponible'
+      return i18n.t('battle:skills.ready')
     case 'RECHARGING':
-      return `Disponible en ${describeTurns(skill.cooldownRemaining)}`
+      return i18n.t('battle:skills.availableIn', { turns: describeTurns(skill.cooldownRemaining) })
     case 'UNSUPPORTED':
-      return 'Esta habilidad todavía no está disponible en combate'
+      return i18n.t('battle:skills.unsupported')
   }
 }
 
@@ -118,15 +123,15 @@ export const skillAvailability = ({
   }
 
   if (connection !== 'open' || !synced) {
-    return { enabled: false, hint: 'Esperando la conexión con la batalla…' }
+    return { enabled: false, hint: i18n.t('battle:attack.hints.connection') }
   }
 
   if (pending) {
-    return { enabled: false, hint: 'Esperando el resultado de tu acción…' }
+    return { enabled: false, hint: i18n.t('battle:attack.hints.pending') }
   }
 
   if (target === null) {
-    return { enabled: false, hint: 'Elige un objetivo.' }
+    return { enabled: false, hint: i18n.t('battle:attack.hints.chooseTarget') }
   }
 
   return { enabled: true, hint: null }
@@ -136,33 +141,33 @@ export const skillAvailability = ({
 export const describeSkillRejection = (code: string): string => {
   switch (code) {
     case 'NOT_YOUR_TURN':
-      return 'No es tu turno. Tu habilidad no se ejecutó.'
+      return i18n.t('battle:skills.errors.NOT_YOUR_TURN')
     case 'BATTLE_NOT_ACTIVE':
-      return 'La batalla no está en curso.'
+      return i18n.t('battle:attack.errors.BATTLE_NOT_ACTIVE')
     case 'INVALID_TARGET':
-      return 'El objetivo elegido ya no existe en la batalla.'
+      return i18n.t('battle:attack.errors.INVALID_TARGET')
     case 'SAME_TEAM_TARGET':
-      return 'Esta habilidad no puede dirigirse a alguien de tu propio equipo.'
+      return i18n.t('battle:skills.errors.SAME_TEAM_TARGET')
     case 'TARGET_UNAVAILABLE':
-      return 'El objetivo ya no tiene Vida. Elige otro.'
+      return i18n.t('battle:attack.errors.TARGET_UNAVAILABLE')
     case 'ACTOR_UNAVAILABLE':
-      return 'Tu héroe ya no tiene Vida y no puede usar habilidades.'
+      return i18n.t('battle:skills.errors.ACTOR_UNAVAILABLE')
     case 'UNSUPPORTED_COMBAT_PROFILE':
-      return 'Las habilidades todavía no están disponibles para este héroe o para esta batalla.'
+      return i18n.t('battle:skills.errors.UNSUPPORTED_COMBAT_PROFILE')
     case 'SKILLS_NOT_AVAILABLE':
-      return 'Esta batalla comenzó antes de que existieran las habilidades y no las admite.'
+      return i18n.t('battle:skills.errors.SKILLS_NOT_AVAILABLE')
     case 'UNKNOWN_SKILL':
-      return 'Esa habilidad no pertenece a tu héroe.'
+      return i18n.t('battle:skills.errors.UNKNOWN_SKILL')
     case 'UNSUPPORTED_SKILL_EFFECT':
-      return 'Esa habilidad todavía no se puede usar: su efecto aún no está definido para el combate.'
+      return i18n.t('battle:skills.errors.UNSUPPORTED_SKILL_EFFECT')
     case 'SKILL_ON_COOLDOWN':
-      return 'Esa habilidad sigue en recarga. Tu turno no se consumió.'
+      return i18n.t('battle:skills.errors.SKILL_ON_COOLDOWN')
     case 'NOT_A_PARTICIPANT':
-      return 'No participas en esta batalla.'
+      return i18n.t('battle:notParticipant')
     case 'ROOM_NOT_FOUND':
-      return 'La sala ya no existe.'
+      return i18n.t('battle:roomGone')
     default:
-      return 'No fue posible usar la habilidad. Inténtalo de nuevo.'
+      return i18n.t('battle:skills.errors.default')
   }
 }
 
@@ -177,24 +182,29 @@ const nameOf = (entry: TurnOrderEntry | null, fallback: string): string =>
  * muestran «antes → despues».
  */
 export const describeLastSkill = (last: LastSkill, battle: BattleView): SkillFeedback => {
-  const actor = nameOf(findEntry(battle, last.actor), 'Un participante')
-  const target = nameOf(findEntry(battle, last.target), 'su objetivo')
+  const actor = nameOf(findEntry(battle, last.actor), i18n.t('battle:aParticipant'))
+  const target = nameOf(findEntry(battle, last.target), i18n.t('battle:theirTarget'))
   const { resolution } = last
-  const headline = `${actor} usó ${last.skill.name} contra ${target}`
+  const headline = i18n.t('battle:skills.used', { actor, skill: last.skill.name, target })
   const secondary = [
-    last.bonus.attack > 0 ? `Bono de Ataque +${String(last.bonus.attack)}` : null,
-    last.bonus.damage !== null && last.bonus.damage > 0
-      ? `Bono de Daño +${String(last.bonus.damage)}`
+    last.bonus.attack > 0
+      ? i18n.t('battle:skills.attackBonus', { amount: String(last.bonus.attack) })
       : null,
-    `Poder ${String(last.power.before)} → ${String(last.power.after)}`,
-    `Recarga ${describeTurns(last.cooldown.remainingTurns)}`,
+    last.bonus.damage !== null && last.bonus.damage > 0
+      ? i18n.t('battle:skills.damageBonus', { amount: String(last.bonus.damage) })
+      : null,
+    i18n.t('battle:skills.powerChange', {
+      before: String(last.power.before),
+      after: String(last.power.after),
+    }),
+    i18n.t('battle:skills.rechargeTurns', { turns: describeTurns(last.cooldown.remainingTurns) }),
   ].filter((text): text is string => text !== null)
   const compared = attackVersusDefense(resolution.attackValue, resolution.defenseValue)
 
   if (!resolution.effective || resolution.effect === null) {
     return {
-      headline: `${headline}, pero no superó su Defensa`,
-      impact: 'Sin daño',
+      headline: i18n.t('battle:skills.notOverDefense', { headline }),
+      impact: i18n.t('battle:feedback.noDamage'),
       tone: 'neutral',
       life: null,
       detail: [compared, ...secondary].join(DETAIL_SEPARATOR),
@@ -203,11 +213,11 @@ export const describeLastSkill = (last: LastSkill, battle: BattleView): SkillFee
 
   if (resolution.effect === 'NO_DAMAGE') {
     return {
-      headline: `${headline}: alcanzó, pero no causó daño`,
-      impact: 'Sin pérdida de Vida',
+      headline: i18n.t('battle:skills.reachedNoDamage', { headline }),
+      impact: i18n.t('battle:feedback.noHealthLoss'),
       tone: 'neutral',
       life: null,
-      detail: [compared, 'Efecto: sin daño', ...secondary].join(DETAIL_SEPARATOR),
+      detail: [compared, i18n.t('battle:feedback.effectNone'), ...secondary].join(DETAIL_SEPARATOR),
     }
   }
 
@@ -228,17 +238,20 @@ export const describeLastSkill = (last: LastSkill, battle: BattleView): SkillFee
  * vienen ya calculados por Combat.
  */
 export const describeLastHealSkill = (last: LastHealSkill, battle: BattleView): SkillFeedback => {
-  const actor = nameOf(findEntry(battle, last.actor), 'Un participante')
-  const target = nameOf(findEntry(battle, last.target), 'su objetivo')
+  const actor = nameOf(findEntry(battle, last.actor), i18n.t('battle:aParticipant'))
+  const target = nameOf(findEntry(battle, last.target), i18n.t('battle:theirTarget'))
 
   return {
-    headline: `${actor} usó ${last.skill.name} sobre ${target}`,
-    impact: `+${String(last.heal.amount)} Vida`,
+    headline: i18n.t('battle:skills.usedOn', { actor, skill: last.skill.name, target }),
+    impact: i18n.t('battle:skills.heal', { amount: String(last.heal.amount) }),
     tone: 'heal',
     life: lifeChange(target, last.targetHealth.before, last.targetHealth.after),
     detail: [
-      `Poder ${String(last.power.before)} → ${String(last.power.after)}`,
-      `Recarga ${describeTurns(last.cooldown.remainingTurns)}`,
+      i18n.t('battle:skills.powerChange', {
+        before: String(last.power.before),
+        after: String(last.power.after),
+      }),
+      i18n.t('battle:skills.rechargeTurns', { turns: describeTurns(last.cooldown.remainingTurns) }),
     ].join(DETAIL_SEPARATOR),
   }
 }
@@ -287,10 +300,10 @@ export const describeDegradedAttack = (
   const skillName =
     combatantSkills(battle, last.attacker).find(
       (skill) => skill.abilityId === last.degradedFrom?.abilityId,
-    )?.name ?? 'la habilidad'
+    )?.name ?? i18n.t('battle:skills.theAbility')
 
   return {
     ...describeLastAttack(last, battle),
-    notice: `No había Poder suficiente para ${skillName}. Se ejecutó un ataque básico en su lugar; la habilidad no se gastó ni quedó en recarga.`,
+    notice: i18n.t('battle:skills.degraded', { skill: skillName }),
   }
 }
