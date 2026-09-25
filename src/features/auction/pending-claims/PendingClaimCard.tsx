@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { Clock, Package, RefreshCw } from '@/components/ui/icons'
@@ -7,12 +8,15 @@ import { formatDateTime } from '@/lib/format'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
 import { queryKeys } from '@/shared/query-keys'
 import type { PendingClaim } from './api'
-
-const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g
+import { i18n } from '@/shared/i18n/i18n'
+import { formatInteger } from '@/shared/i18n/format'
 
 /** `2500` -> `2.500 créditos`. Misma duplicacion local que `auto-bid`/`bidding`: una feature no importa de otra. */
-const formatCredits = (amount: number): string =>
-  `${Math.trunc(amount).toString().replace(THOUSANDS, '.')} créditos`
+const formatCredits = (amount: number): string => {
+  const value = Math.trunc(amount)
+
+  return i18n.t('common:count.credits', { count: value, value: formatInteger(value) })
+}
 
 /**
  * Estado de presentacion de la tarjeta.
@@ -39,10 +43,11 @@ export interface PendingClaimCardProps {
   readonly onClaim: (auctionId: string) => void
 }
 
+/** `label` es la clave de traduccion de la etiqueta. */
 const STATUS_META: Readonly<Record<PendingClaimDisplayStatus, { label: string; tone: string }>> = {
-  PENDING: { label: 'Pendiente', tone: 'bg-warning/15 text-warning' },
-  CLAIMED: { label: 'Reclamado', tone: 'bg-success/15 text-success' },
-  EXPIRED: { label: 'Plazo vencido', tone: 'bg-danger/15 text-danger' },
+  PENDING: { label: 'auction:claims.status.PENDING', tone: 'bg-warning/15 text-warning' },
+  CLAIMED: { label: 'auction:claims.status.CLAIMED', tone: 'bg-success/15 text-success' },
+  EXPIRED: { label: 'auction:claims.status.EXPIRED', tone: 'bg-danger/15 text-danger' },
 }
 
 const PendingClaimStatusBadge = ({
@@ -51,6 +56,7 @@ const PendingClaimStatusBadge = ({
   readonly status: PendingClaimDisplayStatus
 }): React.JSX.Element => {
   const meta = STATUS_META[status]
+  const { t } = useTranslation()
 
   return (
     <span
@@ -59,7 +65,7 @@ const PendingClaimStatusBadge = ({
         meta.tone,
       )}
     >
-      {meta.label}
+      {t(meta.label)}
     </span>
   )
 }
@@ -87,6 +93,7 @@ export const PendingClaimCard = ({
     queryFn: ({ signal }) => fetchCanonicalProduct(claim.productId, signal),
   })
   const product = productQuery.data
+  const { t } = useTranslation()
   const name = product?.name ?? claim.productId
   const urgent = displayStatus === 'PENDING' && claim.remainingClaimDays <= 1
 
@@ -100,7 +107,7 @@ export const PendingClaimCard = ({
           {displayStatus === 'PENDING' ? (
             <input
               type="checkbox"
-              aria-label={`Seleccionar ${name}`}
+              aria-label={t('auction:claims.select', { name })}
               checked={selected}
               onChange={() => {
                 onToggleSelected(claim.auctionId)
@@ -131,7 +138,13 @@ export const PendingClaimCard = ({
               <PendingClaimStatusBadge status={displayStatus} />
             </div>
             <p className="mt-1 truncate text-xs text-muted">
-              {product?.type ?? 'Producto'} · Subasta {claim.auctionId}
+              {t('auction:claims.meta', {
+                type:
+                  product === undefined
+                    ? t('auction:claims.productFallback')
+                    : t(`commerce:productTypes.${product.type}`, { defaultValue: product.type }),
+                id: claim.auctionId,
+              })}
             </p>
           </div>
         </div>
@@ -149,10 +162,14 @@ export const PendingClaimCard = ({
           >
             <Clock aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             {displayStatus === 'EXPIRED'
-              ? `Venció el ${formatDateTime(claim.claimDeadline)}`
+              ? t('auction:claims.expiredOn', { date: formatDateTime(claim.claimDeadline) })
               : claim.remainingClaimDays <= 1
-                ? 'Vence hoy o mañana'
-                : `Quedan ${String(claim.remainingClaimDays)} días · vence el ${formatDateTime(claim.claimDeadline)}`}
+                ? t('auction:claims.dueSoon')
+                : t('auction:claims.remaining', {
+                    count: claim.remainingClaimDays,
+                    value: formatInteger(claim.remainingClaimDays),
+                    date: formatDateTime(claim.claimDeadline),
+                  })}
           </p>
         )}
 
@@ -170,24 +187,23 @@ export const PendingClaimCard = ({
               {claiming ? (
                 <>
                   <RefreshCw aria-hidden="true" className="h-4 w-4 motion-safe:animate-spin" />
-                  Reclamando...
+                  {t('auction:claims.claiming')}
                 </>
               ) : (
-                'Reclamar'
+                t('auction:claims.claim')
               )}
             </Button>
           )}
 
           {displayStatus === 'CLAIMED' && (
             <p role="status" className="text-xs font-medium text-success">
-              Añadido a tu inventario.
+              {t('auction:claims.added')}
             </p>
           )}
 
           {displayStatus === 'EXPIRED' && (
             <p role="alert" className="text-xs text-danger">
-              El plazo de reclamo venció. El producto se perdió: no se revierte la compra ni se
-              reembolsan los créditos.
+              {t('auction:claims.lost')}
             </p>
           )}
         </div>

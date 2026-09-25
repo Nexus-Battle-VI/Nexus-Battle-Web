@@ -1,5 +1,8 @@
 import { httpClient, HttpError } from '@/lib/http'
 import type { WatchlistResponse } from './contract'
+import { i18n } from '@/shared/i18n/i18n'
+import { currentLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 export interface PublishAuctionInput {
   readonly productId: string
@@ -90,28 +93,31 @@ interface AuctionErrorBody {
   readonly code?: unknown
 }
 
-const ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  PRODUCT_NOT_OWNED: 'Este producto ya no pertenece a tu inventario. Actualiza la selección.',
-  PRODUCT_IN_USE: 'Desequipa el producto antes de publicarlo.',
-  PRODUCT_NOT_TRADABLE: 'Este producto no puede comercializarse en subasta.',
-  SELLER_SANCTIONED: 'Tu cuenta tiene una sanción activa. Revisa su vigencia antes de reintentar.',
-  ACTIVE_AUCTION_LIMIT_REACHED: 'Ya tienes 10 subastas activas. Espera a que finalice una.',
-  INVALID_BUY_NOW_PRICE: 'La compra inmediata debe superar el precio mínimo de puja.',
-  INVALID_CREDITS: 'Ingresa precios enteros y mayores que cero.',
-  INSUFFICIENT_FUNDS: 'No tienes créditos suficientes para pagar la comisión seleccionada.',
-  DEPENDENCY_UNAVAILABLE:
-    'No pudimos verificar todos los datos. Conservamos el formulario para reintentar.',
-  PRODUCT_NOT_ELIGIBLE:
-    'Catalog indica que el producto no es exclusivo o no está disponible para publicación oficial.',
-}
+/** Codigos estables de Auction con texto propio (`auction:errors.<CODIGO>`). */
+const KNOWN_ERROR_CODES = new Set([
+  'PRODUCT_NOT_OWNED',
+  'PRODUCT_IN_USE',
+  'PRODUCT_NOT_TRADABLE',
+  'SELLER_SANCTIONED',
+  'ACTIVE_AUCTION_LIMIT_REACHED',
+  'INVALID_BUY_NOW_PRICE',
+  'INVALID_CREDITS',
+  'INSUFFICIENT_FUNDS',
+  'DEPENDENCY_UNAVAILABLE',
+  'PRODUCT_NOT_ELIGIBLE',
+])
 
 export const describeAuctionError = (error: unknown): string => {
   if (!(error instanceof HttpError)) {
-    return error instanceof Error ? error.message : 'No se pudo publicar la subasta.'
+    return error instanceof Error
+      ? describeFailure(error, i18n.t, currentLanguage())
+      : i18n.t('auction:errors.publishFailed')
   }
   const body = error.body as AuctionErrorBody | null
   const code = typeof body?.code === 'string' ? body.code : ''
-  return ERROR_MESSAGES[code] ?? error.message
+  return KNOWN_ERROR_CODES.has(code)
+    ? i18n.t(`auction:errors.${code}`)
+    : describeFailure(error, i18n.t, currentLanguage())
 }
 
 export const publishAuction = (
@@ -136,10 +142,10 @@ export const unfollowAuction = (auctionId: string): Promise<unknown> =>
 
 /** Traduce el rechazo de `followAuction` (HU-68), compartido entre las pantallas que ofrecen "Seguir". */
 export const describeFollowError = (error: unknown): string => {
-  if (error instanceof HttpError && error.status === 409) return 'Ya sigues esta subasta.'
+  if (error instanceof HttpError && error.status === 409) return i18n.t('auction:follow.already')
   if (error instanceof HttpError && (error.status === 404 || error.status === 422))
-    return 'La subasta no está disponible para seguimiento.'
-  return 'No se pudo seguir la subasta. Inténtalo de nuevo.'
+    return i18n.t('auction:follow.unavailable')
+  return i18n.t('auction:follow.failed')
 }
 
 export const publishOfficialAuction = (

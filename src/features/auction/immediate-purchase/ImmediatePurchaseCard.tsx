@@ -1,8 +1,10 @@
 import { useId, useState } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/form/CheckboxField'
+import { countLabel } from '@/shared/i18n/format'
 import { formatCredits } from './formatCredits'
 
 /**
@@ -61,13 +63,14 @@ export interface ImmediatePurchaseCardProps {
   readonly onViewOtherProducts?: () => void
 }
 
+/** Clave de la etiqueta de cada etapa (se traduce al pintar). */
 const BADGE_LABEL: Readonly<Record<ImmediatePurchaseStage, string>> = {
-  available: 'Disponible',
-  processing: 'Procesando',
-  success: 'Vendida',
-  unavailable: 'En subasta solo',
-  'insufficient-credits': 'Disponible',
-  'pending-pickup': 'Pendiente de retiro',
+  available: 'auction:purchase.badge.available',
+  processing: 'auction:purchase.badge.processing',
+  success: 'auction:purchase.badge.success',
+  unavailable: 'auction:purchase.badge.unavailable',
+  'insufficient-credits': 'auction:purchase.badge.available',
+  'pending-pickup': 'auction:purchase.badge.pending-pickup',
 }
 
 /** Mismo criterio de tono que `StatusBadge` (components/ui): fondo suave al 15% del color de estado. */
@@ -139,6 +142,7 @@ export const ImmediatePurchaseCard = ({
   onViewOtherProducts,
 }: ImmediatePurchaseCardProps): React.JSX.Element => {
   const titleId = useId()
+  const { t } = useTranslation()
   const [attempted, setAttempted] = useState(initialConfirmationAttempted)
   const confirmationMissing = attempted && !confirmed
 
@@ -173,7 +177,7 @@ export const ImmediatePurchaseCard = ({
           BADGE_TONE[stage],
         )}
       >
-        {BADGE_LABEL[stage]}
+        {t(BADGE_LABEL[stage])}
       </span>
     </div>
   )
@@ -188,13 +192,13 @@ export const ImmediatePurchaseCard = ({
         {header}
         <div>
           <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
-            <span>Procesando tu compra...</span>
-            <span className="text-[11px] font-medium text-muted">No cierres esta ventana</span>
+            <span>{t('auction:purchase.processing')}</span>
+            <span className="text-[11px] font-medium text-muted">{t('auction:dontClose')}</span>
           </div>
           <div
             className="h-2 overflow-hidden rounded-full bg-border"
             role="progressbar"
-            aria-label="Procesando tu compra"
+            aria-label={t('auction:purchase.processingLabel')}
           >
             <div className="h-2 w-full animate-pulse rounded-full bg-brand motion-reduce:animate-none" />
           </div>
@@ -231,15 +235,18 @@ export const ImmediatePurchaseCard = ({
           <hr className="m-0 h-px border-0 bg-border" />
           <dl className="m-0 flex flex-col gap-2.5">
             {priceCredits !== undefined && (
-              <KeyValue label="Precio de compra inmediata" value={formatCredits(priceCredits)} />
+              <KeyValue label={t('auction:purchase.price')} value={formatCredits(priceCredits)} />
             )}
             {availableCredits !== undefined && (
-              <KeyValue label="Créditos disponibles" value={formatCredits(availableCredits)} />
+              <KeyValue
+                label={t('auction:purchase.availableCredits')}
+                value={formatCredits(availableCredits)}
+              />
             )}
           </dl>
           <hr className="m-0 h-px border-0 bg-border" />
           <CheckboxField
-            label="Confirmo la compra inmediata"
+            label={t('auction:purchase.confirm')}
             checked={confirmed}
             onChange={(event) => {
               handleConfirmedChange(event.target.checked)
@@ -248,8 +255,8 @@ export const ImmediatePurchaseCard = ({
           {confirmationMissing && (
             <Alert
               tone="warning"
-              title="Confirmación requerida"
-              message="Debes marcar la casilla de confirmación antes de continuar."
+              title={t('auction:purchase.confirmationRequired')}
+              message={t('auction:purchase.confirmationBody')}
             />
           )}
           <Button
@@ -258,7 +265,7 @@ export const ImmediatePurchaseCard = ({
             aria-disabled={confirmationMissing}
             onClick={handleBuy}
           >
-            Comprar ahora
+            {t('auction:purchase.buy')}
           </Button>
         </>
       )}
@@ -267,22 +274,22 @@ export const ImmediatePurchaseCard = ({
         <>
           <Alert
             tone="success"
-            title="¡Compra completada!"
-            message={`El producto quedó en pendientes de recoger. Tienes ${String(pickupDays)} días para reclamarlo.`}
+            title={t('auction:purchase.completed')}
+            message={countLabel(t, 'auction:purchase.completedBody', pickupDays)}
           />
           <dl className="m-0 flex flex-col gap-2.5">
-            <KeyValue label="ID de transacción" value={transaction.id} />
+            <KeyValue label={t('auction:purchase.transactionId')} value={transaction.id} />
             <KeyValue
-              label="Créditos debitados"
+              label={t('auction:purchase.debited')}
               value={`-${formatCredits(transaction.debitedCredits)}`}
             />
             <KeyValue
-              label="Créditos restantes"
+              label={t('auction:purchase.remaining')}
               value={formatCredits(transaction.remainingCredits)}
             />
           </dl>
           <Button variant="secondary" className="w-full" onClick={onViewPending}>
-            Ver pendientes de recoger
+            {t('auction:purchase.viewPending')}
           </Button>
         </>
       )}
@@ -291,11 +298,11 @@ export const ImmediatePurchaseCard = ({
         <>
           <Alert
             tone="info"
-            title="Compra inmediata no disponible"
-            message="El vendedor no configuró un precio de compra inmediata para este producto. Participa en la subasta mediante pujas."
+            title={t('auction:purchase.unavailableTitle')}
+            message={t('auction:purchase.unavailableBody')}
           />
           <Button variant="primary" className="w-full" onClick={onGoToBid}>
-            Ir a pujar
+            {t('auction:purchase.goToBid')}
           </Button>
         </>
       )}
@@ -305,23 +312,32 @@ export const ImmediatePurchaseCard = ({
           {priceCredits !== undefined && availableCredits !== undefined && (
             <Alert
               tone="danger"
-              title="Créditos insuficientes"
-              message={`Necesitas ${formatCredits(priceCredits)} y solo tienes ${formatCredits(availableCredits)} disponibles.`}
+              title={t('auction:purchase.insufficientTitle')}
+              message={t('auction:purchase.insufficientBody', {
+                price: formatCredits(priceCredits),
+                available: formatCredits(availableCredits),
+              })}
             />
           )}
           <dl className="m-0 flex flex-col gap-2.5">
             {priceCredits !== undefined && (
-              <KeyValue label="Precio de compra inmediata" value={formatCredits(priceCredits)} />
+              <KeyValue label={t('auction:purchase.price')} value={formatCredits(priceCredits)} />
             )}
             {availableCredits !== undefined && (
-              <KeyValue label="Créditos disponibles" value={formatCredits(availableCredits)} />
+              <KeyValue
+                label={t('auction:purchase.availableCredits')}
+                value={formatCredits(availableCredits)}
+              />
             )}
             {missingCredits !== undefined && (
-              <KeyValue label="Créditos faltantes" value={formatCredits(missingCredits)} />
+              <KeyValue
+                label={t('auction:purchase.missing')}
+                value={formatCredits(missingCredits)}
+              />
             )}
           </dl>
           <Button variant="primary" className="w-full" disabled>
-            Comprar ahora
+            {t('auction:purchase.buy')}
           </Button>
         </>
       )}
@@ -330,18 +346,21 @@ export const ImmediatePurchaseCard = ({
         <>
           <Alert
             tone="success"
-            title="Tu compra está lista para reclamar"
-            message={`Retira el producto dentro de los próximos ${String(pickupDays)} días o volverá al inventario del vendedor.`}
+            title={t('auction:purchase.readyTitle')}
+            message={countLabel(t, 'auction:purchase.readyBody', pickupDays)}
           />
           <dl className="m-0 flex flex-col gap-2.5">
-            <KeyValue label="ID de transacción" value={transaction.id} />
+            <KeyValue label={t('auction:purchase.transactionId')} value={transaction.id} />
             {pickupDeadline !== undefined && (
-              <KeyValue label="Fecha límite de retiro" value={pickupDeadline} />
+              <KeyValue label={t('auction:purchase.deadline')} value={pickupDeadline} />
             )}
-            <KeyValue label="Estado" value="Pendiente de retiro" />
+            <KeyValue
+              label={t('auction:purchase.status')}
+              value={t('auction:purchase.pendingPickup')}
+            />
           </dl>
           <Button variant="secondary" className="w-full" onClick={onViewOtherProducts}>
-            Ver otros productos
+            {t('auction:purchase.viewOthers')}
           </Button>
         </>
       )}

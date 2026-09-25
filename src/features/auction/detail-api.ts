@@ -1,4 +1,7 @@
 import { HttpError, httpClient } from '@/lib/http'
+import { i18n } from '@/shared/i18n/i18n'
+import { currentLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Detalle de una subasta y de su puja lider actual.
@@ -134,32 +137,32 @@ const buyNowErrorCode = (error: HttpError): BuyNowErrorCode | undefined => {
 /** Sigue el mismo criterio que `describeAdjustmentFailure` (admin/products/api.ts). */
 export const describeBuyNowFailure = (error: unknown): string => {
   if (!(error instanceof HttpError)) {
-    return 'No se pudo completar la compra por un problema de conexión. Se reintentará automáticamente.'
+    return i18n.t('auction:buyNow.network')
   }
 
   switch (buyNowErrorCode(error)) {
     case 'AUCTION_NOT_FOUND':
-      return 'Esta subasta ya no existe.'
+      return i18n.t('auction:buyNow.AUCTION_NOT_FOUND')
     case 'BUY_NOW_CONFLICT':
     case 'AUCTION_NOT_ACTIVE':
-      return 'Otro comprador se adelantó: la subasta ya se cerró.'
+      return i18n.t('auction:buyNow.conflict')
     case 'SELLER_CANNOT_BUY_OWN_AUCTION':
-      return 'No puedes ejecutar la compra inmediata de tu propia subasta.'
+      return i18n.t('auction:buyNow.SELLER_CANNOT_BUY_OWN_AUCTION')
     case 'BUY_NOW_PRICE_UNAVAILABLE':
-      return 'Esta subasta ya no tiene compra inmediata disponible.'
+      return i18n.t('auction:buyNow.BUY_NOW_PRICE_UNAVAILABLE')
     case 'CONFIRMATION_REQUIRED':
-      return 'Debes confirmar la compra antes de continuar.'
+      return i18n.t('auction:buyNow.CONFIRMATION_REQUIRED')
     case 'INSUFFICIENT_CREDITS':
-      return 'No tienes créditos suficientes para esta compra.'
+      return i18n.t('auction:buyNow.INSUFFICIENT_CREDITS')
     case 'DEPENDENCY_UNAVAILABLE':
-      return 'El servicio de créditos no está disponible en este momento. Inténtalo más tarde.'
+      return i18n.t('auction:buyNow.DEPENDENCY_UNAVAILABLE')
     default:
       break
   }
 
   if (error.isUnauthorized) {
-    return 'Tu sesión no es válida o venció. Vuelve a iniciar sesión.'
+    return i18n.t('auction:buyNow.unauthorized')
   }
 
-  return error.message
+  return describeFailure(error, i18n.t, currentLanguage())
 }
