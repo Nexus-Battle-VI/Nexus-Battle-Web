@@ -1,5 +1,6 @@
 import { useId, type KeyboardEvent } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import type { MissionContent } from './missionContent'
 import {
@@ -40,6 +41,7 @@ export const MissionContentForm = ({
   section,
   onSectionChange,
 }: MissionContentFormProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const prefix = useId()
   const tabId = (id: SectionId): string => `${prefix}-tab-${id}`
   const panelId = `${prefix}-panel`
@@ -79,7 +81,7 @@ export const MissionContentForm = ({
     <div className="flex flex-col">
       <div
         role="tablist"
-        aria-label="Partes de la misión"
+        aria-label={t('admin:missions.form.tabsLabel')}
         className="flex flex-wrap gap-1 border-b border-border"
       >
         {SECTIONS.map((entry) => {
@@ -116,9 +118,12 @@ export const MissionContentForm = ({
                     {count}
                   </span>
                   <span className="sr-only">
-                    {count === 1
-                      ? ', 1 campo por corregir'
-                      : `, ${String(count)} campos por corregir`}
+                    {t(
+                      count === 1
+                        ? 'admin:missions.form.fieldsToFix_one'
+                        : 'admin:missions.form.fieldsToFix_other',
+                      { count },
+                    )}
                   </span>
                 </>
               )}
