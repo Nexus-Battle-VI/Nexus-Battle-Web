@@ -1,6 +1,9 @@
 import { HttpError, httpClient } from '@/lib/http'
 
 import type { CreateProductRequest, CreatedProduct } from './contract'
+import { i18n } from '@/shared/i18n/i18n'
+import { currentLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Alta canonica de producto (HU-33, ADR-013).
@@ -28,32 +31,33 @@ export const createProduct = (request: CreateProductRequest): Promise<CreatedPro
  */
 export const describeCreationFailure = (error: unknown): string => {
   if (!(error instanceof HttpError)) {
-    return 'No se pudo crear el producto. Revisa tu conexión e inténtalo de nuevo.'
+    return i18n.t('admin:products.failures.createNetwork')
   }
 
   if (error.status === 401) {
-    return 'Tu sesión no es válida o venció. Vuelve a iniciar sesión.'
+    return i18n.t('admin:products.failures.session')
   }
 
   if (error.status === 403) {
-    return 'No tiene permisos para gestionar el catálogo. Se exige rol administrativo y segundo factor verificado en esta sesión.'
+    return i18n.t('admin:products.failures.forbidden')
   }
 
   if (error.status === 409) {
-    return 'Ya existe un producto activo de este tipo con el mismo nombre.'
+    return i18n.t('admin:products.failures.duplicate')
   }
 
   if (error.status === 422 || error.status === 400) {
     // El mensaje del servicio nombra el campo exacto (`attributes.values...`),
-    // que es mas util que cualquier texto generico que se escriba aqui.
-    return error.message
+    // que es mas util que cualquier texto generico que se escriba aqui. En
+    // otro idioma se describe por estado (`describeFailure`).
+    return describeFailure(error, i18n.t, currentLanguage())
   }
 
   if (error.status === 503) {
-    return 'No se pudo comprobar el segundo factor. Inténtalo de nuevo en unos minutos.'
+    return i18n.t('admin:products.failures.mfaUnavailable')
   }
 
-  return 'No se pudo crear el producto.'
+  return i18n.t('admin:products.failures.create')
 }
 
 /**
@@ -100,34 +104,34 @@ export const adjustProductInventory = (
  */
 export const describeAdjustmentFailure = (error: unknown): string => {
   if (!(error instanceof HttpError)) {
-    return 'No se pudo ajustar el tiraje. Revisa tu conexión e inténtalo de nuevo.'
+    return i18n.t('admin:products.failures.adjustNetwork')
   }
 
   if (error.status === 401) {
-    return 'Tu sesión no es válida o venció. Vuelve a iniciar sesión.'
+    return i18n.t('admin:products.failures.session')
   }
 
   if (error.status === 403) {
-    return 'No tiene permisos para gestionar el catálogo. Se exige rol administrativo y segundo factor verificado en esta sesión.'
+    return i18n.t('admin:products.failures.forbidden')
   }
 
   if (error.status === 404) {
-    return 'El producto no existe.'
+    return i18n.t('admin:products.failures.notFound')
   }
 
   if (error.status === 409) {
-    return 'Otro ajuste modificó el producto mientras editabas. Vuelve a cargarlo y repite el cambio.'
+    return i18n.t('admin:products.failures.concurrent')
   }
 
   if (error.status === 422 || error.status === 400) {
-    return error.message
+    return describeFailure(error, i18n.t, currentLanguage())
   }
 
   if (error.status === 503) {
-    return 'No se pudo comprobar el segundo factor. Inténtalo de nuevo en unos minutos.'
+    return i18n.t('admin:products.failures.mfaUnavailable')
   }
 
-  return 'No se pudo ajustar el tiraje.'
+  return i18n.t('admin:products.failures.adjust')
 }
 
 /**
@@ -155,28 +159,28 @@ export const updateProductLifecycleStatus = (
  */
 export const describeLifecycleStatusFailure = (error: unknown): string => {
   if (!(error instanceof HttpError)) {
-    return 'No se pudo actualizar el estado del producto. Revisa tu conexión e inténtalo de nuevo.'
+    return i18n.t('admin:products.failures.statusNetwork')
   }
 
   if (error.status === 400) {
-    return error.message
+    return describeFailure(error, i18n.t, currentLanguage())
   }
 
   if (error.status === 401) {
-    return 'Tu sesión no es válida o venció. Vuelve a iniciar sesión.'
+    return i18n.t('admin:products.failures.session')
   }
 
   if (error.status === 403) {
-    return 'No tiene permisos para gestionar el catálogo. Se exige rol administrativo y segundo factor verificado en esta sesión.'
+    return i18n.t('admin:products.failures.forbidden')
   }
 
   if (error.status === 404) {
-    return 'El producto no existe.'
+    return i18n.t('admin:products.failures.notFound')
   }
 
   if (error.status === 503) {
-    return 'No se pudo comprobar el segundo factor. Inténtalo de nuevo en unos minutos.'
+    return i18n.t('admin:products.failures.mfaUnavailable')
   }
 
-  return 'No se pudo actualizar el estado del producto.'
+  return i18n.t('admin:products.failures.status')
 }

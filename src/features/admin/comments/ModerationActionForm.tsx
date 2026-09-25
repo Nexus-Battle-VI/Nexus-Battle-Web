@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Button, type ButtonVariant } from '@/components/ui/Button'
 import { TextareaField } from '@/components/ui/form/TextareaField'
@@ -7,7 +8,6 @@ import { HttpError } from '@/lib/http'
 import type { ProductComment } from '@/features/product-reviews/api'
 import type { EditCommentInput, ModerationActionInput } from './api'
 
-const GENERIC_ERROR = 'No se pudo completar la operación. Inténtalo nuevamente más tarde.'
 const REASON_MAX_LENGTH = 500
 
 export type ModerationActionKind = 'approve' | 'hide' | 'delete' | 'mark' | 'edit'
@@ -58,7 +58,9 @@ export const ModerationActionForm = ({
 }: ModerationActionFormProps): React.JSX.Element => {
   const [reason, setReason] = useState('')
   const [content, setContent] = useState(initialContent)
+  // Guarda la CLAVE del aviso; se traduce al pintar.
   const [reasonError, setReasonError] = useState<string | undefined>(undefined)
+  const { t } = useTranslation()
 
   const mutation = useMutation({
     mutationFn: async (): Promise<Outcome | null> => {
@@ -90,7 +92,7 @@ export const ModerationActionForm = ({
     event.preventDefault()
 
     if (reason.trim() === '') {
-      setReasonError('El motivo es obligatorio.')
+      setReasonError('admin:moderation.reasonRequired')
       return
     }
 
@@ -108,12 +110,12 @@ export const ModerationActionForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      aria-label={`${actionLabel} comentario ${commentId}`}
+      aria-label={t('admin:moderation.formLabel', { action: actionLabel, id: commentId })}
       className="mt-2 space-y-3 rounded-lg border border-border bg-surface p-3"
     >
       {mutation.isPending && (
         <p role="status" className="text-sm text-muted">
-          Enviando…
+          {t('admin:sending')}
         </p>
       )}
 
@@ -122,7 +124,7 @@ export const ModerationActionForm = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-2 text-sm text-danger"
         >
-          Tu sesión ha caducado. Vuelve a iniciar sesión para moderar este comentario.
+          {t('admin:moderation.sessionExpired')}
         </p>
       )}
 
@@ -131,7 +133,7 @@ export const ModerationActionForm = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-2 text-sm text-danger"
         >
-          Este comentario ya no está disponible.
+          {t('admin:moderation.notFound')}
         </p>
       )}
 
@@ -149,13 +151,13 @@ export const ModerationActionForm = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-2 text-sm text-danger"
         >
-          {GENERIC_ERROR}
+          {t('admin:genericError')}
         </p>
       )}
 
       {action === 'edit' && (
         <TextareaField
-          label="Nuevo contenido"
+          label={t('admin:moderation.newContent')}
           required
           value={content}
           disabled={mutation.isPending}
@@ -167,13 +169,13 @@ export const ModerationActionForm = ({
       )}
 
       <TextareaField
-        label="Motivo de la acción"
+        label={t('admin:moderation.reason')}
         required
         value={reason}
         disabled={mutation.isPending}
         maxLength={REASON_MAX_LENGTH}
-        error={reasonError}
-        placeholder="Explica por qué se toma esta acción…"
+        error={reasonError === undefined ? undefined : t(reasonError)}
+        placeholder={t('admin:moderation.reasonPlaceholder')}
         onChange={(event) => {
           setReason(event.target.value)
           setReasonError(undefined)
@@ -185,7 +187,7 @@ export const ModerationActionForm = ({
           {actionLabel}
         </Button>
         <Button type="button" variant="secondary" disabled={mutation.isPending} onClick={onCancel}>
-          Cancelar
+          {t('common:cancel')}
         </Button>
       </div>
     </form>

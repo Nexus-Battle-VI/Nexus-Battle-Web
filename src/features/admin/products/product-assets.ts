@@ -1,4 +1,5 @@
 import { httpClient, type HttpClient } from '@/lib/http'
+import { i18n } from '@/shared/i18n/i18n'
 
 /** Límites del contrato Catalog Product Assets v1 (ADR-016). */
 const ACCEPTED_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -35,11 +36,11 @@ export class ProductAssetUploadError extends Error {
 
 export const validatePrimaryImage = (file: File): void => {
   if (!ACCEPTED_CONTENT_TYPES.has(file.type)) {
-    throw new ProductAssetUploadError('Selecciona una imagen JPG, PNG o WEBP.')
+    throw new ProductAssetUploadError(i18n.t('admin:products.assets.type'))
   }
 
   if (file.size < 1 || file.size > MAX_FILE_SIZE_BYTES) {
-    throw new ProductAssetUploadError('La imagen debe pesar entre 1 byte y 5 MiB.')
+    throw new ProductAssetUploadError(i18n.t('admin:products.assets.size'))
   }
 }
 
@@ -58,7 +59,7 @@ export const sha256Base64 = async (file: File): Promise<string> => {
   const subtle = Reflect.get(globalThis.crypto, 'subtle') as SubtleCrypto | undefined
 
   if (subtle === undefined) {
-    throw new ProductAssetUploadError('El navegador no puede comprobar la integridad del archivo.')
+    throw new ProductAssetUploadError(i18n.t('admin:products.assets.integrity'))
   }
 
   const digest = await subtle.digest('SHA-256', await file.arrayBuffer())
@@ -107,9 +108,7 @@ export const createProductPrimaryImageUploader = ({
     })
 
     if (!uploadResponse.ok) {
-      throw new ProductAssetUploadError(
-        'No se pudo cargar la imagen. Selecciona el archivo e inténtalo de nuevo.',
-      )
+      throw new ProductAssetUploadError(i18n.t('admin:products.assets.upload'))
     }
 
     return client.post<FinalizedProductAsset>(

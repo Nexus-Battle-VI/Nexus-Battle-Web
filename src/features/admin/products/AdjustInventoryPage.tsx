@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
@@ -52,6 +53,7 @@ type Modalidad = 'LIMITED' | 'INFINITE'
 export const AdjustInventoryPage = (): React.JSX.Element => {
   const { productId = '' } = useParams()
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
 
   const consulta = useQuery({
     queryKey: ['admin', 'product', productId],
@@ -70,6 +72,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
   // Asi ademas no hay un instante en el que el campo muestre un valor distinto
   // del que tiene el producto.
   const [edicion, setEdicion] = useState<{ modalidad: Modalidad; cantidad: string } | null>(null)
+  // Guarda el texto ya resuelto del aviso de campo.
   const [errorDeCampo, setErrorDeCampo] = useState<string | undefined>(undefined)
 
   const modalidad: Modalidad =
@@ -136,7 +139,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
     // sigue siendo la de Catalog, que rechaza con 400 igual si esta se
     // sorteara.
     if (valor.length < REASON_MIN_LENGTH) {
-      setErrorDeMotivo(`El motivo es obligatorio, mínimo ${String(REASON_MIN_LENGTH)} caracteres.`)
+      setErrorDeMotivo(t('admin:products.adjust.reasonMin', { min: String(REASON_MIN_LENGTH) }))
       return
     }
 
@@ -162,7 +165,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
     const valor = cantidad.trim()
 
     if (!/^\d+$/.test(valor) || Number(valor) < 1) {
-      setErrorDeCampo('La cantidad debe ser un entero mayor o igual que 1.')
+      setErrorDeCampo(t('admin:products.errors.printRun'))
       return
     }
 
@@ -171,7 +174,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
     // es quien conoce las entregas ocurridas mientras esta pantalla estaba
     // abierta.
     if (entregadas !== null && Number(valor) < entregadas) {
-      setErrorDeCampo(`No puede ser inferior a las ${String(entregadas)} unidades ya entregadas.`)
+      setErrorDeCampo(t('admin:products.adjust.belowDelivered', { delivered: String(entregadas) }))
       return
     }
 
@@ -182,7 +185,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
   if (consulta.isPending) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-10">
-        <p className="text-sm text-muted">Cargando el producto…</p>
+        <p className="text-sm text-muted">{t('admin:products.adjust.loading')}</p>
       </div>
     )
   }
@@ -199,62 +202,72 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       <Breadcrumb
         items={[
-          { label: 'Inicio', to: '/ecommerce' },
-          { label: 'Catálogo', to: '/catalog' },
-          { label: 'Disponibilidad' },
+          { label: t('admin:home'), to: '/ecommerce' },
+          { label: t('admin:catalog'), to: '/catalog' },
+          { label: t('admin:products.adjust.crumb') },
         ]}
       />
 
       <header className="mt-6 mb-8">
-        <p className="text-xs uppercase tracking-widest text-muted">Administración de productos</p>
+        <p className="text-xs uppercase tracking-widest text-muted">
+          {t('admin:products.eyebrow')}
+        </p>
         <h1 className="mt-1 text-2xl font-semibold text-ink">{producto.name}</h1>
       </header>
 
       <section
-        aria-label="Disponibilidad actual"
+        aria-label={t('admin:products.adjust.current')}
         className="mb-8 rounded-lg border border-ink/10 bg-surface p-5"
       >
         <div className="flex flex-wrap items-center gap-3">
           <AvailabilityBadge availableUnits={producto.availableUnits} />
           <span className="text-xs text-muted">
-            Estado del producto: {producto.lifecycleStatus === 'ACTIVE' ? 'activo' : 'suspendido'}
+            {t('admin:products.adjust.statusLine', {
+              status:
+                producto.lifecycleStatus === 'ACTIVE'
+                  ? t('admin:products.adjust.activeLower')
+                  : t('admin:products.adjust.suspendedLower'),
+            })}
           </span>
         </div>
 
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
           <div>
-            <dt className="text-xs text-muted">Tiraje</dt>
+            <dt className="text-xs text-muted">{t('admin:products.adjust.printRun')}</dt>
             <dd className="text-ink">
-              {producto.printRunMode === 'INFINITE' ? 'Infinito' : producto.printRun}
+              {producto.printRunMode === 'INFINITE'
+                ? t('admin:products.adjust.infinite')
+                : producto.printRun}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted">Disponibles</dt>
-            <dd className="text-ink">{producto.availableUnits ?? 'No aplica'}</dd>
+            <dt className="text-xs text-muted">{t('admin:products.adjust.available')}</dt>
+            <dd className="text-ink">
+              {producto.availableUnits ?? t('admin:products.adjust.notApplicable')}
+            </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted">Entregadas</dt>
-            <dd className="text-ink">{entregadas ?? 'No se cuentan'}</dd>
+            <dt className="text-xs text-muted">{t('admin:products.adjust.delivered')}</dt>
+            <dd className="text-ink">{entregadas ?? t('admin:products.adjust.notCounted')}</dd>
           </div>
         </dl>
 
         {producto.availableUnits === 0 && (
-          <p className="mt-4 text-xs text-muted">
-            Agotado y suspendido son condiciones independientes: agotarse no cambia el estado del
-            producto, y reactivarlo no repone unidades.
-          </p>
+          <p className="mt-4 text-xs text-muted">{t('admin:products.adjust.independent')}</p>
         )}
       </section>
 
       <section
-        aria-label="Estado del producto"
+        aria-label={t('admin:products.adjust.statusSection')}
         className="mb-8 rounded-lg border border-ink/10 bg-surface p-5"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-muted">Estado del producto</p>
+            <p className="text-xs text-muted">{t('admin:products.adjust.statusSection')}</p>
             <p className="mt-1 text-sm font-medium text-ink">
-              {producto.lifecycleStatus === 'ACTIVE' ? 'Activo' : 'Suspendido'}
+              {producto.lifecycleStatus === 'ACTIVE'
+                ? t('admin:products.adjust.active')
+                : t('admin:products.adjust.suspended')}
             </p>
           </div>
 
@@ -264,7 +277,9 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
               variant={producto.lifecycleStatus === 'ACTIVE' ? 'danger' : 'primary'}
               onClick={abrirConfirmacion}
             >
-              {producto.lifecycleStatus === 'ACTIVE' ? 'Suspender producto' : 'Reactivar producto'}
+              {producto.lifecycleStatus === 'ACTIVE'
+                ? t('admin:products.adjust.suspend')
+                : t('admin:products.adjust.reactivate')}
             </Button>
           )}
         </div>
@@ -273,31 +288,24 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
           <form
             onSubmit={confirmarCambioDeEstado}
             aria-label={
-              producto.lifecycleStatus === 'ACTIVE' ? 'Suspender producto' : 'Reactivar producto'
+              producto.lifecycleStatus === 'ACTIVE'
+                ? t('admin:products.adjust.suspend')
+                : t('admin:products.adjust.reactivate')
             }
             className="mt-4 space-y-3 rounded-lg border border-border bg-surface/60 p-3"
           >
             <p className="text-xs text-muted">
-              {producto.lifecycleStatus === 'ACTIVE' ? (
-                <>
-                  El producto se suspenderá: dejará de estar disponible para nuevas adquisiciones y
-                  desaparecerá de la vitrina pública. No se elimina ni se borra -sigue intacto en el
-                  inventario de quienes ya lo poseen- y puede reactivarse en cualquier momento.
-                </>
-              ) : (
-                <>
-                  El producto volverá a estar disponible para nuevas adquisiciones y visible en la
-                  vitrina pública. Si estaba agotado, seguirá agotado hasta que se amplíe su tiraje.
-                </>
-              )}
+              {producto.lifecycleStatus === 'ACTIVE'
+                ? t('admin:products.adjust.suspendNote')
+                : t('admin:products.adjust.reactivateNote')}
             </p>
 
             <TextareaField
-              label="Motivo"
+              label={t('admin:products.adjust.reason')}
               required
               value={motivo}
               error={errorDeMotivo}
-              hint={`Obligatorio, mínimo ${String(REASON_MIN_LENGTH)} caracteres.`}
+              hint={t('admin:products.adjust.reasonHint', { min: String(REASON_MIN_LENGTH) })}
               disabled={cambioDeEstado.isPending}
               onChange={(event) => {
                 setMotivo(event.target.value)
@@ -318,8 +326,8 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
                 loading={cambioDeEstado.isPending}
               >
                 {producto.lifecycleStatus === 'ACTIVE'
-                  ? 'Confirmar suspensión'
-                  : 'Confirmar reactivación'}
+                  ? t('admin:products.adjust.confirmSuspend')
+                  : t('admin:products.adjust.confirmReactivate')}
               </Button>
               <Button
                 type="button"
@@ -327,7 +335,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
                 disabled={cambioDeEstado.isPending}
                 onClick={cancelarConfirmacion}
               >
-                Cancelar
+                {t('common:cancel')}
               </Button>
             </div>
           </form>
@@ -335,7 +343,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
 
         {!motivoAbierto && cambioDeEstado.isSuccess && (
           <p role="status" className="mt-4 text-sm text-brand">
-            Estado actualizado.
+            {t('admin:products.adjust.statusUpdated')}
           </p>
         )}
       </section>
@@ -343,11 +351,11 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
       <form onSubmit={enviar} className="flex flex-col gap-6">
         <div className="grid gap-6 md:grid-cols-2">
           <SelectField
-            label="Disponibilidad"
+            label={t('admin:products.pricing.availability')}
             value={modalidad}
             options={[
-              { value: 'LIMITED', label: 'Tiraje limitado (cantidad exacta)' },
-              { value: 'INFINITE', label: 'Tiraje infinito (sin límite)' },
+              { value: 'LIMITED', label: t('admin:products.pricing.limited') },
+              { value: 'INFINITE', label: t('admin:products.pricing.infinite') },
             ]}
             onChange={(event) => {
               setModalidad(event.target.value as Modalidad)
@@ -356,16 +364,14 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
 
           {modalidad === 'LIMITED' && (
             <TextField
-              label="Cantidad de unidades"
+              label={t('admin:products.pricing.units')}
               required
               inputMode="numeric"
               value={cantidad}
               error={errorDeCampo}
-              hint={
-                entregadas === null
-                  ? 'Entero mayor o igual que 1.'
-                  : `Entero mayor o igual que ${String(Math.max(entregadas, 1))}.`
-              }
+              hint={t('admin:products.adjust.unitsHintMin', {
+                min: String(entregadas === null ? 1 : Math.max(entregadas, 1)),
+              })}
               onChange={(event) => {
                 setCantidad(event.target.value)
               }}
@@ -374,10 +380,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
         </div>
 
         {producto.printRunMode === 'INFINITE' && modalidad === 'LIMITED' && (
-          <p className="text-xs text-danger">
-            Un producto de tiraje infinito no puede pasar a limitado: no se cuentan las unidades
-            entregadas, así que no hay con qué comprobar el mínimo.
-          </p>
+          <p className="text-xs text-danger">{t('admin:products.adjust.infiniteToLimited')}</p>
         )}
 
         {ajuste.isError && (
@@ -388,13 +391,15 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
 
         {ajuste.isSuccess && (
           <p role="status" className="text-sm text-brand">
-            Tiraje ajustado.
+            {t('admin:products.adjust.adjusted')}
           </p>
         )}
 
         <div>
           <Button type="submit" disabled={ajuste.isPending}>
-            {ajuste.isPending ? 'Ajustando…' : 'Ajustar tiraje'}
+            {ajuste.isPending
+              ? t('admin:products.adjust.adjusting')
+              : t('admin:products.adjust.submit')}
           </Button>
         </div>
       </form>

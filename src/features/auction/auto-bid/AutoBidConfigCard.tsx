@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
 import { formatDateTime } from '@/lib/format'
-import './auto-bid.css'
 import { i18n } from '@/shared/i18n/i18n'
 import { formatInteger } from '@/shared/i18n/format'
+import './auto-bid.css'
 
 /** `2500` -> `2.500 créditos` en es; separador y plural del idioma activo. */
 const formatCredits = (amount: number): string => {
