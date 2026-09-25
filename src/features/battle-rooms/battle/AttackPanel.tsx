@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import type { RealtimeConnectionState } from '../realtime'
@@ -70,6 +71,7 @@ export const AttackPanel = ({
 }: AttackPanelProps): React.JSX.Element => {
   const headingId = useId()
   const hintId = useId()
+  const { t } = useTranslation()
   const [chosen, setChosen] = useState<string | null>(null)
   const { attack } = combat
   const attackPending = attack.intent !== null
@@ -111,7 +113,7 @@ export const AttackPanel = ({
     >
       {/* El titulo existe para los lectores de pantalla; a la vista, la barra ya es evidente. */}
       <h2 id={headingId} className="sr-only">
-        Acciones de combate
+        {t('battle:battle.actions')}
       </h2>
 
       {/*
@@ -122,7 +124,7 @@ export const AttackPanel = ({
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-6">
           <fieldset className="min-w-0 flex-1">
             <legend className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-muted">
-              Objetivo del ataque
+              {t('battle:attack.target')}
             </legend>
             <div className="flex flex-wrap gap-2">
               {targets.map((entry) => {
@@ -155,7 +157,10 @@ export const AttackPanel = ({
                     <span className="text-xs tabular-nums text-muted">
                       {health === null
                         ? ''
-                        : `Vida ${String(health.current)} / ${String(health.max)}`}
+                        : t('battle:health.value', {
+                            current: String(health.current),
+                            max: String(health.max),
+                          })}
                     </span>
                   </label>
                 )
@@ -170,7 +175,7 @@ export const AttackPanel = ({
             className="min-h-12 w-full px-8 text-base font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50 md:w-auto md:min-w-52"
             onClick={submit}
           >
-            {attackPending ? 'Atacando…' : 'Ataque básico'}
+            {attackPending ? t('battle:attack.attacking') : t('battle:attack.basic')}
           </Button>
         </div>
       )}
@@ -198,18 +203,12 @@ export const AttackPanel = ({
             {availability.hint}
           </p>
         )}
-        <p className="text-xs text-muted">
-          La habilidad épica llegará cuando el juego defina cómo se equipa; hoy no hay ninguna
-          disponible.
-        </p>
+        <p className="text-xs text-muted">{t('battle:attack.epicSoon')}</p>
       </div>
 
       {attack.unconfirmed && attack.intent !== null && (
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
-          <p>
-            No se pudo confirmar tu ataque. Es posible que Combat ya lo haya procesado: al
-            reintentar se envía el mismo comando y no se duplica.
-          </p>
+          <p>{t('battle:attack.unconfirmed')}</p>
           <Button
             variant="secondary"
             aria-disabled={!ready}
@@ -220,7 +219,7 @@ export const AttackPanel = ({
               }
             }}
           >
-            Reintentar ataque
+            {t('battle:attack.retry')}
           </Button>
         </div>
       )}
@@ -229,7 +228,7 @@ export const AttackPanel = ({
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
           <p>{describeAttackRejection(attack.rejection)}</p>
           <Button variant="secondary" className="min-h-11" onClick={combat.onDismissRejection}>
-            Entendido
+            {t('battle:understood')}
           </Button>
         </div>
       )}

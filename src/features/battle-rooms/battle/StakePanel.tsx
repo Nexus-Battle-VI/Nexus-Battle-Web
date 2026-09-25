@@ -1,11 +1,13 @@
 import { useId } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Coins } from '@/components/ui/icons'
 
 import { useBattleStake } from './useBattleStake'
 import { describeOwnStake } from './stakePresentation'
 import { useRefreshWalletOn, useWallet } from '@/shared/wallet'
+import { countLabel } from '@/shared/i18n/format'
 
 export interface StakePanelProps {
   readonly roomId: string
@@ -33,6 +35,7 @@ const TERMINAL_STAKE_STATES: ReadonlySet<string> = new Set([
 
 export const StakePanel = ({ roomId, subject }: StakePanelProps): React.JSX.Element | null => {
   const headingId = useId()
+  const { t } = useTranslation()
   const stakeQuery = useBattleStake(roomId, subject, subject !== null)
   const walletQuery = useWallet()
   const status = stakeQuery.data?.status ?? null
@@ -65,7 +68,7 @@ export const StakePanel = ({ roomId, subject }: StakePanelProps): React.JSX.Elem
       )}
     >
       <h2 id={headingId} className="sr-only">
-        Apuesta de la batalla
+        {t('battle:stake.title')}
       </h2>
 
       <p
@@ -78,9 +81,9 @@ export const StakePanel = ({ roomId, subject }: StakePanelProps): React.JSX.Elem
 
       {walletQuery.data !== undefined && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted">Saldo</span>
+          <span className="text-muted">{t('battle:stake.balance')}</span>
           <span aria-live="polite" className="tabular-nums font-semibold text-ink">
-            {`${walletQuery.data.balance.toLocaleString('es-CO')} créditos`}
+            {countLabel(t, 'common:count.credits', walletQuery.data.balance)}
           </span>
         </div>
       )}

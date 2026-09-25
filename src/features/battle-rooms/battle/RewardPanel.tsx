@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Coins, Trophy } from '@/components/ui/icons'
 
@@ -12,6 +13,7 @@ import {
   weeklyLimitText,
 } from './rewardPresentation'
 import { useRefreshWalletOn, useWallet } from '@/shared/wallet'
+import { countLabel } from '@/shared/i18n/format'
 
 export interface RewardPanelProps {
   readonly battleId: string
@@ -37,6 +39,7 @@ export interface RewardPanelProps {
  */
 export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.Element | null => {
   const headingId = useId()
+  const { t } = useTranslation()
   const rewardQuery = useBattleReward(battleId, subject !== null)
   const walletQuery = useWallet()
   // Al terminar la batalla (este panel se monta con el resultado) y cuando la
@@ -75,7 +78,7 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
       )}
     >
       <h2 id={headingId} className="sr-only">
-        Créditos y recompensa
+        {t('battle:reward.title')}
       </h2>
 
       <p
@@ -83,27 +86,29 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
         className="flex items-center justify-center gap-2 text-lg font-bold text-ink"
       >
         <Coins aria-hidden="true" className="h-5 w-5 text-brand" />
-        {`+${String(reward.creditsEarned)} crédito${reward.creditsEarned === 1 ? '' : 's'}`}
+        {countLabel(t, 'battle:reward.earned', reward.creditsEarned)}
       </p>
 
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted">Saldo</span>
+        <span className="text-muted">{t('battle:stake.balance')}</span>
         <span aria-live="polite" className="tabular-nums font-semibold text-ink">
-          {reward.balance === null ? 'Confirmando…' : `${String(reward.balance)} créditos`}
+          {reward.balance === null
+            ? t('battle:reward.confirming')
+            : t('common:count.credits', { count: reward.balance, value: String(reward.balance) })}
         </span>
       </div>
 
       {reward.victoryProgress !== null && wallet !== undefined && (
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between text-xs">
-            <span className="text-muted">Progreso del cofre</span>
+            <span className="text-muted">{t('battle:reward.chestProgress')}</span>
             <span aria-hidden="true" className="tabular-nums text-ink">
               {chestProgressText(reward.victoryProgress, wallet.threshold)}
             </span>
           </div>
           <div
             role="meter"
-            aria-label="Progreso hacia el próximo cofre"
+            aria-label={t('battle:reward.chestMeter')}
             aria-valuemin={0}
             aria-valuemax={wallet.threshold}
             aria-valuenow={reward.victoryProgress}
@@ -122,7 +127,7 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
 
       {reward.weeklyChestCount !== null && wallet !== undefined && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted">Cofres esta semana</span>
+          <span className="text-muted">{t('battle:reward.weekly')}</span>
           <span className="tabular-nums font-semibold text-ink">
             {weeklyLimitText(reward.weeklyChestCount, wallet.weeklyChestLimit)}
           </span>
@@ -130,7 +135,9 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
       )}
 
       {limitReached && (
-        <p className="text-center text-xs font-semibold text-warning">Límite semanal alcanzado</p>
+        <p className="text-center text-xs font-semibold text-warning">
+          {t('battle:reward.weeklyLimit')}
+        </p>
       )}
 
       {delivery !== null && (

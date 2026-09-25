@@ -1,4 +1,5 @@
 import type { BattleResult, ParticipantOutcome, TeamStanding } from './types'
+import { i18n } from '@/shared/i18n/i18n'
 
 /**
  * Textos del resultado (HU-21). Modulo PURO: recibe el resultado que publico
@@ -35,22 +36,24 @@ const isDisconnected = (result: BattleResult, participant: ParticipantOutcome): 
 
 const standingText = (team: TeamStanding): TeamStandingText => ({
   teamLabel: team.teamLabel,
-  text: `Vida restante ${String(team.remainingHealth)} / ${String(team.maxHealth)} (${String(team.lifePercent)} %)`,
+  text: i18n.t('battle:result.standing', {
+    remaining: String(team.remainingHealth),
+    max: String(team.maxHealth),
+    percent: String(team.lifePercent),
+  }),
   eliminated: team.eliminated,
 })
 
 const timeLimitDetail = (result: BattleResult): string | null => {
   if (result.tiebreak === 'LIFE_PERCENT') {
-    return 'Ganó el equipo con mayor porcentaje de vida restante.'
+    return i18n.t('battle:result.tiebreak.LIFE_PERCENT')
   }
 
   if (result.tiebreak === 'ABSOLUTE_LIFE') {
-    return 'Empataron en porcentaje de vida; ganó el equipo con más vida restante.'
+    return i18n.t('battle:result.tiebreak.ABSOLUTE_LIFE')
   }
 
-  return result.outcome === 'NO_WINNER'
-    ? 'Empataron en porcentaje y en vida restante: no hay ganador.'
-    : null
+  return result.outcome === 'NO_WINNER' ? i18n.t('battle:result.tiebreak.none') : null
 }
 
 const causeFor = (
@@ -60,29 +63,31 @@ const causeFor = (
 ): string => {
   if (result.reason === 'ELIMINATION') {
     if (participant === null) {
-      return 'Todos los héroes de un equipo fueron eliminados.'
+      return i18n.t('battle:result.cause.eliminationAll')
     }
 
-    return won ? 'Derrotaste a todos los héroes rivales.' : 'Todos tus héroes fueron eliminados.'
+    return won
+      ? i18n.t('battle:result.cause.eliminationWon')
+      : i18n.t('battle:result.cause.eliminationLost')
   }
 
   if (result.reason === 'DISCONNECTION') {
     if (participant === null) {
-      return 'Un jugador se desconectó y no volvió a tiempo.'
+      return i18n.t('battle:result.cause.disconnectAll')
     }
 
     if (isDisconnected(result, participant)) {
-      return 'Te desconectaste y no volviste a tiempo.'
+      return i18n.t('battle:result.cause.disconnectYou')
     }
 
     if (!won) {
-      return 'Un integrante de tu equipo se desconectó.'
+      return i18n.t('battle:result.cause.disconnectTeam')
     }
 
-    return 'Tu rival se desconectó y no volvió a tiempo.'
+    return i18n.t('battle:result.cause.disconnectRival')
   }
 
-  return 'Se acabó el tiempo (6 minutos).'
+  return i18n.t('battle:result.cause.timeLimit')
 }
 
 const headlineFor = (
@@ -91,21 +96,24 @@ const headlineFor = (
 ): { tone: ResultTone; headline: string } => {
   if (participant === null) {
     if (result.outcome === 'NO_WINNER' || result.winnerTeamLabel === null) {
-      return { tone: 'no-winner', headline: 'Sin ganador (empate)' }
+      return { tone: 'no-winner', headline: i18n.t('battle:result.noWinner') }
     }
 
-    return { tone: 'neutral', headline: `Ganó el equipo ${result.winnerTeamLabel}` }
+    return {
+      tone: 'neutral',
+      headline: i18n.t('battle:result.teamWon', { team: result.winnerTeamLabel }),
+    }
   }
 
   if (participant.result === 'WON') {
-    return { tone: 'won', headline: '¡Victoria!' }
+    return { tone: 'won', headline: i18n.t('battle:result.victory') }
   }
 
   if (participant.result === 'LOST') {
-    return { tone: 'lost', headline: 'Derrota' }
+    return { tone: 'lost', headline: i18n.t('battle:result.defeat') }
   }
 
-  return { tone: 'no-winner', headline: 'Sin ganador (empate)' }
+  return { tone: 'no-winner', headline: i18n.t('battle:result.noWinner') }
 }
 
 export const describeResult = (
@@ -128,8 +136,8 @@ export const describeResult = (
 /** Nombre visible de un participante del resultado; una IA es "Oponente IA". */
 export const participantOutcomeName = (participant: ParticipantOutcome): string =>
   participant.kind === 'AI'
-    ? 'Oponente IA'
-    : (participant.displayName ?? `Asiento ${String(participant.seat + 1)}`)
+    ? i18n.t('battle:ai')
+    : (participant.displayName ?? i18n.t('battle:seat', { seat: String(participant.seat + 1) }))
 
 /**
  * "Ganador: Equipo B (Ana, Beto) · Perdedor: Equipo A (Carla)", con el equipo
@@ -145,11 +153,16 @@ export const winnerLine = (result: BattleResult): string | null => {
       .filter((participant) => participant.teamLabel === label)
       .map(participantOutcomeName)
 
-    return names.length === 0 ? `Equipo ${label}` : `Equipo ${label} (${names.join(', ')})`
+    return names.length === 0
+      ? i18n.t('battle:team', { team: label })
+      : i18n.t('battle:result.teamNames', { team: label, names: names.join(', ') })
   }
   const loser = result.teams.find((team) => team.teamLabel !== result.winnerTeamLabel)?.teamLabel
 
   return loser === undefined
-    ? `Ganador: ${teamText(result.winnerTeamLabel)}`
-    : `Ganador: ${teamText(result.winnerTeamLabel)} · Perdedor: ${teamText(loser)}`
+    ? i18n.t('battle:result.winner', { winner: teamText(result.winnerTeamLabel) })
+    : i18n.t('battle:result.winnerLoser', {
+        winner: teamText(result.winnerTeamLabel),
+        loser: teamText(loser),
+      })
 }

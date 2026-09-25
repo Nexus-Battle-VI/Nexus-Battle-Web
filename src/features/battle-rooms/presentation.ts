@@ -1,22 +1,26 @@
 import { HttpError } from '@/lib/http'
 
 import type { BattleRoom, BattleRoomMode, Team, TeamLetter } from './types'
+import { i18n } from '@/shared/i18n/i18n'
+import { localizedMessages } from '@/shared/i18n/messages'
+import { currentLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Traduccion de presentacion UNICAMENTE. El valor que viaja al backend sigue
  * siendo literalmente `'PVP'`/`'PVE'` (ver `types.ts`); esto solo decide que
  * texto lee la persona en pantalla.
  */
-export const MODE_LABELS: Readonly<Record<BattleRoomMode, string>> = {
-  PVP: 'Jugador vs Jugador (JcJ)',
-  PVE: 'Jugador vs Máquina (JcE)',
-}
+export const MODE_LABELS: Readonly<Record<BattleRoomMode, string>> = localizedMessages({
+  PVP: 'battle:modes.PVP',
+  PVE: 'battle:modes.PVE',
+})
 
 /** Descripción breve de cada modalidad, para el selector de creación. */
-export const MODE_DESCRIPTIONS: Readonly<Record<BattleRoomMode, string>> = {
-  PVP: 'Combate competitivo contra otro jugador.',
-  PVE: 'Combate contra oponentes controlados por IA.',
-}
+export const MODE_DESCRIPTIONS: Readonly<Record<BattleRoomMode, string>> = localizedMessages({
+  PVP: 'battle:modeDescriptions.PVP',
+  PVE: 'battle:modeDescriptions.PVE',
+})
 
 export const modeLabel = (mode: BattleRoomMode): string => MODE_LABELS[mode]
 
@@ -49,13 +53,15 @@ export const occupancyOf = (
 export const describeBattleRoomFailure = (error: unknown): string => {
   if (error instanceof HttpError) {
     if (error.isUnauthorized) {
-      return 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.'
+      return i18n.t('battle:sessionExpired')
     }
 
-    return error.message
+    // En español, el mensaje de dominio de Combat tal cual; en otro idioma,
+    // la descripcion por estado (`describeFailure`).
+    return describeFailure(error, i18n.t, currentLanguage())
   }
 
-  return 'Ocurrió un error inesperado al comunicarse con el servicio de combate.'
+  return i18n.t('battle:unexpected')
 }
 
 /**
@@ -103,8 +109,7 @@ export const teamByLetter = (room: BattleRoom, letter: TeamLetter): Team | undef
  * respuesta 409, para que el cliente pueda diferenciar sin depender de texto
  * libre ni tocar los mensajes de dominio existentes.
  */
-const JOIN_CONFLICT_MESSAGE =
-  'No fue posible unirte a la sala: puede que ya no haya cupo, ya seas participante, o la sala haya cambiado de estado. Actualiza e inténtalo de nuevo.'
+const JOIN_CONFLICT_MESSAGE = 'battle:join.conflict'
 
 /**
  * Mensaje para el 422 de union causado por `ACCOUNT_PROFILE_NOT_FOUND`
@@ -115,23 +120,20 @@ const JOIN_CONFLICT_MESSAGE =
  * (`error.body`), NO por texto libre (mismo criterio que la nota sobre el
  * 409 mas abajo: nunca adivinar la variante por el contenido del mensaje).
  */
-const ACCOUNT_PROFILE_NOT_FOUND_MESSAGE =
-  'No encontramos una cuenta asociada a tu sesión. Cierra sesión y vuelve a iniciar sesión; si el problema persiste, contacta a soporte.'
+const ACCOUNT_PROFILE_NOT_FOUND_MESSAGE = 'battle:join.accountMissing'
 
-const MISSING_HERO_MESSAGE = 'Debes preparar un héroe antes de unirte a una sala de batalla.'
+const MISSING_HERO_MESSAGE = 'battle:join.missingHero'
 
 /**
  * HU-23 (contrato §11): rechazos del intento de unirse con apuesta. Se
  * distinguen por el `code` estructurado del cuerpo, nunca por texto libre
  * (mismo criterio que el resto del mapper).
  */
-const INSUFFICIENT_AVAILABLE_BALANCE_MESSAGE =
-  'No tienes créditos disponibles suficientes para esa apuesta. Prueba con un monto menor.'
+const INSUFFICIENT_AVAILABLE_BALANCE_MESSAGE = 'battle:join.insufficientBalance'
 
-const STAKE_NOT_ALLOWED_IN_PVE_MESSAGE = 'Las salas JcE no admiten apuestas.'
+const STAKE_NOT_ALLOWED_IN_PVE_MESSAGE = 'battle:join.stakeInPve'
 
-const INVALID_STAKE_AMOUNT_MESSAGE =
-  'El monto de la apuesta no es válido: debe ser un número entero de créditos.'
+const INVALID_STAKE_AMOUNT_MESSAGE = 'battle:join.invalidStake'
 
 /**
  * Ruta de accion opcional que acompana un mensaje de fallo de union: siempre
@@ -151,9 +153,17 @@ export interface JoinBattleRoomFailure {
 // HU-07 (2026-09-22): "Mi Héroe" se consolido en "Mi Inventario" -ya no es una
 // pantalla propia (`/heroes` solo redirige)-, asi que esta accion apunta
 // directo al destino real en vez de depender de ese redirect.
-const HEROES_ACTION: JoinBattleRoomFailureAction = { label: 'Revisar Mi Héroe', to: '/inventory' }
+// La etiqueta se traduce al leerse (idioma activo); la ruta es fija.
+const HEROES_ACTION: JoinBattleRoomFailureAction = {
+  get label() {
+    return i18n.t('battle:join.reviewHero')
+  },
+  to: '/inventory',
+}
 const INVENTORY_ACTION: JoinBattleRoomFailureAction = {
-  label: 'Revisar inventario',
+  get label() {
+    return i18n.t('battle:join.reviewInventory')
+  },
   to: '/inventory',
 }
 
@@ -185,25 +195,20 @@ const INVENTORY_ACTION: JoinBattleRoomFailureAction = {
  * codigo o un mensaje para ellos aqui violaria la prohibicion expresa de la
  * TASK HU-16.3 de fingir datos que el backend todavia no produce.
  */
-const HERO_CLASS_NOT_ALLOWED_FOR_FORMAT_MESSAGE =
-  'La clase de tu héroe equipado no puede participar en esta modalidad de sala (por ejemplo, Chamán o Médico no juegan en formato 1 contra 1). Elige otro héroe o busca una sala de equipo.'
+const HERO_CLASS_NOT_ALLOWED_FOR_FORMAT_MESSAGE = 'battle:join.classNotAllowed'
 
-const EQUIPMENT_INVALID_MESSAGE =
-  'El equipamiento de tu héroe ya no es válido: revísalo antes de unirte a una sala.'
+const EQUIPMENT_INVALID_MESSAGE = 'battle:join.equipmentInvalid'
 
-const HERO_NOT_ACTIVE_MESSAGE =
-  'Tu héroe equipado ya no está disponible. Selecciona otro héroe antes de unirte a una sala.'
+const HERO_NOT_ACTIVE_MESSAGE = 'battle:join.heroNotActive'
 
-const HERO_NOT_READY_MESSAGE =
-  'Tu héroe equipado no está listo para combate. Revisa tu héroe y tu equipamiento antes de unirte a una sala.'
+const HERO_NOT_READY_MESSAGE = 'battle:join.heroNotReady'
 
 /**
  * Fallback seguro para un `code` de bloqueo que esta UI todavia no
  * reconoce (nuevo codigo de Combat/Player-Inventory no contemplado aqui):
  * ningun detalle tecnico del backend, ningun id, solo una accion generica.
  */
-const UNKNOWN_ELIGIBILITY_MESSAGE =
-  'Tu héroe no cumple los requisitos para unirte a esta sala. Revisa tu héroe y tu equipamiento e inténtalo de nuevo.'
+const UNKNOWN_ELIGIBILITY_MESSAGE = 'battle:join.unknownEligibility'
 
 interface PrecombatEligibilityBlockerLike {
   readonly code?: unknown
@@ -243,25 +248,25 @@ const blockerCodesOf = (body: unknown): readonly string[] => {
  */
 const eligibilityBlockerFailure = (codes: readonly string[]): JoinBattleRoomFailure => {
   if (codes.includes('HERO_CLASS_NOT_ALLOWED_FOR_FORMAT')) {
-    return { message: HERO_CLASS_NOT_ALLOWED_FOR_FORMAT_MESSAGE, action: HEROES_ACTION }
+    return { message: i18n.t(HERO_CLASS_NOT_ALLOWED_FOR_FORMAT_MESSAGE), action: HEROES_ACTION }
   }
 
   if (codes.includes('HERO_NOT_ACTIVE')) {
-    return { message: HERO_NOT_ACTIVE_MESSAGE, action: HEROES_ACTION }
+    return { message: i18n.t(HERO_NOT_ACTIVE_MESSAGE), action: HEROES_ACTION }
   }
 
   if (
     codes.includes('EQUIPPED_PRODUCT_NOT_OWNED') ||
     codes.includes('EQUIPPED_PRODUCT_NOT_ACTIVE')
   ) {
-    return { message: EQUIPMENT_INVALID_MESSAGE, action: INVENTORY_ACTION }
+    return { message: i18n.t(EQUIPMENT_INVALID_MESSAGE), action: INVENTORY_ACTION }
   }
 
   if (codes.includes('HERO_NOT_READY')) {
-    return { message: HERO_NOT_READY_MESSAGE, action: HEROES_ACTION }
+    return { message: i18n.t(HERO_NOT_READY_MESSAGE), action: HEROES_ACTION }
   }
 
-  return { message: UNKNOWN_ELIGIBILITY_MESSAGE, action: null }
+  return { message: i18n.t(UNKNOWN_ELIGIBILITY_MESSAGE), action: null }
 }
 
 /**
@@ -272,7 +277,7 @@ const eligibilityBlockerFailure = (codes: readonly string[]): JoinBattleRoomFail
 export const joinBattleRoomFailure = (error: unknown): JoinBattleRoomFailure => {
   if (!(error instanceof HttpError)) {
     return {
-      message: 'Ocurrió un error inesperado al comunicarse con el servicio de combate.',
+      message: i18n.t('battle:unexpected'),
       action: null,
     }
   }
@@ -280,36 +285,36 @@ export const joinBattleRoomFailure = (error: unknown): JoinBattleRoomFailure => 
   switch (error.status) {
     case 400:
       return {
-        message: 'La solicitud de unión no es válida. Actualiza la sala e inténtalo de nuevo.',
+        message: i18n.t('battle:join.badRequest'),
         action: null,
       }
     case 401:
-      return { message: 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.', action: null }
+      return { message: i18n.t('battle:sessionExpired'), action: null }
     case 404:
-      return { message: 'Esta sala ya no existe o fue eliminada.', action: null }
+      return { message: i18n.t('battle:join.notFound'), action: null }
     case 409:
-      return { message: JOIN_CONFLICT_MESSAGE, action: null }
+      return { message: i18n.t(JOIN_CONFLICT_MESSAGE), action: null }
     case 422: {
       const code = stringCodeOf(error.body)
 
       if (code === 'ACCOUNT_PROFILE_NOT_FOUND') {
-        return { message: ACCOUNT_PROFILE_NOT_FOUND_MESSAGE, action: null }
+        return { message: i18n.t(ACCOUNT_PROFILE_NOT_FOUND_MESSAGE), action: null }
       }
 
       if (code === 'HERO_NOT_SELECTED') {
-        return { message: MISSING_HERO_MESSAGE, action: HEROES_ACTION }
+        return { message: i18n.t(MISSING_HERO_MESSAGE), action: HEROES_ACTION }
       }
 
       if (code === 'INSUFFICIENT_AVAILABLE_BALANCE') {
-        return { message: INSUFFICIENT_AVAILABLE_BALANCE_MESSAGE, action: null }
+        return { message: i18n.t(INSUFFICIENT_AVAILABLE_BALANCE_MESSAGE), action: null }
       }
 
       if (code === 'STAKE_NOT_ALLOWED_IN_PVE') {
-        return { message: STAKE_NOT_ALLOWED_IN_PVE_MESSAGE, action: null }
+        return { message: i18n.t(STAKE_NOT_ALLOWED_IN_PVE_MESSAGE), action: null }
       }
 
       if (code === 'INVALID_AMOUNT') {
-        return { message: INVALID_STAKE_AMOUNT_MESSAGE, action: null }
+        return { message: i18n.t(INVALID_STAKE_AMOUNT_MESSAGE), action: null }
       }
 
       const blockerCodes = blockerCodesOf(error.body)
@@ -320,20 +325,19 @@ export const joinBattleRoomFailure = (error: unknown): JoinBattleRoomFailure => 
 
       // 422 sin `code` reconocido y sin `blockers`: comportamiento previo a
       // HU-16.3 intacto (p. ej. un cuerpo vacio o de forma desconocida).
-      return { message: MISSING_HERO_MESSAGE, action: HEROES_ACTION }
+      return { message: i18n.t(MISSING_HERO_MESSAGE), action: HEROES_ACTION }
     }
     case 503:
       return {
-        message:
-          'El servicio de combate no está disponible en este momento. Inténtalo de nuevo en unos segundos.',
+        message: i18n.t('battle:join.unavailable'),
         action: null,
       }
     default:
       return {
         message:
-          error.message.length > 0
+          error.message.length > 0 && currentLanguage() === 'es'
             ? error.message
-            : 'Ocurrió un error inesperado al intentar unirte a la sala.',
+            : i18n.t('battle:join.unexpected'),
         action: null,
       }
   }

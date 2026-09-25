@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { combatantName } from './presentation'
 import type { BattleView, TurnOrderEntry } from './types'
@@ -22,6 +23,7 @@ export const TurnOrderStrip = ({
   isCurrent,
 }: TurnOrderStripProps): React.JSX.Element => {
   const headingId = useId()
+  const { t } = useTranslation()
 
   return (
     <section
@@ -29,9 +31,9 @@ export const TurnOrderStrip = ({
       className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-surface-raised px-4 py-2.5"
     >
       <h2 id={headingId} className="text-xs font-semibold uppercase tracking-widest text-muted">
-        Turnos
+        {t('battle:battle.turns')}
       </h2>
-      <ol aria-label="Orden de turnos" className="flex flex-wrap items-center gap-y-2">
+      <ol aria-label={t('battle:battle.turnOrder')} className="flex flex-wrap items-center gap-y-2">
         {battle.turnOrder.map((entry, index) => (
           <li key={entry.position} className="flex items-center">
             {index > 0 && (
@@ -52,11 +54,11 @@ export const TurnOrderStrip = ({
               </span>
               <span className="truncate">
                 {combatantName(entry)}
-                {isSelf(entry) ? ' (tú)' : ''}
+                {isSelf(entry) ? ` ${t('battle:you')}` : ''}
               </span>
               {isCurrent(entry) && (
                 <span className="text-xs font-semibold uppercase tracking-wide text-ink">
-                  Actual
+                  {t('battle:battle.current')}
                 </span>
               )}
             </span>
