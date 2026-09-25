@@ -65,7 +65,7 @@ describe('ProductDetailPage (HU-40)', () => {
 
     montar()
 
-    expect(await screen.findByText('4.5 (2 calificaciones)')).toBeInTheDocument()
+    expect(await screen.findByText('4,5 (2 calificaciones)')).toBeInTheDocument()
   })
 
   it('muestra el estado de carga antes de que responda el servicio', () => {

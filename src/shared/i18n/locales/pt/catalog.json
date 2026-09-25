@@ -1,0 +1,17 @@
+{
+  "list": {
+    "title": "Catálogo",
+    "description": "Produtos disponíveis. O serviço só publica os que estão à venda.",
+    "filter": "Filtrar por categoria",
+    "empty": "Não há produtos publicados para esse filtro."
+  },
+  "detail": {
+    "home": "Início",
+    "catalog": "Catálogo",
+    "product": "Produto",
+    "noRatings": "Nenhuma avaliação ainda",
+    "rating_one": "{{average}} ({{value}} avaliação)",
+    "rating_many": "{{average}} ({{value}} de avaliações)",
+    "rating_other": "{{average}} ({{value}} avaliações)"
+  }
+}

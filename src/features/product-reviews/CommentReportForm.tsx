@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
 import { Button } from '@/components/ui/Button'
 import { SelectField, type SelectOption } from '@/components/ui/form/SelectField'
@@ -7,18 +9,12 @@ import { TextareaField } from '@/components/ui/form/TextareaField'
 import { HttpError } from '@/lib/http'
 import { reportComment, ReportCategory, type CommentReport, type ReportCommentInput } from './api'
 
-const CATEGORY_OPTIONS: readonly SelectOption[] = [
-  { value: ReportCategory.Spam, label: 'Spam' },
-  { value: ReportCategory.OffensiveContent, label: 'Contenido ofensivo' },
-  { value: ReportCategory.Harassment, label: 'Acoso' },
-  { value: ReportCategory.FalseInformation, label: 'Información falsa' },
-  { value: ReportCategory.InappropriateContent, label: 'Contenido inapropiado' },
-  { value: ReportCategory.CopyrightViolation, label: 'Violación de derechos de autor' },
-]
-
-const GENERIC_ERROR = 'No se pudo completar la operación. Intenta nuevamente más tarde.'
-const RATE_LIMIT_MESSAGE =
-  'Has alcanzado el límite de reportes permitido. Intenta nuevamente más adelante.'
+/** Motivos en el idioma activo; al backend solo viaja el codigo (`value`). */
+const categoryOptions = (t: TFunction): readonly SelectOption[] =>
+  Object.values(ReportCategory).map((value) => ({
+    value,
+    label: t(`reviews:report.categories.${value}`),
+  }))
 
 export type ReportCommentTransport = (
   commentId: string,
@@ -59,7 +55,9 @@ export const CommentReportForm = ({
 }: CommentReportFormProps): React.JSX.Element => {
   const [category, setCategory] = useState('')
   const [description, setDescription] = useState('')
+  // Guarda la CLAVE del aviso; se traduce al pintar.
   const [categoryError, setCategoryError] = useState<string | undefined>(undefined)
+  const { t } = useTranslation()
 
   const mutation = useMutation({
     mutationFn: async (): Promise<Outcome> => {
@@ -92,7 +90,7 @@ export const CommentReportForm = ({
     event.preventDefault()
 
     if (category === '') {
-      setCategoryError('Selecciona un motivo para continuar.')
+      setCategoryError('reviews:report.categoryRequired')
       return
     }
 
@@ -106,10 +104,10 @@ export const CommentReportForm = ({
     return (
       <div className="mt-2 space-y-2 rounded-lg border border-border bg-surface p-3">
         <p role="status" className="text-sm text-ink">
-          Tu reporte fue enviado para revisión.
+          {t('reviews:report.sent')}
         </p>
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Cerrar
+          {t('reviews:report.close')}
         </Button>
       </div>
     )
@@ -118,12 +116,12 @@ export const CommentReportForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      aria-label={`Reportar comentario ${commentId}`}
+      aria-label={t('reviews:report.formLabel', { id: commentId })}
       className="mt-2 space-y-3 rounded-lg border border-border bg-surface p-3"
     >
       {mutation.isPending && (
         <p role="status" className="text-sm text-muted">
-          Enviando…
+          {t('reviews:sending')}
         </p>
       )}
 
@@ -132,7 +130,7 @@ export const CommentReportForm = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-2 text-sm text-danger"
         >
-          {RATE_LIMIT_MESSAGE}
+          {t('reviews:report.rateLimited')}
         </p>
       )}
 
@@ -141,7 +139,7 @@ export const CommentReportForm = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-2 text-sm text-danger"
         >
-          Tu sesión ha caducado. Vuelve a iniciar sesión para reportar este comentario.
+          {t('reviews:report.sessionExpired')}
         </p>
       )}
 
@@ -150,7 +148,7 @@ export const CommentReportForm = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-2 text-sm text-danger"
         >
-          Este comentario ya no está disponible.
+          {t('reviews:report.notFound')}
         </p>
       )}
 
@@ -168,18 +166,18 @@ export const CommentReportForm = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-2 text-sm text-danger"
         >
-          {GENERIC_ERROR}
+          {t('reviews:genericError')}
         </p>
       )}
 
       <SelectField
-        label="Motivo del reporte"
+        label={t('reviews:report.reason')}
         required
-        placeholder="Selecciona un motivo"
-        options={CATEGORY_OPTIONS}
+        placeholder={t('reviews:report.reasonPlaceholder')}
+        options={categoryOptions(t)}
         value={category}
         disabled={mutation.isPending}
-        error={categoryError}
+        error={categoryError === undefined ? undefined : t(categoryError)}
         onChange={(event) => {
           setCategory(event.target.value)
           setCategoryError(undefined)
@@ -187,11 +185,11 @@ export const CommentReportForm = ({
       />
 
       <TextareaField
-        label="Descripción adicional (opcional)"
+        label={t('reviews:report.description')}
         value={description}
         disabled={mutation.isPending}
         maxLength={500}
-        placeholder="Cuéntanos más sobre el motivo del reporte…"
+        placeholder={t('reviews:report.descriptionPlaceholder')}
         onChange={(event) => {
           setDescription(event.target.value)
         }}
@@ -199,10 +197,10 @@ export const CommentReportForm = ({
 
       <div className="flex gap-2">
         <Button type="submit" loading={mutation.isPending}>
-          Enviar reporte
+          {t('reviews:report.submit')}
         </Button>
         <Button type="button" variant="secondary" disabled={mutation.isPending} onClick={onCancel}>
-          Cancelar
+          {t('common:cancel')}
         </Button>
       </div>
     </form>

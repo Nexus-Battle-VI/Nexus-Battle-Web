@@ -1,0 +1,51 @@
+{
+  "genericError": "L'opération n'a pas pu être effectuée. Réessayez plus tard.",
+  "sending": "Envoi…",
+  "sessionExpiredComment": "Votre session a expiré. Reconnectez-vous pour commenter ou noter.",
+  "form": {
+    "title": "Commentaires et note",
+    "commentRequired": "Écrivez un commentaire avant de publier.",
+    "publishedBoth": "Votre commentaire et votre note ont été publiés.",
+    "published": "Votre commentaire a été publié.",
+    "alreadyRatedNotice": "Votre commentaire a été publié. Vous aviez déjà noté ce produit : votre note précédente est conservée.",
+    "comment": "Commentaire",
+    "commentPlaceholder": "Dites-nous ce que vous avez pensé de ce produit.",
+    "images": "Images (facultatif)",
+    "image": "Image {{index}}",
+    "removeImage": "Retirer",
+    "addImage": "Ajouter une image",
+    "alreadyRated": "Vous avez déjà noté ce produit.",
+    "rating": "Note (facultatif)",
+    "publish": "Publier"
+  },
+  "stars": {
+    "label": "Note",
+    "option": "{{value}} sur 5 étoiles"
+  },
+  "list": {
+    "empty": "Il n'y a pas encore de commentaires sur ce produit.",
+    "report": "Signaler"
+  },
+  "report": {
+    "categories": {
+      "SPAM": "Spam",
+      "OFFENSIVE_CONTENT": "Contenu offensant",
+      "HARASSMENT": "Harcèlement",
+      "FALSE_INFORMATION": "Informations fausses",
+      "INAPPROPRIATE_CONTENT": "Contenu inapproprié",
+      "COPYRIGHT_VIOLATION": "Violation du droit d'auteur"
+    },
+    "rateLimited": "Vous avez atteint la limite de signalements autorisée. Réessayez plus tard.",
+    "categoryRequired": "Sélectionnez un motif pour continuer.",
+    "sent": "Votre signalement a été envoyé pour examen.",
+    "close": "Fermer",
+    "formLabel": "Signaler le commentaire {{id}}",
+    "sessionExpired": "Votre session a expiré. Reconnectez-vous pour signaler ce commentaire.",
+    "notFound": "Ce commentaire n'est plus disponible.",
+    "reason": "Motif du signalement",
+    "reasonPlaceholder": "Sélectionnez un motif",
+    "description": "Description complémentaire (facultatif)",
+    "descriptionPlaceholder": "Dites-nous-en plus sur le motif du signalement…",
+    "submit": "Envoyer le signalement"
+  }
+}
