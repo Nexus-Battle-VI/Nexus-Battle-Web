@@ -1,6 +1,6 @@
 import { SlidersHorizontal } from 'lucide-react'
 import {
-  PRODUCT_TYPES,
+  SHOWCASE_PRODUCT_TYPES,
   PRODUCT_TYPE_LABELS,
   NO_FILTERS,
   type Currency,
@@ -49,7 +49,7 @@ export const ShowcaseFiltersBar = ({
         className={FIELD}
       >
         <option value="">Todos</option>
-        {PRODUCT_TYPES.map((type) => (
+        {SHOWCASE_PRODUCT_TYPES.map((type) => (
           <option key={type} value={type}>
             {PRODUCT_TYPE_LABELS[type]}
           </option>

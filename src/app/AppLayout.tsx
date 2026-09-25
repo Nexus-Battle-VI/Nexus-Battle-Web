@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router'
 
+import { MissionFinishedNotice } from '@/features/missions/MissionFinishedNotice'
 import { ECOMMERCE_PATH } from '@/routes/routes'
 
 import { AppHeader } from './AppHeader'
@@ -25,6 +26,7 @@ export const AppLayout = (): React.JSX.Element => {
       >
         <Outlet />
       </main>
+      <MissionFinishedNotice />
     </div>
   )
 }

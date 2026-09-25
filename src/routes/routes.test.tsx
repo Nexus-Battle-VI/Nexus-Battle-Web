@@ -29,6 +29,7 @@ describe('NAVIGATION', () => {
       '/ecommerce',
       '/play',
       '/missions',
+      '/admin/missions',
       '/tournament',
       '/inventory',
       // HU-07 (2026-09-22): "Mi Héroe" se retiro de la navegacion -se
@@ -282,16 +283,60 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
   })
 
-  /** HU-14.4 no implementa misiones; conserva el marcador explícito. */
-  it('/missions sigue mostrando el modulo no disponible', async () => {
+  it('/missions muestra el tablón real en lugar del marcador', async () => {
     useSession.setState(AUTHENTICATED_STATE)
-    renderRoute('/missions')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        // El shell consulta además sus contadores (Auction): cada ruta responde con
+        // SU forma, o el layout revienta al pintarlos.
+        const body = url.endsWith('/v1/auctions/me/pending-claims') ? [] : { items: [] }
 
-    expect(await screen.findByText('Módulo no disponible.')).toBeInTheDocument()
+        return Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }),
+    )
+
+    try {
+      renderRoute('/missions')
+      expect(await screen.findByText('No hay misiones para estos filtros.')).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
-  /** HU-68 reemplaza el marcador de subastas por la lista de seguimiento real. */
-  it('/auction renderiza la lista de seguimiento', async () => {
+  /**
+   * HU-66.6: `/auction` paso de ser la lista de seguimiento (HU-68) al
+   * listado priorizado de subastas activas -el punto de entrada real que
+   * exige HU-62 (CA-01)-. La lista de seguimiento se movio a
+   * `/auction/watchlist` (ver el siguiente caso).
+   */
+  it('/auction renderiza el listado de subastas activas', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ items: [], page: 1, pageSize: 12, total: 0 }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      ),
+    )
+    renderRoute('/auction')
+
+    expect(await screen.findByRole('heading', { name: 'Subastas activas' })).toBeInTheDocument()
+    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
+
+  /** HU-68: la lista de seguimiento se movio de `/auction` a `/auction/watchlist`. */
+  it('/auction/watchlist renderiza la lista de seguimiento', async () => {
     useSession.setState(AUTHENTICATED_STATE)
     vi.stubGlobal(
       'fetch',
@@ -302,12 +347,149 @@ describe('Proteccion visual de rutas (HU-02)', () => {
         }),
       ),
     )
-    renderRoute('/auction')
+    renderRoute('/auction/watchlist')
 
     expect(
       await screen.findByRole('heading', { name: 'Subastas en seguimiento' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
+
+  /**
+   * HU-74 + HU-09 (Task HU-09.5): `/missions/reports/:enrollmentId` es la pantalla
+   * REAL del reporte, con la experiencia de cada derrota. La matrícula es lo único
+   * que viaja en la dirección: no hay identificador de jugador que un cliente pueda
+   * cambiar.
+   */
+  it('/missions/reports/:enrollmentId renderiza el informe real con su experiencia', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    // Respuestas NUEVAS por peticion: un `Response` solo se puede leer una vez y el
+    // layout tambien consulta al montar.
+    const report = {
+      schemaVersion: 1,
+      enrollmentId: 'enr_prueba',
+      mission: {
+        missionId: 'msn_templo_olvidado',
+        name: 'El Templo Olvidado',
+        category: 'STORY',
+        difficulty: 'NORMAL',
+      },
+      summary: {
+        outcome: 'COMPLETED',
+        outcomeReason: null,
+        hero: { heroId: 'hero-01', name: null, subtype: null },
+        startedAt: '2026-10-02T03:00:00.000Z',
+        finishedAt: '2026-10-02T15:00:00.000Z',
+        simulatedDuration: 'PT12H',
+      },
+      combatStats: {
+        encountersCompleted: 5,
+        encountersTotal: 5,
+        totalTurns: 26,
+        damageDealt: 39,
+        damageTaken: 1,
+        criticalEffects: 2,
+        skillsUsed: [],
+      },
+      enemies: {
+        defeated: [],
+        boss: { enemyRef: 'guardian-eterno', name: 'El Guardián Eterno', defeated: true },
+        masters: [],
+      },
+      objectives: [],
+      rewards: [],
+      experience: {
+        defeats: 19,
+        totalXp: 54,
+        credited: 19,
+        pending: 0,
+        failed: 0,
+        level: 3,
+        currentXp: 657,
+        maxLevel: 8,
+        levelsGained: 1,
+        leveledUp: true,
+      },
+      generatedAt: '2026-10-02T15:00:05.000Z',
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        // El shell consulta ademas sus propios contadores (Auction): cada ruta
+        // responde con SU forma, o el layout revienta al pintarlos.
+        const body = url.endsWith('/v1/auctions/me/pending-claims') ? [] : report
+
+        return Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }),
+    )
+
+    try {
+      renderRoute('/missions/reports/enr_prueba')
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Reporte: El Templo Olvidado' }),
+      ).toBeInTheDocument()
+      expect(await screen.findByText('+54 XP')).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  /** HU-62.5: el formulario del vendedor vive en su propia ruta, no en `/auction`. */
+  it('/auction/publish monta el flujo real de publicación', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ items: [], page: 1, pageSize: 16, totalItems: 0, totalPages: 0 }),
+            { status: 200, headers: { 'content-type': 'application/json' } },
+          ),
+        ),
+    )
+
+    try {
+      renderRoute('/auction/publish')
+
+      expect(
+        await screen.findByRole('heading', { name: 'Publicar en subasta' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  /** HU-66.5/66.6: ruta propia del Maestro de Juego, separada de `/auction/publish`. */
+  it('/auction/publish-official monta el formulario para GAME_MASTER', async () => {
+    useSession.setState({ ...AUTHENTICATED_STATE, roles: ['GAME_MASTER'] })
+
+    renderRoute('/auction/publish-official')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Publicar como Maestro de Juego' }),
+    ).toBeInTheDocument()
+  })
+
+  it('/auction/publish-official deniega el acceso a un jugador', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+
+    renderRoute('/auction/publish-official')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Publicar como Maestro de Juego' }),
+    ).not.toBeInTheDocument()
   })
 
   /**
@@ -431,16 +613,14 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.queryByRole('heading', { name: 'Inventario' })).not.toBeInTheDocument()
   })
 
-  it('un visitante que intenta Misiones sin sesion recibe el gate, no el aviso de modulo no disponible', async () => {
+  it('un visitante que intenta Misiones sin sesion recibe el gate', async () => {
     useSession.setState(ANONYMOUS_STATE)
     renderRoute('/missions')
 
-    // El gate de sesion tiene prioridad: sin sesion no hay forma de saber si
-    // el modulo estaria disponible, asi que no se llega a mostrar ese estado.
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Para continuar' }),
     ).toBeInTheDocument()
-    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Misiones' })).not.toBeInTheDocument()
   })
 
   it('con sesion, E-commerce se renderiza dentro del shell autenticado (misma nav, sesion visible)', async () => {

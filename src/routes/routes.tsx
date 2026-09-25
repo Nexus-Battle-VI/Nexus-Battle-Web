@@ -7,6 +7,7 @@ import { RequireSession } from '@/app/RequireSession'
 import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
 import { RequireModerator } from '@/app/RequireModerator'
+import { RequireGameMaster } from '@/app/RequireGameMaster'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
@@ -19,6 +20,12 @@ import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventory
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { AuctionDetailPage } from '@/features/auction/AuctionDetailPage'
+import { MissionBoardPage } from '@/features/missions/MissionBoardPage'
+import { MissionDetailPage } from '@/features/missions/MissionDetailPage'
+import { MissionContentEditorPage } from '@/features/missions/MissionContentEditorPage'
+import { MissionHistoryPage } from '@/features/missions/MissionHistoryPage'
+import { MissionProgressPage } from '@/features/missions/MissionProgressPage'
+import { MissionReportPage } from '@/features/missions/MissionReportPage'
 import { PendingClaimsPage } from '@/features/auction/pending-claims/PendingClaimsPage'
 import { CommunityPage } from '@/features/community/CommunityPage'
 import { CommercePage } from '@/features/commerce/CommercePage'
@@ -32,6 +39,9 @@ import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPa
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
+import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
+import { OfficialAuctionPublisher } from '@/features/auction/OfficialAuctionPublisher'
+import { AuctionMarketplace } from '@/features/auction/AuctionMarketplace'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
   ? await import('./dev-routes')
@@ -83,6 +93,7 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
   { path: '/play', label: 'Jugar Online' },
   { path: '/missions', label: 'Misiones' },
+  { path: '/admin/missions', label: 'Editar misiones', requiredPrimaryRole: 'ADMINISTRATOR' },
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
   // HU-07 ya NO tiene entrada propia (2026-09-22, retiro de "Mi Héroe" por
@@ -234,7 +245,19 @@ export const routes: RouteObject[] = [
       { path: 'play/rooms/:roomId', element: <BattleRoomLobbyPage /> },
       // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
       { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
-      { path: 'missions', element: <ModuleUnavailable title="Misiones" /> },
+      { path: 'missions', element: <MissionBoardPage /> },
+      { path: 'missions/history', element: <MissionHistoryPage /> },
+      { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
+      { path: 'missions/progress/:enrollmentId', element: <MissionProgressPage /> },
+      { path: 'missions/:missionId', element: <MissionDetailPage /> },
+      {
+        path: 'admin/missions',
+        element: (
+          <RequireAdministrator>
+            <MissionContentEditorPage />
+          </RequireAdministrator>
+        ),
+      },
       { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,
@@ -242,20 +265,42 @@ export const routes: RouteObject[] = [
       // `/heroes` se conserva como redirect -no se borra la ruta de golpe-
       // por si un enlace externo o guardado sigue apuntando ahi.
       { path: 'heroes', element: <Navigate to="/inventory" replace /> },
+      // Listado priorizado de subastas activas, oficiales y de jugador
+      // (HU-66.6). Vive en la ruta principal del modulo -no en
+      // `auction/marketplace`- porque es el punto de entrada real: HU-62
+      // (CA-01) exige que una subasta publicada "quede visible en el
+      // listado", y el acceso "Subasta" de NAVIGATION debe llevar a algo
+      // navegable, no a la lista privada de quien ya sigue subastas.
+      { path: 'auction', element: <AuctionMarketplace /> },
       // Lista privada de subastas en seguimiento del jugador autenticado
-      // (HU-68). El formulario del vendedor para PUBLICAR sigue en
-      // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta no depende
-      // de esa fusion.
-      { path: 'auction', element: <AuctionPage /> },
-      // Detalle de una subasta para quien la va a comprar (HU-64.1). El
-      // formulario del vendedor para PUBLICAR ('auction' arriba) sigue en
-      // `feat/hu-62-5-publicacion-web`, sin fusionar; esta ruta hija no
-      // depende de esa fusion.
+      // (HU-68). Se movio de `/auction` a `/auction/watchlist` (2026-09-24):
+      // esa ruta la ocupa ahora el listado de arriba, que se construyo
+      // despues y por eso no pudo reclamarla desde el principio.
+      { path: 'auction/watchlist', element: <AuctionPage /> },
+      // Formulario del vendedor para publicar un producto propio en subasta
+      // (HU-62.5). Ruta propia -no `/auction`- para no competir con el
+      // listado de arriba.
+      { path: 'auction/publish', element: <PublishAuctionPage /> },
+      // Formulario del Maestro de Juego para publicar una subasta oficial en
+      // dinero real (HU-66.5/66.6). Ruta propia -no `auction/publish`- por la
+      // misma razon que Auction separa el endpoint de PLAYER del de
+      // GAME_MASTER (HU-66.5): mezclarlas arriesgaria abrir, sin darse
+      // cuenta, una via de escalamiento hacia dinero real.
+      {
+        path: 'auction/publish-official',
+        element: (
+          <RequireGameMaster>
+            <OfficialAuctionPublisher />
+          </RequireGameMaster>
+        ),
+      },
+      // Detalle de una subasta para quien la va a comprar (HU-64.1).
       { path: 'auction/:auctionId', element: <AuctionDetailPage /> },
       // Productos ganados pendientes de reclamo (HU-69.7). Ruta estatica:
       // React Router la prioriza sobre 'auction/:auctionId' sin importar el
       // orden de declaracion, asi que 'pending-claims' nunca se interpreta
-      // como un auctionId.
+      // como un auctionId. Lo mismo aplica a 'watchlist', 'publish' y
+      // 'publish-official' arriba.
       { path: 'auction/pending-claims', element: <PendingClaimsPage /> },
       // "Mi cuenta" (HU-05.4): shell con navegacion interna. Cada seccion es una
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver

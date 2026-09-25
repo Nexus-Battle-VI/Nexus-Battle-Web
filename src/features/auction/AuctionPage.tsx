@@ -1,15 +1,9 @@
 import { useState, type SyntheticEvent } from 'react'
+import { Link } from 'react-router'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
-import { HttpError } from '@/lib/http'
 import { formatDateTime } from '@/lib/format'
+import { describeFollowError } from './api'
 import { useWatchlist } from './useWatchlist'
-
-const followErrorMessage = (error: unknown): string => {
-  if (error instanceof HttpError && error.status === 409) return 'Ya sigues esta subasta.'
-  if (error instanceof HttpError && (error.status === 404 || error.status === 422))
-    return 'La subasta no está disponible para seguimiento.'
-  return 'No se pudo seguir la subasta. Inténtalo de nuevo.'
-}
 
 /** Pantalla del jugador para administrar su lista privada de subastas (HU-68). */
 export const AuctionPage = (): React.JSX.Element => {
@@ -26,16 +20,30 @@ export const AuctionPage = (): React.JSX.Element => {
       await follow(id)
       setAuctionId('')
     } catch (cause: unknown) {
-      setError(followErrorMessage(cause))
+      setError(describeFollowError(cause))
     }
   }
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
-      <Breadcrumb items={[{ label: 'Inicio', to: '/ecommerce' }, { label: 'Subastas' }]} />
-      <header>
-        <h1 className="text-2xl font-semibold text-ink">Subastas en seguimiento</h1>
-        <p className="mt-1 text-sm text-muted">Recibe avisos de cambios y del cierre próximo.</p>
+      <Breadcrumb
+        items={[
+          { label: 'Inicio', to: '/ecommerce' },
+          { label: 'Subasta', to: '/auction' },
+          { label: 'En seguimiento' },
+        ]}
+      />
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-ink">Subastas en seguimiento</h1>
+          <p className="mt-1 text-sm text-muted">Recibe avisos de cambios y del cierre próximo.</p>
+        </div>
+        <Link
+          to="/auction"
+          className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
+        >
+          Ver subastas activas
+        </Link>
       </header>
 
       <form

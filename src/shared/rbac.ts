@@ -17,12 +17,19 @@ const ROLE_LABELS: Readonly<Record<string, string>> = {
   MODERATOR: 'Moderador',
   ADMINISTRATOR: 'Administrador',
   SUPER_ADMINISTRATOR: 'Super Administrador',
+  GAME_MASTER: 'Maestro de Juego',
 }
 
 /** Etiqueta legible de un rol. Devuelve el valor original si no se reconoce. */
 export const roleLabel = (role: string): string => ROLE_LABELS[role] ?? role
 
-const ROLE_PRECEDENCE = ['SUPER_ADMINISTRATOR', 'ADMINISTRATOR', 'MODERATOR', 'PLAYER'] as const
+const ROLE_PRECEDENCE = [
+  'SUPER_ADMINISTRATOR',
+  'ADMINISTRATOR',
+  'MODERATOR',
+  'GAME_MASTER',
+  'PLAYER',
+] as const
 
 export const ADMIN_USER_PRIMARY_ROLES = ['ADMINISTRATOR', 'SUPER_ADMINISTRATOR'] as const
 
@@ -57,3 +64,15 @@ export const canModerateComments = (roles: readonly string[]): boolean => {
 
   return COMMENT_MODERATION_PRIMARY_ROLES.some((allowedRole) => allowedRole === role)
 }
+
+/**
+ * Presentacion de HU-66; Auction sigue siendo la autoridad (rol MAS subject
+ * configurado, HU-66.1) y valida el testimonio.
+ *
+ * A diferencia de `canViewAdminUsers`/`canModerateComments`, comprueba
+ * pertenencia directa y no `primaryRole`: GAME_MASTER no participa de la
+ * jerarquia administrativa (ADMINISTRATOR/SUPER_ADMINISTRATOR no lo heredan,
+ * ni el lo hereda a ellos).
+ */
+export const canPublishOfficialAuctions = (roles: readonly string[]): boolean =>
+  roles.includes('GAME_MASTER')
