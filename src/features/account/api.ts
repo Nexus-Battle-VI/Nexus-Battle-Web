@@ -1,5 +1,6 @@
 import { httpClient, type HttpDownload } from '@/lib/http'
 import type { Language } from '@/shared/i18n/languages'
+import { i18n } from '@/shared/i18n/i18n'
 
 /**
  * Transporte de la cuenta propia contra Account (HU-05.4).
@@ -152,13 +153,14 @@ export const validateDisplayName = (raw: string): string | null => {
   const normalized = raw.trim().replace(/\s+/gu, ' ')
 
   if (normalized.length < DISPLAY_NAME_MIN_LENGTH || normalized.length > DISPLAY_NAME_MAX_LENGTH) {
-    return `El apodo debe tener entre ${String(DISPLAY_NAME_MIN_LENGTH)} y ${String(
-      DISPLAY_NAME_MAX_LENGTH,
-    )} caracteres.`
+    return i18n.t('account:profile.displayNameLength', {
+      min: String(DISPLAY_NAME_MIN_LENGTH),
+      max: String(DISPLAY_NAME_MAX_LENGTH),
+    })
   }
 
   if (!DISPLAY_NAME_PATTERN.test(normalized)) {
-    return 'El apodo no admite simbolos ni espacios al principio o al final.'
+    return i18n.t('account:profile.displayNamePattern')
   }
 
   return null

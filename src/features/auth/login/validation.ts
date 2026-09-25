@@ -1,3 +1,4 @@
+import { localizedMessages } from '@/shared/i18n/messages'
 /**
  * Reglas deterministas del formulario de login (HU-02).
  *
@@ -25,12 +26,13 @@ export const EMPTY_LOGIN_VALUES: LoginFormValues = {
   password: '',
 }
 
-export const MESSAGES = {
-  identifierRequired: 'Ingresa tu correo o apodo.',
-  passwordRequired: 'Ingresa tu contraseña.',
-  summaryTitle: 'Información',
-  summaryBody: 'Revisa la información antes de continuar.',
-} as const
+/** Se traducen al leerse (idioma activo); ver `localizedMessages`. */
+export const MESSAGES = localizedMessages({
+  identifierRequired: 'auth:login.identifierRequired',
+  passwordRequired: 'auth:login.passwordRequired',
+  summaryTitle: 'auth:login.summaryTitle',
+  summaryBody: 'auth:login.summaryBody',
+})
 
 export const validateLoginForm = (values: LoginFormValues): LoginFormErrors => {
   const errors: Record<string, string> = {}

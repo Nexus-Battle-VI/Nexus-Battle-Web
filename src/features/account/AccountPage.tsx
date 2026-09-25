@@ -8,6 +8,9 @@ import { AccountSummary } from './AccountSummary'
 import { AccountSectionNav } from './AccountSectionNav'
 import type { AccountOutletContext } from './outletContext'
 import { useOwnAccount } from './useOwnAccount'
+import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * "Mi cuenta" (HU-05.4).
@@ -31,6 +34,8 @@ import { useOwnAccount } from './useOwnAccount'
  */
 export const AccountPage = (): React.JSX.Element => {
   const query = useOwnAccount()
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
 
   const sessionExpired = query.error instanceof HttpError && query.error.isUnauthorized
 
@@ -42,17 +47,15 @@ export const AccountPage = (): React.JSX.Element => {
           className="mb-3 inline-flex items-center gap-1 rounded-md text-sm text-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <ChevronLeft aria-hidden className="h-4 w-4" />
-          Volver
+          {t('common:back')}
         </Link>
-        <h1 className="text-2xl font-semibold text-ink">Mi cuenta</h1>
-        <p className="mt-1 text-sm text-muted">
-          Administra tu perfil, seguridad y preferencias de Nexus Battles VI.
-        </p>
+        <h1 className="text-2xl font-semibold text-ink">{t('account:page.title')}</h1>
+        <p className="mt-1 text-sm text-muted">{t('account:page.subtitle')}</p>
       </header>
 
       {query.isLoading && (
         <p role="status" className="text-sm text-muted">
-          Cargando tu cuenta...
+          {t('account:page.loading')}
         </p>
       )}
 
@@ -60,10 +63,10 @@ export const AccountPage = (): React.JSX.Element => {
         <Card>
           <p role="alert" className="text-sm text-danger">
             {sessionExpired
-              ? 'Tu sesion ha caducado. Vuelve a iniciar sesion para gestionar tu cuenta.'
+              ? t('account:page.sessionExpired')
               : query.error instanceof Error
-                ? query.error.message
-                : 'No se pudo cargar tu cuenta.'}
+                ? describeFailure(query.error, t, language)
+                : t('account:page.loadFailed')}
           </p>
         </Card>
       )}

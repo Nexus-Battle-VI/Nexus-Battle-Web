@@ -7,6 +7,9 @@ import { useSession } from '@/shared/session'
 import { toPlayerAchievements } from './missionAchievements'
 import { StatisticsPanel } from './StatisticsPanel'
 import type { AchievementsPanelState, StatisticsPanelState } from './types'
+import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * "Estadísticas y logros" (HU-06.4) — sección hija de "Mi cuenta"
@@ -30,6 +33,8 @@ export interface StatisticsSectionProps {
 
 export const StatisticsSection = ({ state }: StatisticsSectionProps = {}): React.JSX.Element => {
   const subject = useSession((session) => session.subject)
+  const { t } = useTranslation()
+  const language = useLanguage((current) => current.language)
   const achievements = useQuery({
     queryKey: queryKeys.missions.achievements(subject),
     queryFn: ({ signal }) => fetchMissionAchievements(signal),
@@ -41,7 +46,7 @@ export const StatisticsSection = ({ state }: StatisticsSectionProps = {}): React
       : achievements.isPending
         ? { status: 'loading' }
         : achievements.isError
-          ? { status: 'error', message: achievements.error.message }
+          ? { status: 'error', message: describeFailure(achievements.error, t, language) }
           : // Missions lista todo su catálogo, conseguido o no: vacío es que aún no hay
             // logros definidos (diseño «misiones jugables», P-J3). No se promete nada.
             achievements.data.items.length === 0
@@ -52,11 +57,9 @@ export const StatisticsSection = ({ state }: StatisticsSectionProps = {}): React
     <section aria-labelledby="account-statistics-heading" className="space-y-5">
       <header>
         <h2 id="account-statistics-heading" className="text-2xl font-semibold text-ink">
-          Estadísticas y logros
+          {t('account:statistics.title')}
         </h2>
-        <p className="mt-1 text-sm text-muted">
-          Consulta tu progreso y los reconocimientos registrados en tu cuenta.
-        </p>
+        <p className="mt-1 text-sm text-muted">{t('account:statistics.subtitle')}</p>
       </header>
 
       <StatisticsPanel

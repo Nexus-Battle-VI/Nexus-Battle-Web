@@ -16,7 +16,6 @@ import {
 } from './api'
 import {
   RECOVERY_FIELD,
-  RECOVERY_MESSAGES,
   answerFieldId,
   hasErrors,
   validateAnswersStep,
@@ -24,15 +23,11 @@ import {
   validateEmailStep,
   validatePasswordStep,
 } from './validation'
+import { useTranslation } from 'react-i18next'
 
 type Step = 'identify' | 'questions' | 'code' | 'password' | 'done'
 
-const STEPS: readonly { readonly id: Exclude<Step, 'done'>; readonly label: string }[] = [
-  { id: 'identify', label: '1. Identificación' },
-  { id: 'questions', label: '2. Preguntas' },
-  { id: 'code', label: '3. Código' },
-  { id: 'password', label: '4. Contraseña' },
-]
+const STEPS: readonly Exclude<Step, 'done'>[] = ['identify', 'questions', 'code', 'password']
 
 const CONTROL_CLASS =
   'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
@@ -89,10 +84,11 @@ const Field = ({
   )
 }
 
+/** Clave del aviso (se traduce al pintar). */
 const describeFailure = (error: unknown): string =>
   error instanceof HttpError && error.isClientError
-    ? RECOVERY_MESSAGES.rejected
-    : RECOVERY_MESSAGES.service
+    ? 'auth:recovery.rejected'
+    : 'auth:recovery.service'
 
 export interface RecoveryPageProps {
   readonly startRecoveryFn?: typeof startRecovery
@@ -107,6 +103,7 @@ export const RecoveryPage = ({
   verifyCodeFn = verifyRecoveryCode,
   resetPasswordFn = resetRecoveryPassword,
 }: RecoveryPageProps = {}): React.JSX.Element => {
+  const { t } = useTranslation()
   const [step, setStep] = useState<Step>('identify')
   const [email, setEmail] = useState('')
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
@@ -241,18 +238,18 @@ export const RecoveryPage = ({
         <NexusBrandHeader />
 
         <nav
-          aria-label="Progreso de recuperación"
+          aria-label={t('auth:recovery.progress')}
           className="flex flex-wrap gap-x-3 gap-y-1 text-xs"
         >
           {STEPS.map((item) => (
             <span
-              key={item.id}
+              key={item}
               className={clsx(
                 'font-semibold',
-                item.id === step ? 'border-b-2 border-brand text-ink' : 'text-muted',
+                item === step ? 'border-b-2 border-brand text-ink' : 'text-muted',
               )}
             >
-              {item.label}
+              {t(`auth:recovery.steps.${item}`)}
             </span>
           ))}
         </nav>
@@ -260,21 +257,19 @@ export const RecoveryPage = ({
         {step === 'identify' && (
           <form noValidate onSubmit={(event) => void handleIdentify(event)} className="space-y-5">
             <div>
-              <p className="text-xs text-muted">Inicio ›</p>
-              <h1 className="mt-2 text-2xl font-semibold text-ink">Recuperar contraseña</h1>
-              <p className="mt-2 text-sm text-muted">
-                Ingresa el correo asociado a tu cuenta para continuar.
-              </p>
+              <p className="text-xs text-muted">{t('auth:recovery.breadcrumb')}</p>
+              <h1 className="mt-2 text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
+              <p className="mt-2 text-sm text-muted">{t('auth:recovery.identifyBody')}</p>
             </div>
             {message !== null && (
               <p role="alert" className="text-sm text-danger">
-                {message}
+                {t(message)}
               </p>
             )}
             <Field
               id={RECOVERY_FIELD.email}
-              label="Correo electrónico"
-              hint="Ingresa el correo asociado a tu cuenta para continuar."
+              label={t('auth:recovery.email')}
+              hint={t('auth:recovery.identifyBody')}
               {...(emailError === undefined ? {} : { error: emailError })}
             >
               {(props) => (
@@ -282,7 +277,7 @@ export const RecoveryPage = ({
                   {...props}
                   type="email"
                   autoComplete="email"
-                  placeholder="nombre@correo.com"
+                  placeholder={t('auth:recovery.emailPlaceholder')}
                   value={email}
                   onChange={(event) => {
                     setEmail(event.target.value)
@@ -291,10 +286,10 @@ export const RecoveryPage = ({
               )}
             </Field>
             <Button type="submit" loading={submitting} className="w-full">
-              Continuar
+              {t('auth:recovery.continue')}
             </Button>
             <Link to="/login" className="inline-block text-sm font-medium text-brand underline">
-              Volver a iniciar sesión
+              {t('auth:recovery.backToLogin')}
             </Link>
           </form>
         )}
@@ -302,14 +297,12 @@ export const RecoveryPage = ({
         {step === 'questions' && (
           <form noValidate onSubmit={(event) => void handleAnswers(event)} className="space-y-5">
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Recuperar contraseña</h1>
-              <p className="mt-2 text-sm text-muted">
-                Responde las preguntas de seguridad que configuraste en tu registro.
-              </p>
+              <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
+              <p className="mt-2 text-sm text-muted">{t('auth:recovery.questionsBody')}</p>
             </div>
             {message !== null && (
               <p role="alert" className="text-sm text-danger">
-                {message}
+                {t(message)}
               </p>
             )}
             {questions.map((question, index) => {
@@ -320,7 +313,7 @@ export const RecoveryPage = ({
                 <Field
                   key={question.id}
                   id={fieldId}
-                  label={`Pregunta ${String(index + 1)}`}
+                  label={t('auth:recovery.question', { number: String(index + 1) })}
                   hint={question.statement}
                   {...(errors[fieldId] === undefined ? {} : { error: errors[fieldId] })}
                 >
@@ -329,7 +322,7 @@ export const RecoveryPage = ({
                       {...props}
                       type="text"
                       autoComplete="off"
-                      placeholder="Escribe tu respuesta"
+                      placeholder={t('auth:recovery.answerPlaceholder')}
                       value={answers[question.id] ?? ''}
                       onChange={(event) => {
                         setAnswers((previous) => ({
@@ -343,7 +336,7 @@ export const RecoveryPage = ({
               )
             })}
             <Button type="submit" loading={submitting} className="w-full">
-              Continuar
+              {t('auth:recovery.continue')}
             </Button>
           </form>
         )}
@@ -351,20 +344,18 @@ export const RecoveryPage = ({
         {step === 'code' && (
           <form noValidate onSubmit={(event) => void handleCode(event)} className="space-y-5">
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Recuperar contraseña</h1>
-              <p className="mt-2 text-sm text-muted">
-                Enviamos un código de un solo uso a tu correo registrado.
-              </p>
+              <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
+              <p className="mt-2 text-sm text-muted">{t('auth:recovery.codeBody')}</p>
             </div>
             {message !== null && (
               <p role="alert" className="text-sm text-danger">
-                {message}
+                {t(message)}
               </p>
             )}
             <Field
               id={RECOVERY_FIELD.code}
-              label="Código de verificación"
-              hint="Ingresa el código enviado a tu correo registrado."
+              label={t('auth:recovery.code')}
+              hint={t('auth:recovery.codeHint')}
               {...(codeError === undefined ? {} : { error: codeError })}
             >
               {(props) => (
@@ -373,7 +364,7 @@ export const RecoveryPage = ({
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  placeholder="Ingresa el código recibido por correo"
+                  placeholder={t('auth:recovery.codePlaceholder')}
                   value={code}
                   onChange={(event) => {
                     setCode(event.target.value)
@@ -382,7 +373,7 @@ export const RecoveryPage = ({
               )}
             </Field>
             <Button type="submit" loading={submitting} className="w-full">
-              Continuar
+              {t('auth:recovery.continue')}
             </Button>
           </form>
         )}
@@ -390,20 +381,18 @@ export const RecoveryPage = ({
         {step === 'password' && (
           <form noValidate onSubmit={(event) => void handlePassword(event)} className="space-y-5">
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Recuperar contraseña</h1>
-              <p className="mt-2 text-sm text-muted">
-                Ambas validaciones fueron exitosas. Define tu nueva contraseña.
-              </p>
+              <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
+              <p className="mt-2 text-sm text-muted">{t('auth:recovery.passwordBody')}</p>
             </div>
             {message !== null && (
               <p role="alert" className="text-sm text-danger">
-                {message}
+                {t(message)}
               </p>
             )}
             <Field
               id={RECOVERY_FIELD.password}
-              label="Nueva contraseña"
-              hint="Debe incluir mayúscula, minúscula, número y símbolo."
+              label={t('auth:recovery.newPassword')}
+              hint={t('auth:recovery.newPasswordHint')}
               {...(passwordErrors[RECOVERY_FIELD.password] === undefined
                 ? {}
                 : { error: passwordErrors[RECOVERY_FIELD.password] })}
@@ -413,7 +402,7 @@ export const RecoveryPage = ({
                   {...props}
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Mínimo 9 caracteres"
+                  placeholder={t('auth:recovery.newPasswordPlaceholder')}
                   value={password}
                   onChange={(event) => {
                     setPassword(event.target.value)
@@ -423,7 +412,7 @@ export const RecoveryPage = ({
             </Field>
             <Field
               id={RECOVERY_FIELD.confirm}
-              label="Confirmar nueva contraseña"
+              label={t('auth:recovery.confirm')}
               {...(passwordErrors[RECOVERY_FIELD.confirm] === undefined
                 ? {}
                 : { error: passwordErrors[RECOVERY_FIELD.confirm] })}
@@ -433,7 +422,7 @@ export const RecoveryPage = ({
                   {...props}
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Repite tu nueva contraseña"
+                  placeholder={t('auth:recovery.confirmPlaceholder')}
                   value={confirm}
                   onChange={(event) => {
                     setConfirm(event.target.value)
@@ -442,20 +431,20 @@ export const RecoveryPage = ({
               )}
             </Field>
             <Button type="submit" loading={submitting} className="w-full">
-              Guardar nueva contraseña
+              {t('auth:recovery.save')}
             </Button>
           </form>
         )}
 
         {step === 'done' && (
           <div className="space-y-4">
-            <h1 className="text-2xl font-semibold text-ink">Contraseña actualizada</h1>
-            <p className="text-sm text-muted">Ya puedes iniciar sesión con tu nueva contraseña.</p>
+            <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.doneTitle')}</h1>
+            <p className="text-sm text-muted">{t('auth:recovery.doneBody')}</p>
             <Link
               to="/login"
               className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink"
             >
-              Ir a iniciar sesión
+              {t('auth:recovery.goToLogin')}
             </Link>
           </div>
         )}

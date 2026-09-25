@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/Card'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Metodos de pago (HU-05.4).
@@ -8,12 +9,15 @@ import { Card } from '@/components/ui/Card'
  * numeros de tarjeta y NO se muestra una tarjeta ficticia ("**** 4242") como si
  * fuera del usuario.
  */
-export const PaymentMethodsSection = (): React.JSX.Element => (
-  <Card title="Metodos de pago" description="Formas de pago asociadas a tu cuenta.">
-    <p className="text-sm text-muted">
-      <span className="font-medium text-ink">Todavia no disponible.</span> La gestion de metodos de
-      pago se habilitara cuando el servicio de pagos este disponible. No se solicitan ni se
-      almacenan datos financieros en esta pantalla.
-    </p>
-  </Card>
-)
+export const PaymentMethodsSection = (): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <Card title={t('account:payments.title')} description={t('account:payments.description')}>
+      <p className="text-sm text-muted">
+        <span className="font-medium text-ink">{t('account:notAvailableYet')}</span>{' '}
+        {t('account:payments.body')}
+      </p>
+    </Card>
+  )
+}

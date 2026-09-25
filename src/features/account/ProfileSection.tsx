@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { COUNTRY_OPTIONS } from './countries'
+import { countryOptions } from './countries'
 
 import { Button } from '@/components/ui/Button'
 import { statusLabel } from '@/lib/format'
@@ -13,6 +13,9 @@ import {
   FIELD_LABEL_CLASS,
   READONLY_FIELD_CLASS,
 } from './fieldStyles'
+import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Informacion personal de la cuenta (HU-05.4).
@@ -49,6 +52,8 @@ export interface ProfileSectionProps {
 export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.Element => {
   const { account } = useAccountContext()
   const mutation = useUpdateOwnAccount(save)
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
 
   const [displayName, setDisplayName] = useState(account.displayName)
   const [countryCode, setCountryCode] = useState(account.countryCode ?? '')
@@ -63,7 +68,9 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
   let backendError: string | null = null
   if (mutation.isError) {
     backendError =
-      mutation.error instanceof Error ? mutation.error.message : 'No se pudo guardar el perfil.'
+      mutation.error instanceof Error
+        ? describeFailure(mutation.error, t, language)
+        : t('account:profile.saveFailed')
   }
   const shownError = clientError ?? backendError
 
@@ -87,15 +94,15 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
   return (
     <form className="space-y-5" onSubmit={handleSubmit} noValidate>
       <div className="grid gap-4 sm:grid-cols-2">
-        <ReadonlyRow label="Nombres" value={account.firstNames} />
-        <ReadonlyRow label="Apellidos" value={account.lastNames} />
-        <ReadonlyRow label="Correo electronico" value={account.email} />
-        <ReadonlyRow label="Estado de la cuenta" value={statusLabel(account.status)} />
+        <ReadonlyRow label={t('account:profile.firstNames')} value={account.firstNames} />
+        <ReadonlyRow label={t('account:profile.lastNames')} value={account.lastNames} />
+        <ReadonlyRow label={t('account:profile.email')} value={account.email} />
+        <ReadonlyRow label={t('account:profile.status')} value={statusLabel(account.status)} />
       </div>
 
       <div>
         <label htmlFor="account-display-name" className={FIELD_LABEL_CLASS}>
-          Apodo
+          {t('account:profile.displayName')}
         </label>
         <input
           id="account-display-name"
@@ -113,9 +120,7 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
             mutation.reset()
           }}
         />
-        <p className={FIELD_HINT_CLASS}>
-          Es tu nombre visible para el resto de jugadores. Entre 3 y 32 caracteres.
-        </p>
+        <p className={FIELD_HINT_CLASS}>{t('account:profile.displayNameHint')}</p>
         {shownError !== null && (
           <p id={errorId} role="alert" className={FIELD_ERROR_CLASS}>
             {shownError}
@@ -125,7 +130,7 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
 
       <div>
         <label htmlFor="account-country" className={FIELD_LABEL_CLASS}>
-          País
+          {t('account:profile.country')}
         </label>
         <select
           id="account-country"
@@ -138,23 +143,23 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
             mutation.reset()
           }}
         >
-          <option value="">Sin especificar</option>
-          {COUNTRY_OPTIONS.map((country) => (
+          <option value="">{t('account:profile.countryUnset')}</option>
+          {countryOptions().map((country) => (
             <option key={country.code} value={country.code}>
               {country.name}
             </option>
           ))}
         </select>
-        <p className={FIELD_HINT_CLASS}>Se usará para determinar la moneda de tus compras.</p>
+        <p className={FIELD_HINT_CLASS}>{t('account:profile.countryHint')}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <Button type="submit" loading={mutation.isPending} disabled={unchanged}>
-          Guardar cambios
+          {t('account:profile.save')}
         </Button>
         {mutation.isSuccess && (
           <p role="status" className="text-sm text-success">
-            Cambios guardados correctamente.
+            {t('account:profile.saved')}
           </p>
         )}
       </div>

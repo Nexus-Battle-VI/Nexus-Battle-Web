@@ -20,6 +20,7 @@ import {
   type AdminAccountsExportTransport,
   type AdminAccountsTransport,
 } from './useAdminAccounts'
+import { useTranslation } from 'react-i18next'
 
 type SearchField = 'id' | 'email' | 'firstNames' | 'displayName'
 type RoleFilter = '' | AdminAccountRole
@@ -31,33 +32,34 @@ const FIELD_CLASS =
 
 const LABEL_CLASS = 'block text-xs font-semibold text-ink'
 const CONTROL_HELP = 'mt-1 text-xs text-muted'
-const DATE_RANGE_ERROR = 'La fecha Desde no puede ser posterior a la fecha Hasta.'
 
 const utcStartOfDay = (calendarDate: string): string => `${calendarDate}T00:00:00.000Z`
 const utcEndOfDay = (calendarDate: string): string => `${calendarDate}T23:59:59.999Z`
 
-const queryMessage = (error: unknown): string => {
+/** Clave del aviso de consulta fallida (se traduce al pintar). */
+const queryMessageKey = (error: unknown): string => {
   if (error instanceof HttpError && error.isUnauthorized) {
-    return 'Tu sesión ha caducado. Vuelve a iniciar sesión para consultar el panel.'
+    return 'account:adminUsers.queryExpired'
   }
 
   if (error instanceof HttpError && error.isForbidden) {
-    return 'No tienes autorización para consultar datos administrativos.'
+    return 'account:adminUsers.queryForbidden'
   }
 
-  return 'No se pudo cargar el panel administrativo. Intenta de nuevo más tarde.'
+  return 'account:adminUsers.queryFailed'
 }
 
-const exportMessage = (error: unknown): string => {
+/** Clave del aviso de exportacion fallida (se traduce al pintar). */
+const exportMessageKey = (error: unknown): string => {
   if (error instanceof HttpError && error.isUnauthorized) {
-    return 'Tu sesión ha caducado. Vuelve a iniciar sesión para exportar resultados.'
+    return 'account:adminUsers.exportExpired'
   }
 
   if (error instanceof HttpError && error.isForbidden) {
-    return 'No tienes autorización para exportar resultados administrativos.'
+    return 'account:adminUsers.exportForbidden'
   }
 
-  return 'No se pudo exportar el resultado. Intenta de nuevo más tarde.'
+  return 'account:adminUsers.exportFailed'
 }
 
 const criteriaFrom = (
@@ -93,6 +95,7 @@ const criteriaFrom = (
 
 const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): React.JSX.Element => {
   const role = primaryRole(account.roles)
+  const { t } = useTranslation()
 
   return (
     <li className="grid min-w-0 gap-3 border-b border-border bg-surface p-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
@@ -101,12 +104,12 @@ const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): Re
         <p className="mt-1 break-all text-xs text-muted">ID: {account.id}</p>
         <p className="mt-1 break-all text-xs text-muted">{account.email}</p>
         <p className="mt-1 text-xs text-muted">
-          Registrado:{' '}
+          {t('account:adminUsers.registered')}{' '}
           <time dateTime={account.registeredAt}>{formatDateTime(account.registeredAt)}</time>
         </p>
       </div>
       <span className="text-xs font-semibold text-ink">
-        {role === null ? 'Sin rol' : roleLabel(role)}
+        {role === null ? t('account:adminUsers.noRole') : roleLabel(role)}
       </span>
       <StatusBadge status={account.status} />
     </li>
@@ -126,6 +129,7 @@ export const AdminUsersSection = ({
 }: AdminUsersSectionProps = {}): React.JSX.Element => {
   const roles = useSession((state) => state.roles)
   const sessionRole = primaryRole(roles)
+  const { t } = useTranslation()
   const [searchText, setSearchText] = useState('')
   const [searchField, setSearchField] = useState<SearchField>('displayName')
   const [role, setRole] = useState<RoleFilter>('')
@@ -134,6 +138,7 @@ export const AdminUsersSection = ({
   const [registeredFromDate, setRegisteredFromDate] = useState('')
   const [registeredToDate, setRegisteredToDate] = useState('')
   const [appliedCriteria, setAppliedCriteria] = useState<AdminAccountQueryCriteria>({})
+  // Ambos guardan la CLAVE del aviso; se traduce al pintar (cambia con el idioma).
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [exportFeedback, setExportFeedback] = useState<string | null>(null)
   const query = useAdminAccounts(appliedCriteria, loadAccounts)
@@ -147,7 +152,7 @@ export const AdminUsersSection = ({
       registeredToDate !== '' &&
       registeredFromDate > registeredToDate
     ) {
-      setValidationMessage(DATE_RANGE_ERROR)
+      setValidationMessage('account:adminUsers.dateRangeError')
       return
     }
 
@@ -183,10 +188,10 @@ export const AdminUsersSection = ({
     exportMutation.mutate(appliedCriteria, {
       onSuccess: (file) => {
         saveExport(file)
-        setExportFeedback('Exportación preparada.')
+        setExportFeedback('account:adminUsers.exportReady')
       },
       onError: (error) => {
-        setExportFeedback(exportMessage(error))
+        setExportFeedback(exportMessageKey(error))
       },
     })
   }
@@ -197,34 +202,38 @@ export const AdminUsersSection = ({
     <section className="min-w-0 space-y-5" aria-labelledby="admin-users-title">
       <header className="space-y-3">
         <h2 id="admin-users-title" className="text-xl font-semibold text-ink">
-          Panel administrativo de usuarios
+          {t('account:adminUsers.title')}
         </h2>
         <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand bg-brand/10 px-2 py-1 text-xs font-semibold text-ink">
           <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-          Rol: {sessionRole === null ? 'No disponible' : roleLabel(sessionRole)}
+          {t('account:adminUsers.role', {
+            role: sessionRole === null ? t('common:notAvailable') : roleLabel(sessionRole),
+          })}
         </span>
       </header>
 
       <form className="space-y-4" onSubmit={applyCriteria}>
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-ink">Búsqueda</legend>
-          <p className="text-xs text-muted">Busca por un campo soportado por Account.</p>
+          <legend className="text-sm font-semibold text-ink">
+            {t('account:adminUsers.search')}
+          </legend>
+          <p className="text-xs text-muted">{t('account:adminUsers.searchHint')}</p>
 
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(12rem,0.55fr)]">
             <label className={LABEL_CLASS}>
-              Buscar
+              {t('account:adminUsers.searchLabel')}
               <input
                 value={searchText}
                 onChange={(event) => {
                   setSearchText(event.target.value)
                 }}
                 className={`${FIELD_CLASS} mt-1`}
-                placeholder="Escribe un valor de búsqueda"
+                placeholder={t('account:adminUsers.searchPlaceholder')}
               />
             </label>
 
             <label className={LABEL_CLASS}>
-              Campo de búsqueda
+              {t('account:adminUsers.searchField')}
               <select
                 value={searchField}
                 onChange={(event) => {
@@ -233,22 +242,24 @@ export const AdminUsersSection = ({
                 className={`${FIELD_CLASS} mt-1`}
               >
                 <option value="all" disabled>
-                  Todos los campos (no disponible)
+                  {t('account:adminUsers.fields.all')}
                 </option>
-                <option value="firstNames">Nombre</option>
-                <option value="displayName">Apodo</option>
-                <option value="email">Correo</option>
-                <option value="id">ID</option>
+                <option value="firstNames">{t('account:adminUsers.fields.firstNames')}</option>
+                <option value="displayName">{t('account:adminUsers.fields.displayName')}</option>
+                <option value="email">{t('account:adminUsers.fields.email')}</option>
+                <option value="id">{t('account:adminUsers.fields.id')}</option>
               </select>
             </label>
           </div>
         </fieldset>
 
         <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-ink">Filtros</legend>
+          <legend className="text-sm font-semibold text-ink">
+            {t('account:adminUsers.filters')}
+          </legend>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className={LABEL_CLASS}>
-              Rol
+              {t('account:adminUsers.roleFilter')}
               <select
                 value={role}
                 onChange={(event) => {
@@ -256,16 +267,16 @@ export const AdminUsersSection = ({
                 }}
                 className={`${FIELD_CLASS} mt-1`}
               >
-                <option value="">Todos</option>
-                <option value="PLAYER">Jugador</option>
-                <option value="MODERATOR">Moderador</option>
-                <option value="ADMINISTRATOR">Administrador</option>
-                <option value="SUPER_ADMINISTRATOR">Super Administrador</option>
+                <option value="">{t('account:adminUsers.all')}</option>
+                <option value="PLAYER">{roleLabel('PLAYER')}</option>
+                <option value="MODERATOR">{roleLabel('MODERATOR')}</option>
+                <option value="ADMINISTRATOR">{roleLabel('ADMINISTRATOR')}</option>
+                <option value="SUPER_ADMINISTRATOR">{roleLabel('SUPER_ADMINISTRATOR')}</option>
               </select>
             </label>
 
             <label className={LABEL_CLASS}>
-              Estado de cuenta
+              {t('account:adminUsers.statusFilter')}
               <select
                 value={status}
                 onChange={(event) => {
@@ -273,18 +284,20 @@ export const AdminUsersSection = ({
                 }}
                 className={`${FIELD_CLASS} mt-1`}
               >
-                <option value="">Todos</option>
-                <option value="PENDING_VERIFICATION">Pendiente de verificación</option>
-                <option value="ACTIVE">Activa</option>
-                <option value="SUSPENDED">Suspendida</option>
+                <option value="">{t('account:adminUsers.all')}</option>
+                <option value="PENDING_VERIFICATION">
+                  {t('account:adminUsers.status.PENDING_VERIFICATION')}
+                </option>
+                <option value="ACTIVE">{t('account:adminUsers.status.ACTIVE')}</option>
+                <option value="SUSPENDED">{t('account:adminUsers.status.SUSPENDED')}</option>
               </select>
             </label>
 
             <label className={LABEL_CLASS}>
-              Desde
+              {t('account:adminUsers.from')}
               <input
                 type="date"
-                aria-label="Desde"
+                aria-label={t('account:adminUsers.from')}
                 value={registeredFromDate}
                 onChange={(event) => {
                   setRegisteredFromDate(event.target.value)
@@ -293,14 +306,14 @@ export const AdminUsersSection = ({
                 aria-invalid={validationMessage !== null}
                 className={`${FIELD_CLASS} mt-1`}
               />
-              <span className={CONTROL_HELP}>Fecha de registro desde el inicio del día UTC.</span>
+              <span className={CONTROL_HELP}>{t('account:adminUsers.fromHint')}</span>
             </label>
 
             <label className={LABEL_CLASS}>
-              Hasta
+              {t('account:adminUsers.to')}
               <input
                 type="date"
-                aria-label="Hasta"
+                aria-label={t('account:adminUsers.to')}
                 value={registeredToDate}
                 onChange={(event) => {
                   setRegisteredToDate(event.target.value)
@@ -309,11 +322,11 @@ export const AdminUsersSection = ({
                 aria-invalid={validationMessage !== null}
                 className={`${FIELD_CLASS} mt-1`}
               />
-              <span className={CONTROL_HELP}>Fecha de registro hasta el final del día UTC.</span>
+              <span className={CONTROL_HELP}>{t('account:adminUsers.toHint')}</span>
             </label>
 
             <label className={LABEL_CLASS}>
-              Historial de sanciones
+              {t('account:adminUsers.sanctions')}
               <select
                 value={sanctionHistory}
                 onChange={(event) => {
@@ -321,9 +334,9 @@ export const AdminUsersSection = ({
                 }}
                 className={`${FIELD_CLASS} mt-1`}
               >
-                <option value="">Cualquiera</option>
-                <option value="true">Con sanciones</option>
-                <option value="false">Sin sanciones</option>
+                <option value="">{t('account:adminUsers.sanctionsAny')}</option>
+                <option value="true">{t('account:adminUsers.sanctionsWith')}</option>
+                <option value="false">{t('account:adminUsers.sanctionsWithout')}</option>
               </select>
             </label>
           </div>
@@ -334,24 +347,24 @@ export const AdminUsersSection = ({
               role="alert"
               className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger"
             >
-              {validationMessage}
+              {t(validationMessage)}
             </p>
           )}
         </fieldset>
 
         <div className="grid gap-2 sm:grid-cols-2">
           <Button type="submit" className="w-full">
-            Buscar usuarios
+            {t('account:adminUsers.submit')}
           </Button>
           <Button type="button" variant="secondary" className="w-full" onClick={clearCriteria}>
-            Limpiar filtros
+            {t('account:adminUsers.clear')}
           </Button>
         </div>
       </form>
 
       {query.isLoading && (
         <p role="status" className="text-sm text-muted">
-          Cargando usuarios...
+          {t('account:adminUsers.loading')}
         </p>
       )}
 
@@ -360,53 +373,49 @@ export const AdminUsersSection = ({
           role="alert"
           className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger"
         >
-          {queryMessage(query.error)}
+          {t(queryMessageKey(query.error))}
         </p>
       )}
 
       {query.isSuccess && (
         <>
-          <section aria-label="Estadísticas administrativas" className="space-y-3">
-            <h3 className="text-sm font-semibold text-ink">Estadísticas</h3>
+          <section aria-label={t('account:adminUsers.statsLabel')} className="space-y-3">
+            <h3 className="text-sm font-semibold text-ink">{t('account:adminUsers.stats')}</h3>
             <dl className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-border bg-surface-raised p-4">
-                <dt className="text-xs text-muted">Usuarios activos</dt>
+                <dt className="text-xs text-muted">{t('account:adminUsers.active')}</dt>
                 <dd data-stat="active" className="mt-1 text-xl font-semibold text-success">
                   {query.data.statusCounts.active}
                 </dd>
               </div>
               <div className="rounded-lg border border-border bg-surface-raised p-4">
-                <dt className="text-xs text-muted">Usuarios suspendidos</dt>
+                <dt className="text-xs text-muted">{t('account:adminUsers.suspended')}</dt>
                 <dd data-stat="suspended" className="mt-1 text-xl font-semibold text-warning">
                   {query.data.statusCounts.suspended}
                 </dd>
               </div>
               <div className="rounded-lg border border-border bg-surface-raised p-4">
-                <dt className="text-xs text-muted">Usuarios baneados</dt>
+                <dt className="text-xs text-muted">{t('account:adminUsers.banned')}</dt>
                 <dd data-stat="banned" className="mt-1 text-sm font-semibold text-muted">
-                  No disponible
+                  {t('common:notAvailable')}
                 </dd>
               </div>
             </dl>
           </section>
 
           <section
-            aria-label="Resultados administrativos"
+            aria-label={t('account:adminUsers.resultsLabel')}
             className="overflow-hidden rounded-lg border border-border"
           >
             <div className="bg-surface-raised p-4">
               <h3 className="text-sm font-semibold text-ink">
-                Resultados ({query.data.items.length})
+                {t('account:adminUsers.results', { total: String(query.data.items.length) })}
               </h3>
-              <p className="mt-1 text-xs text-muted">
-                Usuarios que cumplen los criterios aplicados.
-              </p>
+              <p className="mt-1 text-xs text-muted">{t('account:adminUsers.resultsHint')}</p>
             </div>
 
             {query.data.items.length === 0 ? (
-              <p className="bg-surface p-4 text-sm text-muted">
-                No se encontraron usuarios con los criterios aplicados.
-              </p>
+              <p className="bg-surface p-4 text-sm text-muted">{t('account:adminUsers.empty')}</p>
             ) : (
               <ul>
                 {query.data.items.map((account) => (
@@ -416,18 +425,26 @@ export const AdminUsersSection = ({
             )}
           </section>
 
-          <nav aria-label="Paginación de resultados" className="space-y-2">
+          <nav aria-label={t('account:adminUsers.pagination')} className="space-y-2">
             <div className="flex gap-2">
-              <Button type="button" variant="secondary" disabled aria-label="Página anterior">
-                Anterior
+              <Button
+                type="button"
+                variant="secondary"
+                disabled
+                aria-label={t('account:adminUsers.previousPage')}
+              >
+                {t('account:adminUsers.previous')}
               </Button>
-              <Button type="button" variant="secondary" disabled aria-label="Página siguiente">
-                Siguiente
+              <Button
+                type="button"
+                variant="secondary"
+                disabled
+                aria-label={t('account:adminUsers.nextPage')}
+              >
+                {t('account:adminUsers.next')}
               </Button>
             </div>
-            <p className="text-xs text-muted">
-              La paginación estará disponible cuando el contrato backend exponga página y total.
-            </p>
+            <p className="text-xs text-muted">{t('account:adminUsers.paginationPending')}</p>
           </nav>
 
           <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -439,7 +456,7 @@ export const AdminUsersSection = ({
               onClick={exportResults}
             >
               <Download aria-hidden className="h-4 w-4" />
-              Exportar resultados
+              {t('account:adminUsers.export')}
             </Button>
             {exportFeedback !== null && (
               <p
@@ -447,7 +464,7 @@ export const AdminUsersSection = ({
                 aria-live="polite"
                 className={exportFailed ? 'text-xs text-danger' : 'text-xs text-success'}
               >
-                {exportFeedback}
+                {t(exportFeedback)}
               </p>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { formatLocale } from '@/shared/i18n/format'
+import { i18n } from '@/shared/i18n/i18n'
 
 /**
  * Formato de importes.
@@ -65,4 +66,10 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   PREPARING: 'Preparando batalla',
 }
 
-export const statusLabel = (status: string): string => STATUS_LABELS[status] ?? status
+/**
+ * Etiqueta del estado en el idioma activo. `STATUS_LABELS` queda como la
+ * referencia en español de los estados conocidos; un estado desconocido se
+ * muestra tal cual.
+ */
+export const statusLabel = (status: string): string =>
+  STATUS_LABELS[status] === undefined ? status : i18n.t(`common:status.${status}`)

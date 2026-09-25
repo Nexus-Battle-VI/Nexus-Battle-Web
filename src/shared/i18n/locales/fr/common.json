@@ -27,5 +27,42 @@
     "rooms_one": "{{value}} salon",
     "rooms_many": "{{value}} de salons",
     "rooms_other": "{{value}} salons"
+  },
+  "hero3d": {
+    "loading": "Chargement de l'aperçu…",
+    "unavailable": "L'aperçu 3D n'est pas disponible dans cet environnement.",
+    "unavailableFor": "Aperçu indisponible pour « {{id}} »."
+  },
+  "back": "Retour",
+  "yes": "Oui",
+  "no": "Non",
+  "notAvailable": "Non disponible",
+  "roles": {
+    "PLAYER": "Joueur",
+    "MODERATOR": "Modérateur",
+    "ADMINISTRATOR": "Administrateur",
+    "SUPER_ADMINISTRATOR": "Super administrateur",
+    "GAME_MASTER": "Maître de Jeu"
+  },
+  "status": {
+    "DRAFT": "Brouillon",
+    "PUBLISHED": "Publié",
+    "ARCHIVED": "Archivé",
+    "CONFIRMED": "Confirmé",
+    "CANCELLED": "Annulé",
+    "OPEN": "Ouvert",
+    "CLOSED": "Fermé",
+    "PENDING_VERIFICATION": "En attente de vérification",
+    "ACTIVE": "Active",
+    "SUSPENDED": "Suspendue",
+    "RECEIVED": "Reçue",
+    "PENDING": "En attente",
+    "APPROVED": "Approuvé",
+    "DELETED": "Supprimé",
+    "HIDDEN": "Masqué",
+    "EDITED": "Modifié",
+    "MARKED": "Signalé",
+    "WAITING_FOR_PLAYERS": "En attente de joueurs",
+    "PREPARING": "Préparation du combat"
   }
 }

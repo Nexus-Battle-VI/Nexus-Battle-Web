@@ -7,6 +7,9 @@ import { PasswordField } from '@/components/ui/PasswordField'
 import { TotpEnrollment } from './security/TotpEnrollment'
 import { changeOwnPassword, type ChangePasswordInput } from './security/passwordApi'
 import { FIELD_CLASS, FIELD_ERROR_CLASS, FIELD_LABEL_CLASS } from './fieldStyles'
+import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Seguridad de la cuenta (HU-05.4).
@@ -33,8 +36,11 @@ export const SecuritySection = ({
   showLocalAuthNote = false,
 }: SecuritySectionProps = {}): React.JSX.Element => {
   const [fields, setFields] = useState(EMPTY)
+  // Guarda la CLAVE del aviso local; se traduce al pintar.
   const [clientError, setClientError] = useState<string | null>(null)
   const errorId = useId()
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
 
   const mutation = useMutation({
     mutationFn: (input: ChangePasswordInput) => changePassword(input),
@@ -54,15 +60,15 @@ export const SecuritySection = ({
     mutation.reset()
 
     if (fields.current === '' || fields.next === '' || fields.confirm === '') {
-      setClientError('Completa los tres campos.')
+      setClientError('account:security.required')
       return
     }
     if (fields.next !== fields.confirm) {
-      setClientError('La confirmación no coincide con la contraseña nueva.')
+      setClientError('account:security.mismatch')
       return
     }
     if (fields.next === fields.current) {
-      setClientError('La contraseña nueva debe ser distinta de la actual.')
+      setClientError('account:security.sameAsCurrent')
       return
     }
 
@@ -73,31 +79,31 @@ export const SecuritySection = ({
   let backendError: string | null = null
   if (mutation.isError) {
     backendError =
-      mutation.error instanceof Error ? mutation.error.message : 'No se pudo cambiar la contraseña.'
+      mutation.error instanceof Error
+        ? describeFailure(mutation.error, t, language)
+        : t('account:security.changeFailed')
   }
-  const shownError = clientError ?? backendError
+  const shownError = clientError === null ? backendError : t(clientError)
 
   return (
     <div className="space-y-4">
       {showLocalAuthNote && (
         <Card>
           <p className="text-sm text-muted">
-            <span className="font-medium text-ink">Entorno local:</span> el proveedor de identidad
-            de desarrollo no valida credenciales reales, asi que el cambio de contraseña y el
-            segundo factor no completan de extremo a extremo aqui. La interfaz y sus estados son los
-            definitivos.
+            <span className="font-medium text-ink">{t('account:security.localNoteTitle')}</span>{' '}
+            {t('account:security.localNote')}
           </p>
         </Card>
       )}
 
       <Card
-        title="Cambiar contraseña"
-        description="Necesitas tu contraseña actual. La nueva la valida el proveedor de identidad."
+        title={t('account:security.passwordTitle')}
+        description={t('account:security.passwordDescription')}
       >
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div>
             <label htmlFor="current-password" className={FIELD_LABEL_CLASS}>
-              Contraseña actual
+              {t('account:security.current')}
             </label>
             <PasswordField
               id="current-password"
@@ -110,7 +116,7 @@ export const SecuritySection = ({
 
           <div>
             <label htmlFor="new-password" className={FIELD_LABEL_CLASS}>
-              Contraseña nueva
+              {t('account:security.new')}
             </label>
             <PasswordField
               id="new-password"
@@ -125,7 +131,7 @@ export const SecuritySection = ({
 
           <div>
             <label htmlFor="confirm-password" className={FIELD_LABEL_CLASS}>
-              Repite la contraseña nueva
+              {t('account:security.confirm')}
             </label>
             <PasswordField
               id="confirm-password"
@@ -144,11 +150,11 @@ export const SecuritySection = ({
 
           <div className="flex items-center gap-3">
             <Button type="submit" loading={mutation.isPending}>
-              Cambiar contraseña
+              {t('account:security.change')}
             </Button>
             {mutation.isSuccess && (
               <p role="status" className="text-sm text-success">
-                Contraseña actualizada.
+                {t('account:security.changed')}
               </p>
             )}
           </div>
@@ -156,8 +162,8 @@ export const SecuritySection = ({
       </Card>
 
       <Card
-        title="Segundo factor"
-        description="Anade una aplicacion autenticadora (TOTP) como segundo factor."
+        title={t('account:security.totpTitle')}
+        description={t('account:security.totpDescription')}
       >
         <TotpEnrollment />
       </Card>

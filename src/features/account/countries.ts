@@ -1,3 +1,4 @@
+import { currentLanguage } from '@/shared/i18n/language'
 /** Same assigned ISO alpha-2 vocabulary accepted by Account.countryCode. */
 const codes = (
   'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ ' +
@@ -7,8 +8,17 @@ const codes = (
   'NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ ' +
   'TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW'
 ).split(' ')
-const names = new Intl.DisplayNames(['es'], { type: 'region' })
-export const COUNTRY_OPTIONS = codes
-  .map((code) => ({ code, name: names.of(code) ?? code }))
-  .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-export const countryName = (code: string): string => names.of(code) ?? code
+const regionNames = (): Intl.DisplayNames =>
+  new Intl.DisplayNames([currentLanguage()], { type: 'region' })
+
+/** Paises con su nombre en el idioma activo, ordenados segun ese idioma. El codigo no cambia. */
+export const countryOptions = (): readonly { code: string; name: string }[] => {
+  const names = regionNames()
+  const language = currentLanguage()
+
+  return codes
+    .map((code) => ({ code, name: names.of(code) ?? code }))
+    .sort((a, b) => a.name.localeCompare(b.name, language))
+}
+
+export const countryName = (code: string): string => regionNames().of(code) ?? code
