@@ -8,6 +8,7 @@ import {
   enemyScalingText,
   rewardTierText,
 } from './difficultyPresentation'
+import { useTranslation } from 'react-i18next'
 
 export interface DifficultySelectorProps {
   readonly items: readonly MissionDifficulty[]
@@ -38,11 +39,12 @@ export const DifficultySelector = ({
   onChange,
 }: DifficultySelectorProps): React.JSX.Element => {
   const labelId = useId()
+  const { t } = useTranslation()
 
   return (
     <div role="radiogroup" aria-labelledby={labelId} className="flex flex-col gap-3">
       <h3 id={labelId} className="text-sm font-semibold text-ink">
-        Dificultad
+        {t('missions:selector.title')}
       </h3>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(12rem,1fr))] gap-3">
         {items.map((item) => (
@@ -73,6 +75,7 @@ const DifficultyOption = ({
 }: DifficultyOptionProps): React.JSX.Element => {
   const nameId = useId()
   const detailId = useId()
+  const { t } = useTranslation()
   const locked = !item.unlocked
 
   return (
@@ -116,7 +119,7 @@ const DifficultyOption = ({
             locked ? 'bg-warning/15' : 'bg-success/15',
           )}
         >
-          {locked ? 'Bloqueado' : 'Disponible'}
+          {locked ? t('missions:selector.locked') : t('missions:selector.available')}
         </span>
       </span>
       <span id={detailId} className="flex flex-col gap-0.5 text-xs text-muted">

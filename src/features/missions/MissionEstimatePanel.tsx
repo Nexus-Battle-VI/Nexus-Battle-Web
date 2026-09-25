@@ -5,6 +5,7 @@ import type { DifficultyLevel } from './api'
 import { difficultyName } from './difficultyPresentation'
 import type { EstimateRisk, MissionEstimate } from './missionPlayApi'
 import { sentence } from './missionPresentation'
+import { useTranslation } from 'react-i18next'
 
 const RISK_STYLE: Readonly<Record<EstimateRisk, string>> = {
   LOW: 'bg-success/15',
@@ -28,6 +29,7 @@ export const MissionEstimatePanel = ({
   estimate,
   difficulty,
 }: MissionEstimatePanelProps): React.JSX.Element | null => {
+  const { t } = useTranslation()
   const waiting = estimate.fetchStatus === 'idle' && estimate.data === undefined
   if (difficulty === null || waiting) {
     return null
@@ -35,7 +37,7 @@ export const MissionEstimatePanel = ({
   if (estimate.isPending) {
     return (
       <p role="status" className="text-sm text-muted">
-        Calculando la probabilidad de éxito…
+        {t('missions:estimate.calculating')}
       </p>
     )
   }
@@ -50,14 +52,14 @@ export const MissionEstimatePanel = ({
   const data = estimate.data
   return (
     <section
-      aria-label="Probabilidad de éxito"
+      aria-label={t('missions:estimate.label')}
       className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4"
     >
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-3xl font-bold tabular-nums text-ink">{data.successPercent} %</p>
         <div className="flex flex-col">
           <span className="text-sm font-semibold text-ink">
-            de éxito en {difficultyName(data.difficulty)}
+            {t('missions:estimate.successIn', { difficulty: difficultyName(data.difficulty) })}
           </span>
           <span
             className={clsx(
@@ -70,15 +72,12 @@ export const MissionEstimatePanel = ({
         </div>
       </div>
       <ul className="grid gap-1 text-sm text-ink sm:grid-cols-2">
-        <li>Derrota: {data.defeatPercent} %</li>
-        <li>Tiempo agotado: {data.timeoutPercent} %</li>
-        <li>Vida más baja, de media: {data.averageMinHealthPercent} %</li>
-        <li>Probabilidad de encontrar un Máster: {data.masterAppearancePercent} %</li>
+        <li>{t('missions:estimate.defeat', { percent: data.defeatPercent })}</li>
+        <li>{t('missions:estimate.timeout', { percent: data.timeoutPercent })}</li>
+        <li>{t('missions:estimate.avgMinHealth', { percent: data.averageMinHealthPercent })}</li>
+        <li>{t('missions:estimate.masterChance', { percent: data.masterAppearancePercent })}</li>
       </ul>
-      <p className="text-xs text-muted">
-        Estimado con {data.runs} simulaciones de tu héroe, tu estrategia guardada y este nivel. La
-        misión real tiene su propia suerte.
-      </p>
+      <p className="text-xs text-muted">{t('missions:estimate.basis', { runs: data.runs })}</p>
     </section>
   )
 }
@@ -89,11 +88,12 @@ export const UnusableAbilities = ({
 }: {
   readonly estimate: MissionEstimate | undefined
 }): React.JSX.Element | null => {
+  const { t } = useTranslation()
   const unusable = estimate?.abilities.filter((ability) => !ability.usable) ?? []
   if (unusable.length === 0) return null
   return (
     <div role="note" className="rounded-lg border border-warning/60 bg-warning/10 p-3 text-sm">
-      <p className="font-medium text-ink">Estas habilidades no funcionan en misiones:</p>
+      <p className="font-medium text-ink">{t('missions:estimate.unusableTitle')}</p>
       <ul className="mt-1 list-inside list-disc text-ink">
         {unusable.map((ability) => (
           <li key={ability.abilityId}>
@@ -102,9 +102,7 @@ export const UnusableAbilities = ({
           </li>
         ))}
       </ul>
-      <p className="mt-1 text-xs text-muted">
-        Si la estrategia las elige, tu héroe las salta y sigue con la siguiente acción.
-      </p>
+      <p className="mt-1 text-xs text-muted">{t('missions:estimate.unusableFooter')}</p>
     </div>
   )
 }

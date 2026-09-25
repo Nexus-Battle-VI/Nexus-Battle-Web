@@ -1,4 +1,6 @@
 import type { MissionExperience } from './missionReport'
+import { i18n } from '@/shared/i18n/i18n'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 /**
  * Textos del panel de experiencia (HU-09, Task HU-09.5). Módulo PURO: recibe el
@@ -18,16 +20,16 @@ export interface ExperiencePresentation {
   readonly detail: string
 }
 
-const plural = (count: number, one: string, many: string): string =>
-  count === 1 ? `1 ${one}` : `${String(count)} ${many}`
-
 /** Las derrotas de la misión, en texto. */
 export const defeatsText = (experience: MissionExperience): string =>
-  plural(experience.defeats, 'derrota', 'derrotas')
+  i18n.t(
+    experience.defeats === 1 ? 'missions:experience.defeat_one' : 'missions:experience.defeat_other',
+    { count: experience.defeats },
+  )
 
 /** La experiencia acreditada, con su signo. */
 export const experienceGainedText = (experience: MissionExperience): string =>
-  `+${String(experience.totalXp)} XP`
+  i18n.t('missions:experience.gained', { amount: String(experience.totalXp) })
 
 /**
  * Cuántas derrotas llevan su experiencia, sobre el total: `3/5`.
@@ -57,34 +59,42 @@ export const describeExperience = (
   if (experience.failed > 0) {
     return {
       state: 'FAILED',
-      headline: 'Parte de la experiencia no se acreditó',
+      headline: i18n.t('missions:experience.notCreditedTitle'),
       detail:
-        `${plural(experience.failed, 'derrota', 'derrotas')} sin acreditar de ${defeatsText(experience)}.` +
-        (experience.pending > 0 ? ' El resto sigue en curso.' : ''),
+        i18n.t('missions:experience.notCreditedDetail', {
+          failed: i18n.t(
+            experience.failed === 1 ? 'missions:experience.defeat_one' : 'missions:experience.defeat_other',
+            { count: experience.failed },
+          ),
+          total: defeatsText(experience),
+        }) + (experience.pending > 0 ? i18n.t('missions:experience.restPending') : ''),
     }
   }
 
   if (experience.credited === 0) {
     return {
       state: 'PENDING',
-      headline: 'Experiencia en camino',
-      detail: 'Las derrotas ya están registradas: la experiencia se acreditará en breve.',
+      headline: i18n.t('missions:experience.pendingTitle'),
+      detail: i18n.t('missions:experience.pendingDetail'),
     }
   }
 
   return {
     state: 'CREDITED',
-    headline: 'Experiencia acreditada',
+    headline: i18n.t('missions:experience.creditedTitle'),
     detail:
       experience.pending > 0
-        ? `Ya se acreditó parte; ${remainingText(experience.pending)}.`
-        : `${experienceGainedText(experience)} para tu héroe.`,
+        ? i18n.t('missions:experience.creditedPartial', { remaining: remainingText(experience.pending) })
+        : i18n.t('missions:experience.creditedFull', { amount: experienceGainedText(experience) }),
   }
 }
 
 /** Lo que queda en curso, con el verbo y el número concordados. */
 const remainingText = (pending: number): string =>
-  pending === 1 ? 'queda 1 derrota en curso' : `quedan ${String(pending)} derrotas en curso`
+  i18n.t(
+    pending === 1 ? 'missions:experience.remaining_one' : 'missions:experience.remaining_other',
+    { count: pending },
+  )
 
 /**
  * El nivel del héroe tras la misión, o `null` si todavía no hay ninguna
@@ -96,21 +106,21 @@ export const levelText = (experience: MissionExperience): string | null => {
     return null
   }
 
-  const level = `Nivel ${String(experience.level)}`
+  const level = i18n.t('missions:experience.level', { level: String(experience.level) })
 
   return experience.maxLevel !== null && experience.level >= experience.maxLevel
-    ? `${level} · máximo`
+    ? i18n.t('missions:experience.levelMax', { level })
     : level
 }
 
 /** Los niveles cruzados con ESTA misión, o `null` si no subió ninguno. */
 export const levelUpText = (experience: MissionExperience): string | null => {
   if (experience.levelsGained === 1) {
-    return '¡Has subido de nivel!'
+    return i18n.t('missions:experience.levelUpOne')
   }
 
   if (experience.levelsGained > 1) {
-    return `¡Has subido ${String(experience.levelsGained)} niveles!`
+    return i18n.t('missions:experience.levelUpMany', { count: experience.levelsGained })
   }
 
   return null
@@ -118,13 +128,15 @@ export const levelUpText = (experience: MissionExperience): string | null => {
 
 /** La experiencia ACUMULADA del héroe, tal como la publica Missions. */
 export const currentXpText = (experience: MissionExperience): string | null =>
-  experience.currentXp === null ? null : `${String(experience.currentXp)} XP acumulada`
+  experience.currentXp === null
+    ? null
+    : i18n.t('missions:experience.currentXp', { amount: String(experience.currentXp) })
 
-const LINE_STATES: Readonly<Record<string, string>> = {
-  PENDING: 'En curso',
-  CREDITED: 'Acreditada',
-  FAILED: 'Sin acreditar',
-}
+const LINE_STATES: Readonly<Record<string, string>> = localizedMessages({
+  PENDING: 'missions:experience.lineState.PENDING',
+  CREDITED: 'missions:experience.lineState.CREDITED',
+  FAILED: 'missions:experience.lineState.FAILED',
+})
 
 /** El estado de UNA derrota en texto; un valor nuevo se muestra tal cual. */
 export const lineStateText = (status: string): string => LINE_STATES[status] ?? status

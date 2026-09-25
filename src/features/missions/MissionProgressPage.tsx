@@ -13,6 +13,7 @@ import { ProgressBar } from './ActiveMissionsPanel'
 import { difficultyName } from './difficultyPresentation'
 import { fetchMissionProgress, type MissionProgress, type ProgressEntry } from './missionPlayApi'
 import { progressLine, type ProgressTone } from './progressPresentation'
+import { useTranslation } from 'react-i18next'
 
 /** Si nada se revela antes, se vuelve a preguntar a este ritmo. */
 const FALLBACK_REFRESH_MS = 30_000
@@ -30,17 +31,21 @@ const HeroHealth = ({
 }: {
   readonly hero: MissionProgress['hero']
 }): React.JSX.Element | null => {
+  const { t } = useTranslation()
   if (hero.maxHealth === null || hero.health === null) return null
-  const name = hero.name ?? 'tu héroe'
+  const name = hero.name ?? t('missions:progressPage.yourHero')
   return (
     <div className="flex flex-col gap-1 text-sm">
       <div className="flex justify-between text-ink">
-        <span>Vida de {name}</span>
+        <span>{t('missions:progressPage.heroHealth', { name })}</span>
         <span className="tabular-nums">
           {hero.health} / {hero.maxHealth}
         </span>
       </div>
-      <ProgressBar percent={(hero.health * 100) / hero.maxHealth} label={`Vida de ${name}`} />
+      <ProgressBar
+        percent={(hero.health * 100) / hero.maxHealth}
+        label={t('missions:progressPage.heroHealth', { name })}
+      />
     </div>
   )
 }
@@ -52,21 +57,22 @@ const Status = ({
   readonly progress: MissionProgress
   readonly receivedAt: number
 }): React.JSX.Element => {
+  const { t } = useTranslation()
   const remaining = useCountdown(progress.finished ? null : progress.remainingSeconds, receivedAt)
 
   if (progress.finished) {
     return (
       <div role="status" className="flex flex-col gap-2 text-sm text-ink">
-        <p className="font-semibold">La misión terminó.</p>
+        <p className="font-semibold">{t('missions:progressPage.finished')}</p>
         {progress.reportAvailable ? (
           <Link
             to={`/missions/reports/${encodeURIComponent(progress.enrollmentId)}`}
             className="w-fit font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
           >
-            Ver el reporte de la misión
+            {t('missions:progressPage.viewReport')}
           </Link>
         ) : (
-          <p className="text-muted">Preparando el reporte…</p>
+          <p className="text-muted">{t('missions:progressPage.preparingReport')}</p>
         )}
       </div>
     )
@@ -74,13 +80,16 @@ const Status = ({
 
   return (
     <div className="flex flex-col gap-2 text-sm">
-      <ProgressBar percent={progress.progressPercent} label="Progreso de la misión" />
+      <ProgressBar
+        percent={progress.progressPercent}
+        label={t('missions:progressPage.missionProgress')}
+      />
       <p role="timer" aria-live="off" className="tabular-nums text-ink">
         {remaining === null
-          ? 'Confirmando la reserva del héroe…'
+          ? t('missions:panel.confirmingReservation')
           : remaining > 0
-            ? `Termina en ${countdownLabel(remaining)}`
-            : 'Terminando: el reporte llega en unos segundos'}
+            ? t('missions:panel.endsIn', { time: countdownLabel(remaining) })
+            : t('missions:panel.finishingUp')}
       </p>
     </div>
   )
@@ -91,6 +100,7 @@ const ProgressContent = ({
 }: {
   readonly enrollmentId: string
 }): React.JSX.Element => {
+  const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
   const [entries, setEntries] = useState<readonly ProgressEntry[]>([])
@@ -143,7 +153,7 @@ const ProgressContent = ({
             <h1 className="text-2xl font-semibold text-ink">{page.missionName}</h1>
           </header>
 
-          <Card title="Estado">
+          <Card title={t('missions:progressPage.status')}>
             <div className="flex flex-col gap-4">
               <Status progress={page} receivedAt={progress.dataUpdatedAt} />
               <HeroHealth hero={page.hero} />
@@ -151,15 +161,13 @@ const ProgressContent = ({
           </Card>
 
           <Card
-            title="Bitácora"
-            description="Lo que va pasando en la misión, a medida que ocurre. Lo más reciente, arriba."
+            title={t('missions:progressPage.logTitle')}
+            description={t('missions:progressPage.logDescription')}
           >
             {!page.simulated ? (
-              <p className="text-sm text-muted">
-                Tu héroe se prepara: la bitácora aparece en unos segundos.
-              </p>
+              <p className="text-sm text-muted">{t('missions:progressPage.preparingHero')}</p>
             ) : lines.length === 0 ? (
-              <p className="text-sm text-muted">Aún no ha pasado nada que contar.</p>
+              <p className="text-sm text-muted">{t('missions:progressPage.nothingYet')}</p>
             ) : (
               <ol aria-live="polite" className="flex max-h-[28rem] flex-col gap-1 overflow-y-auto">
                 {lines.map(({ seq, line }) =>
@@ -188,12 +196,15 @@ const ProgressContent = ({
  */
 export const MissionProgressPage = (): React.JSX.Element => {
   const { enrollmentId } = useParams<{ enrollmentId: string }>()
-  if (enrollmentId === undefined) return <p role="alert">Falta la misión que quieres seguir.</p>
+  const { t } = useTranslation()
+  if (enrollmentId === undefined) {
+    return <p role="alert">{t('missions:progressPage.missingMission')}</p>
+  }
 
   return (
-    <section aria-label="Seguimiento de misión" className="flex flex-col gap-6">
+    <section aria-label={t('missions:progressPage.label')} className="flex flex-col gap-6">
       <Link to="/missions" className="w-fit text-sm text-brand hover:underline">
-        ← Volver al tablón
+        {t('missions:detail.backToBoard')}
       </Link>
       <ProgressContent key={enrollmentId} enrollmentId={enrollmentId} />
     </section>
