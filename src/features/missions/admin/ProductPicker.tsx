@@ -71,10 +71,8 @@ export const ProductPicker = ({
         <p className="text-xs text-danger">{t('admin:missions.picker.linkedMissing')}</p>
       ) : (
         <p className="text-sm text-ink">
-          {t('admin:missions.picker.linkedTo', {
-            name: linked.data.name,
-            type: typeLabel(linked.data.type),
-          })}
+          {t('admin:missions.picker.linkedToPrefix')}{' '}
+          <span className="font-medium">{linked.data.name}</span> ({typeLabel(linked.data.type)})
         </p>
       )}
       {error !== undefined && (
