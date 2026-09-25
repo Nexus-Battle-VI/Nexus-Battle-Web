@@ -357,5 +357,98 @@
       "integrity": "O navegador não consegue verificar a integridade do arquivo.",
       "upload": "Não foi possível enviar a imagem. Selecione o arquivo e tente novamente."
     }
+  },
+  "missions": {
+    "failures": {
+      "session": "Sua sessão expirou. Faça login novamente para salvar.",
+      "forbidden": "Sua conta não pode editar missões: é necessário um administrador com segundo fator.",
+      "save": "Não foi possível salvar a missão."
+    },
+    "ai": {
+      "AGGRESSIVE": "Agressivo: sempre ataca",
+      "GUARDED": "Defensivo: se protege",
+      "BOSS": "Chefe: enfurece com pouca vida"
+    },
+    "image": {
+      "caminoTemplo": "Caminho para o templo",
+      "temploOlvidado": "Templo esquecido",
+      "camaraSellada": "Câmara selada",
+      "arenaCaidos": "Arena dos caídos",
+      "travesiaBosque": "Floresta sombria"
+    },
+    "objective": {
+      "NONE": "Narrativo (não avaliado)",
+      "DEFEAT_BOSS": "Derrotar o chefe final",
+      "CLEAR_ENCOUNTERS": "Superar encontros",
+      "MIN_HEALTH_PERCENT": "Terminar com um mínimo de vida",
+      "DEFEAT_MASTER": "Derrotar o Mestre",
+      "COLLECT_LOOT": "Conseguir saque"
+    },
+    "sections": {
+      "general": "Geral",
+      "objetivos": "Objetivos",
+      "encuentros": "Encontros",
+      "jefe": "Chefe e saque",
+      "master": "Mestre",
+      "recompensas": "Recompensas",
+      "reglas": "Combate",
+      "json": "JSON"
+    },
+    "validation": {
+      "health": "A vida deve ser um número inteiro de 1 ou mais.",
+      "attack": "O ataque deve ser um número inteiro de 0 ou mais.",
+      "defense": "A defesa deve ser um número inteiro de 0 ou mais.",
+      "fixedDamage": "O dano fixo deve ser um número inteiro de 0 ou mais.",
+      "dice": "Os dados vão de 1 a 100 e suas faces de 2 a 8000.",
+      "enrageThreshold": "O limite de fúria vai de 1% a 100%.",
+      "enrageBonus": "O ataque extra deve ser um número inteiro de 0 ou mais.",
+      "missionIdFormat": "Use de 3 a 100 caracteres: minúsculas, números, hífen ou sublinhado (msn_mi_mision).",
+      "missionIdTaken": "Já existe uma missão com esse identificador.",
+      "name": "Escreva o nome da missão.",
+      "summary": "Escreva um resumo para o painel.",
+      "narrative": "Escreva a história da missão.",
+      "duration": "A duração vai de 1 minuto a 7 dias (10.080 minutos).",
+      "recommendedPower": "O poder recomendado deve ser um número inteiro de 0 ou mais.",
+      "needObjective": "A missão precisa de pelo menos um objetivo.",
+      "objectiveText": "Escreva o objetivo.",
+      "encountersRange": "Indique de 1 a 50 encontros.",
+      "minHealthRange": "A vida mínima vai de 0% a 100%.",
+      "chooseLoot": "Escolha um saque do chefe final.",
+      "lootCount": "A quantidade vai de 1 a 100.",
+      "duplicateObjectiveIds": "Dois objetivos têm o mesmo identificador.",
+      "enemyName": "Escreva o nome do inimigo.",
+      "enemyRefMissing": "Falta o identificador.",
+      "enemyRefDuplicate": "Outro inimigo ou o chefe já usam esse identificador.",
+      "enemyUnused": "Este inimigo não aparece em nenhum encontro: adicione-o ou remova-o.",
+      "tooManyEncounters": "Cabem no máximo 49 encontros antes do chefe.",
+      "needEnemyGroup": "Adicione pelo menos um grupo de inimigos.",
+      "chooseListedEnemy": "Escolha um inimigo da lista.",
+      "countAtLeastOne": "A quantidade deve ser de 1 ou mais.",
+      "powerStep": "O reforço vai de 0% a 200%.",
+      "bossName": "Escreva o nome do chefe.",
+      "bossRefMissing": "Falta o identificador do chefe.",
+      "tooManyDrops": "Cabem no máximo 50 saques.",
+      "dropLabel": "Escreva o nome do saque.",
+      "probability": "A probabilidade vai de 0% a 100%.",
+      "rolls": "As tiradas vão de 1 a 100.",
+      "chooseProduct": "Escolha o produto com o buscador.",
+      "needMaster": "Adicione pelo menos um Mestre ou desative o Mestre.",
+      "needEvalPoint": "Escolha pelo menos um momento em que pode aparecer.",
+      "evalPointStale": "Um momento escolhido não existe mais: revise-os.",
+      "appearancesRange": "As aparições vão de 1 em diante.",
+      "masterName": "Escreva o nome do Mestre.",
+      "masterRefInvalid": "O identificador está faltando ou repetido.",
+      "levelOffset": "Os níveis extras devem ser um número inteiro de 0 ou mais.",
+      "chooseEpic": "Escolha a épica que entrega.",
+      "chooseEpicProduct": "Escolha o produto da épica com o buscador.",
+      "rewardLabel": "Escreva a recompensa.",
+      "turnDuration": "Um turno dura de 1 a 3600 segundos.",
+      "maxTurns": "O limite vai de 1 a 1000 turnos.",
+      "recovery": "A recuperação vai de 0% a 100%.",
+      "criticalChance": "A probabilidade de crítico vai de 0% a 100%.",
+      "criticalMultiplier": "O multiplicador de crítico vai de 1 a 1,8.",
+      "difficultyMultiplier": "O multiplicador vai de 0 a 10.",
+      "supportInt": "Deve ser um número inteiro de 0 a 100."
+    }
   }
 }

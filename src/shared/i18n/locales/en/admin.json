@@ -352,5 +352,98 @@
       "integrity": "The browser can't check the file's integrity.",
       "upload": "The image could not be uploaded. Select the file and try again."
     }
+  },
+  "missions": {
+    "failures": {
+      "session": "Your session expired. Sign in again to save.",
+      "forbidden": "Your account cannot edit missions: an administrator with a second factor is required.",
+      "save": "The mission could not be saved."
+    },
+    "ai": {
+      "AGGRESSIVE": "Aggressive: always attacks",
+      "GUARDED": "Defensive: guards itself",
+      "BOSS": "Boss: enrages at low health"
+    },
+    "image": {
+      "caminoTemplo": "Path to the temple",
+      "temploOlvidado": "Forgotten temple",
+      "camaraSellada": "Sealed chamber",
+      "arenaCaidos": "Arena of the fallen",
+      "travesiaBosque": "Gloomy forest"
+    },
+    "objective": {
+      "NONE": "Narrative (not evaluated)",
+      "DEFEAT_BOSS": "Defeat the final boss",
+      "CLEAR_ENCOUNTERS": "Clear encounters",
+      "MIN_HEALTH_PERCENT": "Finish with minimum health",
+      "DEFEAT_MASTER": "Defeat the Master",
+      "COLLECT_LOOT": "Get loot"
+    },
+    "sections": {
+      "general": "General",
+      "objetivos": "Objectives",
+      "encuentros": "Encounters",
+      "jefe": "Boss and loot",
+      "master": "Master",
+      "recompensas": "Rewards",
+      "reglas": "Combat",
+      "json": "JSON"
+    },
+    "validation": {
+      "health": "Health must be an integer of 1 or more.",
+      "attack": "Attack must be an integer of 0 or more.",
+      "defense": "Defense must be an integer of 0 or more.",
+      "fixedDamage": "Fixed damage must be an integer of 0 or more.",
+      "dice": "Dice range from 1 to 100 and their sides from 2 to 8000.",
+      "enrageThreshold": "The enrage threshold ranges from 1% to 100%.",
+      "enrageBonus": "The extra attack must be an integer of 0 or more.",
+      "missionIdFormat": "Use 3 to 100 characters: lowercase letters, numbers, hyphen or underscore (msn_mi_mision).",
+      "missionIdTaken": "A mission with that identifier already exists.",
+      "name": "Write the mission name.",
+      "summary": "Write a summary for the board.",
+      "narrative": "Write the mission story.",
+      "duration": "Duration ranges from 1 minute to 7 days (10,080 minutes).",
+      "recommendedPower": "The recommended power must be an integer of 0 or more.",
+      "needObjective": "The mission needs at least one objective.",
+      "objectiveText": "Write the objective.",
+      "encountersRange": "Specify 1 to 50 encounters.",
+      "minHealthRange": "Minimum health ranges from 0% to 100%.",
+      "chooseLoot": "Choose a piece of the final boss loot.",
+      "lootCount": "The amount ranges from 1 to 100.",
+      "duplicateObjectiveIds": "Two objectives have the same identifier.",
+      "enemyName": "Write the enemy name.",
+      "enemyRefMissing": "The identifier is missing.",
+      "enemyRefDuplicate": "Another enemy or the boss already use that identifier.",
+      "enemyUnused": "This enemy does not appear in any encounter: add it or remove it.",
+      "tooManyEncounters": "At most 49 encounters fit before the boss.",
+      "needEnemyGroup": "Add at least one enemy group.",
+      "chooseListedEnemy": "Choose an enemy from the list.",
+      "countAtLeastOne": "The amount must be 1 or more.",
+      "powerStep": "The boost ranges from 0% to 200%.",
+      "bossName": "Write the boss name.",
+      "bossRefMissing": "The boss identifier is missing.",
+      "tooManyDrops": "At most 50 loot items fit.",
+      "dropLabel": "Write the loot name.",
+      "probability": "The probability ranges from 0% to 100%.",
+      "rolls": "Rolls range from 1 to 100.",
+      "chooseProduct": "Choose the product with the search tool.",
+      "needMaster": "Add at least one Master or disable the Master.",
+      "needEvalPoint": "Choose at least one moment when it can appear.",
+      "evalPointStale": "A chosen moment no longer exists: review them.",
+      "appearancesRange": "Appearances range from 1 upward.",
+      "masterName": "Write the Master name.",
+      "masterRefInvalid": "The identifier is missing or repeated.",
+      "levelOffset": "The extra levels must be an integer of 0 or more.",
+      "chooseEpic": "Choose the epic it delivers.",
+      "chooseEpicProduct": "Choose the epic's product with the search tool.",
+      "rewardLabel": "Write the reward.",
+      "turnDuration": "A turn lasts from 1 to 3600 seconds.",
+      "maxTurns": "The cap ranges from 1 to 1000 turns.",
+      "recovery": "Recovery ranges from 0% to 100%.",
+      "criticalChance": "Critical chance ranges from 0% to 100%.",
+      "criticalMultiplier": "The critical multiplier ranges from 1 to 1.8.",
+      "difficultyMultiplier": "The multiplier ranges from 0 to 10.",
+      "supportInt": "Must be an integer from 0 to 100."
+    }
   }
 }

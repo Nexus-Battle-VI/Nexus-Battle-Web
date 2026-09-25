@@ -357,5 +357,98 @@
       "integrity": "Le navigateur ne peut pas vérifier l'intégrité du fichier.",
       "upload": "L'image n'a pas pu être téléversée. Sélectionnez le fichier et réessayez."
     }
+  },
+  "missions": {
+    "failures": {
+      "session": "Votre session a expiré. Reconnectez-vous pour enregistrer.",
+      "forbidden": "Votre compte ne peut pas modifier les missions : il faut un administrateur avec un second facteur.",
+      "save": "La mission n'a pas pu être enregistrée."
+    },
+    "ai": {
+      "AGGRESSIVE": "Agressif : attaque toujours",
+      "GUARDED": "Défensif : se protège",
+      "BOSS": "Boss : s'enrage à faible vie"
+    },
+    "image": {
+      "caminoTemplo": "Chemin vers le temple",
+      "temploOlvidado": "Temple oublié",
+      "camaraSellada": "Chambre scellée",
+      "arenaCaidos": "Arène des déchus",
+      "travesiaBosque": "Forêt sombre"
+    },
+    "objective": {
+      "NONE": "Narratif (non évalué)",
+      "DEFEAT_BOSS": "Vaincre le boss final",
+      "CLEAR_ENCOUNTERS": "Réussir des rencontres",
+      "MIN_HEALTH_PERCENT": "Terminer avec un minimum de vie",
+      "DEFEAT_MASTER": "Vaincre le Maître",
+      "COLLECT_LOOT": "Obtenir du butin"
+    },
+    "sections": {
+      "general": "Général",
+      "objetivos": "Objectifs",
+      "encuentros": "Rencontres",
+      "jefe": "Boss et butin",
+      "master": "Maître",
+      "recompensas": "Récompenses",
+      "reglas": "Combat",
+      "json": "JSON"
+    },
+    "validation": {
+      "health": "La vie doit être un entier de 1 ou plus.",
+      "attack": "L'attaque doit être un entier de 0 ou plus.",
+      "defense": "La défense doit être un entier de 0 ou plus.",
+      "fixedDamage": "Les dégâts fixes doivent être un entier de 0 ou plus.",
+      "dice": "Les dés vont de 1 à 100 et leurs faces de 2 à 8000.",
+      "enrageThreshold": "Le seuil d'enragement va de 1 % à 100 %.",
+      "enrageBonus": "L'attaque supplémentaire doit être un entier de 0 ou plus.",
+      "missionIdFormat": "Utilisez de 3 à 100 caractères : minuscules, chiffres, trait d'union ou souligné (msn_mi_mision).",
+      "missionIdTaken": "Une mission avec cet identifiant existe déjà.",
+      "name": "Écrivez le nom de la mission.",
+      "summary": "Écrivez un résumé pour le tableau.",
+      "narrative": "Écrivez l'histoire de la mission.",
+      "duration": "La durée va de 1 minute à 7 jours (10 080 minutes).",
+      "recommendedPower": "La puissance recommandée doit être un entier de 0 ou plus.",
+      "needObjective": "La mission a besoin d'au moins un objectif.",
+      "objectiveText": "Écrivez l'objectif.",
+      "encountersRange": "Indiquez de 1 à 50 rencontres.",
+      "minHealthRange": "La vie minimale va de 0 % à 100 %.",
+      "chooseLoot": "Choisissez un butin du boss final.",
+      "lootCount": "La quantité va de 1 à 100.",
+      "duplicateObjectiveIds": "Deux objectifs ont le même identifiant.",
+      "enemyName": "Écrivez le nom de l'ennemi.",
+      "enemyRefMissing": "L'identifiant est manquant.",
+      "enemyRefDuplicate": "Un autre ennemi ou le boss utilise déjà cet identifiant.",
+      "enemyUnused": "Cet ennemi n'apparaît dans aucune rencontre : ajoutez-le ou retirez-le.",
+      "tooManyEncounters": "Il tient au maximum 49 rencontres avant le boss.",
+      "needEnemyGroup": "Ajoutez au moins un groupe d'ennemis.",
+      "chooseListedEnemy": "Choisissez un ennemi de la liste.",
+      "countAtLeastOne": "La quantité doit être de 1 ou plus.",
+      "powerStep": "Le renforcement va de 0 % à 200 %.",
+      "bossName": "Écrivez le nom du boss.",
+      "bossRefMissing": "L'identifiant du boss est manquant.",
+      "tooManyDrops": "Il tient au maximum 50 butins.",
+      "dropLabel": "Écrivez le nom du butin.",
+      "probability": "La probabilité va de 0 % à 100 %.",
+      "rolls": "Les tirages vont de 1 à 100.",
+      "chooseProduct": "Choisissez le produit avec le moteur de recherche.",
+      "needMaster": "Ajoutez au moins un Maître ou désactivez le Maître.",
+      "needEvalPoint": "Choisissez au moins un moment où il peut apparaître.",
+      "evalPointStale": "Un moment choisi n'existe plus : révisez-les.",
+      "appearancesRange": "Les apparitions vont de 1 et plus.",
+      "masterName": "Écrivez le nom du Maître.",
+      "masterRefInvalid": "L'identifiant est manquant ou répété.",
+      "levelOffset": "Les niveaux supplémentaires doivent être un entier de 0 ou plus.",
+      "chooseEpic": "Choisissez l'épique qu'il délivre.",
+      "chooseEpicProduct": "Choisissez le produit de l'épique avec le moteur de recherche.",
+      "rewardLabel": "Écrivez la récompense.",
+      "turnDuration": "Un tour dure de 1 à 3600 secondes.",
+      "maxTurns": "Le plafond va de 1 à 1000 tours.",
+      "recovery": "La récupération va de 0 % à 100 %.",
+      "criticalChance": "La probabilité de critique va de 0 % à 100 %.",
+      "criticalMultiplier": "Le multiplicateur critique va de 1 à 1,8.",
+      "difficultyMultiplier": "Le multiplicateur va de 0 à 10.",
+      "supportInt": "Doit être un entier de 0 à 100."
+    }
   }
 }
