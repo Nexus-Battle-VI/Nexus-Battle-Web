@@ -1,21 +1,17 @@
 import { useState, type SyntheticEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
-import { HttpError } from '@/lib/http'
 import { formatDateTime } from '@/lib/format'
+import { countLabel } from '@/shared/i18n/format'
+import { describeFollowError } from './api'
 import { useWatchlist } from './useWatchlist'
-
-const followErrorMessage = (error: unknown): string => {
-  if (error instanceof HttpError && error.status === 409) return 'Ya sigues esta subasta.'
-  if (error instanceof HttpError && (error.status === 404 || error.status === 422))
-    return 'La subasta no está disponible para seguimiento.'
-  return 'No se pudo seguir la subasta. Inténtalo de nuevo.'
-}
 
 /** Pantalla del jugador para administrar su lista privada de subastas (HU-68). */
 export const AuctionPage = (): React.JSX.Element => {
   const { items, isLoading, loadError, follow, unfollow, isSaving } = useWatchlist()
   const [auctionId, setAuctionId] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const submit = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
@@ -26,16 +22,21 @@ export const AuctionPage = (): React.JSX.Element => {
       await follow(id)
       setAuctionId('')
     } catch (cause: unknown) {
-      setError(followErrorMessage(cause))
+      setError(describeFollowError(cause))
     }
   }
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
-      <Breadcrumb items={[{ label: 'Inicio', to: '/ecommerce' }, { label: 'Subastas' }]} />
+      <Breadcrumb
+        items={[
+          { label: t('auction:crumbs.home'), to: '/ecommerce' },
+          { label: t('auction:crumbs.watchlist') },
+        ]}
+      />
       <header>
-        <h1 className="text-2xl font-semibold text-ink">Subastas en seguimiento</h1>
-        <p className="mt-1 text-sm text-muted">Recibe avisos de cambios y del cierre próximo.</p>
+        <h1 className="text-2xl font-semibold text-ink">{t('auction:watchlist.title')}</h1>
+        <p className="mt-1 text-sm text-muted">{t('auction:watchlist.subtitle')}</p>
       </header>
 
       <form
@@ -45,7 +46,7 @@ export const AuctionPage = (): React.JSX.Element => {
         className="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4 sm:flex-row sm:items-end"
       >
         <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-ink">
-          Identificador de subasta
+          {t('auction:watchlist.idLabel')}
           <input
             className="rounded-md border border-border bg-surface px-3 py-2"
             value={auctionId}
@@ -59,7 +60,7 @@ export const AuctionPage = (): React.JSX.Element => {
           disabled={isSaving || auctionId.trim().length === 0}
           className="rounded-md bg-brand px-4 py-2 font-medium text-white disabled:opacity-50"
         >
-          Seguir subasta
+          {t('auction:watchlist.follow')}
         </button>
       </form>
       {error !== null && (
@@ -69,16 +70,16 @@ export const AuctionPage = (): React.JSX.Element => {
       )}
       {isLoading && (
         <p role="status" className="text-sm text-muted">
-          Cargando...
+          {t('auction:loading')}
         </p>
       )}
       {!isLoading && loadError !== null && (
         <p role="alert" className="text-sm text-danger">
-          No se pudo cargar tu lista de seguimiento.
+          {t('auction:watchlist.loadFailed')}
         </p>
       )}
       {!isLoading && loadError === null && items.length === 0 && (
-        <p className="text-sm text-muted">Aún no sigues ninguna subasta.</p>
+        <p className="text-sm text-muted">{t('auction:watchlist.empty')}</p>
       )}
       {!isLoading && loadError === null && items.length > 0 && (
         <ul className="grid gap-4 md:grid-cols-2">
@@ -86,8 +87,12 @@ export const AuctionPage = (): React.JSX.Element => {
             <li key={auction.id} className="rounded-lg border border-border bg-surface-raised p-4">
               <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between sm:gap-3">
                 <div className="min-w-0">
-                  <h2 className="break-words font-semibold text-ink">Subasta {auction.id}</h2>
-                  <p className="break-words text-sm text-muted">Producto {auction.productId}</p>
+                  <h2 className="break-words font-semibold text-ink">
+                    {t('auction:watchlist.auction', { id: auction.id })}
+                  </h2>
+                  <p className="break-words text-sm text-muted">
+                    {t('auction:product', { id: auction.productId })}
+                  </p>
                 </div>
                 <span className="rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success">
                   {auction.status}
@@ -95,18 +100,20 @@ export const AuctionPage = (): React.JSX.Element => {
               </div>
               <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-muted">Puja mínima</dt>
-                  <dd className="font-medium text-ink">{auction.minimumBidCredits} créditos</dd>
+                  <dt className="text-muted">{t('auction:watchlist.minimumBid')}</dt>
+                  <dd className="font-medium text-ink">
+                    {countLabel(t, 'common:count.credits', auction.minimumBidCredits)}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-muted">Cierra</dt>
+                  <dt className="text-muted">{t('auction:watchlist.closes')}</dt>
                   <dd className="break-words font-medium text-ink">
                     {formatDateTime(auction.closesAt)}
                   </dd>
                 </div>
               </dl>
               <p className="mt-3 text-xs text-muted">
-                Siguiendo desde {formatDateTime(followedAt)}
+                {t('auction:watchlist.since', { date: formatDateTime(followedAt) })}
               </p>
               <button
                 type="button"
@@ -116,7 +123,7 @@ export const AuctionPage = (): React.JSX.Element => {
                 }}
                 className="mt-4 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink disabled:opacity-50"
               >
-                Dejar de seguir
+                {t('auction:watchlist.unfollow')}
               </button>
             </li>
           ))}
