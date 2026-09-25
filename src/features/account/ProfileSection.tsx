@@ -1,8 +1,11 @@
 import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { countryOptions } from './countries'
 
 import { Button } from '@/components/ui/Button'
 import { statusLabel } from '@/lib/format'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import { validateDisplayName, type OwnAccount, type OwnAccountEdit } from './api'
 import { useAccountContext } from './outletContext'
 import { useUpdateOwnAccount } from './useOwnAccount'
@@ -13,9 +16,6 @@ import {
   FIELD_LABEL_CLASS,
   READONLY_FIELD_CLASS,
 } from './fieldStyles'
-import { useTranslation } from 'react-i18next'
-import { useLanguage } from '@/shared/i18n/language'
-import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Informacion personal de la cuenta (HU-05.4).

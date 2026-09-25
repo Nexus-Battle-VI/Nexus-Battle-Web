@@ -59,5 +59,14 @@
     "MARKED": "Flagged",
     "WAITING_FOR_PLAYERS": "Waiting for players",
     "PREPARING": "Preparing battle"
+  },
+  "breadcrumb": "Breadcrumb",
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
+  },
+  "moduleUnavailable": {
+    "title": "Module not available.",
+    "body": "This feature is not yet available in this increment."
   }
 }

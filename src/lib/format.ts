@@ -1,5 +1,5 @@
-import { formatLocale } from '@/shared/i18n/format'
 import { i18n } from '@/shared/i18n/i18n'
+import { formatLocale } from '@/shared/i18n/format'
 
 /**
  * Formato de importes.

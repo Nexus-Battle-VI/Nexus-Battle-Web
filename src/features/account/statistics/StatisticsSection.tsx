@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { fetchMissionAchievements } from '@/features/missions/missionAchievementApi'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 
 import { toPlayerAchievements } from './missionAchievements'
 import { StatisticsPanel } from './StatisticsPanel'
 import type { AchievementsPanelState, StatisticsPanelState } from './types'
-import { useTranslation } from 'react-i18next'
-import { useLanguage } from '@/shared/i18n/language'
-import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * "Estadísticas y logros" (HU-06.4) — sección hija de "Mi cuenta"

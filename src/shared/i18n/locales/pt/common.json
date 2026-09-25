@@ -64,5 +64,14 @@
     "MARKED": "Sinalizado",
     "WAITING_FOR_PLAYERS": "Aguardando jogadores",
     "PREPARING": "Preparando batalha"
+  },
+  "breadcrumb": "Trilha de navegação",
+  "password": {
+    "show": "Mostrar senha",
+    "hide": "Ocultar senha"
+  },
+  "moduleUnavailable": {
+    "title": "Módulo indisponível.",
+    "body": "Esta funcionalidade ainda não está disponível neste incremento."
   }
 }

@@ -1,7 +1,8 @@
+import { useTranslation } from 'react-i18next'
+
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Avatar } from '@/components/ui/Avatar'
 import type { OwnAccount } from './api'
-import { useTranslation } from 'react-i18next'
 import { roleLabel } from '@/shared/rbac'
 
 /**

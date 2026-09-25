@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
-import { confirmTotp, enrollTotp, type TotpAssociation } from './api'
-import { useTranslation } from 'react-i18next'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
+import { confirmTotp, enrollTotp, type TotpAssociation } from './api'
 
 const CODE_INPUT_CLASS =
   'block w-40 rounded-md border border-border bg-[var(--nb-field)] px-3 py-2 text-sm tracking-widest text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'

@@ -2,10 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { PasswordField } from '@/components/ui/PasswordField'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import { LEGAL_DOCUMENTS, SECURITY_QUESTIONS } from './constants'
 import { confirmRegistration, registerAccount } from './api'
 import {
@@ -19,9 +22,6 @@ import {
   type RegistrationErrors,
   type RegistrationValues,
 } from './validation'
-import { useTranslation } from 'react-i18next'
-import { useLanguage } from '@/shared/i18n/language'
-import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * El tema lo gobierna la fuente unica global (`@/shared/theme`) a traves de

@@ -1,15 +1,15 @@
 import { useId, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { PasswordField } from '@/components/ui/PasswordField'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import { TotpEnrollment } from './security/TotpEnrollment'
 import { changeOwnPassword, type ChangePasswordInput } from './security/passwordApi'
 import { FIELD_CLASS, FIELD_ERROR_CLASS, FIELD_LABEL_CLASS } from './fieldStyles'
-import { useTranslation } from 'react-i18next'
-import { useLanguage } from '@/shared/i18n/language'
-import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * Seguridad de la cuenta (HU-05.4).

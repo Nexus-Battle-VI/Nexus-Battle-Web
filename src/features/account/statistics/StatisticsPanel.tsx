@@ -1,16 +1,16 @@
 import type { ComponentType, ReactNode } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { Gamepad2, Swords, Trophy, TrendingUp } from '@/components/ui/icons'
+import { formatInteger, formatLocale } from '@/shared/i18n/format'
 import type {
   AchievementsPanelState,
   PlayerAchievement,
   PlayerStatistics,
   StatisticsPanelState,
 } from './types'
-import { useTranslation } from 'react-i18next'
-import { formatInteger, formatLocale } from '@/shared/i18n/format'
 
 /**
  * Panel de estadísticas y logros (HU-06.4) — COMPONENTE PRESENTACIONAL PURO.

@@ -1,16 +1,16 @@
 import { Link, Outlet } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { ChevronLeft } from '@/components/ui/icons'
 import { HttpError } from '@/lib/http'
 import { ECOMMERCE_PATH } from '@/routes/routes'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import { AccountSummary } from './AccountSummary'
 import { AccountSectionNav } from './AccountSectionNav'
 import type { AccountOutletContext } from './outletContext'
 import { useOwnAccount } from './useOwnAccount'
-import { useTranslation } from 'react-i18next'
-import { useLanguage } from '@/shared/i18n/language'
-import { describeFailure } from '@/shared/i18n/errors'
 
 /**
  * "Mi cuenta" (HU-05.4).

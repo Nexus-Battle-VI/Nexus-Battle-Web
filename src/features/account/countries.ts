@@ -1,4 +1,5 @@
 import { currentLanguage } from '@/shared/i18n/language'
+
 /** Same assigned ISO alpha-2 vocabulary accepted by Account.countryCode. */
 const codes = (
   'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ ' +

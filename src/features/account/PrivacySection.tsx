@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -14,8 +16,6 @@ import {
 import { AccountDeletionRequest } from './privacy/AccountDeletionRequest'
 import { useOwnPersonalData } from './useOwnAccount'
 import { countryName } from './countries'
-import { useTranslation } from 'react-i18next'
-import type { TFunction } from 'i18next'
 
 interface SummaryRow {
   readonly label: string

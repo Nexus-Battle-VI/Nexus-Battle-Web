@@ -1,8 +1,8 @@
 import { NavLink } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { accountSectionsForRoles } from './sections'
-import { useTranslation } from 'react-i18next'
 
 export interface AccountSectionNavProps {
   readonly roles: readonly string[]

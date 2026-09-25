@@ -1,4 +1,5 @@
 import { localizedMessages } from '@/shared/i18n/messages'
+
 /**
  * Reglas deterministas del formulario de login (HU-02).
  *

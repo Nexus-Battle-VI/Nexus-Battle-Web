@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode, SyntheticEvent } from 'react'
 import { Link } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
@@ -23,7 +24,6 @@ import {
   validateEmailStep,
   validatePasswordStep,
 } from './validation'
-import { useTranslation } from 'react-i18next'
 
 type Step = 'identify' | 'questions' | 'code' | 'password' | 'done'
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode, SyntheticEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
@@ -26,7 +27,6 @@ import {
   validateLoginForm,
   type LoginFormValues,
 } from './validation'
-import { useTranslation } from 'react-i18next'
 
 type Stage = 'credentials' | 'selection' | 'secondFactor' | 'success'
 

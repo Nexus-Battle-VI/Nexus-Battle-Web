@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { formatDateTime } from '@/lib/format'
 import { HttpError } from '@/lib/http'
 import { requestOwnAccountDeletion, type AccountDeletionRequest as DeletionReceipt } from './api'
-import { useTranslation } from 'react-i18next'
 
 export type AccountDeletionRequestTransport = () => Promise<DeletionReceipt>
 

@@ -64,5 +64,14 @@
     "MARKED": "Signalé",
     "WAITING_FOR_PLAYERS": "En attente de joueurs",
     "PREPARING": "Préparation du combat"
+  },
+  "breadcrumb": "Fil d'Ariane",
+  "password": {
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe"
+  },
+  "moduleUnavailable": {
+    "title": "Module non disponible.",
+    "body": "Cette fonctionnalité n'est pas encore disponible dans cet incrément."
   }
 }

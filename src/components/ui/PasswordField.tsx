@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { InputHTMLAttributes } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Eye, EyeOff } from './icons'
 
@@ -30,6 +31,7 @@ export const PasswordField = ({
   ...rest
 }: PasswordFieldProps): React.JSX.Element => {
   const [visible, setVisible] = useState(false)
+  const { t } = useTranslation()
 
   return (
     <div className="relative">
@@ -43,7 +45,7 @@ export const PasswordField = ({
         type="button"
         // El nombre accesible describe la ACCION disponible, y cambia con el
         // estado; `aria-pressed` comunica ademas si el campo esta revelado.
-        aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        aria-label={visible ? t('common:password.hide') : t('common:password.show')}
         aria-pressed={visible}
         aria-controls={id}
         onClick={() => {

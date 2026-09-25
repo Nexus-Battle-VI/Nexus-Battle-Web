@@ -1,5 +1,6 @@
-import { SECURITY_QUESTIONS } from './constants'
 import { localizedMessages } from '@/shared/i18n/messages'
+
+import { SECURITY_QUESTIONS } from './constants'
 
 /**
  * Reglas deterministas de HU-01.

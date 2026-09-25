@@ -1,5 +1,6 @@
-import { Card } from '@/components/ui/Card'
 import { useTranslation } from 'react-i18next'
+
+import { Card } from '@/components/ui/Card'
 
 /**
  * Suscripciones (HU-05.4).

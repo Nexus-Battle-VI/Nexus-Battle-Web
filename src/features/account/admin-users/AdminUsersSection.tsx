@@ -1,4 +1,5 @@
 import { useState, type SyntheticEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { Download } from '@/components/ui/icons'
@@ -20,7 +21,6 @@ import {
   type AdminAccountsExportTransport,
   type AdminAccountsTransport,
 } from './useAdminAccounts'
-import { useTranslation } from 'react-i18next'
 
 type SearchField = 'id' | 'email' | 'firstNames' | 'displayName'
 type RoleFilter = '' | AdminAccountRole

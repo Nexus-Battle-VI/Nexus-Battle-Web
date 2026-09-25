@@ -1,6 +1,6 @@
 import { httpClient, type HttpDownload } from '@/lib/http'
-import type { Language } from '@/shared/i18n/languages'
 import { i18n } from '@/shared/i18n/i18n'
+import type { Language } from '@/shared/i18n/languages'
 
 /**
  * Transporte de la cuenta propia contra Account (HU-05.4).
