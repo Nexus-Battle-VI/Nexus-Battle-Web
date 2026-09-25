@@ -2,37 +2,6 @@
   "loading": "Cargando...",
   "empty": "No hay elementos para mostrar.",
   "cancel": "Cancelar",
-  "number": {
-    "thousand": "mil",
-    "million": "M"
-  },
-  "theme": {
-    "group": "Tema de la interfaz",
-    "light": "Light",
-    "dark": "Dark"
-  },
-  "count": {
-    "credits_one": "{{value}} crédito",
-    "credits_many": "{{value}} de créditos",
-    "credits_other": "{{value}} créditos",
-    "players_one": "{{value}} jugador",
-    "players_many": "{{value}} de jugadores",
-    "players_other": "{{value}} jugadores",
-    "objects_one": "{{value}} objeto",
-    "objects_many": "{{value}} de objetos",
-    "objects_other": "{{value}} objetos",
-    "turns_one": "{{value}} turno",
-    "turns_many": "{{value}} de turnos",
-    "turns_other": "{{value}} turnos",
-    "rooms_one": "{{value}} sala",
-    "rooms_many": "{{value}} de salas",
-    "rooms_other": "{{value}} salas"
-  },
-  "hero3d": {
-    "loading": "Cargando vista previa…",
-    "unavailable": "Vista previa 3D no disponible en este entorno.",
-    "unavailableFor": "Vista previa no disponible para \"{{id}}\"."
-  },
   "back": "Volver",
   "yes": "Sí",
   "no": "No",
@@ -73,5 +42,31 @@
   "moduleUnavailable": {
     "title": "Módulo no disponible.",
     "body": "Esta funcionalidad todavía no está disponible en este incremento."
+  },
+  "number": {
+    "thousand": "mil",
+    "million": "M"
+  },
+  "theme": {
+    "group": "Tema de la interfaz",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "count": {
+    "credits_one": "{{value}} crédito",
+    "credits_many": "{{value}} de créditos",
+    "credits_other": "{{value}} créditos",
+    "players_one": "{{value}} jugador",
+    "players_many": "{{value}} de jugadores",
+    "players_other": "{{value}} jugadores",
+    "objects_one": "{{value}} objeto",
+    "objects_many": "{{value}} de objetos",
+    "objects_other": "{{value}} objetos",
+    "turns_one": "{{value}} turno",
+    "turns_many": "{{value}} de turnos",
+    "turns_other": "{{value}} turnos",
+    "rooms_one": "{{value}} sala",
+    "rooms_many": "{{value}} de salas",
+    "rooms_other": "{{value}} salas"
   }
 }

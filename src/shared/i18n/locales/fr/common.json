@@ -2,37 +2,6 @@
   "loading": "Chargement...",
   "empty": "Aucun élément à afficher.",
   "cancel": "Annuler",
-  "number": {
-    "thousand": "k",
-    "million": "M"
-  },
-  "theme": {
-    "group": "Thème de l'interface",
-    "light": "Clair",
-    "dark": "Sombre"
-  },
-  "count": {
-    "credits_one": "{{value}} crédit",
-    "credits_many": "{{value}} de crédits",
-    "credits_other": "{{value}} crédits",
-    "players_one": "{{value}} joueur",
-    "players_many": "{{value}} de joueurs",
-    "players_other": "{{value}} joueurs",
-    "objects_one": "{{value}} objet",
-    "objects_many": "{{value}} d'objets",
-    "objects_other": "{{value}} objets",
-    "turns_one": "{{value}} tour",
-    "turns_many": "{{value}} de tours",
-    "turns_other": "{{value}} tours",
-    "rooms_one": "{{value}} salon",
-    "rooms_many": "{{value}} de salons",
-    "rooms_other": "{{value}} salons"
-  },
-  "hero3d": {
-    "loading": "Chargement de l'aperçu…",
-    "unavailable": "L'aperçu 3D n'est pas disponible dans cet environnement.",
-    "unavailableFor": "Aperçu indisponible pour « {{id}} »."
-  },
   "back": "Retour",
   "yes": "Oui",
   "no": "Non",
@@ -73,5 +42,31 @@
   "moduleUnavailable": {
     "title": "Module non disponible.",
     "body": "Cette fonctionnalité n'est pas encore disponible dans cet incrément."
+  },
+  "number": {
+    "thousand": "k",
+    "million": "M"
+  },
+  "theme": {
+    "group": "Thème de l'interface",
+    "light": "Clair",
+    "dark": "Sombre"
+  },
+  "count": {
+    "credits_one": "{{value}} crédit",
+    "credits_many": "{{value}} de crédits",
+    "credits_other": "{{value}} crédits",
+    "players_one": "{{value}} joueur",
+    "players_many": "{{value}} de joueurs",
+    "players_other": "{{value}} joueurs",
+    "objects_one": "{{value}} objet",
+    "objects_many": "{{value}} d'objets",
+    "objects_other": "{{value}} objets",
+    "turns_one": "{{value}} tour",
+    "turns_many": "{{value}} de tours",
+    "turns_other": "{{value}} tours",
+    "rooms_one": "{{value}} salon",
+    "rooms_many": "{{value}} de salons",
+    "rooms_other": "{{value}} salons"
   }
 }

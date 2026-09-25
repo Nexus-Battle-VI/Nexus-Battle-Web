@@ -2,32 +2,6 @@
   "loading": "Loading...",
   "empty": "There is nothing to show.",
   "cancel": "Cancel",
-  "number": {
-    "thousand": "k",
-    "million": "M"
-  },
-  "theme": {
-    "group": "Interface theme",
-    "light": "Light",
-    "dark": "Dark"
-  },
-  "count": {
-    "credits_one": "{{value}} credit",
-    "credits_other": "{{value}} credits",
-    "players_one": "{{value}} player",
-    "players_other": "{{value}} players",
-    "objects_one": "{{value}} item",
-    "objects_other": "{{value}} items",
-    "turns_one": "{{value}} turn",
-    "turns_other": "{{value}} turns",
-    "rooms_one": "{{value}} room",
-    "rooms_other": "{{value}} rooms"
-  },
-  "hero3d": {
-    "loading": "Loading preview…",
-    "unavailable": "3D preview is not available in this environment.",
-    "unavailableFor": "Preview not available for \"{{id}}\"."
-  },
   "back": "Back",
   "yes": "Yes",
   "no": "No",
@@ -68,5 +42,26 @@
   "moduleUnavailable": {
     "title": "Module not available.",
     "body": "This feature is not yet available in this increment."
+  },
+  "number": {
+    "thousand": "k",
+    "million": "M"
+  },
+  "theme": {
+    "group": "Interface theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "count": {
+    "credits_one": "{{value}} credit",
+    "credits_other": "{{value}} credits",
+    "players_one": "{{value}} player",
+    "players_other": "{{value}} players",
+    "objects_one": "{{value}} item",
+    "objects_other": "{{value}} items",
+    "turns_one": "{{value}} turn",
+    "turns_other": "{{value}} turns",
+    "rooms_one": "{{value}} room",
+    "rooms_other": "{{value}} rooms"
   }
 }
