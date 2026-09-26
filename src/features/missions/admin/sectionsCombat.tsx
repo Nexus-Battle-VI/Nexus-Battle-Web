@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/form/CheckboxField'
@@ -31,6 +32,7 @@ import {
 import type { FieldErrors } from './missionContentValidation'
 import { ProductPicker } from './ProductPicker'
 import type { SectionProps } from './sectionsContent'
+import { i18n } from '@/shared/i18n/i18n'
 
 const ALL_AI: readonly FighterAi[] = ['AGGRESSIVE', 'GUARDED', 'BOSS']
 const BOSS_AI: readonly FighterAi[] = ['BOSS', 'AGGRESSIVE', 'GUARDED']
@@ -39,8 +41,7 @@ const SUBTYPE_OPTIONS = HERO_SUBTYPES.map((subtype) => ({
   label: heroTypeLabel(subtype),
 }))
 
-const POWER_STEP_HINT =
-  'Sube vida, ataque y defensa enemigas en este encuentro: 10 % es un 10 % más. Vacío o 0: sin refuerzo.'
+const POWER_STEP_HINT = (): string => i18n.t('admin:missions.combat.powerStepHint')
 
 const percentText = (fraction: number): string =>
   `${(Math.round(fraction * 1000) / 10).toLocaleString('es-CO')} %`
@@ -53,6 +54,7 @@ const moved = <T,>(list: readonly T[], from: number, to: number): readonly T[] =
 }
 
 const EnemyTypes = ({ content, onChange, errors }: SectionProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const appearances = appearancesOf(content)
   const update = (index: number, changes: Partial<ContentEnemy>): void => {
     onChange({
@@ -82,7 +84,7 @@ const EnemyTypes = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
         ...content.enemies,
         {
           enemyRef: uniqueRef('enemigo', taken),
-          name: 'Nuevo enemigo',
+          name: t('admin:missions.combat.newEnemy'),
           count: 0,
           description: null,
           profile: newEnemyProfile(),
@@ -94,28 +96,29 @@ const EnemyTypes = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
   return (
     <section aria-labelledby="tipos-de-enemigo" className="flex flex-col gap-3">
       <h3 id="tipos-de-enemigo" className="text-base font-semibold text-ink">
-        Tipos de enemigo
+        {t('admin:missions.combat.enemyTypesTitle')}
       </h3>
-      <p className="text-sm text-muted">
-        Cada tipo se define una vez. Cuántos hay en total lo dicen los encuentros.
-      </p>
+      <p className="text-sm text-muted">{t('admin:missions.combat.enemyTypesHelp')}</p>
       <ListError message={errors.enemies} />
       {content.enemies.map((enemy, index) => {
         const path = `enemies.${String(index)}`
-        const title = enemy.name.trim() === '' ? `Enemigo ${String(index + 1)}` : enemy.name
+        const title =
+          enemy.name.trim() === ''
+            ? t('admin:missions.combat.enemyN', { n: index + 1 })
+            : enemy.name
         const total = appearances.get(enemy.enemyRef) ?? 0
         return (
           <ItemBox
             key={enemy.enemyRef}
             title={title}
-            removeLabel={`Quitar ${title}`}
+            removeLabel={t('admin:missions.combat.remove', { title })}
             onRemove={() => {
               remove(index)
             }}
           >
             <div className="grid gap-3 md:grid-cols-2">
               <TextField
-                label="Nombre"
+                label={t('admin:missions.combat.name')}
                 value={enemy.name}
                 error={errors[`${path}.name`]}
                 onChange={(event) => {
@@ -123,7 +126,7 @@ const EnemyTypes = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
                 }}
               />
               <TextareaField
-                label="Descripción (opcional)"
+                label={t('admin:missions.combat.descriptionOptional')}
                 rows={2}
                 value={enemy.description ?? ''}
                 onChange={(event) => {
@@ -132,8 +135,10 @@ const EnemyTypes = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
               />
             </div>
             <p className="text-sm text-ink">
-              En total: <span className="font-medium">{total}</span> en los encuentros.{' '}
-              <span className="text-xs text-muted">Identificador: {enemy.enemyRef}</span>
+              {t('admin:missions.combat.totalInEncounters', { total })}{' '}
+              <span className="text-xs text-muted">
+                {t('admin:missions.combat.identifier', { ref: enemy.enemyRef })}
+              </span>
             </p>
             <ListError message={errors[`${path}.count`] ?? errors[`${path}.enemyRef`]} />
             <FighterFields
@@ -150,7 +155,7 @@ const EnemyTypes = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
       })}
       <div>
         <Button variant="secondary" onClick={add}>
-          Añadir tipo de enemigo
+          {t('admin:missions.combat.addEnemyType')}
         </Button>
       </div>
     </section>
@@ -158,6 +163,7 @@ const EnemyTypes = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
 }
 
 const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const regular = regularEncountersOf(content)
   const setRegular = (next: readonly ContentEncounter[]): void => {
     onChange(withRegularEncounters(content, next))
@@ -178,12 +184,9 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
   return (
     <section aria-labelledby="encuentros" className="flex flex-col gap-3">
       <h3 id="encuentros" className="text-base font-semibold text-ink">
-        Encuentros
+        {t('admin:missions.combat.encountersTitle')}
       </h3>
-      <p className="text-sm text-muted">
-        Se juegan en este orden. Después del último llega el jefe final, que se configura en su
-        pestaña.
-      </p>
+      <p className="text-sm text-muted">{t('admin:missions.combat.encountersHelp')}</p>
       <ListError message={errors.encounters} />
       {regular.map((encounter, index) => {
         const path = `encounters.${String(index)}`
@@ -198,8 +201,8 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
         return (
           <ItemBox
             key={`encuentro-${number}`}
-            title={`Encuentro ${number}`}
-            removeLabel={`Quitar el encuentro ${number}`}
+            title={t('admin:missions.combat.encounterN', { n: number })}
+            removeLabel={t('admin:missions.combat.removeEncounterN', { n: number })}
             onRemove={() => {
               setRegular(regular.filter((_, position) => position !== index))
             }}
@@ -208,22 +211,22 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
               <Button
                 variant="secondary"
                 disabled={index === 0}
-                aria-label={`Subir el encuentro ${number}`}
+                aria-label={t('admin:missions.combat.raiseEncounterN', { n: number })}
                 onClick={() => {
                   setRegular(moved(regular, index, index - 1))
                 }}
               >
-                Subir
+                {t('admin:missions.combat.up')}
               </Button>
               <Button
                 variant="secondary"
                 disabled={index === regular.length - 1}
-                aria-label={`Bajar el encuentro ${number}`}
+                aria-label={t('admin:missions.combat.lowerEncounterN', { n: number })}
                 onClick={() => {
                   setRegular(moved(regular, index, index + 1))
                 }}
               >
-                Bajar
+                {t('admin:missions.combat.down')}
               </Button>
             </div>
             {encounter.enemies.map((group, groupIndex) => {
@@ -234,9 +237,9 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
                   className="grid items-start gap-2 sm:grid-cols-[1fr_8rem_auto]"
                 >
                   <SelectField
-                    label={`Grupo ${groupNumber}: enemigo`}
+                    label={t('admin:missions.combat.groupEnemy', { n: groupNumber })}
                     value={group.enemyRef}
-                    placeholder="Elige un enemigo"
+                    placeholder={t('admin:missions.combat.chooseEnemy')}
                     options={enemyOptions}
                     error={errors[`${path}.enemies.${String(groupIndex)}`]}
                     onChange={(event) => {
@@ -244,7 +247,7 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
                     }}
                   />
                   <NumberField
-                    label={`Grupo ${groupNumber}: cantidad`}
+                    label={t('admin:missions.combat.groupCount', { n: groupNumber })}
                     value={group.count}
                     min={1}
                     onChange={(count) => {
@@ -254,14 +257,17 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
                   <Button
                     variant="secondary"
                     className="sm:mt-6"
-                    aria-label={`Quitar el grupo ${groupNumber} del encuentro ${number}`}
+                    aria-label={t('admin:missions.combat.removeGroupN', {
+                      group: groupNumber,
+                      encounter: number,
+                    })}
                     onClick={() => {
                       update(index, {
                         enemies: encounter.enemies.filter((_, position) => position !== groupIndex),
                       })
                     }}
                   >
-                    Quitar
+                    {t('admin:missions.fields.remove')}
                   </Button>
                 </div>
               )
@@ -271,7 +277,7 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
               <Button
                 variant="secondary"
                 disabled={firstEnemy === undefined}
-                aria-label={`Añadir un grupo al encuentro ${number}`}
+                aria-label={t('admin:missions.combat.addGroupToEncounterN', { n: number })}
                 onClick={() => {
                   if (firstEnemy === undefined) return
                   update(index, {
@@ -279,15 +285,15 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
                   })
                 }}
               >
-                Añadir grupo
+                {t('admin:missions.combat.addGroup')}
               </Button>
             </div>
             <PercentField
-              label="Refuerzo de este encuentro (%)"
+              label={t('admin:missions.combat.thisEncounterPowerStep')}
               value={encounter.powerStep}
               optional
               max={200}
-              hint={POWER_STEP_HINT}
+              hint={POWER_STEP_HINT()}
               error={errors[`${path}.powerStep`]}
               onChange={(powerStep) => {
                 update(index, { powerStep })
@@ -313,10 +319,10 @@ const Encounters = ({ content, onChange, errors }: SectionProps): React.JSX.Elem
             ])
           }}
         >
-          Añadir encuentro
+          {t('admin:missions.combat.addEncounter')}
         </Button>
         {firstEnemy === undefined && (
-          <p className="mt-1 text-xs text-muted">Primero añade un tipo de enemigo.</p>
+          <p className="mt-1 text-xs text-muted">{t('admin:missions.combat.addEnemyFirst')}</p>
         )}
       </div>
     </section>
@@ -331,6 +337,7 @@ export const EncountersSection = (props: SectionProps): React.JSX.Element => (
 )
 
 export const BossSection = ({ content, onChange, errors }: SectionProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const boss = content.finalBoss
   const drops = boss.drops ?? []
   const stats = bossStatsOf(boss.profile)
@@ -364,7 +371,7 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
-          label="Nombre del jefe"
+          label={t('admin:missions.combat.bossName')}
           value={boss.name}
           error={errors['finalBoss.name']}
           onChange={(event) => {
@@ -372,9 +379,9 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
           }}
         />
         <SelectField
-          label="Tipo de héroe (opcional)"
+          label={t('admin:missions.combat.heroTypeOptional')}
           value={boss.heroType ?? ''}
-          placeholder="Ninguno"
+          placeholder={t('admin:missions.combat.none')}
           options={SUBTYPE_OPTIONS}
           onChange={(event) => {
             setBoss({ heroType: event.target.value === '' ? null : event.target.value })
@@ -382,7 +389,7 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
         />
       </div>
       <TextareaField
-        label="Descripción (opcional)"
+        label={t('admin:missions.combat.descriptionOptional')}
         rows={2}
         value={boss.description ?? ''}
         onChange={(event) => {
@@ -400,15 +407,21 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
         }}
       />
       <p className="text-sm text-ink">
-        El jugador ve: vida {stats.health}, ataque {stats.attack}, defensa {stats.defense}
-        {stats.damage === undefined ? ' y daño en dados.' : ` y daño ${String(stats.damage)}.`}
+        {t('admin:missions.combat.playerSeesBase', {
+          health: stats.health,
+          attack: stats.attack,
+          defense: stats.defense,
+        })}
+        {stats.damage === undefined
+          ? t('admin:missions.combat.diceDamage')
+          : t('admin:missions.combat.fixedDamage', { damage: String(stats.damage) })}
       </p>
       <PercentField
-        label="Refuerzo del encuentro del jefe (%)"
+        label={t('admin:missions.combat.bossPowerStep')}
         value={bossEncounter?.powerStep ?? null}
         optional
         max={200}
-        hint={POWER_STEP_HINT}
+        hint={POWER_STEP_HINT()}
         error={errors['finalBoss.powerStep']}
         onChange={(powerStep) => {
           const structured = withRegularEncounters(content, regularEncountersOf(content))
@@ -423,28 +436,28 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
 
       <section aria-labelledby="botin-del-jefe" className="flex flex-col gap-3">
         <h3 id="botin-del-jefe" className="text-base font-semibold text-ink">
-          Botín del jefe
+          {t('admin:missions.combat.bossLootTitle')}
         </h3>
-        <p className="text-sm text-muted">
-          Al derrotar al jefe se hace cada tirada con su probabilidad. El jugador recibe el producto
-          enlazado; sin producto, el botín ni se muestra ni se entrega.
-        </p>
+        <p className="text-sm text-muted">{t('admin:missions.combat.bossLootHelp')}</p>
         <ListError message={errors['finalBoss.drops']} />
         {drops.map((drop, index) => {
           const path = `finalBoss.drops.${String(index)}`
-          const title = drop.label.trim() === '' ? `Botín ${String(index + 1)}` : drop.label
+          const title =
+            drop.label.trim() === ''
+              ? t('admin:missions.combat.dropN', { n: index + 1 })
+              : drop.label
           return (
             <ItemBox
               key={`botin-${String(index)}`}
               title={title}
-              removeLabel={`Quitar ${title}`}
+              removeLabel={t('admin:missions.combat.remove', { title })}
               onRemove={() => {
                 setBoss({ drops: drops.filter((_, position) => position !== index) })
               }}
             >
               <div className="grid gap-3 md:grid-cols-3">
                 <TextField
-                  label="Nombre del botín"
+                  label={t('admin:missions.combat.dropLabel')}
                   value={drop.label}
                   error={errors[`${path}.label`]}
                   onChange={(event) => {
@@ -452,7 +465,7 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
                   }}
                 />
                 <PercentField
-                  label="Probabilidad por tirada (%)"
+                  label={t('admin:missions.combat.probabilityPerRoll')}
                   value={drop.probability}
                   error={errors[`${path}.probability`]}
                   onChange={(probability) => {
@@ -460,7 +473,7 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
                   }}
                 />
                 <NumberField
-                  label="Tiradas"
+                  label={t('admin:missions.combat.rolls')}
                   value={drop.rolls}
                   min={1}
                   max={100}
@@ -471,7 +484,7 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
                 />
               </div>
               <ProductPicker
-                label="Producto que recibe el jugador"
+                label={t('admin:missions.combat.productPlayerReceives')}
                 productId={drop.productId ?? null}
                 types={['ITEM', 'ARMA', 'ARMADURA']}
                 error={errors[`${path}.productId`]}
@@ -500,7 +513,7 @@ export const BossSection = ({ content, onChange, errors }: SectionProps): React.
               })
             }}
           >
-            Añadir botín
+            {t('admin:missions.combat.addLoot')}
           </Button>
         </div>
       </section>
@@ -533,8 +546,12 @@ const MasterCandidateFields = ({
   readonly onRemove: () => void
   readonly errors: FieldErrors
 }): React.JSX.Element => {
+  const { t } = useTranslation()
   const path = `masterEncounter.candidates.${String(index)}`
-  const title = candidate.name.trim() === '' ? `Máster ${String(index + 1)}` : candidate.name
+  const title =
+    candidate.name.trim() === ''
+      ? t('admin:missions.combat.masterN', { n: index + 1 })
+      : candidate.name
   const table = candidate.probabilityByHeroType
   const set = (changes: Partial<ContentMasterCandidate>): void => {
     onChange({ ...candidate, ...changes })
@@ -546,10 +563,14 @@ const MasterCandidateFields = ({
   const overrides = HERO_SUBTYPES.filter((subtype) => table[subtype] !== undefined).length
 
   return (
-    <ItemBox title={title} removeLabel={`Quitar ${title}`} onRemove={onRemove}>
+    <ItemBox
+      title={title}
+      removeLabel={t('admin:missions.combat.remove', { title })}
+      onRemove={onRemove}
+    >
       <div className="grid gap-3 md:grid-cols-3">
         <TextField
-          label="Nombre"
+          label={t('admin:missions.combat.name')}
           value={candidate.name}
           error={errors[`${path}.name`] ?? errors[`${path}.masterRef`]}
           onChange={(event) => {
@@ -557,7 +578,7 @@ const MasterCandidateFields = ({
           }}
         />
         <SelectField
-          label="Tipo de héroe"
+          label={t('admin:missions.combat.heroType')}
           value={candidate.subtype}
           options={SUBTYPE_OPTIONS}
           onChange={(event) => {
@@ -565,7 +586,7 @@ const MasterCandidateFields = ({
           }}
         />
         <NumberField
-          label="Niveles por encima del héroe"
+          label={t('admin:missions.combat.levelsAboveHero')}
           value={candidate.levelOffset}
           min={0}
           error={errors[`${path}.levelOffset`]}
@@ -575,10 +596,10 @@ const MasterCandidateFields = ({
         />
       </div>
       <PercentField
-        label="Probabilidad en cada momento (%)"
+        label={t('admin:missions.combat.probabilityEachMoment')}
         value={table['*'] ?? null}
         optional
-        hint="Para cualquier héroe. Vacía: solo aparece ante los tipos con probabilidad propia."
+        hint={t('admin:missions.combat.probabilityAnyHeroHint')}
         error={errors[`${path}.probability`]}
         onChange={(fraction) => {
           setProbability('*', fraction)
@@ -586,11 +607,12 @@ const MasterCandidateFields = ({
       />
       <details className="rounded-md border border-border p-3">
         <summary className="cursor-pointer text-sm text-ink">
-          Probabilidad propia por tipo de héroe ({overrides} de {HERO_SUBTYPES.length})
+          {t('admin:missions.combat.ownProbabilitySummary', {
+            overrides,
+            total: HERO_SUBTYPES.length,
+          })}
         </summary>
-        <p className="mt-2 text-xs text-muted">
-          Si un tipo tiene la suya, se usa en lugar de la general. Vacía: la general.
-        </p>
+        <p className="mt-2 text-xs text-muted">{t('admin:missions.combat.ownProbabilityHint')}</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {HERO_SUBTYPES.map((subtype) => (
             <PercentField
@@ -606,7 +628,7 @@ const MasterCandidateFields = ({
         </div>
       </details>
       <SelectField
-        label="Épica que entrega"
+        label={t('admin:missions.combat.epicDelivered')}
         value={candidate.epic.epicRef}
         options={epicOptionsFor(candidate)}
         error={errors[`${path}.epic`]}
@@ -625,10 +647,11 @@ const MasterCandidateFields = ({
         }}
       />
       <p className="text-xs text-muted">
-        {candidate.epic.generalEffect ?? 'Sin efecto general.'} {candidate.epic.epicEffect ?? ''}
+        {candidate.epic.generalEffect ?? t('admin:missions.combat.noGeneralEffect')}{' '}
+        {candidate.epic.epicEffect ?? ''}
       </p>
       <ProductPicker
-        label="Producto de la épica"
+        label={t('admin:missions.combat.epicProduct')}
         productId={candidate.epic.productId}
         types={['EPICA']}
         onChange={(productId) => {
@@ -649,6 +672,7 @@ const MasterCandidateFields = ({
 }
 
 export const MasterSection = ({ content, onChange, errors }: SectionProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const master = content.masterEncounter
   const [stashed, setStashed] = useState<ContentMaster | null>(master)
   const total = regularEncountersOf(content).length + 1
@@ -677,8 +701,8 @@ export const MasterSection = ({ content, onChange, errors }: SectionProps): Reac
   return (
     <div className="flex flex-col gap-4">
       <CheckboxField
-        label="Esta misión puede tener Máster"
-        hint="Un rival más fuerte que el héroe. Si lo derrota, gana la épica del Máster."
+        label={t('admin:missions.combat.hasMasterToggle')}
+        hint={t('admin:missions.combat.hasMasterHint')}
         checked={master !== null}
         onChange={(event) => {
           toggle(event.target.checked)
@@ -688,21 +712,20 @@ export const MasterSection = ({ content, onChange, errors }: SectionProps): Reac
       {master !== null && (
         <>
           <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium text-ink">Momentos en que puede aparecer</legend>
-            <p className="text-xs text-muted">
-              Al terminar cada encuentro marcado se prueba a los Máster en orden y sale como mucho
-              uno.
-            </p>
+            <legend className="text-sm font-medium text-ink">
+              {t('admin:missions.combat.appearanceMomentsTitle')}
+            </legend>
+            <p className="text-xs text-muted">{t('admin:missions.combat.appearanceMomentsHelp')}</p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {shown.map((after) => (
                 <CheckboxField
                   key={after}
                   label={
                     after > total
-                      ? `Tras el encuentro ${String(after)} (ya no existe)`
+                      ? t('admin:missions.combat.afterEncounterGone', { n: after })
                       : after === total
-                        ? 'Tras el jefe final'
-                        : `Tras el encuentro ${String(after)}`
+                        ? t('admin:missions.combat.afterFinalBoss')
+                        : t('admin:missions.combat.afterEncounterN', { n: after })
                   }
                   checked={points.has(after)}
                   onChange={(event) => {
@@ -718,11 +741,11 @@ export const MasterSection = ({ content, onChange, errors }: SectionProps): Reac
           </fieldset>
           <div className="grid gap-4 md:grid-cols-2">
             <NumberField
-              label="Apariciones máximas por misión"
+              label={t('admin:missions.combat.maxAppearancesPerMission')}
               value={master.maxAppearances ?? null}
               min={1}
               optional
-              hint="Vacío: 1."
+              hint={t('admin:missions.combat.emptyMeansOne')}
               error={errors['masterEncounter.maxAppearances']}
               onChange={(value) => {
                 setMaster(
@@ -733,10 +756,10 @@ export const MasterSection = ({ content, onChange, errors }: SectionProps): Reac
               }}
             />
             <p className="self-center rounded-md border border-border bg-surface/40 p-3 text-sm text-ink">
-              Probabilidad de que aparezca en una partida:{' '}
+              {t('admin:missions.combat.appearanceChance')}
               <span className="font-semibold">{percentText(masterChanceOf(master))}</span>
               <span className="block text-xs text-muted">
-                Con la probabilidad general. El PO fijó un 15 % por misión.
+                {t('admin:missions.combat.withGeneralProbability')}
               </span>
             </p>
           </div>
@@ -774,7 +797,7 @@ export const MasterSection = ({ content, onChange, errors }: SectionProps): Reac
                 })
               }}
             >
-              Añadir Máster
+              {t('admin:missions.combat.addMaster')}
             </Button>
           </div>
         </>
