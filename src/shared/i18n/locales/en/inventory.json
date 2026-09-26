@@ -1,0 +1,180 @@
+{
+  "page": {
+    "title": "My Inventory",
+    "description": "The items you own and how many of each. Select one to see its details or to equip it on a hero.",
+    "prepared": "Hero ready:"
+  },
+  "hero": {
+    "title": "Hero setup",
+    "subtitle": "Choose one of your heroes, a slot and a compatible item from your inventory.",
+    "listLabel": "Your heroes",
+    "select": "Select {{name}}",
+    "selectPrepared": "Select {{name}} (ready for battle)",
+    "loading": "Loading your heroes…",
+    "none": "You do not have any heroes yet. Get one from E-commerce or Auction to equip it.",
+    "choose": "Choose one of your heroes to see and change its equipment.",
+    "unavailableSummary_one": "{{value}} game hero you do not own yet",
+    "unavailableSummary_other": "{{value}} game heroes you do not own yet",
+    "unavailable": "{{name}}: not available",
+    "unavailableTitle": "You do not own this hero",
+    "preparedBadge": "Ready for battle",
+    "notPreparedBadge": "Not ready",
+    "autosave": "Equipment changes are saved automatically.",
+    "prepare": "Confirm for battle",
+    "preparing": "Confirming…",
+    "prepared": "Ready for battle ✓",
+    "prepareHint": "Confirming makes this hero, with its current equipment, the one you take into battles.",
+    "notReady": "This hero cannot enter a battle yet."
+  },
+  "blockers": {
+    "HERO_NOT_ACTIVE": "This hero is no longer active in the current catalog.",
+    "EQUIPPED_PRODUCT_NOT_OWNED": "You no longer own the item equipped in {{slot}}. Remove it from that slot.",
+    "EQUIPPED_PRODUCT_NOT_ACTIVE": "The item equipped in {{slot}} is no longer active in the current catalog.",
+    "unknownSlot": "a slot"
+  },
+  "selection": {
+    "notFound": "That hero is no longer in your inventory. Reload the page.",
+    "catalogUnavailable": "The catalog is not available right now. Try again in a few minutes.",
+    "failed": "The hero could not be prepared. Try again."
+  },
+  "equipment": {
+    "title": "Equipment",
+    "of": "{{name}}'s equipment",
+    "chooseHero": "Choose a hero to see its slots and stats.",
+    "groups": {
+      "weapons": "Weapons",
+      "armor": "Armor",
+      "items": "Items"
+    },
+    "slotsOf": "{{group}} slots",
+    "capacity": "{{used}}/{{max}}",
+    "capacityLabel": "{{group}}: {{used}} of {{max}} used",
+    "slotEmpty": "{{slot}}: empty. Choose this slot",
+    "slotFilled": "{{slot}}: {{item}}. Choose this slot",
+    "slotCompatible": "Accepts the selected item",
+    "slotHint": "Slot {{slot}}. Choose an item of type {{type}} from your inventory.",
+    "selectedItem": "Selected: {{item}}",
+    "equip": "Equip",
+    "equipping": "Equipping…",
+    "equipFailed": "The item could not be equipped. Try again.",
+    "pickSlotHint": "Choose a slot to see which items fit."
+  },
+  "slots": {
+    "WEAPON_1": "Weapon 1",
+    "WEAPON_2": "Weapon 2",
+    "HELMET": "Helmet",
+    "CHEST": "Chest",
+    "GLOVES": "Gloves",
+    "BRACERS": "Bracers",
+    "PANTS": "Pants",
+    "SHOES": "Boots",
+    "ITEM_1": "Item 1",
+    "ITEM_2": "Item 2"
+  },
+  "stats": {
+    "title": "Stats",
+    "attribute": "Attribute",
+    "base": "Base",
+    "effective": "Effective",
+    "delta": "Δ",
+    "ATTACK": "Attack",
+    "DEFENSE": "Defense",
+    "HEALTH": "Health",
+    "POWER": "Power",
+    "DAMAGE": "Damage",
+    "HEALING": "Healing",
+    "CRITICAL_CHANCE": "Critical chance",
+    "damage": "Damage",
+    "healing": "Healing",
+    "combatNote": "Final damage is decided in combat: it depends on your Attack against the opponent's Defense and on each hit's effect (normal, critical, evasion…)."
+  },
+  "magnitude": {
+    "perHit": "per hit",
+    "perUse": "per use",
+    "dice_one": "{{value}} {{sides}}-sided die",
+    "dice_other": "{{value}} {{sides}}-sided dice",
+    "diceRange": "{{dice}} · Base range: {{min}}–{{max}} {{per}}",
+    "fixed": "Base: {{amount}} {{per}}",
+    "percent": "{{percent}}% of the reference value"
+  },
+  "effects": {
+    "title": "Equipment effects",
+    "none": "No effects: nothing is equipped.",
+    "applied": "applied to stats",
+    "inCombat": "in combat",
+    "conditional": "conditional · in combat",
+    "turns_one": "{{value}} turn · in combat",
+    "turns_other": "{{value}} turns · in combat",
+    "block": "Blocks {{stat}}",
+    "restore": "Restores {{stat}}",
+    "kinds": {
+      "DAMAGE": "Damage",
+      "HEALING": "Healing",
+      "REVIVE": "Revive",
+      "REFLECT_DAMAGE": "Reflects damage",
+      "IMMUNITY": "Immunity",
+      "TEMPORARY_STATUS": "Temporary status",
+      "other": "Special effect"
+    },
+    "targets": {
+      "ALLY": "to an ally",
+      "ALLIED_GROUP": "to your team",
+      "OPPONENT": "to the opponent",
+      "ENEMY_GROUP": "to the opposing team"
+    }
+  },
+  "catalog": {
+    "label": "Inventory items",
+    "search": "Search by name",
+    "searchPlaceholder": "Item name",
+    "searchHint": "Type at least {{min}} characters to search.",
+    "filterLabel": "Filter by type",
+    "filters": {
+      "all": "All",
+      "HEROE": "Heroes",
+      "ARMA": "Weapons",
+      "ARMADURA": "Armor",
+      "ITEM": "Items"
+    },
+    "updating": "Updating… ",
+    "count_one": "{{value}} item",
+    "count_other": "{{value}} items",
+    "pageOf": " · page {{page}} of {{total}}",
+    "highlighted": " · {{type}} items highlighted",
+    "emptyFiltered": "No item in your inventory matches the search or filter.",
+    "empty": "Your inventory is empty.",
+    "unavailableProduct": "Item unavailable",
+    "viewDetail": "View details",
+    "pagination": "Inventory pages",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "goToPage": "Page {{page}}"
+  },
+  "types": {
+    "HEROE": "Hero",
+    "ARMA": "Weapon",
+    "ARMADURA": "Armor",
+    "ITEM": "Item",
+    "HABILIDAD": "Skill",
+    "EPICA": "Epic"
+  },
+  "lifecycle": {
+    "SUSPENDED": "Withdrawn from the catalog",
+    "ACTIVE": "Available"
+  },
+  "detail": {
+    "label": "Item details",
+    "empty": "Select an item to see its details.",
+    "quantity": "x{{value}} in your inventory",
+    "creditsPrice": "Price in credits",
+    "realPrice": "Real-money price",
+    "slot": "Slot",
+    "compatibility": "Compatibility",
+    "allHeroes": "All heroes",
+    "heroSubtype": "Hero subtype",
+    "effects": "Effects",
+    "abilities": "Linked skills",
+    "fitsSlot": "Fits the {{slot}} slot",
+    "notForSlot": "Does not fit the {{slot}} slot"
+  }
+}

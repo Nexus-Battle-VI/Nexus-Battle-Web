@@ -27,5 +27,10 @@
     "rooms_one": "{{value}} salon",
     "rooms_many": "{{value}} de salons",
     "rooms_other": "{{value}} salons"
+  },
+  "hero3d": {
+    "loading": "Chargement de l'aperçu…",
+    "unavailable": "L'aperçu 3D n'est pas disponible dans cet environnement.",
+    "unavailableFor": "Aperçu indisponible pour « {{id}} »."
   }
 }

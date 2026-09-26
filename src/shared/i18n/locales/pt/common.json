@@ -27,5 +27,10 @@
     "rooms_one": "{{value}} sala",
     "rooms_many": "{{value}} de salas",
     "rooms_other": "{{value}} salas"
+  },
+  "hero3d": {
+    "loading": "Carregando pré-visualização…",
+    "unavailable": "A pré-visualização 3D não está disponível neste ambiente.",
+    "unavailableFor": "Pré-visualização indisponível para \"{{id}}\"."
   }
 }

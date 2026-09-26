@@ -1,4 +1,7 @@
 import { httpClient, HttpError } from '@/lib/http'
+import { i18n } from '@/shared/i18n/i18n'
+import { describeFailure } from '@/shared/i18n/errors'
+import { currentLanguage } from '@/shared/i18n/language'
 
 import type { HeroEquipment, HeroStats } from './equipment/api'
 
@@ -112,19 +115,17 @@ export const selectHero = (heroReference: string): Promise<HeroSelection> =>
 export const describeSelectionFailure = (error: unknown): string => {
   if (error instanceof HttpError) {
     if (error.isNotFound) {
-      return 'Ese héroe ya no está en tu inventario. Vuelve a cargar la página.'
-    }
-
-    if (error.status === 409) {
-      return error.message
+      return i18n.t('inventory:selection.notFound')
     }
 
     if (error.status === 503) {
-      return 'El catálogo no está disponible en este momento. Inténtalo de nuevo en unos minutos.'
+      return i18n.t('inventory:selection.catalogUnavailable')
     }
 
-    return error.message
+    // 409 y el resto: el motivo lo redacta el servicio, en español. En otro
+    // idioma se describe por estado HTTP (Player-Inventory no envia codigos).
+    return describeFailure(error, i18n.t, currentLanguage())
   }
 
-  return 'No se pudo preparar el héroe. Inténtalo de nuevo.'
+  return i18n.t('inventory:selection.failed')
 }

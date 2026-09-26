@@ -50,6 +50,11 @@ export const useEquipItem = (
       }),
     onSuccess: (next) => {
       queryClient.setQueryData(queryKeys.inventory.heroEquipment(heroReference ?? ''), next)
+      // La seleccion preparada (HU-07) incluye su propia copia del equipamiento,
+      // la capacidad 2/6/2 y la elegibilidad: si se equipo el heroe preparado,
+      // quedarian desactualizadas hasta el siguiente refetch. Se piden de nuevo
+      // al servicio en lugar de recalcularlas aqui.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.inventory.heroSelection })
     },
   })
 }

@@ -1,0 +1,184 @@
+{
+  "page": {
+    "title": "Mi Inventario",
+    "description": "Los objetos que posees y en qué cantidad. Selecciona uno para ver su ficha o para equiparlo en un héroe.",
+    "prepared": "Héroe preparado:"
+  },
+  "hero": {
+    "title": "Configurar héroe",
+    "subtitle": "Elige un héroe propio, una ranura y un producto compatible de tu inventario.",
+    "listLabel": "Tus héroes",
+    "select": "Seleccionar {{name}}",
+    "selectPrepared": "Seleccionar {{name}} (preparado para batalla)",
+    "loading": "Cargando tus héroes…",
+    "none": "Todavía no tienes héroes. Consíguelos en E-commerce o en Subasta para poder equiparlos.",
+    "choose": "Elige uno de tus héroes para ver y cambiar su equipamiento.",
+    "unavailableSummary_one": "{{value}} héroe del juego que aún no tienes",
+    "unavailableSummary_many": "{{value}} de héroes del juego que aún no tienes",
+    "unavailableSummary_other": "{{value}} héroes del juego que aún no tienes",
+    "unavailable": "{{name}}: no disponible",
+    "unavailableTitle": "No dispones de este héroe",
+    "preparedBadge": "Preparado para batalla",
+    "notPreparedBadge": "No preparado",
+    "autosave": "Los cambios de equipamiento se guardan automáticamente.",
+    "prepare": "Confirmar para batalla",
+    "preparing": "Confirmando…",
+    "prepared": "Preparado para batalla ✓",
+    "prepareHint": "Confirmar deja este héroe, con su equipamiento actual, como el que llevas a las batallas.",
+    "notReady": "Este héroe todavía no puede entrar a una batalla."
+  },
+  "blockers": {
+    "HERO_NOT_ACTIVE": "El héroe ya no está activo en el catálogo vigente.",
+    "EQUIPPED_PRODUCT_NOT_OWNED": "Ya no tienes el objeto equipado en {{slot}}. Retíralo de esa ranura.",
+    "EQUIPPED_PRODUCT_NOT_ACTIVE": "El objeto equipado en {{slot}} ya no está activo en el catálogo vigente.",
+    "unknownSlot": "una ranura"
+  },
+  "selection": {
+    "notFound": "Ese héroe ya no está en tu inventario. Vuelve a cargar la página.",
+    "catalogUnavailable": "El catálogo no está disponible en este momento. Inténtalo de nuevo en unos minutos.",
+    "failed": "No se pudo preparar el héroe. Inténtalo de nuevo."
+  },
+  "equipment": {
+    "title": "Equipamiento",
+    "of": "Equipamiento de {{name}}",
+    "chooseHero": "Elige un héroe para ver sus ranuras y estadísticas.",
+    "groups": {
+      "weapons": "Armas",
+      "armor": "Armadura",
+      "items": "Ítems"
+    },
+    "slotsOf": "Ranuras de {{group}}",
+    "capacity": "{{used}}/{{max}}",
+    "capacityLabel": "{{group}}: {{used}} de {{max}} ocupadas",
+    "slotEmpty": "{{slot}}: vacío. Elegir esta ranura",
+    "slotFilled": "{{slot}}: {{item}}. Elegir esta ranura",
+    "slotCompatible": "Admite el objeto seleccionado",
+    "slotHint": "Ranura {{slot}}. Elige un producto de tipo {{type}} en tu inventario.",
+    "selectedItem": "Seleccionado: {{item}}",
+    "equip": "Equipar",
+    "equipping": "Equipando…",
+    "equipFailed": "No se pudo equipar el producto. Inténtalo de nuevo.",
+    "pickSlotHint": "Elige una ranura para ver qué objetos encajan."
+  },
+  "slots": {
+    "WEAPON_1": "Arma 1",
+    "WEAPON_2": "Arma 2",
+    "HELMET": "Casco",
+    "CHEST": "Pecho",
+    "GLOVES": "Guantes",
+    "BRACERS": "Brazaletes",
+    "PANTS": "Pantalón",
+    "SHOES": "Zapatos",
+    "ITEM_1": "Ítem 1",
+    "ITEM_2": "Ítem 2"
+  },
+  "stats": {
+    "title": "Estadísticas",
+    "attribute": "Atributo",
+    "base": "Base",
+    "effective": "Efectiva",
+    "delta": "Δ",
+    "ATTACK": "Ataque",
+    "DEFENSE": "Defensa",
+    "HEALTH": "Vida",
+    "POWER": "Poder",
+    "DAMAGE": "Daño",
+    "HEALING": "Sanación",
+    "CRITICAL_CHANCE": "Probabilidad de crítico",
+    "damage": "Daño",
+    "healing": "Sanación",
+    "combatNote": "El daño final se decide en combate: depende de tu Ataque frente a la Defensa del rival y del efecto de cada golpe (normal, crítico, evasión…)."
+  },
+  "magnitude": {
+    "perHit": "por golpe",
+    "perUse": "por uso",
+    "dice_one": "{{value}} dado de {{sides}} caras",
+    "dice_many": "{{value}} de dados de {{sides}} caras",
+    "dice_other": "{{value}} dados de {{sides}} caras",
+    "diceRange": "{{dice}} · Rango base: {{min}}–{{max}} {{per}}",
+    "fixed": "Base: {{amount}} {{per}}",
+    "percent": "{{percent}} % del valor de referencia"
+  },
+  "effects": {
+    "title": "Efectos del equipamiento",
+    "none": "Sin efectos: no hay piezas equipadas.",
+    "applied": "aplicado a stats",
+    "inCombat": "en combate",
+    "conditional": "condicional · en combate",
+    "turns_one": "{{value}} turno(s) · en combate",
+    "turns_many": "{{value}} turno(s) · en combate",
+    "turns_other": "{{value}} turno(s) · en combate",
+    "block": "Bloquea {{stat}}",
+    "restore": "Restaura {{stat}}",
+    "kinds": {
+      "DAMAGE": "Daño",
+      "HEALING": "Sanación",
+      "REVIVE": "Reanimación",
+      "REFLECT_DAMAGE": "Refleja daño",
+      "IMMUNITY": "Inmunidad",
+      "TEMPORARY_STATUS": "Estado temporal",
+      "other": "Efecto especial"
+    },
+    "targets": {
+      "ALLY": "a un aliado",
+      "ALLIED_GROUP": "a tu equipo",
+      "OPPONENT": "al rival",
+      "ENEMY_GROUP": "al equipo rival"
+    }
+  },
+  "catalog": {
+    "label": "Objetos del inventario",
+    "search": "Buscar por nombre",
+    "searchPlaceholder": "Nombre del producto",
+    "searchHint": "Escribe al menos {{min}} caracteres para buscar.",
+    "filterLabel": "Filtrar por tipo",
+    "filters": {
+      "all": "Todos",
+      "HEROE": "Héroes",
+      "ARMA": "Armas",
+      "ARMADURA": "Armaduras",
+      "ITEM": "Ítems"
+    },
+    "updating": "Actualizando… ",
+    "count_one": "{{value}} objeto",
+    "count_many": "{{value}} de objetos",
+    "count_other": "{{value}} objetos",
+    "pageOf": " · página {{page}} de {{total}}",
+    "highlighted": " · compatibles con {{type}} resaltados",
+    "emptyFiltered": "Ningún objeto de tu inventario coincide con la búsqueda o el filtro.",
+    "empty": "Tu inventario está vacío.",
+    "unavailableProduct": "Producto no disponible",
+    "viewDetail": "Ver ficha",
+    "pagination": "Paginación del inventario",
+    "previousPage": "Página anterior",
+    "nextPage": "Página siguiente",
+    "goToPage": "Página {{page}}"
+  },
+  "types": {
+    "HEROE": "Héroe",
+    "ARMA": "Arma",
+    "ARMADURA": "Armadura",
+    "ITEM": "Ítem",
+    "HABILIDAD": "Habilidad",
+    "EPICA": "Épica"
+  },
+  "lifecycle": {
+    "SUSPENDED": "Retirado del catálogo",
+    "ACTIVE": "Vigente"
+  },
+  "detail": {
+    "label": "Detalle del objeto",
+    "empty": "Selecciona un objeto para ver su ficha.",
+    "quantity": "x{{value}} en tu inventario",
+    "creditsPrice": "Precio en créditos",
+    "realPrice": "Precio real",
+    "slot": "Ranura",
+    "compatibility": "Compatibilidad",
+    "allHeroes": "Todos los héroes",
+    "heroSubtype": "Subtipo de héroe",
+    "effects": "Efectos",
+    "abilities": "Habilidades vinculadas",
+    "fitsSlot": "Encaja en la ranura {{slot}}",
+    "notForSlot": "No encaja en la ranura {{slot}}"
+  }
+}
