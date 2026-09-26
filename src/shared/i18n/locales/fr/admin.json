@@ -631,6 +631,32 @@
       "withGeneralProbability": "Avec la probabilité générale. Le PO a fixé 15 % par mission.",
       "addMaster": "Ajouter un Maître",
       "newEnemy": "Nouvel ennemi"
+    },
+    "editor": {
+      "savedNotice": "Mission « {{name}} » enregistrée.",
+      "label": "Éditeur de missions",
+      "title": "Modifier les missions",
+      "subtitle": "Créez et ajustez les missions du tableau : histoire, objectifs, ennemis, boss, butin et Maître. Pendant la préparation d'une mission, enregistrez-la sans la publier.",
+      "navLabel": "Missions",
+      "noMissionsYet": "Il n'y a pas encore de missions.",
+      "published": "Publiée",
+      "unpublished": "Non publiée",
+      "newMission": "Nouvelle mission",
+      "aNewMission": "une nouvelle mission",
+      "unsavedChangesTitle": "Vous avez des modifications non enregistrées. Si vous ouvrez {{label}}, elles seront perdues.",
+      "discardAndOpen": "Annuler les modifications et ouvrir",
+      "keepEditing": "Continuer à modifier",
+      "chooseOrCreate": "Choisissez une mission dans la liste ou créez-en une nouvelle.",
+      "editingTitle": "Modifier « {{name}} »",
+      "unsavedChanges": "Modifications non enregistrées",
+      "notSavedYet": "Pas encore enregistrée",
+      "noChanges": "Aucune modification",
+      "discardChanges": "Annuler les modifications",
+      "duplicate": "Dupliquer",
+      "save": "Enregistrer",
+      "notSaved": "Missions n'a pas enregistré la mission.",
+      "fieldsToFixTitle": "Non enregistré : il y a des champs à corriger.",
+      "goTo": "Aller à {{section}}"
     }
   }
 }

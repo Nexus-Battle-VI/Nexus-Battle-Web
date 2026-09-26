@@ -631,6 +631,32 @@
       "withGeneralProbability": "Con la probabilidad general. El PO fijó un 15 % por misión.",
       "addMaster": "Añadir Máster",
       "newEnemy": "Nuevo enemigo"
+    },
+    "editor": {
+      "savedNotice": "Misión «{{name}}» guardada.",
+      "label": "Editor de misiones",
+      "title": "Editar misiones",
+      "subtitle": "Crea y ajusta las misiones del tablón: historia, objetivos, enemigos, jefe, botín y Máster. Mientras preparas una misión, guárdala sin publicar.",
+      "navLabel": "Misiones",
+      "noMissionsYet": "Todavía no hay misiones.",
+      "published": "Publicada",
+      "unpublished": "Sin publicar",
+      "newMission": "Nueva misión",
+      "aNewMission": "una misión nueva",
+      "unsavedChangesTitle": "Tienes cambios sin guardar. Si abres {{label}}, se pierden.",
+      "discardAndOpen": "Descartar cambios y abrir",
+      "keepEditing": "Seguir editando",
+      "chooseOrCreate": "Elige una misión de la lista o crea una nueva.",
+      "editingTitle": "Editar «{{name}}»",
+      "unsavedChanges": "Cambios sin guardar",
+      "notSavedYet": "Aún no se ha guardado",
+      "noChanges": "Sin cambios",
+      "discardChanges": "Descartar cambios",
+      "duplicate": "Duplicar",
+      "save": "Guardar",
+      "notSaved": "Missions no guardó la misión.",
+      "fieldsToFixTitle": "No se guardó: hay campos por corregir.",
+      "goTo": "Ir a {{section}}"
     }
   }
 }
