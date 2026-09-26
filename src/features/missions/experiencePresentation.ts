@@ -23,7 +23,9 @@ export interface ExperiencePresentation {
 /** Las derrotas de la misión, en texto. */
 export const defeatsText = (experience: MissionExperience): string =>
   i18n.t(
-    experience.defeats === 1 ? 'missions:experience.defeat_one' : 'missions:experience.defeat_other',
+    experience.defeats === 1
+      ? 'missions:experience.defeat_one'
+      : 'missions:experience.defeat_other',
     { count: experience.defeats },
   )
 
@@ -63,7 +65,9 @@ export const describeExperience = (
       detail:
         i18n.t('missions:experience.notCreditedDetail', {
           failed: i18n.t(
-            experience.failed === 1 ? 'missions:experience.defeat_one' : 'missions:experience.defeat_other',
+            experience.failed === 1
+              ? 'missions:experience.defeat_one'
+              : 'missions:experience.defeat_other',
             { count: experience.failed },
           ),
           total: defeatsText(experience),
@@ -84,7 +88,9 @@ export const describeExperience = (
     headline: i18n.t('missions:experience.creditedTitle'),
     detail:
       experience.pending > 0
-        ? i18n.t('missions:experience.creditedPartial', { remaining: remainingText(experience.pending) })
+        ? i18n.t('missions:experience.creditedPartial', {
+            remaining: remainingText(experience.pending),
+          })
         : i18n.t('missions:experience.creditedFull', { amount: experienceGainedText(experience) }),
   }
 }

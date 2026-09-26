@@ -61,14 +61,17 @@ export const compositionTexts = (item: MissionDifficulty): readonly string[] => 
   return [
     ...(extra > 0
       ? [
-          i18n.t(extra === 1 ? 'missions:difficulty.extraEnemies_one' : 'missions:difficulty.extraEnemies_other', {
-            count: extra,
-          }),
+          i18n.t(
+            extra === 1
+              ? 'missions:difficulty.extraEnemies_one'
+              : 'missions:difficulty.extraEnemies_other',
+            {
+              count: extra,
+            },
+          ),
         ]
       : []),
-    ...(enrage > 0
-      ? [i18n.t('missions:difficulty.bossEnrage', { amount: String(enrage) })]
-      : []),
+    ...(enrage > 0 ? [i18n.t('missions:difficulty.bossEnrage', { amount: String(enrage) })] : []),
     ...(loot > 0 ? [i18n.t('missions:difficulty.bossLoot', { amount: String(loot) })] : []),
   ]
 }
