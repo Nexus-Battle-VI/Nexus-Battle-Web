@@ -625,6 +625,32 @@
       "withGeneralProbability": "Using the general probability. The PO set 15% per mission.",
       "addMaster": "Add Master",
       "newEnemy": "New enemy"
+    },
+    "editor": {
+      "savedNotice": "Mission \"{{name}}\" saved.",
+      "label": "Mission editor",
+      "title": "Edit missions",
+      "subtitle": "Create and adjust the board missions: story, objectives, enemies, boss, loot and Master. While preparing a mission, save it without publishing.",
+      "navLabel": "Missions",
+      "noMissionsYet": "There are no missions yet.",
+      "published": "Published",
+      "unpublished": "Unpublished",
+      "newMission": "New mission",
+      "aNewMission": "a new mission",
+      "unsavedChangesTitle": "You have unsaved changes. If you open {{label}}, they will be lost.",
+      "discardAndOpen": "Discard changes and open",
+      "keepEditing": "Keep editing",
+      "chooseOrCreate": "Choose a mission from the list or create a new one.",
+      "editingTitle": "Editing \"{{name}}\"",
+      "unsavedChanges": "Unsaved changes",
+      "notSavedYet": "Not saved yet",
+      "noChanges": "No changes",
+      "discardChanges": "Discard changes",
+      "duplicate": "Duplicate",
+      "save": "Save",
+      "notSaved": "Missions did not save the mission.",
+      "fieldsToFixTitle": "Not saved: there are fields to fix.",
+      "goTo": "Go to {{section}}"
     }
   }
 }

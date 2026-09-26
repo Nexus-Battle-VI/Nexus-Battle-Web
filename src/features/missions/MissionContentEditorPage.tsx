@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
@@ -30,6 +31,7 @@ import {
   type FieldErrors,
   type SectionId,
 } from './admin/missionContentValidation'
+import { i18n } from '@/shared/i18n/i18n'
 
 interface Draft {
   readonly content: MissionContent
@@ -63,6 +65,7 @@ const draftOf = (content: MissionContent, isNew: boolean): Draft => ({
  * quien decide sigue siendo Missions, cuyo rechazo tambien se muestra.
  */
 export const MissionContentEditorPage = (): React.JSX.Element => {
+  const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -88,7 +91,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
       setDraft(draftOf(saved, false))
       setShowErrors(false)
       setProblem(null)
-      setNotice(`Misión «${saved.name}» guardada.`)
+      setNotice(i18n.t('admin:missions.editor.savedNotice', { name: saved.name }))
       void queryClient.invalidateQueries({ queryKey: ['admin', 'missions'] })
       void queryClient.invalidateQueries({ queryKey: ['missions'] })
     },
@@ -157,19 +160,16 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
   }
 
   return (
-    <section aria-label="Editor de misiones" className="flex flex-col gap-6">
+    <section aria-label={t('admin:missions.editor.label')} className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold text-ink">Editar misiones</h1>
-        <p className="mt-2 text-sm text-muted">
-          Crea y ajusta las misiones del tablón: historia, objetivos, enemigos, jefe, botín y
-          Máster. Mientras preparas una misión, guárdala sin publicar.
-        </p>
+        <h1 className="text-2xl font-semibold text-ink">{t('admin:missions.editor.title')}</h1>
+        <p className="mt-2 text-sm text-muted">{t('admin:missions.editor.subtitle')}</p>
       </header>
       <QueryState isLoading={missions.isPending} error={missions.error}>
         <div className="grid items-start gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-          <nav aria-label="Misiones" className="flex flex-col gap-3">
+          <nav aria-label={t('admin:missions.editor.navLabel')} className="flex flex-col gap-3">
             {list.length === 0 ? (
-              <p className="text-sm text-muted">Todavía no hay misiones.</p>
+              <p className="text-sm text-muted">{t('admin:missions.editor.noMissionsYet')}</p>
             ) : (
               <ul className="flex flex-col gap-1">
                 {list.map((mission) => {
@@ -194,7 +194,9 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                         <span className="block font-medium">{mission.name}</span>
                         <span className="block text-xs text-muted">
                           {CATEGORY_LABELS[mission.category]} ·{' '}
-                          {mission.active ? 'Publicada' : 'Sin publicar'}
+                          {mission.active
+                            ? t('admin:missions.editor.published')
+                            : t('admin:missions.editor.unpublished')}
                         </span>
                       </button>
                     </li>
@@ -204,10 +206,12 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
             )}
             <Button
               onClick={() => {
-                openGuarded('una misión nueva', () => draftOf(newMission(takenIds), true))
+                openGuarded(t('admin:missions.editor.aNewMission'), () =>
+                  draftOf(newMission(takenIds), true),
+                )
               }}
             >
-              Nueva misión
+              {t('admin:missions.editor.newMission')}
             </Button>
           </nav>
 
@@ -219,11 +223,11 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                 className="rounded-md border border-border bg-surface-raised p-4"
               >
                 <p id="cambios-sin-guardar" className="text-sm text-ink">
-                  Tienes cambios sin guardar. Si abres {switchRequest.label}, se pierden.
+                  {t('admin:missions.editor.unsavedChangesTitle', { label: switchRequest.label })}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button variant="danger" onClick={switchRequest.run}>
-                    Descartar cambios y abrir
+                    {t('admin:missions.editor.discardAndOpen')}
                   </Button>
                   <Button
                     variant="secondary"
@@ -231,7 +235,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                       setSwitchRequest(null)
                     }}
                   >
-                    Seguir editando
+                    {t('admin:missions.editor.keepEditing')}
                   </Button>
                 </div>
               </div>
@@ -239,24 +243,26 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
 
             {draft === null ? (
               <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted">
-                Elige una misión de la lista o crea una nueva.
+                {t('admin:missions.editor.chooseOrCreate')}
               </p>
             ) : (
               <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface-raised p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="text-lg font-semibold text-ink">
-                      {draft.isNew ? 'Nueva misión' : `Editar «${draft.content.name}»`}
+                      {draft.isNew
+                        ? t('admin:missions.editor.newMission')
+                        : t('admin:missions.editor.editingTitle', { name: draft.content.name })}
                     </h2>
                     <p className="text-xs text-muted">{draft.content.missionId}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm text-muted">
                       {dirty
-                        ? 'Cambios sin guardar'
+                        ? t('admin:missions.editor.unsavedChanges')
                         : draft.isNew
-                          ? 'Aún no se ha guardado'
-                          : 'Sin cambios'}
+                          ? t('admin:missions.editor.notSavedYet')
+                          : t('admin:missions.editor.noChanges')}
                     </span>
                     <Button
                       variant="secondary"
@@ -265,7 +271,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                         open({ ...draft, content: JSON.parse(draft.original) as MissionContent })
                       }}
                     >
-                      Descartar cambios
+                      {t('admin:missions.editor.discardChanges')}
                     </Button>
                     <Button
                       variant="secondary"
@@ -273,10 +279,10 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                         open(draftOf(duplicateMission(draft.content, takenIds), true))
                       }}
                     >
-                      Duplicar
+                      {t('admin:missions.editor.duplicate')}
                     </Button>
                     <Button loading={save.isPending} onClick={handleSave}>
-                      Guardar
+                      {t('admin:missions.editor.save')}
                     </Button>
                   </div>
                 </div>
@@ -291,7 +297,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                     role="alert"
                     className="rounded-md border border-danger p-3 text-sm text-ink"
                   >
-                    <p className="font-medium">Missions no guardó la misión.</p>
+                    <p className="font-medium">{t('admin:missions.editor.notSaved')}</p>
                     <p className="mt-1">{problem.message}</p>
                   </div>
                 )}
@@ -300,7 +306,9 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                     role="alert"
                     className="rounded-md border border-danger p-3 text-sm text-ink"
                   >
-                    <p className="font-medium">No se guardó: hay campos por corregir.</p>
+                    <p className="font-medium">
+                      {t('admin:missions.editor.fieldsToFixTitle')}
+                    </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {SECTIONS.filter((entry) => errorSections.has(entry.id)).map((entry) => (
                         <Button
@@ -310,7 +318,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                             setSection(entry.id)
                           }}
                         >
-                          Ir a {entry.label}
+                          {t('admin:missions.editor.goTo', { section: entry.label })}
                         </Button>
                       ))}
                     </div>

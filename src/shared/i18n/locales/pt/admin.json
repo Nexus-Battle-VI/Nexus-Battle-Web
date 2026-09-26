@@ -631,6 +631,32 @@
       "withGeneralProbability": "Com a probabilidade geral. O PO fixou 15% por missão.",
       "addMaster": "Adicionar Mestre",
       "newEnemy": "Novo inimigo"
+    },
+    "editor": {
+      "savedNotice": "Missão \"{{name}}\" salva.",
+      "label": "Editor de missões",
+      "title": "Editar missões",
+      "subtitle": "Crie e ajuste as missões do painel: história, objetivos, inimigos, chefe, saque e Mestre. Enquanto prepara uma missão, salve-a sem publicar.",
+      "navLabel": "Missões",
+      "noMissionsYet": "Ainda não há missões.",
+      "published": "Publicada",
+      "unpublished": "Não publicada",
+      "newMission": "Nova missão",
+      "aNewMission": "uma nova missão",
+      "unsavedChangesTitle": "Você tem alterações não salvas. Se abrir {{label}}, elas serão perdidas.",
+      "discardAndOpen": "Descartar alterações e abrir",
+      "keepEditing": "Continuar editando",
+      "chooseOrCreate": "Escolha uma missão da lista ou crie uma nova.",
+      "editingTitle": "Editando \"{{name}}\"",
+      "unsavedChanges": "Alterações não salvas",
+      "notSavedYet": "Ainda não foi salva",
+      "noChanges": "Sem alterações",
+      "discardChanges": "Descartar alterações",
+      "duplicate": "Duplicar",
+      "save": "Salvar",
+      "notSaved": "O Missions não salvou a missão.",
+      "fieldsToFixTitle": "Não salvo: há campos a corrigir.",
+      "goTo": "Ir para {{section}}"
     }
   }
 }
