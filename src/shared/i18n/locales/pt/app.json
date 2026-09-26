@@ -34,7 +34,8 @@
   "signIn": {
     "title": "Para continuar",
     "signIn": "Entrar",
-    "signUp": "Criar conta"
+    "signUp": "Criar conta",
+    "required": "Você precisa entrar ou criar uma conta."
   },
   "access": {
     "deniedTitle": "Acesso negado",

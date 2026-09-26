@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -16,16 +17,11 @@ export interface AccountDeletionRequestProps {
 
 type Step = 'idle' | 'confirming'
 
-const DELETION_FAILED_DEFAULT =
-  'No se pudo enviar tu solicitud de eliminación. Intenta nuevamente más tarde.'
-
-const deletionErrorMessage = (error: unknown): string => {
-  if (error instanceof HttpError && error.isUnauthorized) {
-    return 'Tu sesión ha caducado. Vuelve a iniciar sesión para solicitar la eliminación de tu cuenta.'
-  }
-
-  return DELETION_FAILED_DEFAULT
-}
+/** Clave del aviso de fallo (se traduce al pintar). */
+const deletionErrorKey = (error: unknown): string =>
+  error instanceof HttpError && error.isUnauthorized
+    ? 'account:deletion.sessionExpired'
+    : 'account:deletion.failed'
 
 /**
  * Solicitud de eliminacion de la cuenta propia (HU-43.5), integrada en el
@@ -51,6 +47,7 @@ export const AccountDeletionRequest = ({
 }: AccountDeletionRequestProps = {}): React.JSX.Element => {
   const [step, setStep] = useState<Step>('idle')
   const mutation = useMutation({ mutationFn: requestDeletion })
+  const { t } = useTranslation()
 
   const handleConfirm = (): void => {
     // Refuerzo de UX contra el doble clic: la mutacion en curso ya deshabilita
@@ -75,21 +72,19 @@ export const AccountDeletionRequest = ({
     return (
       <section className="space-y-3" aria-labelledby="account-deletion-title">
         <h3 id="account-deletion-title" className="text-sm font-semibold text-ink">
-          Eliminar mi cuenta
+          {t('account:deletion.title')}
         </h3>
         <div
           role="status"
           className="space-y-2 rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
         >
-          <p className="font-medium">Solicitud recibida.</p>
-          <p className="text-xs text-muted">
-            La procesaremos dentro de un plazo máximo de 30 días. La recepción de tu solicitud no
-            significa que tu cuenta ya fue eliminada; cuando el tratamiento finalice recibirás una
-            notificación de cierre.
-          </p>
+          <p className="font-medium">{t('account:deletion.received')}</p>
+          <p className="text-xs text-muted">{t('account:deletion.receivedBody')}</p>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <StatusBadge status={status} />
-            <span className="text-xs text-muted">Recibida el {formatDateTime(receivedAt)}</span>
+            <span className="text-xs text-muted">
+              {t('account:deletion.receivedAt', { date: formatDateTime(receivedAt) })}
+            </span>
           </div>
         </div>
       </section>
@@ -100,13 +95,9 @@ export const AccountDeletionRequest = ({
     <section className="space-y-3" aria-labelledby="account-deletion-title">
       <div>
         <h3 id="account-deletion-title" className="text-sm font-semibold text-ink">
-          Eliminar mi cuenta
+          {t('account:deletion.title')}
         </h3>
-        <p className="mt-2 text-xs text-muted">
-          Solicita la eliminación de tu cuenta. La solicitud se procesa dentro de un plazo máximo de
-          30 días: recibirla no significa que tu cuenta ya fue eliminada. Cuando el proceso
-          finalice, recibirás una notificación de cierre.
-        </p>
+        <p className="mt-2 text-xs text-muted">{t('account:deletion.intro')}</p>
       </div>
 
       {mutation.isError && (
@@ -114,7 +105,7 @@ export const AccountDeletionRequest = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-3 text-xs text-danger"
         >
-          {deletionErrorMessage(mutation.error)}
+          {t(deletionErrorKey(mutation.error))}
         </p>
       )}
 
@@ -126,7 +117,7 @@ export const AccountDeletionRequest = ({
             setStep('confirming')
           }}
         >
-          Solicitar eliminación de cuenta
+          {t('account:deletion.request')}
         </Button>
       ) : (
         <div
@@ -135,9 +126,9 @@ export const AccountDeletionRequest = ({
           className="space-y-3 rounded-lg border border-danger bg-danger/5 p-4"
         >
           <p id="account-deletion-confirm-title" className="text-sm font-medium text-ink">
-            ¿Confirmas que quieres solicitar la eliminación de tu cuenta?
+            {t('account:deletion.confirmQuestion')}
           </p>
-          <p className="text-xs text-muted">Esta solicitud aplica únicamente a tu propia cuenta.</p>
+          <p className="text-xs text-muted">{t('account:deletion.onlyOwn')}</p>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
@@ -145,7 +136,7 @@ export const AccountDeletionRequest = ({
               loading={mutation.isPending}
               onClick={handleConfirm}
             >
-              Sí, solicitar eliminación
+              {t('account:deletion.confirm')}
             </Button>
             <Button
               type="button"
@@ -153,7 +144,7 @@ export const AccountDeletionRequest = ({
               disabled={mutation.isPending}
               onClick={handleCancel}
             >
-              Cancelar
+              {t('common:cancel')}
             </Button>
           </div>
         </div>

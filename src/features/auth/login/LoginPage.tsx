@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode, SyntheticEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
@@ -29,12 +30,13 @@ import {
 
 type Stage = 'credentials' | 'selection' | 'secondFactor' | 'success'
 
-const GENERIC_INVALID_CREDENTIALS = 'No fue posible iniciar sesión. Revisa tus credenciales.'
+// Claves de traduccion, no textos: el estado guarda la CLAVE y la pantalla la
+// traduce al pintar, asi un cambio de idioma tambien cambia el aviso visible.
+const GENERIC_INVALID_CREDENTIALS = 'auth:login.invalidCredentials'
 
-const GENERIC_SERVICE_ERROR =
-  'No pudimos completar el inicio de sesión en este momento. Inténtalo de nuevo más tarde.'
+const GENERIC_SERVICE_ERROR = 'auth:login.serviceError'
 
-const GENERIC_SECOND_FACTOR_REJECTED = 'El código no es válido o ya expiró. Inténtalo nuevamente.'
+const GENERIC_SECOND_FACTOR_REJECTED = 'auth:login.secondFactorRejected'
 
 /**
  * Traduce un fallo de transporte a un mensaje seguro para mostrar.
@@ -125,39 +127,19 @@ export interface LoginPageProps {
  * pantalla ofrece lo que el proveedor ofrece, y describir aqui condiciones del
  * entorno mezclaria configuracion con interfaz.
  */
-const FACTOR_LABEL: Readonly<Record<SecondFactorMethod, string>> = {
-  AUTHENTICATOR_APP: 'Aplicación autenticadora',
-  EMAIL: 'Correo electrónico',
-  SMS: 'Mensaje de texto',
-}
+const factorLabelKey = (method: SecondFactorMethod): string => `auth:login.factors.${method}`
 
-const FACTOR_HINT: Readonly<Record<SecondFactorMethod, string>> = {
-  AUTHENTICATOR_APP: 'Usa el código que muestra tu aplicación.',
-  EMAIL: 'Te enviaremos un código a tu correo.',
-  SMS: 'Te enviaremos un código por mensaje de texto.',
-}
+const factorHintKey = (method: SecondFactorMethod): string => `auth:login.factorHints.${method}`
 
-const secondFactorPrompt = (method: SecondFactorMethod | null): string => {
-  if (method === 'AUTHENTICATOR_APP') {
-    return 'Tu cuenta requiere un segundo factor. Abre tu aplicación autenticadora e ingresa el código que muestra.'
-  }
-
-  if (method === 'EMAIL') {
-    return 'Tu cuenta requiere un segundo factor. Te enviamos un código por correo electrónico.'
-  }
-
-  if (method === 'SMS') {
-    return 'Tu cuenta requiere un segundo factor. Te enviamos un código por mensaje de texto.'
-  }
-
-  return 'Tu cuenta requiere un segundo factor. Ingresa el código de verificación.'
-}
+const secondFactorPromptKey = (method: SecondFactorMethod | null): string =>
+  method === null ? 'auth:login.prompt.unknown' : `auth:login.prompt.${method}`
 
 export const LoginPage = ({
   loginFn = login,
   completeSecondFactorFn = completeSecondFactor,
 }: LoginPageProps = {}): React.JSX.Element => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const establishSession = useSession((state) => state.establishSession)
 
   const [stage, setStage] = useState<Stage>('credentials')
@@ -316,7 +298,7 @@ export const LoginPage = ({
       <div className="mx-auto w-full max-w-md">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
-            ← Volver al menú
+            {t('auth:backToMenu')}
           </Link>
           <ThemeToggle />
         </div>
@@ -328,19 +310,19 @@ export const LoginPage = ({
         <main className="mt-10">
           {stage === 'success' && (
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Acceso completado</h1>
+              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.successTitle')}</h1>
               <p role="status" className="mt-2 text-sm text-muted">
-                Sesión iniciada
-                {sessionRole !== null ? ` como ${roleLabel(sessionRole)}` : ''}. Te llevamos a
-                E-commerce.
+                {sessionRole !== null
+                  ? t('auth:login.successBodyRole', { role: roleLabel(sessionRole) })
+                  : t('auth:login.successBody')}
               </p>
             </div>
           )}
 
           {stage === 'credentials' && (
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Iniciar sesión</h1>
-              <p className="mt-2 text-sm text-muted">Ingresa tu correo o apodo y tu contraseña.</p>
+              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.title')}</h1>
+              <p className="mt-2 text-sm text-muted">{t('auth:login.subtitle')}</p>
 
               <form
                 noValidate
@@ -356,13 +338,13 @@ export const LoginPage = ({
 
                 {authMessage !== null && (
                   <p role="alert" className="border-l-2 border-danger pl-3 text-sm text-danger">
-                    {authMessage}
+                    {t(authMessage)}
                   </p>
                 )}
 
                 <Field
                   id={FIELD.identifier}
-                  label="Correo o apodo"
+                  label={t('auth:login.identifier')}
                   {...(visible[FIELD.identifier] === undefined
                     ? {}
                     : { error: visible[FIELD.identifier] })}
@@ -372,7 +354,7 @@ export const LoginPage = ({
                       {...field}
                       type="text"
                       autoComplete="username"
-                      placeholder="nombre@correo.com o tu apodo"
+                      placeholder={t('auth:login.identifierPlaceholder')}
                       value={values.identifier}
                       onBlur={() => {
                         setTouched((previous) => ({ ...previous, [FIELD.identifier]: true }))
@@ -386,7 +368,7 @@ export const LoginPage = ({
 
                 <Field
                   id={FIELD.password}
-                  label="Contraseña"
+                  label={t('auth:login.password')}
                   {...(visible[FIELD.password] === undefined
                     ? {}
                     : { error: visible[FIELD.password] })}
@@ -395,7 +377,7 @@ export const LoginPage = ({
                     <PasswordField
                       {...field}
                       autoComplete="current-password"
-                      placeholder="Tu contraseña"
+                      placeholder={t('auth:login.passwordPlaceholder')}
                       value={values.password}
                       onBlur={() => {
                         setTouched((previous) => ({ ...previous, [FIELD.password]: true }))
@@ -414,15 +396,15 @@ export const LoginPage = ({
                 */}
                 <div className="flex flex-col items-start gap-2 text-sm">
                   <Link to="/recover" className="font-medium text-brand underline">
-                    ¿Olvidaste tu contraseña?
+                    {t('auth:login.forgot')}
                   </Link>
                   <Link to="/register" className="font-medium text-brand underline">
-                    ¿No tienes cuenta? Crear cuenta
+                    {t('auth:login.noAccount')}
                   </Link>
                 </div>
 
                 <Button type="submit" loading={submitting} className="w-full">
-                  Iniciar sesión
+                  {t('auth:login.submit')}
                 </Button>
               </form>
             </div>
@@ -430,10 +412,8 @@ export const LoginPage = ({
 
           {stage === 'selection' && (
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Elige cómo verificarte</h1>
-              <p className="mt-2 text-sm text-muted">
-                Tu cuenta tiene más de un método de verificación. Elige uno para recibir el código.
-              </p>
+              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.chooseTitle')}</h1>
+              <p className="mt-2 text-sm text-muted">{t('auth:login.chooseBody')}</p>
 
               <div className="mt-6 flex flex-col gap-3">
                 {availableFactors.map((factor) => (
@@ -448,9 +428,11 @@ export const LoginPage = ({
                     }}
                   >
                     <span className="block text-sm font-medium text-ink">
-                      {FACTOR_LABEL[factor]}
+                      {t(factorLabelKey(factor))}
                     </span>
-                    <span className="mt-0.5 block text-xs text-muted">{FACTOR_HINT[factor]}</span>
+                    <span className="mt-0.5 block text-xs text-muted">
+                      {t(factorHintKey(factor))}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -459,10 +441,9 @@ export const LoginPage = ({
 
           {stage === 'secondFactor' && (
             <div>
-              <h1 className="text-2xl font-semibold text-ink">Verificación adicional</h1>
+              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.verifyTitle')}</h1>
               <p className="mt-2 text-sm text-muted">
-                {secondFactorPrompt(secondFactorMethod)} Las operaciones administrativas quedan
-                deshabilitadas hasta verificarlo.
+                {t(secondFactorPromptKey(secondFactorMethod))} {t('auth:login.adminLocked')}
               </p>
 
               <form
@@ -479,15 +460,15 @@ export const LoginPage = ({
 
                 {secondFactorMessage !== null && (
                   <p role="alert" className="border-l-2 border-danger pl-3 text-sm text-danger">
-                    {secondFactorMessage}
+                    {t(secondFactorMessage)}
                   </p>
                 )}
 
                 <Field
                   id="second-factor-code"
-                  label="Código de verificación"
+                  label={t('auth:login.code')}
                   {...(secondFactorAttempted && secondFactorCode.trim() === ''
-                    ? { error: 'Ingresa el código que recibiste por correo.' }
+                    ? { error: t('auth:login.codeRequired') }
                     : {})}
                 >
                   {(field) => (
@@ -505,7 +486,7 @@ export const LoginPage = ({
                 </Field>
 
                 <Button type="submit" loading={submitting} className="w-full">
-                  Verificar código
+                  {t('auth:login.verify')}
                 </Button>
               </form>
             </div>

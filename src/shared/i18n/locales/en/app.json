@@ -34,7 +34,8 @@
   "signIn": {
     "title": "To continue",
     "signIn": "Sign in",
-    "signUp": "Create account"
+    "signUp": "Create account",
+    "required": "You need to sign in or create an account."
   },
   "access": {
     "deniedTitle": "Access denied",

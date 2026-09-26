@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { Card } from './Card'
 
 export interface ModuleUnavailableProps {
@@ -14,11 +16,15 @@ export interface ModuleUnavailableProps {
  * responsable: ese servicio todavia no existe en la organizacion, y
  * atribuirselo a uno inventado seria peor que no nombrarlo.
  */
-export const ModuleUnavailable = ({ title }: ModuleUnavailableProps): React.JSX.Element => (
-  <Card title={title}>
-    <p className="text-sm text-muted">
-      <span className="font-medium text-ink">Módulo no disponible.</span> Esta funcionalidad todavía
-      no está disponible en este incremento.
-    </p>
-  </Card>
-)
+export const ModuleUnavailable = ({ title }: ModuleUnavailableProps): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <Card title={title}>
+      <p className="text-sm text-muted">
+        <span className="font-medium text-ink">{t('common:moduleUnavailable.title')}</span>{' '}
+        {t('common:moduleUnavailable.body')}
+      </p>
+    </Card>
+  )
+}

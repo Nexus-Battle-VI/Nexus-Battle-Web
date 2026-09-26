@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
@@ -35,6 +36,7 @@ export const ProductCommentsList = ({
   listComments = fetchProductComments,
 }: ProductCommentsListProps): React.JSX.Element => {
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const query = useQuery({
     queryKey: queryKeys.community.productComments(productId),
@@ -49,7 +51,7 @@ export const ProductCommentsList = ({
       isLoading={query.isPending}
       error={query.error}
       isEmpty={comments.length === 0}
-      emptyMessage="Todavía no hay comentarios sobre este producto."
+      emptyMessage={t('reviews:list.empty')}
     >
       <ul className="space-y-3">
         {comments.map((comment) => (
@@ -65,7 +67,7 @@ export const ProductCommentsList = ({
                   setReportingCommentId((current) => (current === comment.id ? null : comment.id))
                 }}
               >
-                Reportar
+                {t('reviews:list.report')}
               </Button>
             </div>
 

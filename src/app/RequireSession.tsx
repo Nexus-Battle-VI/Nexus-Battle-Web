@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useSession } from '@/shared/session'
 import { SignInPrompt } from './SignInPrompt'
@@ -24,15 +25,12 @@ export interface RequireSessionProps {
  */
 export const RequireSession = ({ children }: RequireSessionProps): React.JSX.Element => {
   const subject = useSession((state) => state.subject)
+  const { t } = useTranslation()
 
   if (subject === null) {
     return (
       <div className="flex min-h-dvh items-center justify-center px-4 py-10 text-ink">
-        <SignInPrompt
-          description="Necesitas iniciar sesión o crear una cuenta."
-          headingTag="h1"
-          cancelHref="/"
-        />
+        <SignInPrompt description={t('app:signIn.required')} headingTag="h1" cancelHref="/" />
       </div>
     )
   }

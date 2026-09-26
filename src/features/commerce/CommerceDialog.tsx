@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /** La capa nativa mantiene el foco dentro y lo devuelve al control que la abrió. */
 export const CommerceDialog = ({
@@ -16,6 +17,7 @@ export const CommerceDialog = ({
   readonly locked?: boolean
 }): React.JSX.Element => {
   const dialog = useRef<HTMLDialogElement>(null)
+  const { t } = useTranslation()
   useEffect(() => {
     const element = dialog.current
     element?.showModal()
@@ -37,7 +39,7 @@ export const CommerceDialog = ({
         <p className="text-xs font-medium text-muted">{title}</p>
         <button
           type="button"
-          aria-label={`Cerrar ${title}`}
+          aria-label={t('commerce:dialog.close', { title })}
           disabled={locked}
           onClick={onClose}
           className="rounded-full p-2 text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-50"

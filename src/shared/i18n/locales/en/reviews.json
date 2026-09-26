@@ -1,0 +1,51 @@
+{
+  "genericError": "The operation could not be completed. Please try again later.",
+  "sending": "Sending…",
+  "sessionExpiredComment": "Your session has expired. Sign in again to comment or rate.",
+  "form": {
+    "title": "Comments and rating",
+    "commentRequired": "Write a comment before publishing.",
+    "publishedBoth": "Your comment and your rating were published successfully.",
+    "published": "Your comment was published successfully.",
+    "alreadyRatedNotice": "Your comment was published successfully. You had already rated this product before: your previous rating is kept.",
+    "comment": "Comment",
+    "commentPlaceholder": "Tell us what you thought of this product.",
+    "images": "Images (optional)",
+    "image": "Image {{index}}",
+    "removeImage": "Remove",
+    "addImage": "Add image",
+    "alreadyRated": "You have already rated this product.",
+    "rating": "Rating (optional)",
+    "publish": "Publish"
+  },
+  "stars": {
+    "label": "Rating",
+    "option": "{{value}} of 5 stars"
+  },
+  "list": {
+    "empty": "There are no comments on this product yet.",
+    "report": "Report"
+  },
+  "report": {
+    "categories": {
+      "SPAM": "Spam",
+      "OFFENSIVE_CONTENT": "Offensive content",
+      "HARASSMENT": "Harassment",
+      "FALSE_INFORMATION": "False information",
+      "INAPPROPRIATE_CONTENT": "Inappropriate content",
+      "COPYRIGHT_VIOLATION": "Copyright violation"
+    },
+    "rateLimited": "You have reached the allowed report limit. Please try again later.",
+    "categoryRequired": "Select a reason to continue.",
+    "sent": "Your report was sent for review.",
+    "close": "Close",
+    "formLabel": "Report comment {{id}}",
+    "sessionExpired": "Your session has expired. Sign in again to report this comment.",
+    "notFound": "This comment is no longer available.",
+    "reason": "Report reason",
+    "reasonPlaceholder": "Select a reason",
+    "description": "Additional description (optional)",
+    "descriptionPlaceholder": "Tell us more about the reason for the report…",
+    "submit": "Send report"
+  }
+}

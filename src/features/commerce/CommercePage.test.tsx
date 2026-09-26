@@ -119,7 +119,7 @@ describe('Recorrido de interfaz con contratos HTTP', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: `Anadir ${product.name} al carrito` }),
     )
-    const cartBubble = await screen.findByRole('button', { name: 'Carrito, 1 productos' })
+    const cartBubble = await screen.findByRole('button', { name: 'Carrito, 1 producto' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     await userEvent.click(cartBubble)
     const cartDialog = screen.getByRole('dialog', { name: 'Tu carrito' })
@@ -139,7 +139,7 @@ describe('Recorrido de interfaz con contratos HTTP', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'E-commerce' })).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Carrito, 1 productos' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Carrito, 1 producto' }))
     const reopenedCart = within(screen.getByRole('region', { name: 'Carrito de compras' }))
     const quantity = reopenedCart.getByLabelText(`Cantidad de ${product.name}`)
     await userEvent.clear(quantity)
@@ -255,7 +255,7 @@ describe('Recorrido de interfaz con contratos HTTP', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar Tu carrito' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Carrito, 1 productos' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Carrito, 1 producto' }))
     expect(
       within(screen.getByRole('region', { name: 'Carrito de compras' })).getByText(product.name),
     ).toBeInTheDocument()

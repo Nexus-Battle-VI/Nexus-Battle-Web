@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { TextareaField } from '@/components/ui/form/TextareaField'
@@ -36,8 +37,6 @@ type Outcome =
   | { readonly kind: 'validation-error'; readonly message: string }
   | { readonly kind: 'error'; readonly message: string }
 
-const GENERIC_ERROR = 'No se pudo completar la operación. Intenta nuevamente más tarde.'
-
 /**
  * "Comentarios y calificación" (HU-40, HU-40.4 / Task #174).
  *
@@ -62,6 +61,7 @@ export const ProductCommentsAndRating = ({
   submitRating = submitProductRating,
 }: ProductCommentsAndRatingProps): React.JSX.Element => {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
   const [content, setContent] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [rating, setRating] = useState<number | null>(null)
@@ -73,7 +73,7 @@ export const ProductCommentsAndRating = ({
       const trimmed = content.trim()
 
       if (trimmed.length === 0) {
-        return { kind: 'validation-error', message: 'Escribe un comentario antes de publicar.' }
+        return { kind: 'validation-error', message: t('reviews:form.commentRequired') }
       }
 
       const nonEmptyImages = images.map((image) => image.trim()).filter((image) => image !== '')
@@ -92,7 +92,7 @@ export const ProductCommentsAndRating = ({
         // un dato de entrada rechazado: el mensaje NUNCA es `error.message`
         // aqui, para no filtrar detalle tecnico de un 500 (mismo criterio que
         // `AccountDeletionRequest`).
-        return { kind: 'error', message: GENERIC_ERROR }
+        return { kind: 'error', message: t('reviews:genericError') }
       }
 
       void queryClient.invalidateQueries({
@@ -141,7 +141,7 @@ export const ProductCommentsAndRating = ({
     setValidationMessage(undefined)
 
     if (content.trim().length === 0) {
-      setValidationMessage('Escribe un comentario antes de publicar.')
+      setValidationMessage(t('reviews:form.commentRequired'))
       return
     }
 
@@ -163,12 +163,12 @@ export const ProductCommentsAndRating = ({
   return (
     <section className="space-y-4" aria-labelledby="product-reviews-title">
       <h3 id="product-reviews-title" className="text-sm font-semibold text-ink">
-        Comentarios y calificación
+        {t('reviews:form.title')}
       </h3>
 
       {mutation.isPending && (
         <p role="status" className="text-sm text-muted">
-          Enviando…
+          {t('reviews:sending')}
         </p>
       )}
 
@@ -177,9 +177,7 @@ export const ProductCommentsAndRating = ({
           role="status"
           className="rounded-lg border border-success bg-success/10 p-3 text-sm text-ink"
         >
-          {outcome.ratedToo
-            ? 'Tu comentario y tu calificación se publicaron correctamente.'
-            : 'Tu comentario se publicó correctamente.'}
+          {outcome.ratedToo ? t('reviews:form.publishedBoth') : t('reviews:form.published')}
         </p>
       )}
 
@@ -188,8 +186,7 @@ export const ProductCommentsAndRating = ({
           role="status"
           className="rounded-lg border border-border bg-surface-raised p-3 text-sm text-ink"
         >
-          Tu comentario se publicó correctamente. Ya habías registrado una calificación para este
-          producto antes: se mantiene la que ya tenías.
+          {t('reviews:form.alreadyRatedNotice')}
         </p>
       )}
 
@@ -198,7 +195,7 @@ export const ProductCommentsAndRating = ({
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-3 text-sm text-danger"
         >
-          Tu sesión ha caducado. Vuelve a iniciar sesión para comentar o calificar.
+          {t('reviews:sessionExpiredComment')}
         </p>
       )}
 
@@ -231,25 +228,25 @@ export const ProductCommentsAndRating = ({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <TextareaField
-          label="Comentario"
+          label={t('reviews:form.comment')}
           required
           value={content}
           disabled={mutation.isPending}
           maxLength={2000}
-          placeholder="Cuéntanos qué te pareció este producto."
+          placeholder={t('reviews:form.commentPlaceholder')}
           onChange={(event) => {
             setContent(event.target.value)
           }}
         />
 
         <div>
-          <span className="block text-sm font-medium text-ink">Imágenes (opcional)</span>
+          <span className="block text-sm font-medium text-ink">{t('reviews:form.images')}</span>
           <div className="mt-1.5 space-y-2">
             {images.map((image, index) => (
               <div key={index} className="flex items-end gap-2">
                 <div className="flex-1">
                   <TextField
-                    label={`Imagen ${String(index + 1)}`}
+                    label={t('reviews:form.image', { index: String(index + 1) })}
                     type="url"
                     value={image}
                     disabled={mutation.isPending}
@@ -267,7 +264,7 @@ export const ProductCommentsAndRating = ({
                     removeImageField(index)
                   }}
                 >
-                  Quitar
+                  {t('reviews:form.removeImage')}
                 </Button>
               </div>
             ))}
@@ -278,17 +275,17 @@ export const ProductCommentsAndRating = ({
                 disabled={mutation.isPending}
                 onClick={addImageField}
               >
-                Agregar imagen
+                {t('reviews:form.addImage')}
               </Button>
             )}
           </div>
         </div>
 
         {alreadyRated ? (
-          <p className="text-sm text-muted">Ya calificaste este producto anteriormente.</p>
+          <p className="text-sm text-muted">{t('reviews:form.alreadyRated')}</p>
         ) : (
           <div>
-            <span className="block text-sm font-medium text-ink">Calificación (opcional)</span>
+            <span className="block text-sm font-medium text-ink">{t('reviews:form.rating')}</span>
             <div className="mt-1.5">
               <StarRatingInput value={rating} disabled={mutation.isPending} onChange={setRating} />
             </div>
@@ -296,7 +293,7 @@ export const ProductCommentsAndRating = ({
         )}
 
         <Button type="submit" loading={mutation.isPending}>
-          Publicar
+          {t('reviews:form.publish')}
         </Button>
       </form>
     </section>

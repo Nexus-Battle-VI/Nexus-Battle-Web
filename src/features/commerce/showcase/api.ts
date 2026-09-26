@@ -1,15 +1,17 @@
 import { httpClient } from '@/lib/http'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 export const PRODUCT_TYPES = ['HEROE', 'HABILIDAD', 'ARMA', 'ARMADURA', 'ITEM', 'EPICA'] as const
 export type ProductType = (typeof PRODUCT_TYPES)[number]
-export const PRODUCT_TYPE_LABELS: Readonly<Record<ProductType, string>> = {
-  HEROE: 'Héroe',
-  HABILIDAD: 'Habilidad',
-  ARMA: 'Arma',
-  ARMADURA: 'Armadura',
-  ITEM: 'Ítem',
-  EPICA: 'Épica',
-}
+/** Etiqueta del tipo en el idioma activo (se traduce al leerse). */
+export const PRODUCT_TYPE_LABELS: Readonly<Record<ProductType, string>> = localizedMessages({
+  HEROE: 'commerce:productTypes.HEROE',
+  HABILIDAD: 'commerce:productTypes.HABILIDAD',
+  ARMA: 'commerce:productTypes.ARMA',
+  ARMADURA: 'commerce:productTypes.ARMADURA',
+  ITEM: 'commerce:productTypes.ITEM',
+  EPICA: 'commerce:productTypes.EPICA',
+})
 
 /**
  * Tipos que el dominio de E-commerce puede comercializar (PDF §7.2.2 +

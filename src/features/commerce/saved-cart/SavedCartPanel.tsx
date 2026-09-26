@@ -1,5 +1,9 @@
+import { useTranslation } from 'react-i18next'
+
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import type { SavedCart } from './api'
 
 export interface SavedCartPanelProps {
@@ -33,57 +37,53 @@ export const SavedCartPanel = ({
   isBusy = false,
   error,
 }: SavedCartPanelProps): React.JSX.Element => {
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
+
   if (unavailable) {
     return (
       <section
-        aria-label="Carrito guardado"
+        aria-label={t('commerce:saved.label')}
         className="rounded-lg border border-border bg-surface-raised p-4"
       >
-        <h2 className="text-base font-semibold text-ink">Guardar para otra sesion</h2>
+        <h2 className="text-base font-semibold text-ink">{t('commerce:saved.title')}</h2>
         {/*
           No es un error: es una condicion de la funcionalidad. HU-61 exige
           identidad verificada, porque un carrito guardado sin saber de quien
           es no se puede devolver a nadie. Se explica en lugar de mostrar un
           fallo generico que haria pensar que la pantalla esta rota.
         */}
-        <p className="mt-2 text-sm text-muted">
-          Para conservar tu carrito y recuperarlo mas adelante necesitas haber iniciado sesion.
-        </p>
+        <p className="mt-2 text-sm text-muted">{t('commerce:saved.unavailable')}</p>
       </section>
     )
   }
 
   return (
     <section
-      aria-label="Carrito guardado"
+      aria-label={t('commerce:saved.label')}
       className="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-ink">Guardar para otra sesion</h2>
+        <h2 className="text-base font-semibold text-ink">{t('commerce:saved.title')}</h2>
         <Button onClick={onSave} disabled={!canSave || isBusy}>
-          Guardar carrito
+          {t('commerce:saved.save')}
         </Button>
       </div>
 
       {!canSave && saved === null && (
-        <p className="text-sm text-muted">Anade productos al carrito para poder guardarlo.</p>
+        <p className="text-sm text-muted">{t('commerce:saved.addFirst')}</p>
       )}
 
       {saved === null ? (
-        canSave && (
-          <p className="text-sm text-muted">
-            Todavia no has guardado ningun carrito. Al guardarlo podras recuperarlo la proxima vez
-            que entres.
-          </p>
-        )
+        canSave && <p className="text-sm text-muted">{t('commerce:saved.none')}</p>
       ) : (
         <>
           <p className="text-sm text-muted">
-            Tienes un carrito guardado con{' '}
+            {t('commerce:saved.summaryBefore')}{' '}
             <span data-testid="guardado-item-count" className="font-medium text-ink">
               {saved.itemCount}
             </span>{' '}
-            producto{saved.itemCount === 1 ? '' : 's'}, por un total de{' '}
+            {t('commerce:saved.summaryProducts', { count: saved.itemCount })}{' '}
             <span data-testid="guardado-total" className="font-medium text-ink tabular-nums">
               {formatMoney(saved.total, saved.currency)}
             </span>
@@ -107,16 +107,14 @@ export const SavedCartPanel = ({
             Recuperar REEMPLAZA el contenido del carrito vigente, y se avisa
             antes de pulsar: descubrirlo despues seria una sorpresa desagradable.
           */}
-          <p className="text-xs text-muted">
-            Al recuperarlo, el contenido guardado reemplaza lo que tengas ahora en el carrito.
-          </p>
+          <p className="text-xs text-muted">{t('commerce:saved.replaceWarning')}</p>
 
           <div className="flex flex-wrap gap-3">
             <Button onClick={onRestore} disabled={isBusy}>
-              Recuperar carrito
+              {t('commerce:saved.restore')}
             </Button>
             <Button variant="secondary" onClick={onDiscard} disabled={isBusy}>
-              Descartar guardado
+              {t('commerce:saved.discard')}
             </Button>
           </div>
         </>
@@ -124,7 +122,9 @@ export const SavedCartPanel = ({
 
       {error !== undefined && error !== null && (
         <p role="alert" className="text-sm text-danger">
-          {error instanceof Error ? error.message : 'No se pudo operar con el carrito guardado.'}
+          {error instanceof Error
+            ? describeFailure(error, t, language)
+            : t('commerce:saved.failed')}
         </p>
       )}
     </section>
