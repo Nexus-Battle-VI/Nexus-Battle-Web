@@ -1,3 +1,5 @@
+import { i18n } from '@/shared/i18n/i18n'
+
 import type { ProductType } from './api'
 
 /**
@@ -12,27 +14,23 @@ import type { ProductType } from './api'
  */
 export interface TypeFilterOption {
   readonly value: ProductType | null
-  readonly label: string
+  /** Clave de traduccion de la etiqueta; el valor enviado al servicio no cambia. */
+  readonly labelKey: string
 }
 
 export const TYPE_FILTERS: readonly TypeFilterOption[] = [
-  { value: null, label: 'Todos' },
-  { value: 'HEROE', label: 'Héroes' },
-  { value: 'ARMA', label: 'Armas' },
-  { value: 'ARMADURA', label: 'Armaduras' },
-  { value: 'ITEM', label: 'Ítems' },
+  { value: null, labelKey: 'inventory:catalog.filters.all' },
+  { value: 'HEROE', labelKey: 'inventory:catalog.filters.HEROE' },
+  { value: 'ARMA', labelKey: 'inventory:catalog.filters.ARMA' },
+  { value: 'ARMADURA', labelKey: 'inventory:catalog.filters.ARMADURA' },
+  { value: 'ITEM', labelKey: 'inventory:catalog.filters.ITEM' },
 ]
 
-const LABELS: Readonly<Record<string, string>> = {
-  HEROE: 'Héroe',
-  ARMA: 'Arma',
-  ARMADURA: 'Armadura',
-  ITEM: 'Ítem',
-  HABILIDAD: 'Habilidad',
-  EPICA: 'Épica',
-}
+const KNOWN_TYPES = new Set(['HEROE', 'ARMA', 'ARMADURA', 'ITEM', 'HABILIDAD', 'EPICA'])
 
-export const typeLabel = (type: string): string => LABELS[type] ?? type
+/** Etiqueta del tipo canonico en el idioma activo; un tipo desconocido se muestra tal cual. */
+export const typeLabel = (type: string): string =>
+  KNOWN_TYPES.has(type) ? i18n.t(`inventory:types.${type}`) : type
 
 export const lifecycleLabel = (status: string): string =>
-  status === 'SUSPENDED' ? 'Retirado del catálogo' : status === 'ACTIVE' ? 'Vigente' : status
+  status === 'SUSPENDED' || status === 'ACTIVE' ? i18n.t(`inventory:lifecycle.${status}`) : status

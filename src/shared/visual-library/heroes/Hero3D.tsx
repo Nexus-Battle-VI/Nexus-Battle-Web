@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 
 import { registerHeroVisualResources } from './register-hero-visual-resources'
@@ -45,6 +46,7 @@ export const Hero3D = ({ heroId, className }: Hero3DProps): React.JSX.Element =>
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [mountOutcome, setMountOutcome] = useState<MountOutcome>('pending')
+  const { t } = useTranslation()
 
   const resolution = useMemo(
     () => resolveVisualResource(visualResourceRegistry, heroId, 'hero'),
@@ -96,11 +98,11 @@ export const Hero3D = ({ heroId, className }: Hero3DProps): React.JSX.Element =>
   const showCanvas = eligible && mountOutcome === 'ready'
   const fallbackMessage = !eligible
     ? resolution.isFallback
-      ? `Vista previa no disponible para "${heroId}".`
-      : 'Vista previa 3D no disponible en este entorno.'
+      ? t('common:hero3d.unavailableFor', { id: heroId })
+      : t('common:hero3d.unavailable')
     : mountOutcome === 'error'
-      ? 'Vista previa 3D no disponible en este entorno.'
-      : 'Cargando vista previa…'
+      ? t('common:hero3d.unavailable')
+      : t('common:hero3d.loading')
 
   return (
     <div className={clsx('flex flex-col gap-2', className)}>

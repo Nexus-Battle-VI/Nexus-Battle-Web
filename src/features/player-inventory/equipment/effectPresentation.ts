@@ -1,15 +1,7 @@
+import { i18n } from '@/shared/i18n/i18n'
+
 import type { EquippedEffect } from './api'
 import { formatMagnitude } from './magnitude'
-
-const STATISTIC_LABELS: Readonly<Record<string, string>> = {
-  ATTACK: 'Ataque',
-  DEFENSE: 'Defensa',
-  HEALTH: 'Vida',
-  POWER: 'Poder',
-  DAMAGE: 'Daño',
-  HEALING: 'Sanación',
-  CRITICAL_CHANCE: 'Probabilidad de crítico',
-}
 
 const OPERATION_SIGNS: Readonly<Record<string, string>> = {
   INCREASE: '+',
@@ -18,46 +10,61 @@ const OPERATION_SIGNS: Readonly<Record<string, string>> = {
   SET: '= ',
 }
 
-const TARGET_LABELS: Readonly<Record<string, string>> = {
-  ALLY: 'a un aliado',
-  ALLIED_GROUP: 'a tu equipo',
-  OPPONENT: 'al rival',
-  ENEMY_GROUP: 'al equipo rival',
-}
+const KNOWN_STATISTICS = new Set([
+  'ATTACK',
+  'DEFENSE',
+  'HEALTH',
+  'POWER',
+  'DAMAGE',
+  'HEALING',
+  'CRITICAL_CHANCE',
+])
+const KNOWN_TARGETS = new Set(['ALLY', 'ALLIED_GROUP', 'OPPONENT', 'ENEMY_GROUP'])
+const KNOWN_KINDS = new Set([
+  'DAMAGE',
+  'HEALING',
+  'REVIVE',
+  'REFLECT_DAMAGE',
+  'IMMUNITY',
+  'TEMPORARY_STATUS',
+])
 
-const KIND_LABELS: Readonly<Record<string, string>> = {
-  DAMAGE: 'Daño',
-  HEALING: 'Sanación',
-  REVIVE: 'Reanimación',
-  REFLECT_DAMAGE: 'Refleja daño',
-  IMMUNITY: 'Inmunidad',
-  TEMPORARY_STATUS: 'Estado temporal',
-}
+/** Etiqueta de una estadistica; un codigo desconocido se muestra tal cual (no se inventa). */
+export const statisticLabel = (statistic: string): string =>
+  KNOWN_STATISTICS.has(statistic) ? i18n.t(`inventory:stats.${statistic}`) : statistic
+
+/** Lo minimo que se necesita para describir un efecto (equipado o de la ficha). */
+export type DescribableEffect = Pick<
+  EquippedEffect,
+  'kind' | 'target' | 'statistic' | 'operation' | 'magnitude'
+>
 
 /**
- * Un efecto del equipamiento en palabras ("+2 Ataque", "−1 Ataque al rival",
- * "Daño +1d4"), en lugar de sus codigos (`STAT_MODIFIER · ATTACK · INCREASE ·
- * SELF`). Solo presentacion: no aplica ni calcula nada; la magnitud se muestra
- * tal cual (un dado sigue siendo un dado).
+ * Un efecto del equipamiento en palabras del idioma activo, a partir de sus
+ * codigos (`kind`, `statistic`, `operation`, `target`) y su magnitud. Solo
+ * describe: no decide si aplica ni cuanto vale en combate.
  */
-export const describeEquipmentEffect = (effect: EquippedEffect): string => {
+export const describeEquipmentEffect = (effect: DescribableEffect): string => {
   const magnitude = effect.magnitude === undefined ? '' : formatMagnitude(effect.magnitude)
   const sign = effect.operation === undefined ? '' : (OPERATION_SIGNS[effect.operation] ?? '')
-  const statistic =
-    effect.statistic === undefined ? null : (STATISTIC_LABELS[effect.statistic] ?? effect.statistic)
-  const target = TARGET_LABELS[effect.target] ?? null
+  const statistic = effect.statistic === undefined ? null : statisticLabel(effect.statistic)
+  const target = KNOWN_TARGETS.has(effect.target)
+    ? i18n.t(`inventory:effects.targets.${effect.target}`)
+    : null
 
   let main: string
 
   if (effect.kind === 'STAT_MODIFIER' && statistic !== null) {
     main =
       effect.operation === 'BLOCK'
-        ? `Bloquea ${statistic}`
+        ? i18n.t('inventory:effects.block', { stat: statistic })
         : effect.operation === 'RESTORE'
-          ? `Restaura ${statistic}`
+          ? i18n.t('inventory:effects.restore', { stat: statistic })
           : `${sign}${magnitude} ${statistic}`.trim()
   } else {
-    const label = KIND_LABELS[effect.kind] ?? 'Efecto especial'
+    const label = KNOWN_KINDS.has(effect.kind)
+      ? i18n.t(`inventory:effects.kinds.${effect.kind}`)
+      : i18n.t('inventory:effects.kinds.other')
     main = magnitude === '' ? label : `${label} ${sign}${magnitude}`
   }
 

@@ -1,3 +1,6 @@
+import { formatInteger } from '@/shared/i18n/format'
+import { i18n } from '@/shared/i18n/i18n'
+
 import type { Magnitude } from './api'
 
 /**
@@ -14,24 +17,29 @@ export const formatMagnitude = (magnitude: Magnitude | null | undefined): string
   return `${String((magnitude.basisPoints ?? 0) / 100)}%`
 }
 
+/** Unidad de la magnitud: el daño se da «por golpe», la sanación «por uso». */
+export type MagnitudeUnit = 'hit' | 'use'
+
+const UNIT_KEYS: Readonly<Record<MagnitudeUnit, string>> = {
+  hit: 'inventory:magnitude.perHit',
+  use: 'inventory:magnitude.perUse',
+}
+
 /**
  * Traduccion para personas de una magnitud BASE, sin tirar dados ni calcular
  * un resultado: un dado sigue siendo un rango ("1–4"), nunca un numero
- * inventado. `per` es la unidad ("por golpe", "por uso").
+ * inventado. `unit` es la unidad ("por golpe", "por uso").
  *
- * - DICE `1d4` → "1 dado de 4 caras · Rango base: 1–4 por golpe"
- * - DICE `2d6` → "2 dados de 6 caras · Rango base: 2–12 por golpe"
- * - FIXED `3`  → "Base: 3 por golpe"
- * - PERCENTAGE → "25 % del valor de referencia"
- *
- * El minimo y el maximo son la aritmetica de la magnitud publicada
- * (`count` y `count × sides`), no una simulacion del combate.
+ * El texto sale del idioma activo; los numeros son exactamente los del
+ * backend (`count`, `sides`, `amount`), el rango es su lectura directa.
  */
 export const describeMagnitudeRange = (
   magnitude: Magnitude | null | undefined,
-  per = 'por golpe',
+  unit: MagnitudeUnit = 'hit',
 ): string | null => {
   if (magnitude == null) return null
+
+  const per = i18n.t(UNIT_KEYS[unit])
 
   if (magnitude.mode === 'DICE') {
     const count = magnitude.count ?? 0
@@ -39,14 +47,25 @@ export const describeMagnitudeRange = (
 
     if (count <= 0 || sides <= 0) return null
 
-    const dice = count === 1 ? '1 dado' : `${String(count)} dados`
+    const dice = i18n.t('inventory:magnitude.dice', {
+      count,
+      value: formatInteger(count),
+      sides: String(sides),
+    })
 
-    return `${dice} de ${String(sides)} caras · Rango base: ${String(count)}–${String(count * sides)} ${per}`
+    return i18n.t('inventory:magnitude.diceRange', {
+      dice,
+      min: String(count),
+      max: String(count * sides),
+      per,
+    })
   }
 
   if (magnitude.mode === 'FIXED') {
-    return `Base: ${String(magnitude.amount ?? 0)} ${per}`
+    return i18n.t('inventory:magnitude.fixed', { amount: String(magnitude.amount ?? 0), per })
   }
 
-  return `${String((magnitude.basisPoints ?? 0) / 100)} % del valor de referencia`
+  return i18n.t('inventory:magnitude.percent', {
+    percent: String((magnitude.basisPoints ?? 0) / 100),
+  })
 }
