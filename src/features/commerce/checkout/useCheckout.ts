@@ -6,6 +6,7 @@ import { useSession } from '@/shared/session'
 import { HttpError } from '@/lib/http'
 import { fetchCheckoutSummary, fetchPayment, payOrder } from './api'
 import type { CardForm } from './validation'
+import { i18n } from '@/shared/i18n/i18n'
 
 export const useCheckout = (orderId: string | null) => {
   const queryClient = useQueryClient()
@@ -27,7 +28,7 @@ export const useCheckout = (orderId: string | null) => {
     // La cache de mutaciones conserva solo el ID, nunca los cuatro datos de tarjeta.
     mutationFn: async (id: string) => {
       const input = cardToSend.current
-      if (input === null) throw new Error('Completa los datos del pago.')
+      if (input === null) throw new Error(i18n.t('commerce:checkout.completeData'))
       try {
         return await payOrder(id, input.card, input.version)
       } finally {

@@ -1,8 +1,10 @@
 import type { ComponentType, ReactNode } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { Gamepad2, Swords, Trophy, TrendingUp } from '@/components/ui/icons'
+import { formatInteger, formatLocale } from '@/shared/i18n/format'
 import type {
   AchievementsPanelState,
   PlayerAchievement,
@@ -26,12 +28,6 @@ import type {
 
 const CARD_SURFACE = 'rounded-lg border border-border bg-surface-raised p-5'
 const PENDING_HINT = 'text-xs text-muted'
-const RECOGNITION_STATUS = {
-  RECORDED: 'Registrado',
-  PENDING: 'Entrega pendiente',
-  CREDITED: 'Entregado',
-  FAILED: 'Entrega fallida',
-} as const
 
 /**
  * Microinteracción de profundidad (HU-06.4).
@@ -67,107 +63,128 @@ const StatCard = ({ icon: Icon, label, className, children }: StatCardProps): Re
 )
 
 /** Valor numérico grande, o "Sin registros todavía" cuando el servicio no reporta ninguno. */
-const MetricValue = ({ value }: { readonly value: number | null }): React.JSX.Element =>
-  value === null ? (
-    <p className="text-sm text-muted">Sin registros todavía.</p>
+const MetricValue = ({ value }: { readonly value: number | null }): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return value === null ? (
+    <p className="text-sm text-muted">{t('account:statistics.noRecords')}</p>
   ) : (
-    <p className="text-3xl font-semibold text-ink tabular-nums">{value.toLocaleString('es-CO')}</p>
+    <p className="text-3xl font-semibold text-ink tabular-nums">{formatInteger(value)}</p>
   )
+}
 
-const PendingMetric = ({ hint }: { readonly hint: string }): React.JSX.Element => (
-  <div className="space-y-1">
-    <p className="text-sm font-medium text-ink">Aún no disponible</p>
-    <p className={PENDING_HINT}>{hint}</p>
-  </div>
-)
+const PendingMetric = ({ hint }: { readonly hint: string }): React.JSX.Element => {
+  const { t } = useTranslation()
 
-const ProgressPending = (): React.JSX.Element => (
-  <div className="space-y-1">
-    <p className="text-sm font-medium text-ink">Definición funcional pendiente</p>
-    <p className={PENDING_HINT}>La representación definitiva dependerá de la escala aprobada.</p>
-  </div>
-)
+  return (
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-ink">{t('account:statistics.notAvailable')}</p>
+      <p className={PENDING_HINT}>{hint}</p>
+    </div>
+  )
+}
+
+const ProgressPending = (): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-ink">{t('account:statistics.progressPending')}</p>
+      <p className={PENDING_HINT}>{t('account:statistics.progressPendingHint')}</p>
+    </div>
+  )
+}
 
 const AchievementItem = ({
   achievement,
 }: {
   readonly achievement: PlayerAchievement
-}): React.JSX.Element => (
-  <li className={clsx(CARD_SURFACE, 'flex gap-3', DEPTH_HOVER)}>
-    <Trophy aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
-    <div className="min-w-0 space-y-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm font-medium text-ink">{achievement.name}</p>
-        <span className="inline-flex rounded-full bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
-          Obtenido
-        </span>
+}): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <li className={clsx(CARD_SURFACE, 'flex gap-3', DEPTH_HOVER)}>
+      <Trophy aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+      <div className="min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium text-ink">{achievement.name}</p>
+          <span className="inline-flex rounded-full bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
+            {t('account:statistics.obtained')}
+          </span>
+        </div>
+        {achievement.description !== undefined && (
+          <p className="text-xs text-muted">{achievement.description}</p>
+        )}
+        {achievement.recognition !== undefined && (
+          <p className="text-xs text-muted">
+            {t('account:statistics.recognition', {
+              name: achievement.recognition.name,
+              status:
+                achievement.recognition.status === null
+                  ? t('account:statistics.recognitionUnknown')
+                  : t(`account:statistics.recognitionStatus.${achievement.recognition.status}`),
+            })}
+          </p>
+        )}
+        {achievement.obtainedAt !== undefined && (
+          <p className="text-xs text-muted">
+            {t('account:statistics.obtainedOn', {
+              date: new Date(achievement.obtainedAt).toLocaleDateString(formatLocale()),
+            })}
+          </p>
+        )}
       </div>
-      {achievement.description !== undefined && (
-        <p className="text-xs text-muted">{achievement.description}</p>
-      )}
-      {achievement.recognition !== undefined && (
-        <p className="text-xs text-muted">
-          Reconocimiento: {achievement.recognition.name} ·{' '}
-          {achievement.recognition.status === null
-            ? 'Estado no informado'
-            : RECOGNITION_STATUS[achievement.recognition.status]}
-        </p>
-      )}
-      {achievement.obtainedAt !== undefined && (
-        <p className="text-xs text-muted">
-          Obtenido el {new Date(achievement.obtainedAt).toLocaleDateString('es-CO')}
-        </p>
-      )}
-    </div>
-  </li>
-)
+    </li>
+  )
+}
 
 const AchievementsBlock = ({
   state,
 }: {
   readonly state: AchievementsPanelState
-}): React.JSX.Element => (
-  <section aria-labelledby="account-achievements-heading" className="space-y-3">
-    <div className="flex items-center gap-2">
-      <Trophy aria-hidden className="h-4 w-4 text-muted" />
-      <h3 id="account-achievements-heading" className="text-base font-semibold text-ink">
-        Logros y reconocimientos
-      </h3>
-    </div>
+}): React.JSX.Element => {
+  const { t } = useTranslation()
 
-    {state.status === 'pending' ? (
-      <Card>
-        <p className="text-sm font-medium text-ink">Aún no disponible</p>
-        <p className="mt-1 text-xs text-muted">
-          Aquí verás los logros y reconocimientos de tu cuenta cuando exista el servicio que los
-          registra.
-        </p>
-      </Card>
-    ) : state.status === 'loading' ? (
-      <Card>
-        <p role="status" className="text-sm text-muted">
-          Cargando logros...
-        </p>
-      </Card>
-    ) : state.status === 'error' ? (
-      <Card>
-        <p role="alert" className="text-sm text-danger">
-          {state.message}
-        </p>
-      </Card>
-    ) : state.items.length === 0 ? (
-      <Card>
-        <p className="text-sm text-muted">Aún no tienes logros registrados.</p>
-      </Card>
-    ) : (
-      <ul className="grid gap-3 sm:grid-cols-2">
-        {state.items.map((achievement) => (
-          <AchievementItem key={achievement.id} achievement={achievement} />
-        ))}
-      </ul>
-    )}
-  </section>
-)
+  return (
+    <section aria-labelledby="account-achievements-heading" className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Trophy aria-hidden className="h-4 w-4 text-muted" />
+        <h3 id="account-achievements-heading" className="text-base font-semibold text-ink">
+          {t('account:statistics.achievements')}
+        </h3>
+      </div>
+
+      {state.status === 'pending' ? (
+        <Card>
+          <p className="text-sm font-medium text-ink">{t('account:statistics.notAvailable')}</p>
+          <p className="mt-1 text-xs text-muted">{t('account:statistics.achievementsPending')}</p>
+        </Card>
+      ) : state.status === 'loading' ? (
+        <Card>
+          <p role="status" className="text-sm text-muted">
+            {t('account:statistics.achievementsLoading')}
+          </p>
+        </Card>
+      ) : state.status === 'error' ? (
+        <Card>
+          <p role="alert" className="text-sm text-danger">
+            {state.message}
+          </p>
+        </Card>
+      ) : state.items.length === 0 ? (
+        <Card>
+          <p className="text-sm text-muted">{t('account:statistics.achievementsEmpty')}</p>
+        </Card>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {state.items.map((achievement) => (
+            <AchievementItem key={achievement.id} achievement={achievement} />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
 
 const StatsGrid = ({
   statistics,
@@ -175,35 +192,43 @@ const StatsGrid = ({
 }: {
   readonly statistics: PlayerStatistics | null
   readonly pending: boolean
-}): React.JSX.Element => (
-  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    <StatCard icon={Gamepad2} label="Partidas jugadas">
-      {pending || statistics === null ? (
-        <PendingMetric hint="Se mostrará cuando exista el servicio que registra tus partidas." />
-      ) : (
-        <MetricValue value={statistics.gamesPlayed} />
-      )}
-    </StatCard>
+}): React.JSX.Element => {
+  const { t } = useTranslation()
 
-    <StatCard icon={Swords} label="Victorias">
-      {pending || statistics === null ? (
-        <PendingMetric hint="Se mostrará cuando exista el servicio que registra tus victorias." />
-      ) : (
-        <MetricValue value={statistics.wins} />
-      )}
-    </StatCard>
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatCard icon={Gamepad2} label={t('account:statistics.gamesPlayed')}>
+        {pending || statistics === null ? (
+          <PendingMetric hint={t('account:statistics.gamesPlayedPending')} />
+        ) : (
+          <MetricValue value={statistics.gamesPlayed} />
+        )}
+      </StatCard>
 
-    <StatCard icon={TrendingUp} label="Progreso general" className="sm:col-span-2 lg:col-span-1">
-      {pending ||
-      statistics === null ||
-      statistics.generalProgress.kind === 'pending-definition' ? (
-        <ProgressPending />
-      ) : (
-        <p className="text-sm text-ink">{statistics.generalProgress.label}</p>
-      )}
-    </StatCard>
-  </div>
-)
+      <StatCard icon={Swords} label={t('account:statistics.wins')}>
+        {pending || statistics === null ? (
+          <PendingMetric hint={t('account:statistics.winsPending')} />
+        ) : (
+          <MetricValue value={statistics.wins} />
+        )}
+      </StatCard>
+
+      <StatCard
+        icon={TrendingUp}
+        label={t('account:statistics.generalProgress')}
+        className="sm:col-span-2 lg:col-span-1"
+      >
+        {pending ||
+        statistics === null ||
+        statistics.generalProgress.kind === 'pending-definition' ? (
+          <ProgressPending />
+        ) : (
+          <p className="text-sm text-ink">{statistics.generalProgress.label}</p>
+        )}
+      </StatCard>
+    </div>
+  )
+}
 
 export interface StatisticsPanelProps {
   readonly state: StatisticsPanelState
@@ -214,11 +239,13 @@ export const StatisticsPanel = ({
   state,
   achievementsState,
 }: StatisticsPanelProps): React.JSX.Element => {
+  const { t } = useTranslation()
+
   if (state.status === 'loading') {
     return (
       <p role="status" className="text-sm">
         <strong className="font-semibold text-ink underline underline-offset-2">
-          Cargando tus estadísticas…
+          {t('account:statistics.loading')}
         </strong>
       </p>
     )
@@ -228,8 +255,7 @@ export const StatisticsPanel = ({
     return (
       <Card>
         <p role="alert" className="text-sm text-danger">
-          {state.message ??
-            'No se pudieron cargar tus estadísticas. Vuelve a intentarlo en un momento.'}
+          {state.message ?? t('account:statistics.loadFailed')}
         </p>
       </Card>
     )

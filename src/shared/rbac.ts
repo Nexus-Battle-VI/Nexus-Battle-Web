@@ -1,3 +1,4 @@
+import { i18n } from '@/shared/i18n/i18n'
 /**
  * Roles reconocidos por HU-02 y su representacion textual.
  *
@@ -12,15 +13,14 @@
  * servicio, que valida el rol del testimonio antes de ejecutar la operacion
  * protegida.
  */
-const ROLE_LABELS: Readonly<Record<string, string>> = {
-  PLAYER: 'Jugador',
-  MODERATOR: 'Moderador',
-  ADMINISTRATOR: 'Administrador',
-  SUPER_ADMINISTRATOR: 'Super Administrador',
-}
+const KNOWN_ROLES = new Set(['PLAYER', 'MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])
 
-/** Etiqueta legible de un rol. Devuelve el valor original si no se reconoce. */
-export const roleLabel = (role: string): string => ROLE_LABELS[role] ?? role
+/**
+ * Etiqueta legible de un rol en el idioma activo. Devuelve el valor original si
+ * no se reconoce (el token del rol nunca se traduce: solo su etiqueta).
+ */
+export const roleLabel = (role: string): string =>
+  KNOWN_ROLES.has(role) ? i18n.t(`common:roles.${role}`) : role
 
 const ROLE_PRECEDENCE = ['SUPER_ADMINISTRATOR', 'ADMINISTRATOR', 'MODERATOR', 'PLAYER'] as const
 

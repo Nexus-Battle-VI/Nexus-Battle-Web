@@ -2,10 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { PasswordField } from '@/components/ui/PasswordField'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import { LEGAL_DOCUMENTS, SECURITY_QUESTIONS } from './constants'
 import { confirmRegistration, registerAccount } from './api'
 import {
@@ -26,9 +29,6 @@ import {
  * el avatar, ni las respuestas de seguridad tocan el almacenamiento del
  * navegador.
  */
-const REGISTER_FAILED = 'No se pudo completar el registro.'
-const CONFIRM_FAILED = 'No se pudo confirmar la cuenta.'
-
 const CONTROL_CLASS =
   'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
 
@@ -173,75 +173,84 @@ const ConfirmationStep = ({
   confirmed,
   failure,
   onGoToLogin,
-}: ConfirmationStepProps): React.JSX.Element => (
-  <div className="mx-auto max-w-md">
-    {confirmed ? (
-      <div className="space-y-5 text-center">
-        <h1 className="text-xl font-semibold text-ink">Cuenta activada</h1>
-        <p
-          role="status"
-          className="rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
-        >
-          Tu cuenta quedó activada. Ya puedes iniciar sesión con tu correo y tu contraseña.
-        </p>
-        <div className="flex justify-center">
-          <Button onClick={onGoToLogin}>Ir a iniciar sesión</Button>
-        </div>
-      </div>
-    ) : (
-      <>
-        <h1 className="text-center text-xl font-semibold text-ink">Confirma tu correo</h1>
-        <p className="mx-auto mt-1.5 max-w-sm text-center text-sm text-muted">
-          Enviamos un código de confirmación a <span className="font-medium text-ink">{email}</span>
-          . Escríbelo para activar tu cuenta.
-        </p>
+}: ConfirmationStepProps): React.JSX.Element => {
+  const { t } = useTranslation()
 
-        <form
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault()
-            onConfirm()
-          }}
-          className="mt-6 space-y-4"
-        >
-          {failure !== null && (
-            <p
-              role="alert"
-              className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
-            >
-              {failure}
-            </p>
-          )}
-
-          <Field
-            id="confirmation-code"
-            label="Código de confirmación"
-            hint="Revisa tu bandeja de entrada y la carpeta de spam."
+  return (
+    <div className="mx-auto max-w-md">
+      {confirmed ? (
+        <div className="space-y-5 text-center">
+          <h1 className="text-xl font-semibold text-ink">
+            {t('account:registration.activatedTitle')}
+          </h1>
+          <p
+            role="status"
+            className="rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
           >
-            {(field) => (
-              <input
-                {...field}
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={code}
-                onChange={(event) => {
-                  onCodeChange(event.target.value)
-                }}
-              />
-            )}
-          </Field>
-
-          <div className="flex justify-end">
-            <Button type="submit" loading={confirming}>
-              Confirmar cuenta
-            </Button>
+            {t('account:registration.activatedBody')}
+          </p>
+          <div className="flex justify-center">
+            <Button onClick={onGoToLogin}>{t('account:registration.goToLogin')}</Button>
           </div>
-        </form>
-      </>
-    )}
-  </div>
-)
+        </div>
+      ) : (
+        <>
+          <h1 className="text-center text-xl font-semibold text-ink">
+            {t('account:registration.confirmTitle')}
+          </h1>
+          <p className="mx-auto mt-1.5 max-w-sm text-center text-sm text-muted">
+            {t('account:registration.confirmSentBefore')}{' '}
+            <span className="font-medium text-ink">{email}</span>
+            {t('account:registration.confirmSentAfter')}
+          </p>
+
+          <form
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault()
+              onConfirm()
+            }}
+            className="mt-6 space-y-4"
+          >
+            {failure !== null && (
+              <p
+                role="alert"
+                className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
+              >
+                {failure}
+              </p>
+            )}
+
+            <Field
+              id="confirmation-code"
+              label={t('account:registration.code')}
+              hint={t('account:registration.codeHint')}
+            >
+              {(field) => (
+                <input
+                  {...field}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={(event) => {
+                    onCodeChange(event.target.value)
+                  }}
+                />
+              )}
+            </Field>
+
+            <div className="flex justify-end">
+              <Button type="submit" loading={confirming}>
+                {t('account:registration.confirm')}
+              </Button>
+            </div>
+          </form>
+        </>
+      )}
+    </div>
+  )
+}
 
 export interface RegistrationPageProps {
   /** Transporte del registro. Se inyecta para poder ejercitar el envio sin red. */
@@ -268,6 +277,8 @@ export const RegistrationPage = ({
   onConfirm = confirmRegistration,
 }: RegistrationPageProps = {}): React.JSX.Element => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
 
   const [values, setValues] = useState<RegistrationValues>(EMPTY_VALUES)
   const [touched, setTouched] = useState<Readonly<Record<string, boolean>>>({})
@@ -341,7 +352,11 @@ export const RegistrationPage = ({
       // segundo paso en lugar de anunciar un exito que aun no lo es.
       setPendingEmail(values.email)
     } catch (error: unknown) {
-      setFailure(error instanceof Error ? error.message : REGISTER_FAILED)
+      setFailure(
+        error instanceof Error
+          ? describeFailure(error, t, language)
+          : t('account:registration.failed'),
+      )
     } finally {
       setSending(false)
     }
@@ -355,7 +370,7 @@ export const RegistrationPage = ({
     setConfirmFailure(null)
 
     if (code.trim() === '') {
-      setConfirmFailure('Escribe el código que enviamos a tu correo.')
+      setConfirmFailure(t('account:registration.codeRequired'))
       return
     }
 
@@ -365,7 +380,11 @@ export const RegistrationPage = ({
       await onConfirm(pendingEmail, code.trim())
       setConfirmed(true)
     } catch (error: unknown) {
-      setConfirmFailure(error instanceof Error ? error.message : CONFIRM_FAILED)
+      setConfirmFailure(
+        error instanceof Error
+          ? describeFailure(error, t, language)
+          : t('account:registration.confirmFailed'),
+      )
     } finally {
       setConfirming(false)
     }
@@ -387,7 +406,7 @@ export const RegistrationPage = ({
       <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
-            ← Volver al menú
+            {t('account:registration.backToMenu')}
           </Link>
 
           <ThemeToggle />
@@ -397,7 +416,7 @@ export const RegistrationPage = ({
           {logoFailed ? (
             <>
               <p className="text-[0.65rem] uppercase tracking-[0.3em] text-muted">
-                UPB-COMPANY presenta
+                {t('account:registration.presents')}
               </p>
               <p className="mt-1 text-xl font-semibold uppercase tracking-[0.16em] text-ink">
                 The Nexus Battles VI
@@ -413,7 +432,7 @@ export const RegistrationPage = ({
           ) : (
             <>
               <p className="text-[0.65rem] uppercase tracking-[0.3em] text-muted">
-                UPB-COMPANY presenta
+                {t('account:registration.presents')}
               </p>
               <img
                 src={LOGO_SRC}
@@ -450,10 +469,11 @@ export const RegistrationPage = ({
             />
           ) : (
             <>
-              <h1 className="text-center text-xl font-semibold text-ink">Crear cuenta</h1>
+              <h1 className="text-center text-xl font-semibold text-ink">
+                {t('account:registration.title')}
+              </h1>
               <p className="mx-auto mt-1.5 max-w-lg text-center text-sm text-muted">
-                Completa tus datos para unirte a Nexus Battles VI. Todos los campos son
-                obligatorios.
+                {t('account:registration.subtitle')}
               </p>
 
               <form
@@ -472,7 +492,7 @@ export const RegistrationPage = ({
                     className="rounded-lg border border-danger bg-danger/10 p-4"
                   >
                     <p className="text-sm font-semibold text-danger">
-                      Revisa los siguientes campos antes de completar el registro:
+                      {t('account:registration.summary')}
                     </p>
                     <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-danger">
                       {issues.map(([field, message]) => (
@@ -495,13 +515,13 @@ export const RegistrationPage = ({
                   </p>
                 )}
 
-                <Section title="Datos personales">
+                <Section title={t('account:registration.personal')}>
                   <div className="space-y-4">
                     <FieldRow>
                       <Field
                         id={FIELD.firstName}
-                        label="Nombres"
-                        hint="Campo obligatorio."
+                        label={t('account:registration.firstNames')}
+                        hint={t('account:registration.requiredHint')}
                         {...(visible[FIELD.firstName] === undefined
                           ? {}
                           : { error: visible[FIELD.firstName] })}
@@ -524,8 +544,8 @@ export const RegistrationPage = ({
 
                       <Field
                         id={FIELD.lastName}
-                        label="Apellidos"
-                        hint="Campo obligatorio."
+                        label={t('account:registration.lastNames')}
+                        hint={t('account:registration.requiredHint')}
                         {...(visible[FIELD.lastName] === undefined
                           ? {}
                           : { error: visible[FIELD.lastName] })}
@@ -550,8 +570,8 @@ export const RegistrationPage = ({
                     <FieldRow>
                       <Field
                         id={FIELD.email}
-                        label="Correo electrónico"
-                        hint="Usaremos este correo para confirmar tu cuenta."
+                        label={t('account:registration.email')}
+                        hint={t('account:registration.emailHint')}
                         {...(visible[FIELD.email] === undefined
                           ? {}
                           : { error: visible[FIELD.email] })}
@@ -574,9 +594,12 @@ export const RegistrationPage = ({
 
                       <Field
                         id={FIELD.nickname}
-                        label="Apodo"
-                        hint="No se permiten palabras ofensivas ni nombres reservados."
-                        counter={`${String(values.nickname.length)} / ${String(NICKNAME_MAX_LENGTH)} caracteres`}
+                        label={t('account:registration.nickname')}
+                        hint={t('account:registration.nicknameHint')}
+                        counter={t('account:registration.nicknameCounter', {
+                          current: String(values.nickname.length),
+                          max: String(NICKNAME_MAX_LENGTH),
+                        })}
                         {...(visible[FIELD.nickname] === undefined
                           ? {}
                           : { error: visible[FIELD.nickname] })}
@@ -603,8 +626,8 @@ export const RegistrationPage = ({
 
                     <Field
                       id={FIELD.password}
-                      label="Contraseña"
-                      hint="Más de 8 caracteres, con mayúscula, minúscula, número y símbolo."
+                      label={t('account:registration.password')}
+                      hint={t('account:registration.passwordHint')}
                       {...(visible[FIELD.password] === undefined
                         ? {}
                         : { error: visible[FIELD.password] })}
@@ -626,11 +649,11 @@ export const RegistrationPage = ({
                   </div>
                 </Section>
 
-                <Section title="Avatar">
+                <Section title={t('account:registration.avatarSection')}>
                   <Field
                     id={FIELD.avatar}
-                    label="Sube tu avatar (obligatorio)"
-                    hint="Formato imagen · Tamaño máximo 5 MB"
+                    label={t('account:registration.avatar')}
+                    hint={t('account:registration.avatarHint')}
                     {...(visible[FIELD.avatar] === undefined
                       ? {}
                       : { error: visible[FIELD.avatar] })}
@@ -656,14 +679,14 @@ export const RegistrationPage = ({
 
                   {values.avatar !== null && (
                     <p className="mt-1.5 truncate text-xs text-muted">
-                      Seleccionado: {values.avatar.name}
+                      {t('account:registration.avatarSelected', { name: values.avatar.name })}
                     </p>
                   )}
                 </Section>
 
                 <Section
-                  title="Preguntas de seguridad"
-                  description="Se usarán para recuperar el acceso a tu cuenta. Responde las cuatro."
+                  title={t('account:registration.securitySection')}
+                  description={t('account:registration.securityDescription')}
                 >
                   {/*
                 Una columna: con dos columnas, una pregunta que envuelve a dos
@@ -725,8 +748,7 @@ export const RegistrationPage = ({
                       className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                     />
                     <label htmlFor={FIELD.terms} className="text-sm text-ink">
-                      He leído y acepto los Términos y Condiciones y la Política de Privacidad de
-                      Nexus Battles VI.
+                      {t('account:registration.terms')}
                     </label>
                   </div>
 
@@ -765,8 +787,9 @@ export const RegistrationPage = ({
 
                   {unavailableDocument !== null && (
                     <p role="status" className="mt-2 pl-7 text-xs text-muted">
-                      {unavailableDocument}: el documento todavía no está publicado en la
-                      aplicación.
+                      {t('account:registration.documentUnavailable', {
+                        document: unavailableDocument,
+                      })}
                     </p>
                   )}
 
@@ -790,10 +813,10 @@ export const RegistrationPage = ({
                       void navigate('/')
                     }}
                   >
-                    Cancelar
+                    {t('common:cancel')}
                   </Button>
                   <Button type="submit" loading={sending}>
-                    Completar registro
+                    {t('account:registration.submit')}
                   </Button>
                 </div>
               </form>

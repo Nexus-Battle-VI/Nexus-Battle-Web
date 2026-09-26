@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
 import { confirmTotp, enrollTotp, type TotpAssociation } from './api'
-
-const ENROLL_FAILED = 'No se pudo iniciar la configuracion del autenticador.'
-const CONFIRM_FAILED = 'No se pudo confirmar el autenticador.'
 
 const CODE_INPUT_CLASS =
   'block w-40 rounded-md border border-border bg-[var(--nb-field)] px-3 py-2 text-sm tracking-widest text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
@@ -35,7 +35,10 @@ export const TotpEnrollment = ({
   const [associating, setAssociating] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  // Texto ya localizado del fallo (describeFailure o clave traducida).
   const [failure, setFailure] = useState<string | null>(null)
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
 
   useEffect(() => {
     // Una vez asociado, no se vuelve a `null` en este flujo, asi que no hace
@@ -77,7 +80,11 @@ export const TotpEnrollment = ({
     try {
       setAssociation(await onEnroll())
     } catch (error: unknown) {
-      setFailure(error instanceof Error ? error.message : ENROLL_FAILED)
+      setFailure(
+        error instanceof Error
+          ? describeFailure(error, t, language)
+          : t('account:totp.enrollFailed'),
+      )
     } finally {
       setAssociating(false)
     }
@@ -91,7 +98,7 @@ export const TotpEnrollment = ({
     setFailure(null)
 
     if (!/^\d{6}$/u.test(code.trim())) {
-      setFailure('El codigo debe tener seis digitos.')
+      setFailure(t('account:totp.codeFormat'))
       return
     }
 
@@ -101,7 +108,11 @@ export const TotpEnrollment = ({
       await onConfirm(code.trim())
       setConfirmed(true)
     } catch (error: unknown) {
-      setFailure(error instanceof Error ? error.message : CONFIRM_FAILED)
+      setFailure(
+        error instanceof Error
+          ? describeFailure(error, t, language)
+          : t('account:totp.confirmFailed'),
+      )
     } finally {
       setConfirming(false)
     }
@@ -110,8 +121,7 @@ export const TotpEnrollment = ({
   if (confirmed) {
     return (
       <p role="status" className="rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink">
-        Autenticador confirmado. A partir del proximo inicio de sesion se te pedira el codigo de tu
-        aplicacion.
+        {t('account:totp.confirmed')}
       </p>
     )
   }
@@ -129,25 +139,19 @@ export const TotpEnrollment = ({
 
       {association === null ? (
         <div className="space-y-3">
-          <p className="text-sm text-muted">
-            Anade una aplicacion autenticadora (Google Authenticator, Authy, etc.) como segundo
-            factor. Es obligatorio antes de recibir un rol administrativo.
-          </p>
+          <p className="text-sm text-muted">{t('account:totp.intro')}</p>
           <Button onClick={() => void handleEnroll()} loading={associating}>
-            Configurar autenticador
+            {t('account:totp.setup')}
           </Button>
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-muted">
-            Escanea el codigo QR con tu aplicacion, o introduce la clave a mano. Despues escribe el
-            codigo de seis digitos que muestre para confirmar.
-          </p>
+          <p className="text-sm text-muted">{t('account:totp.scan')}</p>
 
           {qrDataUrl !== null && (
             <img
               src={qrDataUrl}
-              alt="Codigo QR para configurar tu aplicacion autenticadora"
+              alt={t('account:totp.qrAlt')}
               width={208}
               height={208}
               className="rounded-md border border-border bg-white p-2"
@@ -155,7 +159,7 @@ export const TotpEnrollment = ({
           )}
 
           <div>
-            <p className="text-xs text-muted">Clave para introducir a mano:</p>
+            <p className="text-xs text-muted">{t('account:totp.manualKey')}</p>
             <code className="mt-1 inline-block rounded bg-surface px-2 py-1 text-sm tracking-widest text-ink">
               {association.secret}
             </code>
@@ -163,7 +167,7 @@ export const TotpEnrollment = ({
 
           <div className="space-y-2">
             <label htmlFor="totp-code" className="block text-sm font-medium text-ink">
-              Codigo del autenticador
+              {t('account:totp.code')}
             </label>
             <input
               id="totp-code"
@@ -180,7 +184,7 @@ export const TotpEnrollment = ({
           </div>
 
           <Button onClick={() => void handleConfirm()} loading={confirming}>
-            Confirmar autenticador
+            {t('account:totp.confirm')}
           </Button>
         </div>
       )}

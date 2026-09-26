@@ -1,0 +1,51 @@
+{
+  "genericError": "Não foi possível concluir a operação. Tente novamente mais tarde.",
+  "sending": "Enviando…",
+  "sessionExpiredComment": "Sua sessão expirou. Entre novamente para comentar ou avaliar.",
+  "form": {
+    "title": "Comentários e avaliação",
+    "commentRequired": "Escreva um comentário antes de publicar.",
+    "publishedBoth": "Seu comentário e sua avaliação foram publicados com sucesso.",
+    "published": "Seu comentário foi publicado com sucesso.",
+    "alreadyRatedNotice": "Seu comentário foi publicado com sucesso. Você já tinha avaliado este produto antes: a avaliação anterior é mantida.",
+    "comment": "Comentário",
+    "commentPlaceholder": "Conte o que você achou deste produto.",
+    "images": "Imagens (opcional)",
+    "image": "Imagem {{index}}",
+    "removeImage": "Remover",
+    "addImage": "Adicionar imagem",
+    "alreadyRated": "Você já avaliou este produto.",
+    "rating": "Avaliação (opcional)",
+    "publish": "Publicar"
+  },
+  "stars": {
+    "label": "Avaliação",
+    "option": "{{value}} de 5 estrelas"
+  },
+  "list": {
+    "empty": "Ainda não há comentários sobre este produto.",
+    "report": "Denunciar"
+  },
+  "report": {
+    "categories": {
+      "SPAM": "Spam",
+      "OFFENSIVE_CONTENT": "Conteúdo ofensivo",
+      "HARASSMENT": "Assédio",
+      "FALSE_INFORMATION": "Informação falsa",
+      "INAPPROPRIATE_CONTENT": "Conteúdo inapropriado",
+      "COPYRIGHT_VIOLATION": "Violação de direitos autorais"
+    },
+    "rateLimited": "Você atingiu o limite de denúncias permitido. Tente novamente mais tarde.",
+    "categoryRequired": "Selecione um motivo para continuar.",
+    "sent": "Sua denúncia foi enviada para análise.",
+    "close": "Fechar",
+    "formLabel": "Denunciar comentário {{id}}",
+    "sessionExpired": "Sua sessão expirou. Entre novamente para denunciar este comentário.",
+    "notFound": "Este comentário não está mais disponível.",
+    "reason": "Motivo da denúncia",
+    "reasonPlaceholder": "Selecione um motivo",
+    "description": "Descrição adicional (opcional)",
+    "descriptionPlaceholder": "Conte mais sobre o motivo da denúncia…",
+    "submit": "Enviar denúncia"
+  }
+}

@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Star } from '@/components/ui/icons'
 
@@ -24,34 +25,45 @@ export const StarRatingInput = ({
   value,
   onChange,
   disabled = false,
-  label = 'Calificación',
-}: StarRatingInputProps): React.JSX.Element => (
-  <div role="radiogroup" aria-label={label} className="flex items-center gap-1">
-    {SCALE.map((star) => {
-      const selected = value !== null && star <= value
+  label,
+}: StarRatingInputProps): React.JSX.Element => {
+  const { t } = useTranslation()
 
-      return (
-        <button
-          key={star}
-          type="button"
-          role="radio"
-          aria-checked={value === star}
-          aria-label={`${String(star)} de 5 estrellas`}
-          disabled={disabled}
-          onClick={() => {
-            onChange(star)
-          }}
-          className={clsx(
-            'rounded p-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
-        >
-          <Star
-            aria-hidden="true"
-            className={clsx('size-6', selected ? 'fill-brand text-brand' : 'fill-none text-muted')}
-          />
-        </button>
-      )
-    })}
-  </div>
-)
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label ?? t('reviews:stars.label')}
+      className="flex items-center gap-1"
+    >
+      {SCALE.map((star) => {
+        const selected = value !== null && star <= value
+
+        return (
+          <button
+            key={star}
+            type="button"
+            role="radio"
+            aria-checked={value === star}
+            aria-label={t('reviews:stars.option', { value: String(star) })}
+            disabled={disabled}
+            onClick={() => {
+              onChange(star)
+            }}
+            className={clsx(
+              'rounded p-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+              'disabled:cursor-not-allowed disabled:opacity-50',
+            )}
+          >
+            <Star
+              aria-hidden="true"
+              className={clsx(
+                'size-6',
+                selected ? 'fill-brand text-brand' : 'fill-none text-muted',
+              )}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}

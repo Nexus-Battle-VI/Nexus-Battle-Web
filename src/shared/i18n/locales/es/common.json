@@ -2,6 +2,47 @@
   "loading": "Cargando...",
   "empty": "No hay elementos para mostrar.",
   "cancel": "Cancelar",
+  "back": "Volver",
+  "yes": "Sí",
+  "no": "No",
+  "notAvailable": "No disponible",
+  "roles": {
+    "PLAYER": "Jugador",
+    "MODERATOR": "Moderador",
+    "ADMINISTRATOR": "Administrador",
+    "SUPER_ADMINISTRATOR": "Super Administrador",
+    "GAME_MASTER": "Maestro de Juego"
+  },
+  "status": {
+    "DRAFT": "Borrador",
+    "PUBLISHED": "Publicado",
+    "ARCHIVED": "Archivado",
+    "CONFIRMED": "Confirmado",
+    "CANCELLED": "Cancelado",
+    "OPEN": "Abierto",
+    "CLOSED": "Cerrado",
+    "PENDING_VERIFICATION": "Pendiente de verificacion",
+    "ACTIVE": "Activa",
+    "SUSPENDED": "Suspendida",
+    "RECEIVED": "Recibida",
+    "PENDING": "Pendiente",
+    "APPROVED": "Aprobado",
+    "DELETED": "Eliminado",
+    "HIDDEN": "Oculto",
+    "EDITED": "Editado",
+    "MARKED": "Marcado",
+    "WAITING_FOR_PLAYERS": "Esperando jugadores",
+    "PREPARING": "Preparando batalla"
+  },
+  "breadcrumb": "Ruta de navegacion",
+  "password": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
+  },
+  "moduleUnavailable": {
+    "title": "Módulo no disponible.",
+    "body": "Esta funcionalidad todavía no está disponible en este incremento."
+  },
   "number": {
     "thousand": "mil",
     "million": "M"

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { screen } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
+import { setLanguage } from '@/shared/i18n/language'
 import { renderWithProviders } from '@/test/render'
 import { CartPanel } from './CartPanel'
 import { useCartPanelState } from './useCartPanelState'
@@ -265,5 +266,34 @@ describe('CartPanel — los importes vienen del servicio', () => {
     renderPanel({ cart: { ...CART, total: 99_900 } })
 
     expect(screen.getByTestId('cart-total')).toHaveTextContent('999,00')
+  })
+})
+
+describe('CartPanel — idioma (HU-05 CA-04)', () => {
+  it('traduce etiquetas y pluraliza el recuento sin tocar los nombres ni los importes del servicio', async () => {
+    renderPanel({ expanded: false, cart: { ...CART, itemCount: 1 } })
+    expect(screen.getByRole('button', { name: 'Carrito, 1 producto' })).toBeInTheDocument()
+
+    await act(async () => {
+      await setLanguage('en')
+    })
+    expect(await screen.findByRole('button', { name: 'Cart, 1 product' })).toBeInTheDocument()
+
+    await act(async () => {
+      await setLanguage('fr')
+    })
+    expect(await screen.findByRole('button', { name: 'Panier, 1 produit' })).toBeInTheDocument()
+  })
+
+  it('la vista desplegada cambia de idioma y conserva la referencia del producto', async () => {
+    renderPanel()
+
+    await act(async () => {
+      await setLanguage('pt')
+    })
+
+    expect(await screen.findByRole('button', { name: 'Ir para o pagamento' })).toBeInTheDocument()
+    // El nombre (aqui la referencia) es contenido del servicio: no se traduce.
+    expect(screen.getAllByText('espada-de-hierro').length).toBeGreaterThan(0)
   })
 })

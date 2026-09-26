@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { QueryState } from '@/components/ui/QueryState'
 import { SignInPrompt } from '@/app/SignInPrompt'
 import { useSession } from '@/shared/session'
 import { CatalogBanner } from '@/features/notifications/CatalogBanner'
 import { CatalogNotificationsSummary } from '@/features/notifications/CatalogNotificationsSummary'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
+import { countLabel } from '@/shared/i18n/format'
 import { CartPanel } from './cart/CartPanel'
 import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
@@ -27,6 +31,8 @@ import './commerce.css'
  */
 export const CommercePage = (): React.JSX.Element => {
   const subject = useSession((state) => state.subject)
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
   const { cart, isLoading, error, busySku, isBusy, add, changeQuantity, remove, mutationError } =
     useCart()
   const savedCart = useSavedCart()
@@ -59,18 +65,20 @@ export const CommercePage = (): React.JSX.Element => {
     <div className="commerce-page">
       <header className="commerce-heading">
         <div className="flex items-baseline gap-3">
-          <h1 className="text-xl font-semibold text-ink">E-commerce</h1>
-          <span className="hidden text-xs text-muted sm:inline">Equipa tu próxima batalla</span>
+          <h1 className="text-xl font-semibold text-ink">{t('commerce:page.title')}</h1>
+          <span className="hidden text-xs text-muted sm:inline">{t('commerce:page.tagline')}</span>
         </div>
         <p aria-live="polite" className="text-xs text-muted">
-          {cart?.itemCount ?? 0} productos en tu carrito
+          {countLabel(t, 'commerce:page.cartCount', cart?.itemCount ?? 0)}
         </p>
       </header>
       <CatalogBanner />
       <CatalogNotificationsSummary />
       {cartError !== null && (
         <p role="alert" className="commerce-notice text-sm text-danger">
-          {cartError instanceof Error ? cartError.message : 'No se pudo actualizar el carrito.'}
+          {cartError instanceof Error
+            ? describeFailure(cartError, t, language)
+            : t('commerce:page.cartFailed')}
         </p>
       )}
       <Showcase
@@ -95,14 +103,14 @@ export const CommercePage = (): React.JSX.Element => {
       </div>
       {signInPromptOpen && (
         <CommerceDialog
-          title="Inicia sesión para comprar"
+          title={t('commerce:page.signInTitle')}
           onClose={() => {
             setSignInPromptOpen(false)
           }}
         >
           <div className="flex justify-center p-6">
             <SignInPrompt
-              description="Necesitas iniciar sesión o crear una cuenta para añadir productos al carrito."
+              description={t('commerce:page.signInDescription')}
               onCancel={() => {
                 setSignInPromptOpen(false)
               }}
@@ -111,15 +119,15 @@ export const CommercePage = (): React.JSX.Element => {
         </CommerceDialog>
       )}
       {panel.expanded && (
-        <CommerceDialog title="Tu carrito" floating onClose={panel.toggle}>
+        <CommerceDialog title={t('commerce:page.cartDialog')} floating onClose={panel.toggle}>
           <QueryState isLoading={isLoading} error={error}>
             <CartPanel {...cartProps} expanded />
           </QueryState>
           {mutationError !== null && (
             <p role="alert" className="px-4 py-2 text-sm text-danger">
               {mutationError instanceof Error
-                ? mutationError.message
-                : 'No se pudo actualizar el carrito.'}
+                ? describeFailure(mutationError, t, language)
+                : t('commerce:page.cartFailed')}
             </p>
           )}
           <QueryState isLoading={savedCart.isLoading} error={savedCart.error}>
@@ -138,7 +146,7 @@ export const CommercePage = (): React.JSX.Element => {
       )}
       {payingOrderId !== null && (
         <CommerceDialog
-          title="Finalizar compra"
+          title={t('commerce:page.checkoutDialog')}
           onClose={closePayment}
           locked={checkout.isPaying && !checkout.processing}
         >
