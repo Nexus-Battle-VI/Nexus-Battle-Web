@@ -16,7 +16,14 @@ import { localizedMessages } from '@/shared/i18n/messages'
  */
 
 export const SECTION_IDS = [
-  'general', 'objetivos', 'encuentros', 'jefe', 'master', 'recompensas', 'reglas', 'json',
+  'general',
+  'objetivos',
+  'encuentros',
+  'jefe',
+  'master',
+  'recompensas',
+  'reglas',
+  'json',
 ] as const
 export type SectionId = (typeof SECTION_IDS)[number]
 const SECTION_LABELS: Readonly<Record<SectionId, string>> = localizedMessages({
@@ -30,7 +37,12 @@ const SECTION_LABELS: Readonly<Record<SectionId, string>> = localizedMessages({
   json: 'admin:missions.sections.json',
 })
 export const SECTIONS: readonly { readonly id: SectionId; readonly label: string }[] =
-  SECTION_IDS.map((id) => ({ id, get label() { return SECTION_LABELS[id] } }))
+  SECTION_IDS.map((id) => ({
+    id,
+    get label() {
+      return SECTION_LABELS[id]
+    },
+  }))
 
 /** Ruta del campo (`enemies.0.profile.attack`) → mensaje. */
 export type FieldErrors = Readonly<Record<string, string>>
@@ -155,7 +167,8 @@ export const validateMissionContent = (
   const lootLabels = new Set((content.finalBoss.drops ?? []).map((drop) => drop.label.trim()))
   content.objectives.forEach((objective, index) => {
     const path = `objectives.${String(index)}`
-    if (!text(objective.text)) errors[`${path}.text`] = i18n.t('admin:missions.validation.objectiveText')
+    if (!text(objective.text))
+      errors[`${path}.text`] = i18n.t('admin:missions.validation.objectiveText')
     const rule = objective.rule
     if (rule?.type === 'CLEAR_ENCOUNTERS' && !isInt(rule.count, 1, 50)) {
       errors[`${path}.rule`] = i18n.t('admin:missions.validation.encountersRange')
@@ -182,7 +195,8 @@ export const validateMissionContent = (
   content.enemies.forEach((enemy, index) => {
     const path = `enemies.${String(index)}`
     if (!text(enemy.name)) errors[`${path}.name`] = i18n.t('admin:missions.validation.enemyName')
-    if (!text(enemy.enemyRef)) errors[`${path}.enemyRef`] = i18n.t('admin:missions.validation.enemyRefMissing')
+    if (!text(enemy.enemyRef))
+      errors[`${path}.enemyRef`] = i18n.t('admin:missions.validation.enemyRefMissing')
     if (refs.has(enemy.enemyRef) || enemy.enemyRef === content.finalBoss.enemyRef) {
       errors[`${path}.enemyRef`] = i18n.t('admin:missions.validation.enemyRefDuplicate')
     }
@@ -202,9 +216,13 @@ export const validateMissionContent = (
     }
     encounter.enemies.forEach((group, groupIndex) => {
       if (!refs.has(group.enemyRef)) {
-        errors[`${path}.enemies.${String(groupIndex)}`] = i18n.t('admin:missions.validation.chooseListedEnemy')
+        errors[`${path}.enemies.${String(groupIndex)}`] = i18n.t(
+          'admin:missions.validation.chooseListedEnemy',
+        )
       } else if (!isInt(group.count, 1, 1_000_000)) {
-        errors[`${path}.enemies.${String(groupIndex)}`] = i18n.t('admin:missions.validation.countAtLeastOne')
+        errors[`${path}.enemies.${String(groupIndex)}`] = i18n.t(
+          'admin:missions.validation.countAtLeastOne',
+        )
       }
     })
     if (encounter.powerStep !== null && !isNumberIn(encounter.powerStep, 0, 2)) {
@@ -219,17 +237,20 @@ export const validateMissionContent = (
 
   const boss = content.finalBoss
   if (!text(boss.name)) errors['finalBoss.name'] = i18n.t('admin:missions.validation.bossName')
-  if (!text(boss.enemyRef)) errors['finalBoss.enemyRef'] = i18n.t('admin:missions.validation.bossRefMissing')
+  if (!text(boss.enemyRef))
+    errors['finalBoss.enemyRef'] = i18n.t('admin:missions.validation.bossRefMissing')
   fighterErrors(boss.profile, 'finalBoss.profile', errors)
   const drops = boss.drops ?? []
-  if (drops.length > 50) errors['finalBoss.drops'] = i18n.t('admin:missions.validation.tooManyDrops')
+  if (drops.length > 50)
+    errors['finalBoss.drops'] = i18n.t('admin:missions.validation.tooManyDrops')
   drops.forEach((drop, index) => {
     const path = `finalBoss.drops.${String(index)}`
     if (!text(drop.label)) errors[`${path}.label`] = i18n.t('admin:missions.validation.dropLabel')
     if (!isNumberIn(drop.probability, 0, 1)) {
       errors[`${path}.probability`] = i18n.t('admin:missions.validation.probability')
     }
-    if (!isInt(drop.rolls, 1, 100)) errors[`${path}.rolls`] = i18n.t('admin:missions.validation.rolls')
+    if (!isInt(drop.rolls, 1, 100))
+      errors[`${path}.rolls`] = i18n.t('admin:missions.validation.rolls')
     if (drop.productId != null && !UUID.test(drop.productId)) {
       errors[`${path}.productId`] = i18n.t('admin:missions.validation.chooseProduct')
     }
@@ -246,15 +267,20 @@ export const validateMissionContent = (
     if (
       master.evaluationPoints.some((point) => !isInt(point.afterEncounter, 1, regular.length + 1))
     ) {
-      errors['masterEncounter.evaluationPoints'] = i18n.t('admin:missions.validation.evalPointStale')
+      errors['masterEncounter.evaluationPoints'] = i18n.t(
+        'admin:missions.validation.evalPointStale',
+      )
     }
     if (master.maxAppearances !== undefined && !isInt(master.maxAppearances, 1, 1_000)) {
-      errors['masterEncounter.maxAppearances'] = i18n.t('admin:missions.validation.appearancesRange')
+      errors['masterEncounter.maxAppearances'] = i18n.t(
+        'admin:missions.validation.appearancesRange',
+      )
     }
     const masterRefs = new Set<string>()
     master.candidates.forEach((candidate, index) => {
       const path = `masterEncounter.candidates.${String(index)}`
-      if (!text(candidate.name)) errors[`${path}.name`] = i18n.t('admin:missions.validation.masterName')
+      if (!text(candidate.name))
+        errors[`${path}.name`] = i18n.t('admin:missions.validation.masterName')
       if (!text(candidate.masterRef) || masterRefs.has(candidate.masterRef)) {
         errors[`${path}.masterRef`] = i18n.t('admin:missions.validation.masterRefInvalid')
       }
@@ -278,7 +304,9 @@ export const validateMissionContent = (
   for (const field of ['guaranteed', 'objectiveBonuses', 'firstTime'] as const) {
     content.rewards[field].forEach((reward, index) => {
       if (!text(reward.label))
-        errors[`rewards.${field}.${String(index)}`] = i18n.t('admin:missions.validation.rewardLabel')
+        errors[`rewards.${field}.${String(index)}`] = i18n.t(
+          'admin:missions.validation.rewardLabel',
+        )
     })
   }
 
@@ -296,12 +324,16 @@ export const validateMissionContent = (
     errors['combatRules.criticalChance'] = i18n.t('admin:missions.validation.criticalChance')
   }
   if (!isNumberIn(rules.criticalMultiplier, 1, 1.8)) {
-    errors['combatRules.criticalMultiplier'] = i18n.t('admin:missions.validation.criticalMultiplier')
+    errors['combatRules.criticalMultiplier'] = i18n.t(
+      'admin:missions.validation.criticalMultiplier',
+    )
   }
   for (const level of DIFFICULTY_LEVELS) {
     const multiplier = rules.difficultyMultipliers?.[level]
     if (multiplier !== undefined && !(isNumberIn(multiplier, 0, 10) && multiplier > 0)) {
-      errors[`combatRules.difficultyMultipliers.${level}`] = i18n.t('admin:missions.validation.difficultyMultiplier')
+      errors[`combatRules.difficultyMultipliers.${level}`] = i18n.t(
+        'admin:missions.validation.difficultyMultiplier',
+      )
     }
   }
   for (const field of ['supportAttack', 'supportDamage', 'supportRegen'] as const) {

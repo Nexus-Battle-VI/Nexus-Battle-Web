@@ -137,7 +137,10 @@ export const ProductPicker = ({
             ) : found.length === 0 ? (
               <p className="text-xs text-muted">{t('admin:missions.picker.noMatch')}</p>
             ) : (
-              <ul aria-label={t('admin:missions.picker.resultsLabel')} className="flex flex-col gap-1">
+              <ul
+                aria-label={t('admin:missions.picker.resultsLabel')}
+                className="flex flex-col gap-1"
+              >
                 {found.map((product) => (
                   <li key={product.productId}>
                     <button

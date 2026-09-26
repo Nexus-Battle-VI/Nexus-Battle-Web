@@ -60,8 +60,7 @@ const RewardList = ({
 }): React.JSX.Element | null =>
   items.length === 0 ? null : (
     <p className="text-sm text-ink">
-      <span className="font-medium">{title}:</span>{' '}
-      {items.map((item) => item.label).join(', ')}
+      <span className="font-medium">{title}:</span> {items.map((item) => item.label).join(', ')}
     </p>
   )
 
