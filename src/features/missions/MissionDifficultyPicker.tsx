@@ -31,11 +31,7 @@ export const MissionDifficultyPicker = ({
   const query = useMissionDifficulties(missionId)
 
   if (subject === null) {
-    return (
-      <p className="text-sm text-muted">
-        {t('missions:picker.loginToChoose')}
-      </p>
-    )
+    return <p className="text-sm text-muted">{t('missions:picker.loginToChoose')}</p>
   }
 
   const items = query.data?.items ?? []

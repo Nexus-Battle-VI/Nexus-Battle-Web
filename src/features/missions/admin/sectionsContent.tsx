@@ -388,7 +388,10 @@ const LabelList = ({
           <Button
             variant="secondary"
             className="mt-6"
-            aria-label={t('admin:missions.content.removeLabelItem', { title: title.toLowerCase(), n: index + 1 })}
+            aria-label={t('admin:missions.content.removeLabelItem', {
+              title: title.toLowerCase(),
+              n: index + 1,
+            })}
             onClick={() => {
               onChange(items.filter((_, position) => position !== index))
             }}

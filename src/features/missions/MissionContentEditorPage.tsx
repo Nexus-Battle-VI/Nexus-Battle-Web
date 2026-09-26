@@ -306,9 +306,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                     role="alert"
                     className="rounded-md border border-danger p-3 text-sm text-ink"
                   >
-                    <p className="font-medium">
-                      {t('admin:missions.editor.fieldsToFixTitle')}
-                    </p>
+                    <p className="font-medium">{t('admin:missions.editor.fieldsToFixTitle')}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {SECTIONS.filter((entry) => errorSections.has(entry.id)).map((entry) => (
                         <Button

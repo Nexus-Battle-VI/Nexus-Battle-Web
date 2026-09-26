@@ -14,8 +14,7 @@ export interface ProgressLine {
   readonly tone: ProgressTone
 }
 
-const nameOf = (entry: ProgressEntry): string =>
-  entry.enemy ?? i18n.t('missions:progress.anEnemy')
+const nameOf = (entry: ProgressEntry): string => entry.enemy ?? i18n.t('missions:progress.anEnemy')
 
 const number = (value: number | undefined): string => String(value ?? 0)
 
@@ -29,7 +28,8 @@ const effectText = (effect: Readonly<Record<string, unknown>>): string | null =>
   // Combat las nombra en mayúsculas (`DAMAGE`); las etiquetas usan el nombre del perfil.
   const statistic =
     typeof effect.statistic === 'string' ? statLabel(effect.statistic.toLowerCase()) : ''
-  const turnsText = turns === '' ? '' : i18n.t('missions:progress.effect.turns', { turns: effect.turns })
+  const turnsText =
+    turns === '' ? '' : i18n.t('missions:progress.effect.turns', { turns: effect.turns })
   switch (effect.kind) {
     case 'BUFF':
       return amount === null
@@ -113,8 +113,7 @@ export const progressLine = (entry: ProgressEntry): ProgressLine | null => {
           tone: 'hero',
         }
       }
-      const critical =
-        entry.critical === true ? i18n.t('missions:progress.criticalHit') : ''
+      const critical = entry.critical === true ? i18n.t('missions:progress.criticalHit') : ''
       return {
         text: i18n.t('missions:progress.heroHits', {
           verb,
@@ -127,7 +126,10 @@ export const progressLine = (entry: ProgressEntry): ProgressLine | null => {
       }
     }
     case 'ENEMY_GUARDED':
-      return { text: i18n.t('missions:progress.enemyGuards', { name: nameOf(entry) }), tone: 'enemy' }
+      return {
+        text: i18n.t('missions:progress.enemyGuards', { name: nameOf(entry) }),
+        tone: 'enemy',
+      }
     case 'ENEMY_ACTION': {
       const rage = entry.enraged === true ? i18n.t('missions:progress.enraged') : ''
       if (entry.hit !== true) {
@@ -168,8 +170,14 @@ export const progressLine = (entry: ProgressEntry): ProgressLine | null => {
         }
       }
       if (entry.role === 'BOSS')
-        return { text: i18n.t('missions:progress.bossDefeated', { name: nameOf(entry) }), tone: 'good' }
-      return { text: i18n.t('missions:progress.enemyDefeated', { name: nameOf(entry) }), tone: 'good' }
+        return {
+          text: i18n.t('missions:progress.bossDefeated', { name: nameOf(entry) }),
+          tone: 'good',
+        }
+      return {
+        text: i18n.t('missions:progress.enemyDefeated', { name: nameOf(entry) }),
+        tone: 'good',
+      }
     case 'ENCOUNTER_FINISHED':
       return {
         text: i18n.t('missions:progress.encounterFinished', { n: number(entry.encounter) }),

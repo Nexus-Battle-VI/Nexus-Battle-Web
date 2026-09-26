@@ -149,7 +149,10 @@ const ReportContent = ({
               label={t('missions:report.encountersTotal')}
               value={valueLabel(report.combatStats.encountersTotal, t)}
             />
-            <Stat label={t('missions:report.turns')} value={valueLabel(report.combatStats.totalTurns, t)} />
+            <Stat
+              label={t('missions:report.turns')}
+              value={valueLabel(report.combatStats.totalTurns, t)}
+            />
             <Stat
               label={t('missions:report.damageDealt')}
               value={valueLabel(report.combatStats.damageDealt, t)}

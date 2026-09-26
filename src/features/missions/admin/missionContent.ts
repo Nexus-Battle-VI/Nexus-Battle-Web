@@ -56,11 +56,36 @@ export type FighterAi = 'AGGRESSIVE' | 'GUARDED' | 'BOSS'
 
 /** Ilustraciones que dibuja la Web (P-J11); sin una, se usa la de la categoria. */
 export const IMAGE_REFS: readonly { readonly value: string; readonly label: string }[] = [
-  { value: 'mision-camino-templo', get label() { return i18n.t('admin:missions.image.caminoTemplo') } },
-  { value: 'mision-templo-olvidado', get label() { return i18n.t('admin:missions.image.temploOlvidado') } },
-  { value: 'mision-camara-sellada', get label() { return i18n.t('admin:missions.image.camaraSellada') } },
-  { value: 'mision-arena-caidos', get label() { return i18n.t('admin:missions.image.arenaCaidos') } },
-  { value: 'mision-travesia-bosque', get label() { return i18n.t('admin:missions.image.travesiaBosque') } },
+  {
+    value: 'mision-camino-templo',
+    get label() {
+      return i18n.t('admin:missions.image.caminoTemplo')
+    },
+  },
+  {
+    value: 'mision-templo-olvidado',
+    get label() {
+      return i18n.t('admin:missions.image.temploOlvidado')
+    },
+  },
+  {
+    value: 'mision-camara-sellada',
+    get label() {
+      return i18n.t('admin:missions.image.camaraSellada')
+    },
+  },
+  {
+    value: 'mision-arena-caidos',
+    get label() {
+      return i18n.t('admin:missions.image.arenaCaidos')
+    },
+  },
+  {
+    value: 'mision-travesia-bosque',
+    get label() {
+      return i18n.t('admin:missions.image.travesiaBosque')
+    },
+  },
 ]
 
 export type DamageSpec =
@@ -128,14 +153,16 @@ export const OBJECTIVE_TYPES = [
 ] as const
 export type ObjectiveType = (typeof OBJECTIVE_TYPES)[number]
 
-export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveType | 'NONE', string>> = localizedMessages({
-  NONE: 'admin:missions.objective.NONE',
-  DEFEAT_BOSS: 'admin:missions.objective.DEFEAT_BOSS',
-  CLEAR_ENCOUNTERS: 'admin:missions.objective.CLEAR_ENCOUNTERS',
-  MIN_HEALTH_PERCENT: 'admin:missions.objective.MIN_HEALTH_PERCENT',
-  DEFEAT_MASTER: 'admin:missions.objective.DEFEAT_MASTER',
-  COLLECT_LOOT: 'admin:missions.objective.COLLECT_LOOT',
-})
+export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveType | 'NONE', string>> = localizedMessages(
+  {
+    NONE: 'admin:missions.objective.NONE',
+    DEFEAT_BOSS: 'admin:missions.objective.DEFEAT_BOSS',
+    CLEAR_ENCOUNTERS: 'admin:missions.objective.CLEAR_ENCOUNTERS',
+    MIN_HEALTH_PERCENT: 'admin:missions.objective.MIN_HEALTH_PERCENT',
+    DEFEAT_MASTER: 'admin:missions.objective.DEFEAT_MASTER',
+    COLLECT_LOOT: 'admin:missions.objective.COLLECT_LOOT',
+  },
+)
 
 export type ObjectiveRule =
   | { readonly type: 'DEFEAT_BOSS' }

@@ -141,16 +141,15 @@ export const MissionStrategyEditor = ({
   const abilityOptions = abilities.data ?? []
 
   return (
-    <Card
-      title={t('missions:strategy.title')}
-      description={t('missions:strategy.description')}
-    >
+    <Card title={t('missions:strategy.title')} description={t('missions:strategy.description')}>
       <QueryState isLoading={strategy.isPending} error={strategy.error}>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted">
             {strategy.data === null
               ? t('missions:strategy.noSaved')
-              : t('missions:strategy.savedVersion', { version: String(strategy.data?.version ?? '') })}
+              : t('missions:strategy.savedVersion', {
+                  version: String(strategy.data?.version ?? ''),
+                })}
           </p>
           {hero.abilities.length > 0 && abilities.isPending && (
             <p role="status" className="text-sm text-muted">
