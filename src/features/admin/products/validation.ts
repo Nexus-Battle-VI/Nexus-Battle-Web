@@ -1,5 +1,6 @@
 import { parseSubtypeList, USES_EFFECT_LIST, type EffectDraft, type ProductDraft } from './draft'
 import type { MagnitudeDraft } from './draft'
+import { i18n } from '@/shared/i18n/i18n'
 
 /**
  * Validacion del formulario de alta de producto.
@@ -27,21 +28,21 @@ const integerError = (
   { minimum, maximum }: { minimum?: number; maximum?: number } = {},
 ): string | null => {
   if (raw.trim() === '') {
-    return 'Obligatorio.'
+    return i18n.t('admin:products.errors.required')
   }
 
   if (!isInteger(raw)) {
-    return 'Debe ser un número entero.'
+    return i18n.t('admin:products.errors.integer')
   }
 
   const value = Number(raw)
 
   if (minimum !== undefined && value < minimum) {
-    return `No puede ser menor que ${String(minimum)}.`
+    return i18n.t('admin:products.errors.min', { min: String(minimum) })
   }
 
   if (maximum !== undefined && value > maximum) {
-    return `No puede ser mayor que ${String(maximum)}.`
+    return i18n.t('admin:products.errors.max', { max: String(maximum) })
   }
 
   return null
@@ -59,25 +60,25 @@ export const validateBasics = (draft: ProductDraft): FieldErrors => {
   const name = draft.name.trim()
 
   if (name.length < 3 || name.length > 80) {
-    errors.name = 'Entre 3 y 80 caracteres.'
+    errors.name = i18n.t('admin:products.errors.name')
   }
 
   if (draft.type === '') {
-    errors.type = 'Selecciona un tipo de producto.'
+    errors.type = i18n.t('admin:products.errors.type')
   }
 
   if (draft.description.trim() === '') {
-    errors.description = 'Describe el producto.'
+    errors.description = i18n.t('admin:products.errors.description')
   }
 
   const image = draft.imageUrl.trim()
 
   if (image === '') {
-    errors.imageUrl = 'La imagen representativa es obligatoria.'
+    errors.imageUrl = i18n.t('admin:products.errors.imageRequired')
   } else if (
     !/^https?:\/\/\S+\/api\/v1\/catalog\/product-assets\/[0-9a-f-]+\/content$/i.test(image)
   ) {
-    errors.imageUrl = 'La imagen debe cargarse y validarse antes de crear el producto.'
+    errors.imageUrl = i18n.t('admin:products.errors.imageUnvalidated')
   }
 
   return errors
@@ -90,7 +91,7 @@ const validateMagnitude = (
   allowed: readonly MagnitudeDraft['mode'][],
 ): void => {
   if (!allowed.includes(magnitude.mode)) {
-    errors[`${prefix}.mode`] = 'Este tipo de efecto no admite esta magnitud.'
+    errors[`${prefix}.mode`] = i18n.t('admin:products.errors.magnitudeMode')
     return
   }
 
@@ -135,12 +136,12 @@ export const validateEffect = (
       break
     case 'IMMUNITY':
       if (!CODE.test(effect.immunityCode.trim())) {
-        errors[`${prefix}.immunityCode`] = 'Código en MAYÚSCULAS, sin espacios. Ej. VENENO.'
+        errors[`${prefix}.immunityCode`] = i18n.t('admin:products.errors.immunityCode')
       }
       break
     case 'TEMPORARY_STATUS':
       if (!CODE.test(effect.statusCode.trim())) {
-        errors[`${prefix}.statusCode`] = 'Código en MAYÚSCULAS, sin espacios. Ej. ATURDIDO.'
+        errors[`${prefix}.statusCode`] = i18n.t('admin:products.errors.statusCode')
       }
       assign(errors, `${prefix}.durationTurns`, integerError(effect.durationTurns, { minimum: 1 }))
       break
@@ -157,25 +158,25 @@ const validateSubtypeList = (
 
   if (values.length === 0) {
     if (requireOne) {
-      errors[key] = 'Indica al menos un subtipo de héroe.'
+      errors[key] = i18n.t('admin:products.errors.subtypeRequired')
     }
 
     return
   }
 
   if (values.some((value) => !CODE.test(value))) {
-    errors[key] = 'Cada subtipo va en MAYÚSCULAS y sin espacios. Ej. GUERRERO, MAGO.'
+    errors[key] = i18n.t('admin:products.errors.subtypeFormat')
     return
   }
 
   if (new Set(values).size !== values.length) {
-    errors[key] = 'No repitas el mismo subtipo.'
+    errors[key] = i18n.t('admin:products.errors.subtypeDuplicate')
   }
 }
 
 const validateHero = (draft: ProductDraft, errors: Record<string, string>): void => {
   if (!CODE.test(draft.heroSubtype.trim())) {
-    errors.heroSubtype = 'En MAYÚSCULAS y sin espacios. Ej. GUERRERO.'
+    errors.heroSubtype = i18n.t('admin:products.errors.codeFormat')
   }
 
   assign(errors, 'basePower', integerError(draft.basePower, { minimum: 0 }))
@@ -193,19 +194,19 @@ const validateHero = (draft: ProductDraft, errors: Record<string, string>): void
 
   abilities.forEach((ability, index) => {
     if (ability === '') {
-      errors[`abilities.${String(index)}`] = 'Un héroe declara exactamente tres habilidades.'
+      errors[`abilities.${String(index)}`] = i18n.t('admin:products.errors.threeAbilities')
       return
     }
 
     if (!UUID.test(ability)) {
-      errors[`abilities.${String(index)}`] = 'Identificador de habilidad ya existente (UUID).'
+      errors[`abilities.${String(index)}`] = i18n.t('admin:products.errors.abilityUuid')
     }
   })
 
   const filled = abilities.filter((value) => value !== '')
 
   if (filled.length === 3 && new Set(filled).size !== 3) {
-    errors['abilities.0'] = 'Las tres habilidades deben ser distintas.'
+    errors['abilities.0'] = i18n.t('admin:products.errors.abilitiesDistinct')
   }
 }
 
@@ -214,7 +215,7 @@ export const validateAttributes = (draft: ProductDraft): FieldErrors => {
   const errors: Record<string, string> = {}
 
   if (draft.type === '') {
-    errors.type = 'Selecciona primero un tipo de producto.'
+    errors.type = i18n.t('admin:products.errors.typeFirst')
     return errors
   }
 
@@ -235,7 +236,7 @@ export const validateAttributes = (draft: ProductDraft): FieldErrors => {
 
   if (draft.type === 'EPICA') {
     if (!CODE.test(draft.compatibleHeroSubtype.trim())) {
-      errors.compatibleHeroSubtype = 'En MAYÚSCULAS y sin espacios. Ej. GUERRERO.'
+      errors.compatibleHeroSubtype = i18n.t('admin:products.errors.codeFormat')
     }
 
     validateEffect(draft.specificEffect, 'specificEffect', errors)
@@ -255,19 +256,19 @@ export const validateAttributes = (draft: ProductDraft): FieldErrors => {
     } else if (parseSubtypeList(draft.compatibleHeroSubtypes).length > 0) {
       // El dominio RECHAZA la lista cuando el ambito es «todos los héroes»: es
       // una contradiccion, no un dato de mas.
-      errors.compatibleHeroSubtypes = 'Con «Todos los héroes» no se admite una lista de subtipos.'
+      errors.compatibleHeroSubtypes = i18n.t('admin:products.errors.allHeroesList')
     }
 
     const setCode = draft.setCode.trim()
 
     if (setCode !== '' && !CODE.test(setCode)) {
-      errors.setCode = 'En MAYÚSCULAS y sin espacios, o déjalo vacío.'
+      errors.setCode = i18n.t('admin:products.errors.setCode')
     }
   }
 
   if (USES_EFFECT_LIST.has(draft.type)) {
     if (draft.effects.length === 0) {
-      errors.effects = 'Declara al menos un efecto.'
+      errors.effects = i18n.t('admin:products.errors.effectRequired')
     }
 
     draft.effects.forEach((effect, index) => {
@@ -288,11 +289,11 @@ export const validatePricing = (draft: ProductDraft): FieldErrors => {
   // que se viera donde.
   if (draft.printRunMode === 'LIMITED') {
     if (printRun === '') {
-      errors.printRun = 'Obligatorio.'
+      errors.printRun = i18n.t('admin:products.errors.required')
     } else if (!isInteger(printRun)) {
-      errors.printRun = 'La cantidad debe ser un entero mayor o igual que 1.'
+      errors.printRun = i18n.t('admin:products.errors.printRun')
     } else if (Number(printRun) < 1) {
-      errors.printRun = 'La cantidad debe ser un entero mayor o igual que 1.'
+      errors.printRun = i18n.t('admin:products.errors.printRun')
     }
   }
 

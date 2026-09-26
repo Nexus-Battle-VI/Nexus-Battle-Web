@@ -16,27 +16,28 @@ import { ADMIN_USER_PRIMARY_ROLES, primaryRole } from '@/shared/rbac'
 export interface AccountSection {
   /** Ruta relativa a "Mi cuenta". `end` distingue la seccion indice (`.`). */
   readonly to: string
-  readonly label: string
+  /** Clave de traduccion de la etiqueta. */
+  readonly labelKey: string
   readonly end: boolean
   readonly requiredPrimaryRoles?: readonly string[]
 }
 
 export const ACCOUNT_SECTIONS: readonly AccountSection[] = [
-  { to: '.', label: 'Perfil', end: true },
-  { to: 'security', label: 'Seguridad', end: false },
-  { to: 'preferences', label: 'Preferencias', end: false },
-  { to: 'statistics', label: 'Estadísticas y logros', end: false },
-  { to: 'subscriptions', label: 'Suscripciones', end: false },
-  { to: 'payment-methods', label: 'Metodos de pago', end: false },
+  { to: '.', labelKey: 'account:sections.profile', end: true },
+  { to: 'security', labelKey: 'account:sections.security', end: false },
+  { to: 'preferences', labelKey: 'account:sections.preferences', end: false },
+  { to: 'statistics', labelKey: 'account:sections.statistics', end: false },
+  { to: 'subscriptions', labelKey: 'account:sections.subscriptions', end: false },
+  { to: 'payment-methods', labelKey: 'account:sections.paymentMethods', end: false },
   {
     to: 'privacy',
-    label: 'Datos personales y exportación',
+    labelKey: 'account:sections.privacy',
     end: false,
     requiredPrimaryRoles: ['PLAYER'],
   },
   {
     to: 'admin-users',
-    label: 'Panel administrativo',
+    labelKey: 'account:sections.adminUsers',
     end: false,
     requiredPrimaryRoles: ADMIN_USER_PRIMARY_ROLES,
   },

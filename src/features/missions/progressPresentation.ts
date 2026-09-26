@@ -1,5 +1,6 @@
 import type { ProgressEntry } from './missionPlayApi'
 import { statLabel } from './missionPresentation'
+import { i18n } from '@/shared/i18n/i18n'
 
 /**
  * La bitácora de una misión en palabras del jugador (diseño «misiones jugables»,
@@ -13,7 +14,7 @@ export interface ProgressLine {
   readonly tone: ProgressTone
 }
 
-const nameOf = (entry: ProgressEntry): string => entry.enemy ?? 'un enemigo'
+const nameOf = (entry: ProgressEntry): string => entry.enemy ?? i18n.t('missions:progress.anEnemy')
 
 const number = (value: number | undefined): string => String(value ?? 0)
 
@@ -27,20 +28,37 @@ const effectText = (effect: Readonly<Record<string, unknown>>): string | null =>
   // Combat las nombra en mayúsculas (`DAMAGE`); las etiquetas usan el nombre del perfil.
   const statistic =
     typeof effect.statistic === 'string' ? statLabel(effect.statistic.toLowerCase()) : ''
+  const turnsText =
+    turns === '' ? '' : i18n.t('missions:progress.effect.turns', { turns: effect.turns })
   switch (effect.kind) {
     case 'BUFF':
-      return amount === null ? null : `+${amount} de ${statistic.toLowerCase()}${turns}`
+      return amount === null
+        ? null
+        : i18n.t('missions:progress.effect.buff', {
+            amount,
+            statistic: statistic.toLowerCase(),
+            turns: turnsText,
+          })
     case 'DEBUFF':
-      return amount === null ? null : `−${amount} de ${statistic.toLowerCase()} al enemigo${turns}`
+      return amount === null
+        ? null
+        : i18n.t('missions:progress.effect.debuff', {
+            amount,
+            statistic: statistic.toLowerCase(),
+            turns: turnsText,
+          })
     case 'DIRECT_DAMAGE':
-      return amount === null ? null : `${amount} de daño directo`
+      return amount === null ? null : i18n.t('missions:progress.effect.directDamage', { amount })
     case 'HEAL':
-      return amount === null ? null : `recupera ${amount} de vida`
+      return amount === null ? null : i18n.t('missions:progress.effect.heal', { amount })
     case 'IMMUNITY':
-      return `no recibe daño${turns}`
+      return i18n.t('missions:progress.effect.immunity', { turns: turnsText })
     case 'REFLECT':
       return typeof effect.basisPoints === 'number'
-        ? `devuelve el ${String(effect.basisPoints / 100)} % del daño${turns}`
+        ? i18n.t('missions:progress.effect.reflect', {
+            percent: String(effect.basisPoints / 100),
+            turns: turnsText,
+          })
         : null
     default:
       return null
@@ -59,70 +77,121 @@ export const progressLine = (entry: ProgressEntry): ProgressLine | null => {
   switch (entry.kind) {
     case 'ENCOUNTER_STARTED':
       return entry.boss === true
-        ? { text: `Encuentro ${number(entry.encounter)}: ¡el jefe final!`, tone: 'bad' }
-        : { text: `Comienza el encuentro ${number(entry.encounter)}.`, tone: 'info' }
+        ? {
+            text: i18n.t('missions:progress.encounterBoss', { n: number(entry.encounter) }),
+            tone: 'bad',
+          }
+        : {
+            text: i18n.t('missions:progress.encounterStart', { n: number(entry.encounter) }),
+            tone: 'info',
+          }
     case 'ENEMY_APPEARED':
       return entry.role === 'MASTER'
-        ? { text: `¡Aparece un Máster: ${nameOf(entry)}!`, tone: 'bad' }
-        : { text: `Aparece ${nameOf(entry)}.`, tone: 'info' }
+        ? { text: i18n.t('missions:progress.masterAppeared', { name: nameOf(entry) }), tone: 'bad' }
+        : { text: i18n.t('missions:progress.enemyAppeared', { name: nameOf(entry) }), tone: 'info' }
     case 'HERO_ACTION': {
       const verb =
         entry.ability === null || entry.ability === undefined
-          ? 'ataca a'
-          : `usa ${entry.ability} contra`
+          ? i18n.t('missions:progress.verbAttacks')
+          : i18n.t('missions:progress.verbUses', { ability: entry.ability })
       if (entry.attacked === false) {
         return {
-          text: `Tu héroe usa ${entry.ability ?? 'una habilidad'}${effectsText(entry)}.`,
+          text: i18n.t('missions:progress.heroUsesAbility', {
+            ability: entry.ability ?? i18n.t('missions:progress.anAbility'),
+            effects: effectsText(entry),
+          }),
           tone: 'hero',
         }
       }
       if (entry.hit !== true) {
         return {
-          text: `Tu héroe ${verb} ${nameOf(entry)} y falla${effectsText(entry)}.`,
+          text: i18n.t('missions:progress.heroMisses', {
+            verb,
+            name: nameOf(entry),
+            effects: effectsText(entry),
+          }),
           tone: 'hero',
         }
       }
-      const critical = entry.critical === true ? ' ¡Golpe crítico!' : ''
+      const critical = entry.critical === true ? i18n.t('missions:progress.criticalHit') : ''
       return {
-        text: `Tu héroe ${verb} ${nameOf(entry)}: ${number(entry.damage)} de daño${effectsText(entry)}.${critical}`,
+        text: i18n.t('missions:progress.heroHits', {
+          verb,
+          name: nameOf(entry),
+          damage: number(entry.damage),
+          effects: effectsText(entry),
+          critical,
+        }),
         tone: 'hero',
       }
     }
     case 'ENEMY_GUARDED':
-      return { text: `${nameOf(entry)} se cubre y espera.`, tone: 'enemy' }
+      return {
+        text: i18n.t('missions:progress.enemyGuards', { name: nameOf(entry) }),
+        tone: 'enemy',
+      }
     case 'ENEMY_ACTION': {
-      const rage = entry.enraged === true ? ' ¡Está furioso!' : ''
+      const rage = entry.enraged === true ? i18n.t('missions:progress.enraged') : ''
       if (entry.hit !== true) {
-        return { text: `${nameOf(entry)} ataca y falla.${rage}`, tone: 'enemy' }
+        return {
+          text: i18n.t('missions:progress.enemyMisses', { name: nameOf(entry), rage }),
+          tone: 'enemy',
+        }
       }
       const prevented =
-        (entry.prevented ?? 0) > 0 ? ` Tu héroe evita ${number(entry.prevented)}.` : ''
+        (entry.prevented ?? 0) > 0
+          ? i18n.t('missions:progress.prevented', { amount: number(entry.prevented) })
+          : ''
       const reflected =
-        (entry.reflected ?? 0) > 0 ? ` Le devuelves ${number(entry.reflected)}.` : ''
+        (entry.reflected ?? 0) > 0
+          ? i18n.t('missions:progress.reflected', { amount: number(entry.reflected) })
+          : ''
       return {
-        text: `${nameOf(entry)} golpea: ${number(entry.damage)} de daño a tu héroe.${prevented}${reflected}${rage}`,
+        text: i18n.t('missions:progress.enemyHits', {
+          name: nameOf(entry),
+          damage: number(entry.damage),
+          prevented,
+          reflected,
+          rage,
+        }),
         tone: 'enemy',
       }
     }
     case 'HERO_HEALED':
-      return { text: `Tu héroe recupera ${number(entry.amount)} de vida.`, tone: 'good' }
+      return {
+        text: i18n.t('missions:progress.heroHealed', { amount: number(entry.amount) }),
+        tone: 'good',
+      }
     case 'DEFEATED':
       if (entry.role === 'MASTER') {
-        return { text: `¡Derrotaste al Máster ${nameOf(entry)}!`, tone: 'good' }
+        return {
+          text: i18n.t('missions:progress.masterDefeated', { name: nameOf(entry) }),
+          tone: 'good',
+        }
       }
-      if (entry.role === 'BOSS') return { text: `¡Derrotaste a ${nameOf(entry)}!`, tone: 'good' }
-      return { text: `${nameOf(entry)} cae derrotado.`, tone: 'good' }
+      if (entry.role === 'BOSS')
+        return {
+          text: i18n.t('missions:progress.bossDefeated', { name: nameOf(entry) }),
+          tone: 'good',
+        }
+      return {
+        text: i18n.t('missions:progress.enemyDefeated', { name: nameOf(entry) }),
+        tone: 'good',
+      }
     case 'ENCOUNTER_FINISHED':
-      return { text: `Encuentro ${number(entry.encounter)} superado.`, tone: 'good' }
+      return {
+        text: i18n.t('missions:progress.encounterFinished', { n: number(entry.encounter) }),
+        tone: 'good',
+      }
     case 'HERO_RECOVERED':
       return {
-        text: `Tu héroe descansa y queda con ${number(entry.heroHealth)} de vida.`,
+        text: i18n.t('missions:progress.heroRecovered', { health: number(entry.heroHealth) }),
         tone: 'good',
       }
     case 'MISSION_FINISHED':
       return entry.victory === true
-        ? { text: '¡Misión cumplida!', tone: 'good' }
-        : { text: 'Tu héroe no pudo completar la misión.', tone: 'bad' }
+        ? { text: i18n.t('missions:progress.missionSucceeded'), tone: 'good' }
+        : { text: i18n.t('missions:progress.missionFailed'), tone: 'bad' }
     default:
       return null
   }

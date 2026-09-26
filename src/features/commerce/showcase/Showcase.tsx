@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
@@ -8,6 +9,9 @@ import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { useWishlist } from '@/features/commerce/wishlist/useWishlist'
 import { CommerceDialog } from '@/features/commerce/CommerceDialog'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
+import { countLabel } from '@/shared/i18n/format'
 import {
   fetchShowcase,
   NO_FILTERS,
@@ -40,6 +44,8 @@ export const Showcase = ({
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<string | null>(null)
   const subject = useSession((state) => state.subject)
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
   const criteria = showcaseQuery(filters, page)
   const query = useQuery({
     queryKey: queryKeys.commerce.showcase(criteria),
@@ -59,16 +65,16 @@ export const Showcase = ({
     setPage(1)
   }
   return (
-    <section aria-label="Vitrina de productos" className="commerce-showcase">
+    <section aria-label={t('commerce:showcase.label')} className="commerce-showcase">
       <div className="commerce-search-row rounded-xl border border-border bg-surface-raised">
-        <h2 className="text-base font-semibold text-ink">Vitrina</h2>
+        <h2 className="text-base font-semibold text-ink">{t('commerce:showcase.title')}</h2>
         <label className="commerce-search">
-          <span className="sr-only">Buscar</span>
+          <span className="sr-only">{t('commerce:showcase.search')}</span>
           <Search aria-hidden="true" className="size-4 shrink-0 text-muted" />
           <input
             type="search"
             value={filters.term}
-            placeholder="Buscar por nombre, descripción o habilidad…"
+            placeholder={t('commerce:showcase.searchPlaceholder')}
             onChange={(event) => {
               changeFilters({ ...filters, term: event.target.value })
             }}
@@ -83,21 +89,25 @@ export const Showcase = ({
             isLoading={query.isLoading}
             error={query.error}
             isEmpty={query.data?.total === 0}
-            emptyMessage="Ningun producto cumple los criterios seleccionados."
+            emptyMessage={t('commerce:showcase.empty')}
           >
             <div className="commerce-result-status">
               <p role="status" className="text-xs text-muted">
-                {query.data?.total ?? 0} productos
-                {pageCount > 1 && ` · pagina ${String(currentPage)} de ${String(pageCount)}`}
+                {countLabel(t, 'commerce:showcase.total', query.data?.total ?? 0)}
+                {pageCount > 1 &&
+                  t('commerce:showcase.pageOf', {
+                    page: String(currentPage),
+                    pages: String(pageCount),
+                  })}
               </p>
               {wishlist.isLoading && (
-                <p className="text-xs text-muted">Consultando deseos y compras...</p>
+                <p className="text-xs text-muted">{t('commerce:showcase.wishlistLoading')}</p>
               )}
               {wishlistError !== null && (
                 <p role="alert" className="text-xs text-danger">
                   {wishlistError instanceof Error
-                    ? wishlistError.message
-                    : 'No se pudo consultar o actualizar tu lista de deseos.'}
+                    ? describeFailure(wishlistError, t, language)
+                    : t('commerce:showcase.wishlistFailed')}
                 </p>
               )}
             </div>
@@ -118,7 +128,7 @@ export const Showcase = ({
               wishlistUnavailable={wishlistUnavailable}
             />
           </QueryState>
-          <nav aria-label="Paginacion" className="commerce-pagination">
+          <nav aria-label={t('commerce:showcase.pagination')} className="commerce-pagination">
             <Button
               variant="secondary"
               disabled={query.isLoading || currentPage <= 1}
@@ -126,7 +136,7 @@ export const Showcase = ({
                 setPage(currentPage - 1)
               }}
             >
-              Anterior
+              {t('commerce:showcase.previous')}
             </Button>
             <span className="text-xs text-muted">
               {Math.min(currentPage, Math.max(1, pageCount))} / {Math.max(1, pageCount)}
@@ -138,14 +148,14 @@ export const Showcase = ({
                 setPage(currentPage + 1)
               }}
             >
-              Siguiente
+              {t('commerce:showcase.next')}
             </Button>
           </nav>
         </div>
       </div>
       {selected !== null && (
         <CommerceDialog
-          title="Detalle del producto"
+          title={t('commerce:showcase.detailDialog')}
           onClose={() => {
             setSelected(null)
           }}

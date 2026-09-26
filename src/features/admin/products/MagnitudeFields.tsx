@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 
@@ -35,68 +37,72 @@ export const MagnitudeFields = ({
   prefix,
   allowedModes,
   disabled = false,
-}: MagnitudeFieldsProps): React.JSX.Element => (
-  <fieldset className="grid gap-4 sm:grid-cols-3" disabled={disabled}>
-    <legend className="sr-only">{legend}</legend>
+}: MagnitudeFieldsProps): React.JSX.Element => {
+  const { t } = useTranslation()
 
-    <SelectField
-      label="Magnitud"
-      value={value.mode}
-      error={errors[`${prefix}.mode`]}
-      options={allowedModes.map((mode) => ({ value: mode, label: MAGNITUDE_MODE_LABELS[mode] }))}
-      onChange={(event) => {
-        onChange({ ...value, mode: event.target.value as MagnitudeMode })
-      }}
-    />
+  return (
+    <fieldset className="grid gap-4 sm:grid-cols-3" disabled={disabled}>
+      <legend className="sr-only">{legend}</legend>
 
-    {value.mode === 'FIXED' && (
-      <TextField
-        label="Cantidad"
-        inputMode="numeric"
-        value={value.amount}
-        error={errors[`${prefix}.amount`]}
-        hint="Entero mayor o igual que 1."
+      <SelectField
+        label={t('admin:products.magnitude.label')}
+        value={value.mode}
+        error={errors[`${prefix}.mode`]}
+        options={allowedModes.map((mode) => ({ value: mode, label: MAGNITUDE_MODE_LABELS[mode] }))}
         onChange={(event) => {
-          onChange({ ...value, amount: event.target.value })
+          onChange({ ...value, mode: event.target.value as MagnitudeMode })
         }}
       />
-    )}
 
-    {value.mode === 'PERCENTAGE' && (
-      <TextField
-        label="Puntos básicos"
-        inputMode="numeric"
-        value={value.basisPoints}
-        error={errors[`${prefix}.basisPoints`]}
-        hint="100 = 1 %. Máximo 10 000, que es el 100 %."
-        onChange={(event) => {
-          onChange({ ...value, basisPoints: event.target.value })
-        }}
-      />
-    )}
-
-    {value.mode === 'DICE' && (
-      <>
+      {value.mode === 'FIXED' && (
         <TextField
-          label="Número de dados"
+          label={t('admin:products.magnitude.amount')}
           inputMode="numeric"
-          value={value.diceCount}
-          error={errors[`${prefix}.diceCount`]}
+          value={value.amount}
+          error={errors[`${prefix}.amount`]}
+          hint={t('admin:products.magnitude.amountHint')}
           onChange={(event) => {
-            onChange({ ...value, diceCount: event.target.value })
+            onChange({ ...value, amount: event.target.value })
           }}
         />
+      )}
+
+      {value.mode === 'PERCENTAGE' && (
         <TextField
-          label="Caras por dado"
+          label={t('admin:products.magnitude.basisPoints')}
           inputMode="numeric"
-          value={value.diceSides}
-          error={errors[`${prefix}.diceSides`]}
-          hint="Mínimo 2."
+          value={value.basisPoints}
+          error={errors[`${prefix}.basisPoints`]}
+          hint={t('admin:products.magnitude.basisPointsHint')}
           onChange={(event) => {
-            onChange({ ...value, diceSides: event.target.value })
+            onChange({ ...value, basisPoints: event.target.value })
           }}
         />
-      </>
-    )}
-  </fieldset>
-)
+      )}
+
+      {value.mode === 'DICE' && (
+        <>
+          <TextField
+            label={t('admin:products.magnitude.diceCount')}
+            inputMode="numeric"
+            value={value.diceCount}
+            error={errors[`${prefix}.diceCount`]}
+            onChange={(event) => {
+              onChange({ ...value, diceCount: event.target.value })
+            }}
+          />
+          <TextField
+            label={t('admin:products.magnitude.diceSides')}
+            inputMode="numeric"
+            value={value.diceSides}
+            error={errors[`${prefix}.diceSides`]}
+            hint={t('admin:products.magnitude.diceSidesHint')}
+            onChange={(event) => {
+              onChange({ ...value, diceSides: event.target.value })
+            }}
+          />
+        </>
+      )}
+    </fieldset>
+  )
+}

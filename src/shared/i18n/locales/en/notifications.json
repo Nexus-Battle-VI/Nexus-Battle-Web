@@ -1,0 +1,61 @@
+{
+  "home": "Home",
+  "loading": "Loading...",
+  "history": {
+    "crumb": "Updates history",
+    "title": "Catalog updates",
+    "subtitle": "Full history of notified changes.",
+    "failed": "The updates history could not be loaded.",
+    "empty": "There are no recorded updates yet."
+  },
+  "summary": {
+    "loading": "Loading catalog updates...",
+    "failed": "Catalog updates could not be loaded.",
+    "title": "Catalog updates",
+    "subtitle": "Summary since your last session. Repeated changes to the same product are merged into a single notification.",
+    "history": "View history ›"
+  },
+  "banner": {
+    "failed": "The catalog notice could not be loaded.",
+    "label": "Catalog notice",
+    "previous": "Previous banner",
+    "next": "Next banner"
+  },
+  "changeTypes": {
+    "PRODUCT_CREATED": "New",
+    "PRODUCT_INVENTORY_ADJUSTED": "Print run updated",
+    "PRODUCT_SUSPENDED": "Suspended",
+    "PRODUCT_REACTIVATED": "Reactivated",
+    "PRODUCT_PREMIUM_CONFIGURED": "Premium",
+    "AUCTION_CHANGED": "Auction updated",
+    "AUCTION_CLOSING_SOON": "Closing soon",
+    "AUCTION_BID_OUTBID": "Outbid",
+    "AUCTION_CLOSED_BY_BUY_NOW": "Buy now",
+    "AUCTION_AUTO_BID_LIMIT_REACHED": "Bid limit reached",
+    "AUCTION_SETTLED_SELLER": "Auction sold",
+    "AUCTION_SETTLED_WINNER": "You won the auction",
+    "AUCTION_SETTLED_LOSER": "Auction ended",
+    "AUCTION_SETTLED_WITHOUT_BIDS": "Auction without bids"
+  },
+  "admin": {
+    "crumb": "Information banner",
+    "title": "Information banner",
+    "subtitle": "Validity by dates. Outside its validity it is silently excluded.",
+    "titleField": "Banner title",
+    "content": "Banner message",
+    "publishAt": "Valid from",
+    "expiresAt": "Valid until",
+    "required": "Fill in title, message, start and end of validity.",
+    "invalidDates": "The validity dates are not valid.",
+    "dateOrder": "The start of validity must be before or equal to the end of validity.",
+    "failed": "The banner could not be published.",
+    "published": "Banner published.",
+    "publish": "Publish banner",
+    "list": "Managed banners",
+    "listFailed": "The banner list could not be loaded.",
+    "empty": "No banner has been published yet.",
+    "active": "Active",
+    "inactive": "Expired",
+    "back": "← Back"
+  }
+}

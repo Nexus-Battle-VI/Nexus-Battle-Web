@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Card } from '@/components/ui/Card'
@@ -10,6 +11,7 @@ import { formatMoney } from '@/lib/format'
 import { queryKeys } from '@/shared/query-keys'
 import { ProductCommentsAndRating } from '@/features/product-reviews/ProductCommentsAndRating'
 import { ProductCommentsList } from '@/features/product-reviews/ProductCommentsList'
+import { countLabel, formatDecimal, formatInteger } from '@/shared/i18n/format'
 import { fetchCanonicalProduct } from './api'
 
 /**
@@ -19,6 +21,7 @@ import { fetchCanonicalProduct } from './api'
  */
 export const ProductDetailPage = (): React.JSX.Element => {
   const { productId = '' } = useParams()
+  const { t } = useTranslation()
 
   const query = useQuery({
     queryKey: queryKeys.catalog.detail(productId),
@@ -32,9 +35,9 @@ export const ProductDetailPage = (): React.JSX.Element => {
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       <Breadcrumb
         items={[
-          { label: 'Inicio', to: '/ecommerce' },
-          { label: 'Catálogo', to: '/catalog' },
-          { label: product?.name ?? 'Producto' },
+          { label: t('catalog:detail.home'), to: '/ecommerce' },
+          { label: t('catalog:detail.catalog'), to: '/catalog' },
+          { label: product?.name ?? t('catalog:detail.product') },
         ]}
       />
 
@@ -54,7 +57,7 @@ export const ProductDetailPage = (): React.JSX.Element => {
                 <span className="text-lg font-medium tabular-nums text-ink">
                   {product.realMoneyPrice !== null
                     ? formatMoney(product.realMoneyPrice.amount, product.realMoneyPrice.currency)
-                    : `${String(product.creditsPrice)} créditos`}
+                    : countLabel(t, 'common:count.credits', product.creditsPrice)}
                 </span>
 
                 <span className="inline-flex items-center gap-1 text-sm text-muted">
@@ -67,10 +70,12 @@ export const ProductDetailPage = (): React.JSX.Element => {
                     }
                   />
                   {product.averageRating === null
-                    ? 'Sin calificaciones todavía'
-                    : `${product.averageRating.toFixed(1)} (${String(product.reviewCount)} ${
-                        product.reviewCount === 1 ? 'calificación' : 'calificaciones'
-                      })`}
+                    ? t('catalog:detail.noRatings')
+                    : t('catalog:detail.rating', {
+                        count: product.reviewCount,
+                        value: formatInteger(product.reviewCount),
+                        average: formatDecimal(product.averageRating, 1),
+                      })}
                 </span>
               </div>
             </Card>

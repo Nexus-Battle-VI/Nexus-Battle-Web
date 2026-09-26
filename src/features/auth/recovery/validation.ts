@@ -1,4 +1,5 @@
 import { isValidEmail, isValidPassword } from '@/features/account/registration/validation'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 export const RECOVERY_FIELD = {
   email: 'recovery-email',
@@ -7,18 +8,18 @@ export const RECOVERY_FIELD = {
   confirm: 'recovery-confirm',
 } as const
 
-export const RECOVERY_MESSAGES = {
-  emailRequired: 'Ingresa el correo asociado a tu cuenta.',
-  emailInvalid: 'Ingresa un correo electrónico válido.',
-  answerRequired: 'Responde esta pregunta.',
-  codeRequired: 'Ingresa el código que recibiste.',
-  password:
-    'La contraseña debe tener más de 8 caracteres e incluir mayúscula, minúscula, número y símbolo.',
-  confirmRequired: 'Repite tu nueva contraseña.',
-  confirmMismatch: 'Las contraseñas no coinciden.',
-  rejected: 'No fue posible continuar con la recuperación. Revisa los datos e inténtalo de nuevo.',
-  service: 'No pudimos completar la recuperación en este momento. Inténtalo de nuevo más tarde.',
-} as const
+/** Se traducen al leerse (idioma activo); ver `localizedMessages`. */
+export const RECOVERY_MESSAGES = localizedMessages({
+  emailRequired: 'auth:recovery.emailRequired',
+  emailInvalid: 'auth:recovery.emailInvalid',
+  answerRequired: 'auth:recovery.answerRequired',
+  codeRequired: 'auth:recovery.codeRequired',
+  password: 'auth:recovery.passwordPolicy',
+  confirmRequired: 'auth:recovery.confirmRequired',
+  confirmMismatch: 'auth:recovery.confirmMismatch',
+  rejected: 'auth:recovery.rejected',
+  service: 'auth:recovery.service',
+})
 
 export const answerFieldId = (questionId: string): string => `recovery-answer-${questionId}`
 

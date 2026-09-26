@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { useCallAt } from '@/shared/countdown'
 
 import { useActiveMissions } from './useActiveMissions'
+import { useTranslation } from 'react-i18next'
 
 interface FinishedMission {
   readonly enrollmentId: string
@@ -48,6 +49,7 @@ export const MissionFinishedNotice = (): React.JSX.Element | null => {
   }, [refetch])
   useCallAt(active.data?.items[0]?.endsAt ?? null, refresh)
 
+  const { t } = useTranslation()
   const dismiss = (enrollmentId: string): void => {
     setFinished((list) => list.filter((item) => item.enrollmentId !== enrollmentId))
   }
@@ -65,7 +67,9 @@ export const MissionFinishedNotice = (): React.JSX.Element | null => {
           key={mission.enrollmentId}
           className="flex flex-col gap-2 rounded-lg border border-brand/60 bg-surface-raised p-4 text-sm shadow-lg"
         >
-          <p className="font-semibold text-ink">«{mission.missionName}» terminó.</p>
+          <p className="font-semibold text-ink">
+            {t('missions:notice.finished', { name: mission.missionName })}
+          </p>
           <div className="flex flex-wrap items-center gap-3">
             <Link
               to={`/missions/reports/${encodeURIComponent(mission.enrollmentId)}`}
@@ -74,7 +78,7 @@ export const MissionFinishedNotice = (): React.JSX.Element | null => {
               }}
               className="font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
             >
-              Ver el reporte
+              {t('missions:notice.viewReport')}
             </Link>
             <Button
               variant="secondary"
@@ -82,7 +86,7 @@ export const MissionFinishedNotice = (): React.JSX.Element | null => {
                 dismiss(mission.enrollmentId)
               }}
             >
-              Cerrar
+              {t('missions:notice.close')}
             </Button>
           </div>
         </div>

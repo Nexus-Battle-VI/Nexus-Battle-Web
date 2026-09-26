@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
@@ -17,36 +18,41 @@ import {
   type ClaimBatchResult,
   type PendingClaim,
 } from './api'
+import { i18n } from '@/shared/i18n/i18n'
+import { currentLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
+import { countLabel } from '@/shared/i18n/format'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 const AUCTION_PATH = '/auction'
 
 type BatchStep = 'idle' | 'confirming'
 
+/** Motivo de fallo por item, en el idioma activo (se traduce al leerse). */
 const BATCH_FAILURE_LABEL: Readonly<
   Record<Exclude<ClaimBatchItemStatus, 'CLAIMED' | 'ALREADY_CLAIMED'>, string>
-> = {
-  NOT_OWNED: 'no te pertenece',
-  NOT_FOUND: 'ya no existe',
-  EXPIRED: 'plazo vencido',
-  INVENTORY_UNAVAILABLE: 'inventario no disponible, puedes reintentar',
-  ERROR: 'error inesperado',
-}
+> = localizedMessages({
+  NOT_OWNED: 'auction:claims.batchLabels.NOT_OWNED',
+  NOT_FOUND: 'auction:claims.batchLabels.NOT_FOUND',
+  EXPIRED: 'auction:claims.batchLabels.EXPIRED',
+  INVENTORY_UNAVAILABLE: 'auction:claims.batchLabels.INVENTORY_UNAVAILABLE',
+  ERROR: 'auction:claims.batchLabels.ERROR',
+})
 
 const isBatchSuccess = (status: ClaimBatchItemStatus): boolean =>
   status === 'CLAIMED' || status === 'ALREADY_CLAIMED'
 
 const describeClaimError = (error: unknown): string => {
   if (error instanceof HttpError) {
-    if (error.isForbidden) return 'No eres el titular de este reclamo.'
-    if (error.isNotFound) return 'Este producto ya no está disponible para reclamar.'
-    if (error.status === 409)
-      return 'El estado del reclamo cambió; actualiza la página e intenta de nuevo.'
-    if (error.status === 422) return 'El plazo de reclamo ya venció para este producto.'
+    if (error.isForbidden) return i18n.t('auction:claims.errors.forbidden')
+    if (error.isNotFound) return i18n.t('auction:claims.errors.notFound')
+    if (error.status === 409) return i18n.t('auction:claims.errors.conflict')
+    if (error.status === 422) return i18n.t('auction:claims.errors.expired')
 
-    return error.message
+    return describeFailure(error, i18n.t, currentLanguage())
   }
 
-  return 'No se pudo reclamar el producto. Intenta nuevamente.'
+  return i18n.t('auction:claims.errors.failed')
 }
 
 /**
@@ -63,6 +69,7 @@ const describeClaimError = (error: unknown): string => {
  */
 export const PendingClaimsPage = (): React.JSX.Element => {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set())
   const [batchStep, setBatchStep] = useState<BatchStep>('idle')
   const [expiredAuctionIds, setExpiredAuctionIds] = useState<ReadonlySet<string>>(new Set())
@@ -160,19 +167,15 @@ export const PendingClaimsPage = (): React.JSX.Element => {
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6">
       <Breadcrumb
         items={[
-          { label: 'Inicio', to: ECOMMERCE_PATH },
-          { label: 'Subastas', to: AUCTION_PATH },
-          { label: 'Productos pendientes de reclamo' },
+          { label: t('auction:crumbs.home'), to: ECOMMERCE_PATH },
+          { label: t('auction:claims.crumbAuctions'), to: AUCTION_PATH },
+          { label: t('auction:claims.title') },
         ]}
       />
 
       <div>
-        <h1 className="text-xl font-semibold text-ink">Productos pendientes de reclamo</h1>
-        <p className="mt-1 text-sm text-muted">
-          Tienes 7 días desde que se liquida la subasta para reclamar cada producto ganado. Pasado
-          ese plazo, el producto se pierde de forma definitiva: no se revierte la compra ni se
-          reembolsan los créditos.
-        </p>
+        <h1 className="text-xl font-semibold text-ink">{t('auction:claims.title')}</h1>
+        <p className="mt-1 text-sm text-muted">{t('auction:claims.intro')}</p>
       </div>
 
       {claimMutation.isError && (
@@ -189,7 +192,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
           role="alert"
           className="rounded-lg border border-danger bg-danger/10 p-3 text-sm text-danger"
         >
-          No se pudo procesar el reclamo en bloque. Intenta nuevamente.
+          {t('auction:claims.batchFailed')}
         </p>
       )}
 
@@ -205,18 +208,23 @@ export const PendingClaimsPage = (): React.JSX.Element => {
         >
           <p className="font-medium">
             {summary.failed.length === 0
-              ? `Reclamaste ${String(summary.claimed.length)} producto${summary.claimed.length === 1 ? '' : 's'} correctamente.`
-              : `Reclamaste ${String(summary.claimed.length)} de ${String(summary.total)} productos seleccionados.`}
+              ? countLabel(t, 'auction:claims.claimedAll', summary.claimed.length)
+              : t('auction:claims.claimedSome', {
+                  claimed: String(summary.claimed.length),
+                  total: String(summary.total),
+                })}
           </p>
           {summary.failed.length > 0 && (
             <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted">
               {summary.failed.map((item) => (
                 <li key={item.auctionId}>
-                  Subasta {item.auctionId}:{' '}
-                  {item.status === 'CLAIMED' || item.status === 'ALREADY_CLAIMED'
-                    ? item.status
-                    : BATCH_FAILURE_LABEL[item.status]}
-                  .
+                  {t('auction:claims.failedItem', {
+                    id: item.auctionId,
+                    reason:
+                      item.status === 'CLAIMED' || item.status === 'ALREADY_CLAIMED'
+                        ? item.status
+                        : BATCH_FAILURE_LABEL[item.status],
+                  })}
                 </li>
               ))}
             </ul>
@@ -228,7 +236,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
         isLoading={claimsQuery.isPending}
         error={claimsQuery.error}
         isEmpty={claims.length === 0}
-        emptyMessage="No tienes productos pendientes de reclamo."
+        emptyMessage={t('auction:claims.empty')}
       >
         {pendingClaims.length > 0 && (
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
@@ -239,10 +247,13 @@ export const PendingClaimsPage = (): React.JSX.Element => {
                 onChange={toggleSelectAll}
                 className="size-4 accent-[var(--color-brand)]"
               />
-              Seleccionar todos
+              {t('auction:claims.selectAll')}
             </label>
             <span className="text-xs text-muted">
-              {selectedIds.size} de {pendingClaims.length} seleccionados
+              {t('auction:claims.selectedCount', {
+                selected: String(selectedIds.size),
+                total: String(pendingClaims.length),
+              })}
             </span>
             <Button
               variant="primary"
@@ -250,7 +261,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
               disabled={selectedIds.size === 0}
               onClick={openBatchConfirmation}
             >
-              Recoger todo
+              {t('auction:claims.collectAll')}
             </Button>
           </div>
         )}
@@ -262,7 +273,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
             className="mb-4 space-y-3 rounded-lg border border-brand bg-brand/5 p-4"
           >
             <p id="pending-claims-batch-confirm-title" className="text-sm font-medium text-ink">
-              ¿Confirmas que quieres recoger los {selectedIds.size} productos seleccionados?
+              {t('auction:claims.confirmBatch', { total: String(selectedIds.size) })}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -270,7 +281,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
                 loading={batchMutation.isPending}
                 onClick={handleConfirmBatch}
               >
-                Sí, recoger todo
+                {t('auction:claims.confirmYes')}
               </Button>
               <Button
                 variant="secondary"
@@ -279,7 +290,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
                   setBatchStep('idle')
                 }}
               >
-                Cancelar
+                {t('common:cancel')}
               </Button>
             </div>
           </div>
@@ -287,7 +298,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
 
         {batchMutation.isPending && (
           <p role="status" aria-live="polite" className="mb-4 text-sm text-muted">
-            Reclamando productos seleccionados...
+            {t('auction:claims.claimingSelected')}
           </p>
         )}
 

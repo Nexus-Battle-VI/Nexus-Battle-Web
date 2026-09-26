@@ -1,4 +1,5 @@
 import type { RewardDeliveryState, RewardProduct } from './api'
+import { i18n } from '@/shared/i18n/i18n'
 
 /**
  * Textos y numeros del panel de recompensa (HU-22). Modulo PURO: recibe lo
@@ -59,30 +60,29 @@ export const describeDelivery = (
 
   if (delivery === 'PENDING') {
     return {
-      headline: 'Cofre obtenido',
+      headline: i18n.t('battle:reward.chest'),
       detail:
         reward === null
-          ? 'Tus créditos ya se acreditaron. Seleccionando tu recompensa…'
-          : `Tus créditos ya se acreditaron. Estamos completando la entrega de ${reward.name}.`,
+          ? i18n.t('battle:reward.pendingSelecting')
+          : i18n.t('battle:reward.pendingDelivering', { reward: reward.name }),
     }
   }
 
   if (delivery === 'FAILED') {
     return balance === null
       ? {
-          headline: 'No se pudo procesar tu recompensa',
-          detail: 'Vuelve a intentarlo más tarde o contacta con soporte si el problema persiste.',
+          headline: i18n.t('battle:reward.failed'),
+          detail: i18n.t('battle:reward.failedDetail'),
         }
       : {
-          headline: 'Entrega incompleta',
-          detail:
-            'Tus créditos ya se acreditaron, pero no pudimos completar la entrega de tu recompensa.',
+          headline: i18n.t('battle:reward.incomplete'),
+          detail: i18n.t('battle:reward.incompleteDetail'),
         }
   }
 
   // CONFIRMED: reward siempre no-nulo en este estado (el contrato lo garantiza).
   return {
-    headline: 'Cofre obtenido',
-    detail: reward === null ? null : `${reward.name} añadida a tu inventario ✓`,
+    headline: i18n.t('battle:reward.chest'),
+    detail: reward === null ? null : i18n.t('battle:reward.added', { reward: reward.name }),
   }
 }

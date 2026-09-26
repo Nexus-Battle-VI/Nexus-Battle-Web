@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Card } from '@/components/ui/Card'
@@ -44,6 +45,7 @@ const MAX_AUTOMATIC_RETRIES = 3
 export const AuctionDetailPage = (): React.JSX.Element => {
   const { auctionId = '' } = useParams()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
   const [confirmed, setConfirmed] = useState(false)
@@ -113,9 +115,9 @@ export const AuctionDetailPage = (): React.JSX.Element => {
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       <Breadcrumb
         items={[
-          { label: 'Inicio', to: '/ecommerce' },
-          { label: 'Subasta', to: '/auction' },
-          { label: product?.name ?? 'Detalle' },
+          { label: t('auction:crumbs.home'), to: '/ecommerce' },
+          { label: t('auction:crumbs.auction'), to: '/auction' },
+          { label: product?.name ?? t('auction:crumbs.detail') },
         ]}
       />
 
@@ -133,15 +135,15 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                  */
                 transaction === null && auction.status !== 'ACTIVE' ? (
                   <Card
-                    title="Esta subasta ya no esta activa"
-                    description={`Estado actual: ${auction.status}.`}
+                    title={t('auction:detail.notActive')}
+                    description={t('auction:detail.currentStatus', { status: auction.status })}
                   >
                     {null}
                   </Card>
                 ) : transaction === null && isSeller ? (
                   <Card
-                    title="Es tu propia subasta"
-                    description="No puedes ejecutar la compra inmediata de un producto que tu mismo publicaste."
+                    title={t('auction:detail.ownTitle')}
+                    description={t('auction:detail.ownDescription')}
                   >
                     {null}
                   </Card>

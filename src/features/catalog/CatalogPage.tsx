@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
@@ -20,14 +21,12 @@ export const CatalogPage = (): React.JSX.Element => {
   const debouncedCategory = useDebouncedValue(category)
   const normalized = debouncedCategory.trim().toLowerCase()
   const products = useProducts(normalized === '' ? null : normalized)
+  const { t } = useTranslation()
 
   return (
-    <Card
-      title="Catalogo"
-      description="Productos disponibles. El servicio solo publica los que estan a la venta."
-    >
+    <Card title={t('catalog:list.title')} description={t('catalog:list.description')}>
       <label className="block text-sm font-medium text-ink" htmlFor="category">
-        Filtrar por categoria
+        {t('catalog:list.filter')}
       </label>
       <input
         id="category"
@@ -45,7 +44,7 @@ export const CatalogPage = (): React.JSX.Element => {
           isLoading={products.isPending}
           error={products.error}
           isEmpty={(products.data?.length ?? 0) === 0}
-          emptyMessage="No hay productos publicados para ese filtro."
+          emptyMessage={t('catalog:list.empty')}
         >
           <ul className="divide-y divide-border">
             {(products.data ?? []).map((product) => (

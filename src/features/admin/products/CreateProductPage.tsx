@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
@@ -16,12 +17,13 @@ import { PricingStep } from './steps/PricingStep'
 import { ReviewStep } from './steps/ReviewStep'
 import { validateAttributes, validateBasics, validatePricing, type FieldErrors } from './validation'
 
-const STEPS: readonly StepDefinition[] = [
-  { id: 'basics', label: 'Datos básicos' },
-  { id: 'attributes', label: 'Tipo y atributos' },
-  { id: 'pricing', label: 'Tiraje y precio' },
-  { id: 'review', label: 'Confirmar' },
-]
+/** Pasos del asistente; la etiqueta se traduce al pintar. */
+const STEP_KEYS = [
+  { id: 'basics', labelKey: 'admin:products.steps.basics' },
+  { id: 'attributes', labelKey: 'admin:products.steps.attributes' },
+  { id: 'pricing', labelKey: 'admin:products.steps.pricing' },
+  { id: 'review', labelKey: 'admin:products.steps.review' },
+] as const
 
 const VALIDATORS = [validateBasics, validateAttributes, validatePricing] as const
 
@@ -60,6 +62,11 @@ export const CreateProductPage = ({
   onUploadPrimaryImage = uploadProductPrimaryImage,
 }: CreateProductPageProps = {}): React.JSX.Element => {
   const [draft, setDraft] = useState<ProductDraft>(emptyDraft)
+  const { t } = useTranslation()
+  const STEPS: readonly StepDefinition[] = STEP_KEYS.map(({ id, labelKey }) => ({
+    id,
+    label: t(labelKey),
+  }))
   const [step, setStep] = useState(0)
   const [reached, setReached] = useState(0)
   const [errors, setErrors] = useState<FieldErrors>(NO_ERRORS)
@@ -133,20 +140,18 @@ export const CreateProductPage = ({
     <div className="flex flex-col gap-6">
       <Breadcrumb
         items={[
-          { label: 'Inicio', to: '/ecommerce' },
-          { label: 'Catálogo', to: '/catalog' },
-          { label: 'Crear producto' },
+          { label: t('admin:home'), to: '/ecommerce' },
+          { label: t('admin:catalog'), to: '/catalog' },
+          { label: t('admin:products.create.crumb') },
         ]}
       />
 
       <header className="flex flex-col gap-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-brand">
-          Administración de productos
+          {t('admin:products.eyebrow')}
         </p>
-        <h1 className="text-3xl font-bold text-ink">Crear producto</h1>
-        <p className="max-w-3xl text-sm text-muted">
-          Los campos específicos aparecen únicamente después de seleccionar el tipo de producto.
-        </p>
+        <h1 className="text-3xl font-bold text-ink">{t('admin:products.create.title')}</h1>
+        <p className="max-w-3xl text-sm text-muted">{t('admin:products.create.intro')}</p>
       </header>
 
       <section className="overflow-hidden rounded-lg border border-border bg-surface-raised">
@@ -154,7 +159,7 @@ export const CreateProductPage = ({
           steps={STEPS}
           current={step}
           reached={reached}
-          label="Pasos para crear un producto"
+          label={t('admin:products.create.stepsLabel')}
           onSelect={(index) => {
             setErrors(NO_ERRORS)
             setStep(index)
@@ -168,13 +173,13 @@ export const CreateProductPage = ({
                 role="status"
                 className="rounded-md border border-success/40 bg-success/10 px-4 py-3 text-sm text-ink"
               >
-                <p className="font-semibold">Producto creado.</p>
+                <p className="font-semibold">{t('admin:products.create.created')}</p>
                 <p className="mt-1 text-muted">
-                  «{created.name}» ya está disponible en el catálogo.
+                  {t('admin:products.create.createdBody', { name: created.name })}
                 </p>
               </div>
               <div>
-                <Button onClick={startAnother}>Crear otro producto</Button>
+                <Button onClick={startAnother}>{t('admin:products.create.another')}</Button>
               </div>
             </div>
           ) : (
@@ -204,17 +209,17 @@ export const CreateProductPage = ({
           <div className="flex items-center justify-between gap-3 border-t border-border px-6 py-4">
             {step > 0 ? (
               <Button variant="secondary" onClick={goBack}>
-                Atrás
+                {t('admin:products.create.back')}
               </Button>
             ) : (
               <span />
             )}
 
             {step < STEPS.length - 1 ? (
-              <Button onClick={goNext}>Continuar</Button>
+              <Button onClick={goNext}>{t('admin:products.create.continue')}</Button>
             ) : (
               <Button onClick={submit} loading={mutation.isPending}>
-                Publicar producto
+                {t('admin:products.create.publish')}
               </Button>
             )}
           </div>

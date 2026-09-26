@@ -1,3 +1,7 @@
+import { useTranslation } from 'react-i18next'
+
+import { countLabel } from '@/shared/i18n/format'
+
 /**
  * Indicador de disponibilidad de un producto (HU-34).
  *
@@ -15,10 +19,12 @@ export const AvailabilityBadge = ({
 }: {
   readonly availableUnits: number | null
 }): React.JSX.Element => {
+  const { t } = useTranslation()
+
   if (availableUnits === null) {
     return (
       <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
-        Disponible (infinito)
+        {t('admin:products.badge.infinite')}
       </span>
     )
   }
@@ -26,14 +32,14 @@ export const AvailabilityBadge = ({
   if (availableUnits === 0) {
     return (
       <span className="inline-flex items-center rounded-full bg-danger/10 px-3 py-1 text-xs font-medium text-danger">
-        Agotado
+        {t('admin:products.badge.soldOut')}
       </span>
     )
   }
 
   return (
     <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
-      Disponible · {availableUnits} {availableUnits === 1 ? 'unidad' : 'unidades'}
+      {countLabel(t, 'admin:products.badge.available', availableUnits)}
     </span>
   )
 }

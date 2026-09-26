@@ -6,6 +6,7 @@ import { MissionArt } from './art/MissionArt'
 import { difficultyName } from './difficultyPresentation'
 import type { ActiveMission } from './missionPlayApi'
 import { useActiveMissions } from './useActiveMissions'
+import { useTranslation } from 'react-i18next'
 
 /** La barra la llena el porcentaje que calcula Missions: aquí no se mide el tiempo. */
 export const ProgressBar = ({
@@ -38,12 +39,13 @@ const ActiveMissionRow = ({
   readonly receivedAt: number
 }): React.JSX.Element => {
   const remaining = useCountdown(mission.remainingSeconds, receivedAt)
+  const { t } = useTranslation()
   const timeText =
     remaining === null
-      ? 'Confirmando la reserva del héroe…'
+      ? t('missions:panel.confirmingReservation')
       : remaining > 0
-        ? `Termina en ${countdownLabel(remaining)}`
-        : 'Terminando: el reporte llega en unos segundos'
+        ? t('missions:panel.endsIn', { time: countdownLabel(remaining) })
+        : t('missions:panel.finishingUp')
 
   return (
     <li className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface">
@@ -53,10 +55,12 @@ const ActiveMissionRow = ({
           <p className="font-semibold text-ink">{mission.missionName}</p>
           <p className="text-muted">{difficultyName(mission.difficulty)}</p>
         </div>
-        {mission.heroName !== null && <p className="text-muted">Héroe: {mission.heroName}</p>}
+        {mission.heroName !== null && (
+          <p className="text-muted">{t('missions:panel.hero', { name: mission.heroName })}</p>
+        )}
         <ProgressBar
           percent={mission.progressPercent}
-          label={`Progreso de ${mission.missionName}`}
+          label={t('missions:panel.progressOf', { mission: mission.missionName })}
         />
         <p role="timer" aria-live="off" className="tabular-nums text-ink">
           {timeText}
@@ -65,7 +69,7 @@ const ActiveMissionRow = ({
           to={`/missions/progress/${encodeURIComponent(mission.enrollmentId)}`}
           className="w-fit text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
         >
-          Seguir la misión
+          {t('missions:panel.follow')}
         </Link>
       </div>
     </li>
@@ -79,13 +83,14 @@ const ActiveMissionRow = ({
  */
 export const ActiveMissionsPanel = (): React.JSX.Element | null => {
   const active = useActiveMissions()
+  const { t } = useTranslation()
   const items = active.data?.items ?? []
   if (items.length === 0) return null
 
   return (
     <section aria-labelledby="misiones-en-curso" className="flex flex-col gap-3">
       <h2 id="misiones-en-curso" className="text-lg font-semibold text-ink">
-        Misiones en curso
+        {t('missions:panel.title')}
       </h2>
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((mission) => (

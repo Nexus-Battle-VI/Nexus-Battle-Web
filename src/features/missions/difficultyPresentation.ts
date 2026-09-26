@@ -1,23 +1,25 @@
 import type { DifficultyLevel, MissionDifficulty, RewardTier } from './api'
+import { i18n } from '@/shared/i18n/i18n'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 /**
  * Textos que ve el jugador. Solo presentan lo que responde Missions: ninguna
  * funcion de este modulo decide si un nivel esta libre.
  */
-const NAMES: Readonly<Record<DifficultyLevel, string>> = {
-  NORMAL: 'Normal',
-  HEROIC: 'Heroico',
-  LEGENDARY: 'Legendario',
-  MYTHIC: 'Mítico',
-}
+const NAMES: Readonly<Record<DifficultyLevel, string>> = localizedMessages({
+  NORMAL: 'missions:difficulty.NORMAL',
+  HEROIC: 'missions:difficulty.HEROIC',
+  LEGENDARY: 'missions:difficulty.LEGENDARY',
+  MYTHIC: 'missions:difficulty.MYTHIC',
+})
 
 /** Redaccion de la HU: Heroico "mejores", Legendario "premium", Mitico "unicas y exclusivas". */
-const REWARDS: Readonly<Record<RewardTier, string>> = {
-  STANDARD: 'Recompensas estándar',
-  IMPROVED: 'Mejores recompensas',
-  PREMIUM: 'Recompensas premium',
-  EXCLUSIVE: 'Recompensas únicas y exclusivas',
-}
+const REWARDS: Readonly<Record<RewardTier, string>> = localizedMessages({
+  STANDARD: 'missions:reward.STANDARD',
+  IMPROVED: 'missions:reward.IMPROVED',
+  PREMIUM: 'missions:reward.PREMIUM',
+  EXCLUSIVE: 'missions:reward.EXCLUSIVE',
+})
 
 export const difficultyName = (level: DifficultyLevel): string => NAMES[level]
 
@@ -34,7 +36,7 @@ const WHOLE_PERCENT = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 
  */
 export const enemyScalingText = (multiplier: number | null): string => {
   if (multiplier === null) {
-    return 'Dificultad máxima'
+    return i18n.t('missions:difficulty.maxDifficulty')
   }
 
   const extra = (multiplier - 1) * 100
@@ -42,8 +44,8 @@ export const enemyScalingText = (multiplier: number | null): string => {
   const shown = WHOLE_PERCENT.format(extra)
 
   return extra > 0 && shown !== '0'
-    ? `Enemigos con ${shown} % más estadísticas`
-    : 'Enemigos con sus estadísticas base'
+    ? i18n.t('missions:difficulty.enemiesBoosted', { percent: shown })
+    : i18n.t('missions:difficulty.enemiesBase')
 }
 
 /**
@@ -58,9 +60,18 @@ export const compositionTexts = (item: MissionDifficulty): readonly string[] => 
   const loot = item.lootBonusPercent ?? 0
   return [
     ...(extra > 0
-      ? [`+${String(extra)} ${extra === 1 ? 'enemigo' : 'enemigos'} en cada encuentro`]
+      ? [
+          i18n.t(
+            extra === 1
+              ? 'missions:difficulty.extraEnemies_one'
+              : 'missions:difficulty.extraEnemies_other',
+            {
+              count: extra,
+            },
+          ),
+        ]
       : []),
-    ...(enrage > 0 ? [`Jefe furioso: +${String(enrage)} de ataque`] : []),
-    ...(loot > 0 ? [`Botín del jefe: +${String(loot)} % de probabilidad`] : []),
+    ...(enrage > 0 ? [i18n.t('missions:difficulty.bossEnrage', { amount: String(enrage) })] : []),
+    ...(loot > 0 ? [i18n.t('missions:difficulty.bossLoot', { amount: String(loot) })] : []),
   ]
 }

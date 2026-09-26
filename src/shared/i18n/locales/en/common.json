@@ -2,6 +2,47 @@
   "loading": "Loading...",
   "empty": "There is nothing to show.",
   "cancel": "Cancel",
+  "back": "Back",
+  "yes": "Yes",
+  "no": "No",
+  "notAvailable": "Not available",
+  "roles": {
+    "PLAYER": "Player",
+    "MODERATOR": "Moderator",
+    "ADMINISTRATOR": "Administrator",
+    "SUPER_ADMINISTRATOR": "Super Administrator",
+    "GAME_MASTER": "Game Master"
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "PUBLISHED": "Published",
+    "ARCHIVED": "Archived",
+    "CONFIRMED": "Confirmed",
+    "CANCELLED": "Cancelled",
+    "OPEN": "Open",
+    "CLOSED": "Closed",
+    "PENDING_VERIFICATION": "Pending verification",
+    "ACTIVE": "Active",
+    "SUSPENDED": "Suspended",
+    "RECEIVED": "Received",
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "DELETED": "Deleted",
+    "HIDDEN": "Hidden",
+    "EDITED": "Edited",
+    "MARKED": "Flagged",
+    "WAITING_FOR_PLAYERS": "Waiting for players",
+    "PREPARING": "Preparing battle"
+  },
+  "breadcrumb": "Breadcrumb",
+  "password": {
+    "show": "Show password",
+    "hide": "Hide password"
+  },
+  "moduleUnavailable": {
+    "title": "Module not available.",
+    "body": "This feature is not yet available in this increment."
+  },
   "number": {
     "thousand": "k",
     "million": "M"
@@ -22,5 +63,10 @@
     "turns_other": "{{value}} turns",
     "rooms_one": "{{value}} room",
     "rooms_other": "{{value}} rooms"
+  },
+  "hero3d": {
+    "loading": "Loading preview…",
+    "unavailable": "3D preview is not available in this environment.",
+    "unavailableFor": "Preview not available for \"{{id}}\"."
   }
 }

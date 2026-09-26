@@ -2,6 +2,47 @@
   "loading": "Carregando...",
   "empty": "Não há itens para mostrar.",
   "cancel": "Cancelar",
+  "back": "Voltar",
+  "yes": "Sim",
+  "no": "Não",
+  "notAvailable": "Não disponível",
+  "roles": {
+    "PLAYER": "Jogador",
+    "MODERATOR": "Moderador",
+    "ADMINISTRATOR": "Administrador",
+    "SUPER_ADMINISTRATOR": "Superadministrador",
+    "GAME_MASTER": "Mestre do Jogo"
+  },
+  "status": {
+    "DRAFT": "Rascunho",
+    "PUBLISHED": "Publicado",
+    "ARCHIVED": "Arquivado",
+    "CONFIRMED": "Confirmado",
+    "CANCELLED": "Cancelado",
+    "OPEN": "Aberto",
+    "CLOSED": "Fechado",
+    "PENDING_VERIFICATION": "Verificação pendente",
+    "ACTIVE": "Ativa",
+    "SUSPENDED": "Suspensa",
+    "RECEIVED": "Recebida",
+    "PENDING": "Pendente",
+    "APPROVED": "Aprovado",
+    "DELETED": "Excluído",
+    "HIDDEN": "Oculto",
+    "EDITED": "Editado",
+    "MARKED": "Sinalizado",
+    "WAITING_FOR_PLAYERS": "Aguardando jogadores",
+    "PREPARING": "Preparando batalha"
+  },
+  "breadcrumb": "Trilha de navegação",
+  "password": {
+    "show": "Mostrar senha",
+    "hide": "Ocultar senha"
+  },
+  "moduleUnavailable": {
+    "title": "Módulo indisponível.",
+    "body": "Esta funcionalidade ainda não está disponível neste incremento."
+  },
   "number": {
     "thousand": "mil",
     "million": "mi"
@@ -27,5 +68,10 @@
     "rooms_one": "{{value}} sala",
     "rooms_many": "{{value}} de salas",
     "rooms_other": "{{value}} salas"
+  },
+  "hero3d": {
+    "loading": "Carregando pré-visualização…",
+    "unavailable": "A pré-visualização 3D não está disponível neste ambiente.",
+    "unavailableFor": "Pré-visualização indisponível para \"{{id}}\"."
   }
 }

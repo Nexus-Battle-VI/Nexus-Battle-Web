@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { describePower, type HeroPower } from './power'
 
@@ -33,6 +34,7 @@ export interface PowerMeterProps {
  */
 export const PowerMeter = ({ power, heroName, className }: PowerMeterProps): React.JSX.Element => {
   const display = describePower(power)
+  const { t } = useTranslation()
 
   if (!display.valid) {
     return (
@@ -40,8 +42,8 @@ export const PowerMeter = ({ power, heroName, className }: PowerMeterProps): Rea
         data-testid="power-meter"
         className={clsx('flex items-baseline justify-between gap-2 text-xs', className)}
       >
-        <span className="text-muted">Poder</span>
-        <span className="text-muted">No disponible</span>
+        <span className="text-muted">{t('battle:power.label')}</span>
+        <span className="text-muted">{t('battle:power.unavailable')}</span>
       </div>
     )
   }
@@ -49,14 +51,14 @@ export const PowerMeter = ({ power, heroName, className }: PowerMeterProps): Rea
   return (
     <div data-testid="power-meter" className={clsx('flex flex-col gap-1', className)}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="text-muted">Poder</span>
+        <span className="text-muted">{t('battle:power.label')}</span>
         <span aria-hidden="true" className="tabular-nums text-ink">
           {display.text}
         </span>
       </div>
       <div
         role="meter"
-        aria-label={`Poder de ${heroName}`}
+        aria-label={t('battle:power.of', { name: heroName })}
         aria-valuemin={0}
         aria-valuemax={display.max}
         aria-valuenow={display.current}
@@ -69,7 +71,7 @@ export const PowerMeter = ({ power, heroName, className }: PowerMeterProps): Rea
         />
       </div>
       <span className="sr-only" aria-live="polite" aria-atomic="true">
-        {`Poder de ${heroName}: ${display.spoken}`}
+        {t('battle:power.ofValue', { name: heroName, value: display.spoken })}
       </span>
     </div>
   )

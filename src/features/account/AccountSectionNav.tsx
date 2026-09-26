@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import { accountSectionsForRoles } from './sections'
 
@@ -18,9 +19,10 @@ export interface AccountSectionNavProps {
  */
 export const AccountSectionNav = ({ roles }: AccountSectionNavProps): React.JSX.Element => {
   const sections = accountSectionsForRoles(roles)
+  const { t } = useTranslation()
 
   return (
-    <nav aria-label="Secciones de Mi cuenta" className="min-w-0 overflow-hidden">
+    <nav aria-label={t('account:sections.label')} className="min-w-0 overflow-hidden">
       <ul className="flex w-full max-w-full gap-1 overflow-x-auto sm:flex-col sm:overflow-visible">
         {sections.map((section) => (
           <li key={section.to} className="shrink-0">
@@ -37,7 +39,7 @@ export const AccountSectionNav = ({ roles }: AccountSectionNavProps): React.JSX.
                 )
               }
             >
-              {section.label}
+              {t(section.labelKey)}
             </NavLink>
           </li>
         ))}

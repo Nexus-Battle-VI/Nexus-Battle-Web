@@ -10,7 +10,8 @@
     "createProduct": "Créer un produit",
     "banners": "Gérer la bannière",
     "roles": "Gérer les rôles",
-    "moderation": "Modération des commentaires"
+    "moderation": "Modération des commentaires",
+    "editMissions": "Modifier les missions"
   },
   "session": {
     "signUp": "Créer un compte",
@@ -34,7 +35,8 @@
   "signIn": {
     "title": "Pour continuer",
     "signIn": "Se connecter",
-    "signUp": "Créer un compte"
+    "signUp": "Créer un compte",
+    "required": "Vous devez vous connecter ou créer un compte."
   },
   "access": {
     "deniedTitle": "Accès refusé",
@@ -57,5 +59,11 @@
     "notConfigured": "Aucun fournisseur d'identité n'est configuré dans cette version.",
     "unusableToken": "Le jeton reçu n'est pas utilisable.",
     "failed": "La connexion n'a pas pu aboutir."
+  },
+  "community": {
+    "title": "Communauté",
+    "description": "Fils de discussion et messages.",
+    "pendingBefore": "Cet écran n'est pas encore implémenté. Sa fonctionnalité relève du service",
+    "pendingAfter": "et sera développée dans sa User Story."
   }
 }

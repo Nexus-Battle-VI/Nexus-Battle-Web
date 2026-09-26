@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { ShoppingCart } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
 import { ProductImage } from '@/features/commerce/ProductImage'
+import { countLabel } from '@/shared/i18n/format'
 import type { Cart } from './api'
 
 export interface CartPanelProps {
@@ -48,6 +50,7 @@ const QuantityField = ({
   onCommit,
 }: QuantityFieldProps): React.JSX.Element => {
   const [draft, setDraft] = useState(String(quantity))
+  const { t } = useTranslation()
   const [lastSynced, setLastSynced] = useState(quantity)
 
   if (quantity !== lastSynced) {
@@ -73,14 +76,14 @@ const QuantityField = ({
 
   return (
     <label className="flex items-center gap-2 text-xs text-muted">
-      <span className="sr-only">Cantidad de {name}</span>
+      <span className="sr-only">{t('commerce:cart.quantityOf', { name })}</span>
       <input
         type="number"
         min={1}
         max={MAX_QUANTITY}
         value={draft}
         disabled={disabled}
-        aria-label={`Cantidad de ${name}`}
+        aria-label={t('commerce:cart.quantityOf', { name })}
         onChange={(event) => {
           setDraft(event.target.value)
         }}
@@ -121,6 +124,7 @@ export const CartPanel = ({
   disabled = false,
 }: CartPanelProps): React.JSX.Element => {
   const itemCount = cart?.itemCount ?? 0
+  const { t } = useTranslation()
 
   if (!expanded) {
     return (
@@ -130,12 +134,12 @@ export const CartPanel = ({
         aria-expanded={false}
         // El nombre accesible dice el numero, no solo lo pinta: quien navega
         // con lector de pantalla necesita saber cuantos productos lleva.
-        aria-label={`Carrito, ${String(itemCount)} productos`}
+        aria-label={countLabel(t, 'commerce:cart.bubble', itemCount)}
         aria-haspopup="dialog"
         className="commerce-cart-bubble inline-flex items-center gap-3 rounded-full border border-brand/40 bg-brand px-5 py-3 text-sm font-semibold text-brand-ink shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <ShoppingCart aria-hidden="true" className="size-5" />
-        <span>Carrito</span>
+        <span>{t('commerce:cart.title')}</span>
         <span
           data-testid="cart-item-count"
           className="min-w-6 rounded-full bg-surface px-1.5 py-0.5 text-center text-xs font-semibold text-ink"
@@ -148,27 +152,27 @@ export const CartPanel = ({
 
   return (
     <section
-      aria-label="Carrito de compras"
+      aria-label={t('commerce:cart.label')}
       className="rounded-lg border border-border bg-surface-raised p-4"
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-ink">
-          Carrito{' '}
+          {t('commerce:cart.title')}{' '}
           <span data-testid="cart-item-count" className="text-sm font-normal text-muted">
             ({itemCount})
           </span>
         </h2>
         <Button variant="secondary" onClick={onToggle} aria-expanded>
-          Minimizar
+          {t('commerce:cart.minimize')}
         </Button>
       </div>
 
       {cart === null || cart.lines.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">Tu carrito esta vacio.</p>
+        <p className="mt-4 text-sm text-muted">{t('commerce:cart.empty')}</p>
       ) : (
         <>
           <ul
-            aria-label="Productos del carrito"
+            aria-label={t('commerce:cart.lines')}
             tabIndex={0}
             className="commerce-cart-lines mt-4 flex max-h-[32dvh] flex-col gap-3 overflow-y-auto overscroll-contain pr-1 focus-visible:outline-2 focus-visible:outline-brand"
           >
@@ -188,7 +192,9 @@ export const CartPanel = ({
                     {line.name ?? line.sku}
                   </p>
                   <p className="text-xs text-muted">
-                    {formatMoney(line.unitPrice, cart.currency)} por unidad
+                    {t('commerce:cart.perUnit', {
+                      price: formatMoney(line.unitPrice, cart.currency),
+                    })}
                   </p>
                 </div>
 
@@ -213,9 +219,9 @@ export const CartPanel = ({
                     onRemove(line.productId ?? line.sku)
                   }}
                   disabled={disabled || busySku === (line.productId ?? line.sku)}
-                  aria-label={`Quitar ${line.name ?? line.sku} del carrito`}
+                  aria-label={t('commerce:cart.removeLabel', { name: line.name ?? line.sku })}
                 >
-                  Quitar
+                  {t('commerce:cart.remove')}
                 </Button>
               </li>
             ))}
@@ -223,7 +229,7 @@ export const CartPanel = ({
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
             <p className="text-sm text-muted">
-              Total{' '}
+              {t('commerce:cart.total')}{' '}
               <span
                 data-testid="cart-total"
                 className="text-base font-semibold text-ink tabular-nums"
@@ -232,7 +238,7 @@ export const CartPanel = ({
               </span>
             </p>
             <Button onClick={onCheckout} disabled={disabled || onCheckout === undefined}>
-              Proceder al pago
+              {t('commerce:cart.checkout')}
             </Button>
           </div>
         </>

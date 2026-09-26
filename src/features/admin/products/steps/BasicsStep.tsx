@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
@@ -35,6 +36,7 @@ export const BasicsStep = ({
 }: BasicsStepProps): React.JSX.Element => {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const { t } = useTranslation()
   const image = draft.imageUrl.trim()
   const showPreview = image !== ''
 
@@ -50,7 +52,7 @@ export const BasicsStep = ({
       const asset = await onUploadPrimaryImage(file)
       onChange({ imageUrl: asset.imageUrl })
     } catch (error: unknown) {
-      setUploadError(error instanceof Error ? error.message : 'No se pudo cargar la imagen.')
+      setUploadError(error instanceof Error ? error.message : t('admin:products.failures.upload'))
     } finally {
       setUploading(false)
     }
@@ -60,24 +62,24 @@ export const BasicsStep = ({
     <div className="flex flex-col gap-6">
       <div className="grid gap-6 md:grid-cols-2">
         <TextField
-          label="Nombre del producto"
+          label={t('admin:products.basics.name')}
           required
           value={draft.name}
           error={errors.name}
-          hint="Entre 3 y 80 caracteres. Debe ser único dentro del mismo tipo."
-          placeholder="Ej. Espada de Fuego"
+          hint={t('admin:products.basics.nameHint')}
+          placeholder={t('admin:products.basics.namePlaceholder')}
           onChange={(event) => {
             onChange({ name: event.target.value })
           }}
         />
 
         <SelectField
-          label="Tipo de producto"
+          label={t('admin:products.basics.type')}
           required
           value={draft.type}
           error={errors.type}
-          placeholder="Selecciona un tipo"
-          hint="El tipo determina qué atributos se piden en el paso siguiente."
+          placeholder={t('admin:products.basics.typePlaceholder')}
+          hint={t('admin:products.basics.typeHint')}
           options={PRODUCT_TYPES.map((type) => ({ value: type, label: PRODUCT_TYPE_LABELS[type] }))}
           onChange={(event) => {
             onChange({ type: event.target.value as ProductType | '' })
@@ -86,11 +88,11 @@ export const BasicsStep = ({
       </div>
 
       <TextareaField
-        label="Descripción detallada"
+        label={t('admin:products.basics.description')}
         required
         value={draft.description}
         error={errors.description}
-        placeholder="Describe la historia, función o identidad del producto dentro del juego."
+        placeholder={t('admin:products.basics.descriptionPlaceholder')}
         onChange={(event) => {
           onChange({ description: event.target.value })
         }}
@@ -104,17 +106,19 @@ export const BasicsStep = ({
           {showPreview ? (
             <ProductImage
               source={image}
-              name={draft.name || 'producto'}
+              name={draft.name || t('admin:products.basics.imageAltFallback')}
               className="size-full object-contain"
             />
           ) : (
-            <span className="px-2 text-center text-xs text-muted">Vista previa de la imagen</span>
+            <span className="px-2 text-center text-xs text-muted">
+              {t('admin:products.basics.imagePreview')}
+            </span>
           )}
         </div>
 
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-ink" htmlFor="product-primary-image">
-            Imagen representativa <span aria-hidden="true">*</span>
+            {t('admin:products.basics.image')} <span aria-hidden="true">*</span>
           </label>
           <input
             id="product-primary-image"
@@ -129,16 +133,16 @@ export const BasicsStep = ({
             }}
           />
           <p id="product-primary-image-help" className="text-xs text-muted">
-            JPG, PNG o WEBP; máximo 5 MiB. La imagen se valida antes de asociarla al producto.
+            {t('admin:products.basics.imageHelp')}
           </p>
           {uploading && (
             <p role="status" className="text-sm text-muted">
-              Cargando y validando imagen…
+              {t('admin:products.basics.uploading')}
             </p>
           )}
           {!uploading && image !== '' && (
             <p role="status" className="text-sm text-success">
-              Imagen cargada y validada.
+              {t('admin:products.basics.uploaded')}
             </p>
           )}
           {uploadError !== null && (

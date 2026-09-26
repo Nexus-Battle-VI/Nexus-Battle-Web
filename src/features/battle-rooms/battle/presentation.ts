@@ -3,10 +3,12 @@ import { HttpError } from '@/lib/http'
 import type { RealtimeConnectionState } from '../realtime'
 import type { LastAttack } from './battleReducer'
 import type { BattleView, HealthView, RandomEffect, TargetRef, TurnOrderEntry } from './types'
+import { i18n } from '@/shared/i18n/i18n'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 /** Nombre visible de un participante: nunca el `playerId` ni ningun identificador tecnico. */
 export const combatantName = (entry: TurnOrderEntry): string =>
-  entry.kind === 'AI' ? 'Oponente IA' : (entry.displayName ?? 'Jugador')
+  entry.kind === 'AI' ? i18n.t('battle:ai') : (entry.displayName ?? i18n.t('battle:player'))
 
 /** El participante que esta jugando ESTA pantalla (mismo `sub` verificado que la sesion). */
 export const findSelf = (battle: BattleView, subject: string | null): TurnOrderEntry | null =>
@@ -56,10 +58,17 @@ export const describeTurn = (battle: BattleView, subject: string | null): TurnDe
 
   return {
     isMyTurn,
-    headline: isMyTurn ? 'Tu turno' : `Turno de ${combatantName(current)}`,
+    headline: isMyTurn
+      ? i18n.t('battle:turn.yours')
+      : i18n.t('battle:turn.of', { name: combatantName(current) }),
     detail: opening
-      ? `${isMyTurn ? 'Tú inicias' : `Inicia ${combatantName(current)}`} la batalla · Ronda ${String(battle.round)}`
-      : `Ronda ${String(battle.round)}`,
+      ? isMyTurn
+        ? i18n.t('battle:turn.youStart', { round: String(battle.round) })
+        : i18n.t('battle:turn.theyStart', {
+            name: combatantName(current),
+            round: String(battle.round),
+          })
+      : i18n.t('battle:battle.round', { round: String(battle.round) }),
   }
 }
 
@@ -81,41 +90,41 @@ export const describeStartBattleFailure = (error: unknown): string => {
   if (error instanceof HttpError) {
     switch (error.status) {
       case 401:
-        return 'Tu sesión expiró. Vuelve a iniciar sesión para continuar.'
+        return i18n.t('battle:sessionExpired')
       case 403:
         // HU-17 (2026-09-22): el 403 de /start ahora tiene dos causas -- no ser
         // participante, o serlo pero no ser el propietario. El boton solo se
         // muestra al propietario, asi que en la practica esto no deberia verse;
         // si ocurre (llamada manual, condicion de carrera), este mensaje cubre
         // ambos casos sin mentir sobre cual aplica.
-        return 'Solo quien creó la sala puede iniciar la partida.'
+        return i18n.t('battle:start.forbidden')
       case 404:
-        return 'La sala ya no existe.'
+        return i18n.t('battle:roomGone')
       case 409:
-        return 'La sala no está lista para comenzar o cambió de estado. Vuelve a la lista de salas e inténtalo de nuevo.'
+        return i18n.t('battle:start.conflict')
       case 422:
         if (isUnsupportedTeamComposition(error.body)) {
-          return 'Los equipos de esta sala tienen distinto tamaño y el orden de turnos solo está definido para equipos con el mismo número de participantes. La batalla no comenzó; vuelve a la lista de salas.'
+          return i18n.t('battle:start.unevenTeams')
         }
 
-        return 'Un participante ya no cumple los requisitos para combatir: su héroe o su equipamiento cambió. La batalla no comenzó; revisa tu héroe y vuelve a la sala.'
+        return i18n.t('battle:start.ineligible')
       case 503:
-        return 'El servicio no pudo validar a los participantes en este momento. Inténtalo de nuevo en unos segundos.'
+        return i18n.t('battle:start.unavailable')
       default:
-        return 'No fue posible iniciar la batalla. Inténtalo de nuevo.'
+        return i18n.t('battle:start.failed')
     }
   }
 
-  return 'No fue posible iniciar la batalla. Inténtalo de nuevo.'
+  return i18n.t('battle:start.failed')
 }
 
 /** Motivos estables de `command.rejected` que hacen inaccesible la batalla. */
 export const describeRejection = (code: string): string =>
   code === 'NOT_A_PARTICIPANT'
-    ? 'No participas en esta batalla.'
+    ? i18n.t('battle:notParticipant')
     : code === 'ROOM_NOT_FOUND'
-      ? 'La sala ya no existe.'
-      : 'No fue posible acceder a esta batalla.'
+      ? i18n.t('battle:roomGone')
+      : i18n.t('battle:reject.access')
 
 // ---------------------------------------------------------------------------------
 // HU-18: Vida y ataque basico. Solo LEE lo que publica Combat; no calcula dano, ni
@@ -185,14 +194,14 @@ export const healableAllies = (
   return groupCombatants(battle, subject).allies.filter((entry) => entry.seat !== self?.seat)
 }
 
-export const EFFECT_LABELS: Readonly<Record<RandomEffect, string>> = {
-  DAMAGE: 'Daño normal',
-  CRITICAL_DAMAGE: 'Golpe crítico',
-  EVADE: 'Evasión',
-  RESIST: 'Resistencia',
-  ESCAPE: 'Escape',
-  NO_DAMAGE: 'No causa daño',
-}
+export const EFFECT_LABELS: Readonly<Record<RandomEffect, string>> = localizedMessages({
+  DAMAGE: 'battle:effects.DAMAGE',
+  CRITICAL_DAMAGE: 'battle:effects.CRITICAL_DAMAGE',
+  EVADE: 'battle:effects.EVADE',
+  RESIST: 'battle:effects.RESIST',
+  ESCAPE: 'battle:effects.ESCAPE',
+  NO_DAMAGE: 'battle:effects.NO_DAMAGE',
+})
 
 /**
  * Lo que la pantalla cuenta de una accion, con jerarquia de lectura:
@@ -223,7 +232,9 @@ export const DETAIL_SEPARATOR = ' · '
 
 /** Signo menos tipografico: "−3 Vida" se lee como una perdida, no como un guion. */
 export const damageImpact = (applied: number): string =>
-  applied > 0 ? `−${String(applied)} Vida` : 'Sin daño'
+  applied > 0
+    ? i18n.t('battle:feedback.damage', { amount: String(applied) })
+    : i18n.t('battle:feedback.noDamage')
 
 /** "Bruno: 26 → 23", con la Vida antes y despues que publico Combat. */
 export const lifeChange = (name: string, before: number, after: number): string =>
@@ -231,11 +242,16 @@ export const lifeChange = (name: string, before: number, after: number): string 
 
 /** "Ataque 17 vs Defensa 11". */
 export const attackVersusDefense = (attack: number, defense: number): string =>
-  `Ataque ${String(attack)} vs Defensa ${String(defense)}`
+  i18n.t('battle:feedback.attackVsDefense', { attack: String(attack), defense: String(defense) })
 
 /** "Golpe crítico 170 %" (o solo la etiqueta si Combat no envio porcentaje). */
 export const effectWithPercent = (effect: RandomEffect, percent: number | null): string =>
-  percent === null ? EFFECT_LABELS[effect] : `${EFFECT_LABELS[effect]} ${String(percent)} %`
+  percent === null
+    ? EFFECT_LABELS[effect]
+    : i18n.t('battle:feedback.effectPercent', {
+        effect: EFFECT_LABELS[effect],
+        percent: String(percent),
+      })
 
 /**
  * Titular de un golpe EFECTIVO de ataque basico segun el efecto que sorteo
@@ -250,21 +266,21 @@ const hitHeadline = (
 ): string => {
   switch (effect) {
     case 'DAMAGE':
-      return `${attacker} golpeó a ${target}`
+      return i18n.t('battle:feedback.hit.DAMAGE', { attacker, target })
     case 'CRITICAL_DAMAGE':
-      return `¡Golpe crítico de ${attacker} a ${target}!`
+      return i18n.t('battle:feedback.hit.CRITICAL_DAMAGE', { attacker, target })
     case 'EVADE':
       return applied > 0
-        ? `${target} redujo el impacto del ataque de ${attacker}`
-        : `${target} esquivó el ataque de ${attacker}`
+        ? i18n.t('battle:feedback.hit.EVADE_partial', { attacker, target })
+        : i18n.t('battle:feedback.hit.EVADE', { attacker, target })
     case 'RESIST':
       return applied > 0
-        ? `${target} resistió parte del ataque de ${attacker}`
-        : `${target} resistió el ataque de ${attacker}`
+        ? i18n.t('battle:feedback.hit.RESIST_partial', { attacker, target })
+        : i18n.t('battle:feedback.hit.RESIST', { attacker, target })
     case 'ESCAPE':
       return applied > 0
-        ? `${target} escapó en parte del ataque de ${attacker}`
-        : `${target} escapó del ataque de ${attacker}`
+        ? i18n.t('battle:feedback.hit.ESCAPE_partial', { attacker, target })
+        : i18n.t('battle:feedback.hit.ESCAPE', { attacker, target })
   }
 }
 
@@ -276,35 +292,36 @@ const hitHeadline = (
 export const describeLastAttack = (last: LastAttack, battle: BattleView): AttackFeedback => {
   const attackerEntry = findEntry(battle, last.attacker)
   const targetEntry = findEntry(battle, last.target)
-  const attacker = attackerEntry === null ? 'Un participante' : combatantName(attackerEntry)
-  const target = targetEntry === null ? 'su objetivo' : combatantName(targetEntry)
+  const attacker =
+    attackerEntry === null ? i18n.t('battle:aParticipant') : combatantName(attackerEntry)
+  const target = targetEntry === null ? i18n.t('battle:theirTarget') : combatantName(targetEntry)
   const { resolution } = last
   const compared = attackVersusDefense(resolution.attackValue, resolution.defenseValue)
 
   if (!resolution.effective || resolution.effect === null) {
     return {
-      headline: `${attacker} atacó a ${target}, pero no superó su Defensa`,
-      impact: 'Sin daño',
+      headline: i18n.t('battle:feedback.notOverDefense', { attacker, target }),
+      impact: i18n.t('battle:feedback.noDamage'),
       tone: 'neutral',
       life: null,
-      detail: [compared, 'el Ataque debe superar la Defensa'].join(DETAIL_SEPARATOR),
+      detail: [compared, i18n.t('battle:feedback.mustExceed')].join(DETAIL_SEPARATOR),
     }
   }
 
   if (resolution.effect === 'NO_DAMAGE') {
     return {
-      headline: `El ataque de ${attacker} alcanzó a ${target}, pero no causó daño`,
-      impact: 'Sin pérdida de Vida',
+      headline: i18n.t('battle:feedback.reachedNoDamage', { attacker, target }),
+      impact: i18n.t('battle:feedback.noHealthLoss'),
       tone: 'neutral',
       life: null,
-      detail: [compared, 'Efecto: sin daño'].join(DETAIL_SEPARATOR),
+      detail: [compared, i18n.t('battle:feedback.effectNone')].join(DETAIL_SEPARATOR),
     }
   }
 
   const reduced =
     resolution.calculatedDamage === resolution.appliedDamage
       ? null
-      : `daño calculado ${String(resolution.calculatedDamage)} (la Vida no baja de 0)`
+      : i18n.t('battle:feedback.calculated', { amount: String(resolution.calculatedDamage) })
 
   return {
     headline: hitHeadline(resolution.effect, attacker, target, resolution.appliedDamage),
@@ -321,25 +338,25 @@ export const describeLastAttack = (last: LastAttack, battle: BattleView): Attack
 export const describeAttackRejection = (code: string): string => {
   switch (code) {
     case 'NOT_YOUR_TURN':
-      return 'No es tu turno. Tu ataque no se ejecutó.'
+      return i18n.t('battle:attack.errors.NOT_YOUR_TURN')
     case 'BATTLE_NOT_ACTIVE':
-      return 'La batalla no está en curso.'
+      return i18n.t('battle:attack.errors.BATTLE_NOT_ACTIVE')
     case 'INVALID_TARGET':
-      return 'El objetivo elegido ya no existe en la batalla.'
+      return i18n.t('battle:attack.errors.INVALID_TARGET')
     case 'SAME_TEAM_TARGET':
-      return 'No puedes atacar a alguien de tu propio equipo.'
+      return i18n.t('battle:attack.errors.SAME_TEAM_TARGET')
     case 'TARGET_UNAVAILABLE':
-      return 'El objetivo ya no tiene Vida. Elige otro.'
+      return i18n.t('battle:attack.errors.TARGET_UNAVAILABLE')
     case 'ACTOR_UNAVAILABLE':
-      return 'Tu héroe ya no tiene Vida y no puede atacar.'
+      return i18n.t('battle:attack.errors.ACTOR_UNAVAILABLE')
     case 'UNSUPPORTED_COMBAT_PROFILE':
-      return 'El ataque básico todavía no está disponible para este héroe o para esta batalla.'
+      return i18n.t('battle:attack.errors.UNSUPPORTED_COMBAT_PROFILE')
     case 'NOT_A_PARTICIPANT':
-      return 'No participas en esta batalla.'
+      return i18n.t('battle:notParticipant')
     case 'ROOM_NOT_FOUND':
-      return 'La sala ya no existe.'
+      return i18n.t('battle:roomGone')
     default:
-      return 'No fue posible ejecutar el ataque. Inténtalo de nuevo.'
+      return i18n.t('battle:attack.errors.default')
   }
 }
 
@@ -378,34 +395,34 @@ export const attackAvailability = ({
     return {
       visible: false,
       enabled: false,
-      hint: 'Esta batalla comenzó antes de que existieran las acciones de combate y no admite ataques.',
+      hint: i18n.t('battle:attack.hints.legacy'),
     }
   }
 
   if (!describeTurn(battle, subject).isMyTurn) {
-    return { visible: false, enabled: false, hint: 'Podrás atacar cuando sea tu turno.' }
+    return { visible: false, enabled: false, hint: i18n.t('battle:attack.hints.waitTurn') }
   }
 
   const self = findSelf(battle, subject)
 
   if (self !== null && !hasHealth(combatantHealth(battle, self))) {
-    return { visible: true, enabled: false, hint: 'Tu héroe no tiene Vida y no puede atacar.' }
+    return { visible: true, enabled: false, hint: i18n.t('battle:attack.hints.noHealth') }
   }
 
   if (connection !== 'open' || !synced) {
-    return { visible: true, enabled: false, hint: 'Esperando la conexión con la batalla…' }
+    return { visible: true, enabled: false, hint: i18n.t('battle:attack.hints.connection') }
   }
 
   if (pending) {
-    return { visible: true, enabled: false, hint: 'Esperando el resultado de tu acción…' }
+    return { visible: true, enabled: false, hint: i18n.t('battle:attack.hints.pending') }
   }
 
   if (attackableTargets(battle, subject).length === 0) {
-    return { visible: true, enabled: false, hint: 'No hay rivales con Vida a los que atacar.' }
+    return { visible: true, enabled: false, hint: i18n.t('battle:attack.hints.noTargets') }
   }
 
   if (target === null) {
-    return { visible: true, enabled: false, hint: 'Elige un objetivo.' }
+    return { visible: true, enabled: false, hint: i18n.t('battle:attack.hints.chooseTarget') }
   }
 
   return { visible: true, enabled: true, hint: null }

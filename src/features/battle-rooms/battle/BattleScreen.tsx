@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 import type { RealtimeConnectionState } from '../realtime'
 
@@ -22,6 +23,7 @@ import {
 import { describeLatestAction } from './skillPresentation'
 import { TurnOrderStrip } from './TurnOrderStrip'
 import type { BattleResult, BattleView, HealthView, TurnOrderEntry } from './types'
+import { i18n } from '@/shared/i18n/i18n'
 
 export interface BattleScreenProps {
   readonly battle: BattleView
@@ -55,12 +57,12 @@ export interface BattleScreenProps {
 /** Estado de la conexion en TEXTO (el punto de color solo lo refuerza). */
 const connectionLabel = (connection: RealtimeConnectionState, reconnecting: boolean): string =>
   reconnecting
-    ? 'Reconectando…'
+    ? i18n.t('battle:battle.reconnecting')
     : connection === 'open'
-      ? 'Conectado'
+      ? i18n.t('battle:battle.connected')
       : connection === 'connecting'
-        ? 'Conectando…'
-        : 'Sin conexión'
+        ? i18n.t('battle:battle.connectingShort')
+        : i18n.t('battle:battle.offline')
 
 /**
  * Pantalla de batalla (HU-17, HU-18) como una ARENA: los heroes enfrentados y su Vida son lo
@@ -90,8 +92,13 @@ export const BattleScreen = ({
   serverClock = null,
 }: BattleScreenProps): React.JSX.Element => {
   const finished = result !== null
+  const { t } = useTranslation()
   const turn = finished
-    ? { isMyTurn: false, headline: 'Batalla terminada', detail: `Ronda ${String(battle.round)}` }
+    ? {
+        isMyTurn: false,
+        headline: t('battle:battle.finished'),
+        detail: t('battle:battle.round', { round: String(battle.round) }),
+      }
     : describeTurn(battle, subject)
   const self = findSelf(battle, subject)
   const { allies, opponents } = groupCombatants(battle, subject)
@@ -114,10 +121,11 @@ export const BattleScreen = ({
       entry.seat === lastTurnTimeout.timedOut.seat,
   )
   // Mismo nombre que en el resto de la pantalla: una IA es "Oponente IA", nunca "Asiento N".
-  const timeoutName = timeoutEntry === undefined ? 'Un participante' : combatantName(timeoutEntry)
+  const timeoutName =
+    timeoutEntry === undefined ? t('battle:aParticipant') : combatantName(timeoutEntry)
   const feedback: ActionFeedback | null = timeoutAfterActions
     ? {
-        headline: `${timeoutName} perdió su turno por tiempo.`,
+        headline: t('battle:battle.timedOut', { name: timeoutName }),
         impact: null,
         tone: 'neutral',
         life: null,
@@ -132,7 +140,7 @@ export const BattleScreen = ({
       : 'lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4'
 
   return (
-    <section aria-label="Batalla" className="flex flex-col gap-3 lg:gap-4">
+    <section aria-label={t('battle:battle.label')} className="flex flex-col gap-3 lg:gap-4">
       {/* HUD compacto: turno y ronda a la izquierda, conexion a la derecha. */}
       <div
         className={clsx(
@@ -176,12 +184,12 @@ export const BattleScreen = ({
 
       {reconnecting && (
         <p role="status" className="text-center text-xs text-muted">
-          Reconectando en tiempo real… El estado se recuperará al volver la conexión.
+          {t('battle:battle.reconnectingLong')}
         </p>
       )}
       {connection === 'failed' && (
         <p role="alert" className="text-center text-xs text-danger">
-          No se pudo autenticar la conexión en tiempo real. Vuelve a entrar a la batalla.
+          {t('battle:battle.authFailed')}
         </p>
       )}
 
@@ -195,7 +203,7 @@ export const BattleScreen = ({
       >
         <ArenaSide
           battle={battle}
-          title="Rival"
+          title={t('battle:battle.rival')}
           entries={opponents}
           isSelf={isSelf}
           isCurrent={isCurrent}
@@ -211,7 +219,7 @@ export const BattleScreen = ({
 
         <ArenaSide
           battle={battle}
-          title={allies.length > 1 ? 'Tu equipo' : 'Tu héroe'}
+          title={allies.length > 1 ? t('battle:battle.yourTeam') : t('battle:battle.yourHero')}
           entries={allies}
           isSelf={isSelf}
           isCurrent={isCurrent}
@@ -233,7 +241,7 @@ export const BattleScreen = ({
       <div
         role="status"
         aria-live="polite"
-        aria-label="Resultado de la última acción"
+        aria-label={t('battle:battle.lastAction')}
         className={clsx(
           feedback === null
             ? '-mt-3 lg:-mt-4'
@@ -276,10 +284,10 @@ export const BattleScreen = ({
       {!finished &&
         (combat === undefined ? (
           <p
-            aria-label="Acciones de combate"
+            aria-label={t('battle:battle.actions')}
             className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted"
           >
-            Las acciones de combate no están disponibles en esta vista.
+            {t('battle:battle.actionsUnavailable')}
           </p>
         ) : (
           <AttackPanel

@@ -1,4 +1,5 @@
 import type { MissionReport, MissionReportRewardLine } from './api'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 /**
  * Lectura del informe de misión (HU-74) y de su experiencia (HU-09, Task HU-09.5).
@@ -84,18 +85,18 @@ export const readExperience = (report: MissionReport): MissionExperience | null 
   }
 }
 
-const DIFFICULTY_LABELS: Readonly<Record<string, string>> = {
-  NORMAL: 'Normal',
-  HEROIC: 'Heroica',
-  LEGENDARY: 'Legendaria',
-  MYTHIC: 'Mítica',
-}
+const DIFFICULTY_LABELS: Readonly<Record<string, string>> = localizedMessages({
+  NORMAL: 'missions:reportDifficulty.NORMAL',
+  HEROIC: 'missions:reportDifficulty.HEROIC',
+  LEGENDARY: 'missions:reportDifficulty.LEGENDARY',
+  MYTHIC: 'missions:reportDifficulty.MYTHIC',
+})
 
-const OUTCOME_LABELS: Readonly<Record<string, string>> = {
-  COMPLETED: 'Completada',
-  FAILED: 'Fallida',
-  ABANDONED: 'Abandonada',
-}
+const OUTCOME_LABELS: Readonly<Record<string, string>> = localizedMessages({
+  COMPLETED: 'missions:outcome.COMPLETED',
+  FAILED: 'missions:outcome.FAILED',
+  ABANDONED: 'missions:outcome.ABANDONED',
+})
 
 /** La dificultad del informe en texto; un valor nuevo se muestra tal cual. */
 export const difficultyLabel = (difficulty: string): string =>

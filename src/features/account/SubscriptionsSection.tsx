@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { Card } from '@/components/ui/Card'
 
 /**
@@ -8,11 +10,18 @@ import { Card } from '@/components/ui/Card'
  * pendiente, NO se inventa -ni plan, ni precio, ni fecha, ni renovacion-. Se
  * declara el estado y ya.
  */
-export const SubscriptionsSection = (): React.JSX.Element => (
-  <Card title="Suscripciones" description="Plan y estado de tu suscripcion a Nexus Battles VI.">
-    <p className="text-sm text-muted">
-      <span className="font-medium text-ink">Todavia no disponible.</span> Cuando exista un servicio
-      de suscripciones, aqui podras consultar tu plan y gestionarlo.
-    </p>
-  </Card>
-)
+export const SubscriptionsSection = (): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <Card
+      title={t('account:subscriptions.title')}
+      description={t('account:subscriptions.description')}
+    >
+      <p className="text-sm text-muted">
+        <span className="font-medium text-ink">{t('account:notAvailableYet')}</span>{' '}
+        {t('account:subscriptions.body')}
+      </p>
+    </Card>
+  )
+}

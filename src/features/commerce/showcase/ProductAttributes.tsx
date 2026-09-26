@@ -1,89 +1,30 @@
-const LABELS: Readonly<Record<string, string>> = {
-  kind: 'Tipo',
-  heroSubtype: 'Clase de héroe',
-  basePower: 'Poder',
-  baseHealth: 'Salud',
-  baseDefense: 'Defensa',
-  baseAttack: 'Ataque',
-  baseDamage: 'Daño',
-  baseHealing: 'Curación',
-  abilities: 'Habilidades',
-  compatibleHeroSubtypes: 'Héroes compatibles',
-  compatibleHeroSubtype: 'Héroe compatible',
-  compatibilityScope: 'Compatibilidad',
-  powerCostMode: 'Consumo de poder',
-  powerCost: 'Coste de poder',
-  chargeTurns: 'Turnos de carga',
-  cooldownTurns: 'Turnos de recarga',
-  effects: 'Efectos',
-  generalEffect: 'Efecto general',
-  specificEffect: 'Efecto específico',
-  slot: 'Parte de armadura',
-  setCode: 'Conjunto',
-  target: 'Objetivo',
-  statistic: 'Estadística',
-  operation: 'Operación',
-  magnitude: 'Magnitud',
-  mode: 'Modo',
-  amount: 'Cantidad',
-  basisPoints: 'Puntos base',
-  count: 'Número de dados',
-  sides: 'Caras',
-  durationTurns: 'Duración en turnos',
-  immunityCode: 'Inmunidad',
-  statusCode: 'Estado',
-  stackable: 'Apilable',
-}
-const VALUES: Readonly<Record<string, string>> = {
-  FIXED: 'Fijo',
-  DICE: 'Dados',
-  PERCENTAGE: 'Porcentaje',
-  ALL_AVAILABLE: 'Todo el poder disponible',
-  ALL_HEROES: 'Todos los héroes',
-  SELECTED_SUBTYPES: 'Clases indicadas',
-  SELF: 'A sí mismo',
-  ALLY: 'Aliado',
-  ALLIED_GROUP: 'Grupo aliado',
-  OPPONENT: 'Oponente',
-  ENEMY_GROUP: 'Grupo enemigo',
-  STAT_MODIFIER: 'Modificar estadística',
-  DAMAGE: 'Daño',
-  HEALING: 'Curación',
-  IMMUNITY: 'Inmunidad',
-  REFLECT_DAMAGE: 'Reflejar daño',
-  REVIVE: 'Revivir',
-  TEMPORARY_STATUS: 'Estado temporal',
-  HEROE: 'Héroe',
-  HABILIDAD: 'Habilidad',
-  ARMA: 'Arma',
-  ARMADURA: 'Armadura',
-  ITEM: 'Ítem',
-  EPICA: 'Épica',
-  // Estadísticas afectadas por un efecto (mismo vocabulario que
-  // features/admin/products/contract.ts STATISTIC_LABELS).
-  POWER: 'Poder',
-  HEALTH: 'Vida',
-  DEFENSE: 'Defensa',
-  ATTACK: 'Ataque',
-  CRITICAL_CHANCE: 'Probabilidad crítica',
-  // Operaciones de un efecto (mismo vocabulario que
-  // features/admin/products/contract.ts EFFECT_OPERATION_LABELS).
-  INCREASE: 'Aumentar',
-  DECREASE: 'Disminuir',
-  MULTIPLY: 'Multiplicar',
-  SET: 'Fijar',
-  BLOCK: 'Bloquear',
-  RESTORE: 'Restaurar',
-}
+import { useTranslation } from 'react-i18next'
 
-const labelFor = (key: string): string => LABELS[key] ?? key.replace(/([a-z])([A-Z])/gu, '$1 $2')
+import { i18n } from '@/shared/i18n/i18n'
+/*
+ * Etiquetas de CLAVES y CODIGOS del esquema versionado (`commerce:attributes.*`).
+ * Son vocabulario de la interfaz, no contenido: un nombre de habilidad o un
+ * texto libre que llegue como valor se muestra tal cual. Una clave o codigo sin
+ * traduccion conocida cae a su forma legible (clave) o a su valor original.
+ */
+const labelFor = (key: string): string => {
+  const translationKey = `commerce:attributes.labels.${key}`
+
+  return i18n.exists(translationKey)
+    ? i18n.t(translationKey)
+    : key.replace(/([a-z])([A-Z])/gu, '$1 $2')
+}
 
 const isPlainObject = (value: unknown): value is Readonly<Record<string, unknown>> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 
 const formatScalar = (value: unknown): string => {
-  if (typeof value === 'boolean') return value ? 'Sí' : 'No'
-  if (typeof value === 'string') return VALUES[value] ?? value
+  if (typeof value === 'boolean') return value ? i18n.t('common:yes') : i18n.t('common:no')
+  if (typeof value === 'string') {
+    const translationKey = `commerce:attributes.values.${value}`
+
+    return i18n.exists(translationKey) ? i18n.t(translationKey) : value
+  }
   if (typeof value === 'number') return String(value)
   return '—'
 }
@@ -132,46 +73,51 @@ export const ProductAttributes = ({
   values,
 }: {
   readonly values: Readonly<Record<string, unknown>>
-}): React.JSX.Element => (
-  <dl className="flex flex-col gap-1.5">
-    {Object.entries(values).map(([key, value]) => {
-      const label = labelFor(key)
+}): React.JSX.Element => {
+  // Se suscribe al idioma: las etiquetas se vuelven a pintar al cambiarlo.
+  useTranslation()
 
-      if (Array.isArray(value)) {
-        if (value.length === 0) return <ScalarRow key={key} label={label} value="—" />
+  return (
+    <dl className="flex flex-col gap-1.5">
+      {Object.entries(values).map(([key, value]) => {
+        const label = labelFor(key)
 
-        if (value.every((entry) => !isPlainObject(entry)))
-          return <ScalarRow key={key} label={label} value={<ChipList values={value} />} />
+        if (Array.isArray(value)) {
+          if (value.length === 0) return <ScalarRow key={key} label={label} value="—" />
 
-        return (
-          <div key={key} className="flex flex-col gap-2 py-1">
-            <dt className="text-xs font-semibold tracking-wide text-ink uppercase">{label}</dt>
-            <dd className="flex flex-col gap-2">
-              {value.map((entry, index) =>
-                isPlainObject(entry) ? (
-                  <AttributeGroupCard key={index} values={entry} />
-                ) : (
-                  <span key={index} className="text-sm text-ink">
-                    {formatScalar(entry)}
-                  </span>
-                ),
-              )}
-            </dd>
-          </div>
-        )
-      }
+          if (value.every((entry) => !isPlainObject(entry)))
+            return <ScalarRow key={key} label={label} value={<ChipList values={value} />} />
 
-      if (isPlainObject(value))
-        return (
-          <div key={key} className="flex flex-col gap-2 py-1">
-            <dt className="text-xs font-semibold tracking-wide text-ink uppercase">{label}</dt>
-            <dd>
-              <AttributeGroupCard values={value} />
-            </dd>
-          </div>
-        )
+          return (
+            <div key={key} className="flex flex-col gap-2 py-1">
+              <dt className="text-xs font-semibold tracking-wide text-ink uppercase">{label}</dt>
+              <dd className="flex flex-col gap-2">
+                {value.map((entry, index) =>
+                  isPlainObject(entry) ? (
+                    <AttributeGroupCard key={index} values={entry} />
+                  ) : (
+                    <span key={index} className="text-sm text-ink">
+                      {formatScalar(entry)}
+                    </span>
+                  ),
+                )}
+              </dd>
+            </div>
+          )
+        }
 
-      return <ScalarRow key={key} label={label} value={formatScalar(value)} />
-    })}
-  </dl>
-)
+        if (isPlainObject(value))
+          return (
+            <div key={key} className="flex flex-col gap-2 py-1">
+              <dt className="text-xs font-semibold tracking-wide text-ink uppercase">{label}</dt>
+              <dd>
+                <AttributeGroupCard values={value} />
+              </dd>
+            </div>
+          )
+
+        return <ScalarRow key={key} label={label} value={formatScalar(value)} />
+      })}
+    </dl>
+  )
+}

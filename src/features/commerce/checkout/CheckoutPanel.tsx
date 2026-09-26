@@ -1,8 +1,12 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { CreditCard, ShoppingBag } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
+import { useLanguage } from '@/shared/i18n/language'
+import { describeFailure } from '@/shared/i18n/errors'
+import { countLabel } from '@/shared/i18n/format'
 import {
   caretPositionForDigitCount,
   digitsBeforeCursor,
@@ -33,11 +37,29 @@ export interface CheckoutPanelProps {
   readonly disabled?: boolean
 }
 
-const FIELDS: readonly { field: CardField; label: string; placeholder: string }[] = [
-  { field: 'holder', label: 'Nombre del titular', placeholder: 'Como aparece en la tarjeta' },
-  { field: 'number', label: 'Numero de tarjeta', placeholder: '4111 1111 1111 1111' },
-  { field: 'expiry', label: 'Vencimiento', placeholder: 'MM/AA' },
-  { field: 'securityCode', label: 'Codigo de seguridad', placeholder: '123' },
+/** `placeholder` es literal (un ejemplo de digitos); `placeholderKey`, una clave traducible. */
+const FIELDS: readonly {
+  field: CardField
+  labelKey: string
+  placeholder?: string
+  placeholderKey?: string
+}[] = [
+  {
+    field: 'holder',
+    labelKey: 'commerce:checkout.fields.holder',
+    placeholderKey: 'commerce:checkout.fields.holderPlaceholder',
+  },
+  {
+    field: 'number',
+    labelKey: 'commerce:checkout.fields.number',
+    placeholder: '4111 1111 1111 1111',
+  },
+  {
+    field: 'expiry',
+    labelKey: 'commerce:checkout.fields.expiry',
+    placeholderKey: 'commerce:checkout.fields.expiryPlaceholder',
+  },
+  { field: 'securityCode', labelKey: 'commerce:checkout.fields.securityCode', placeholder: '123' },
 ]
 
 /**
@@ -62,6 +84,8 @@ export const CheckoutPanel = ({
   disabled = false,
 }: CheckoutPanelProps): React.JSX.Element => {
   const headingId = useId()
+  const { t } = useTranslation()
+  const language = useLanguage((state) => state.language)
   const [card, setCard] = useState<CardForm>(EMPTY_CARD)
   const [touched, setTouched] = useState(false)
 
@@ -143,17 +167,16 @@ export const CheckoutPanel = ({
   if (processing) {
     return (
       <section
-        aria-label="Compra en proceso"
+        aria-label={t('commerce:checkout.processingLabel')}
         className="rounded-lg border border-border bg-surface-raised p-5"
       >
-        <h2 className="text-lg font-semibold text-ink">Compra en proceso</h2>
+        <h2 className="text-lg font-semibold text-ink">{t('commerce:checkout.processingLabel')}</h2>
         <p role="status" className="mt-2 text-sm text-muted">
-          Estamos verificando el resultado de tu compra. Esta pantalla se actualizará
-          automáticamente.
+          {t('commerce:checkout.processingBody')}
         </p>
         {error instanceof Error && (
           <p role="alert" className="mt-2 text-sm text-danger">
-            {error.message}
+            {describeFailure(error, t, language)}
           </p>
         )}
       </section>
@@ -163,19 +186,19 @@ export const CheckoutPanel = ({
   if (result?.status === 'COMPLETED') {
     return (
       <section
-        aria-label="Compra completada"
+        aria-label={t('commerce:checkout.completed')}
         className="rounded-lg border border-border bg-surface-raised p-5"
       >
-        <h2 className="text-lg font-semibold text-ink">Compra completada</h2>
+        <h2 className="text-lg font-semibold text-ink">{t('commerce:checkout.completed')}</h2>
         <p className="mt-2 text-sm text-muted">
-          Referencia{' '}
+          {t('commerce:checkout.reference')}{' '}
           <code className="rounded bg-surface px-1.5 py-0.5 text-xs">
             {result.paymentReference}
           </code>
-          , tarjeta terminada en {result.maskedCard}.
+          {t('commerce:checkout.cardEnding', { card: result.maskedCard })}
         </p>
         <p className="mt-2 text-sm text-ink">
-          Total pagado{' '}
+          {t('commerce:checkout.totalPaid')}{' '}
           <span className="font-semibold tabular-nums">
             {formatMoney(result.order.total, result.order.currency)}
           </span>
@@ -188,11 +211,11 @@ export const CheckoutPanel = ({
         */}
         <p className="mt-2 text-xs text-muted">
           {result.realMoneyMoved
-            ? 'Atencion: el servicio informa de un movimiento financiero real.'
-            : 'Pago simulado: no se ejecuto ningun movimiento financiero real.'}
+            ? t('commerce:checkout.realMoney')
+            : t('commerce:checkout.simulated')}
         </p>
         <Button className="mt-4" onClick={onCancel}>
-          Seguir comprando
+          {t('commerce:checkout.keepShopping')}
         </Button>
       </section>
     )
@@ -200,7 +223,7 @@ export const CheckoutPanel = ({
 
   return (
     <section
-      aria-label="Pago de la compra"
+      aria-label={t('commerce:checkout.paymentLabel')}
       className="flex max-h-[calc(100dvh-8rem)] min-h-0 flex-col overflow-y-auto rounded-2xl border border-border bg-surface-raised md:grid md:h-[min(34rem,calc(100dvh-8rem))] md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:overflow-hidden"
     >
       <section
@@ -213,15 +236,15 @@ export const CheckoutPanel = ({
           </span>
           <div className="min-w-0">
             <h2 id={`${headingId}-summary`} className="text-base font-semibold text-ink">
-              Resumen de la compra
+              {t('commerce:checkout.summary')}
             </h2>
             <p className="mt-0.5 text-xs text-muted">
-              {summary.itemCount} {summary.itemCount === 1 ? 'unidad' : 'unidades'}
+              {countLabel(t, 'commerce:checkout.units', summary.itemCount)}
             </p>
           </div>
         </header>
         <ul
-          aria-label="Productos de la compra"
+          aria-label={t('commerce:checkout.lines')}
           tabIndex={0}
           className="mt-4 max-h-40 min-h-0 space-y-1 overflow-y-auto overscroll-contain pr-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand md:max-h-none md:flex-1"
         >
@@ -246,7 +269,7 @@ export const CheckoutPanel = ({
           ))}
         </ul>
         <div className="mt-4 flex shrink-0 items-center justify-between gap-3 rounded-xl border border-brand/20 bg-brand/10 p-4">
-          <span className="text-sm text-muted">Total a pagar</span>
+          <span className="text-sm text-muted">{t('commerce:checkout.total')}</span>
           <strong
             data-testid="resumen-total"
             className="text-lg font-semibold whitespace-nowrap text-ink tabular-nums"
@@ -273,16 +296,16 @@ export const CheckoutPanel = ({
           <div className="flex items-center gap-2 text-ink">
             <CreditCard aria-hidden="true" className="size-5 text-brand" />
             <h2 id={`${headingId}-payment`} className="text-base font-semibold">
-              Datos de pago
+              {t('commerce:checkout.paymentData')}
             </h2>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-muted">
-            Pasarela simulada: esta operacion no ejecuta ningun movimiento financiero real.
+            {t('commerce:checkout.gatewayNote')}
           </p>
         </header>
 
         <div className="grid grid-cols-2 content-start gap-3 px-5 py-4 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain">
-          {FIELDS.map(({ field, label, placeholder }) => (
+          {FIELDS.map(({ field, labelKey, placeholder, placeholderKey }) => (
             /*
             El mensaje de error va FUERA del `label`. Dentro, su texto pasaria
             a formar parte del nombre accesible del campo, que quedaria como
@@ -296,12 +319,12 @@ export const CheckoutPanel = ({
               }
             >
               <label className="flex flex-col gap-1 text-xs text-muted">
-                {label}
+                {t(labelKey)}
                 <input
                   type="text"
                   inputMode={field === 'holder' ? 'text' : 'numeric'}
                   value={displayValue(field)}
-                  placeholder={placeholder}
+                  placeholder={placeholderKey === undefined ? placeholder : t(placeholderKey)}
                   // Sin autocompletado: esta pasarela es academica y no cobra
                   // nada. Invitar al navegador a rellenar una tarjeta real seria
                   // pedir un dato sensible para un flujo que no lo necesita.
@@ -337,14 +360,16 @@ export const CheckoutPanel = ({
               role="alert"
               className="col-span-2 rounded-lg border border-danger/25 bg-danger/10 p-3 text-sm text-danger"
             >
-              {error instanceof Error ? error.message : 'No se pudo completar la compra.'}
+              {error instanceof Error
+                ? describeFailure(error, t, language)
+                : t('commerce:checkout.failed')}
             </p>
           )}
         </div>
 
         <div className="flex shrink-0 flex-col gap-2 border-t border-border px-5 py-4">
           <Button type="submit" loading={isPaying} disabled={disabled} className="w-full">
-            Confirmar pago
+            {t('commerce:checkout.confirm')}
           </Button>
           <Button
             type="button"
@@ -353,7 +378,7 @@ export const CheckoutPanel = ({
             disabled={isPaying}
             className="w-full"
           >
-            Volver al carrito
+            {t('commerce:checkout.backToCart')}
           </Button>
         </div>
       </form>

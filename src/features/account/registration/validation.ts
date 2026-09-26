@@ -1,3 +1,5 @@
+import { localizedMessages } from '@/shared/i18n/messages'
+
 import { SECURITY_QUESTIONS } from './constants'
 
 /**
@@ -77,18 +79,18 @@ export const EMPTY_VALUES: RegistrationValues = {
   acceptedTerms: false,
 }
 
-export const MESSAGES = {
-  required: 'Campo obligatorio.',
-  email: 'Ingresa un correo electrónico válido.',
-  password:
-    'La contraseña debe tener más de 8 caracteres e incluir mayúscula, minúscula, número y símbolo.',
-  nicknameLength: 'El apodo no puede superar los 32 caracteres.',
-  avatarMissing: 'Selecciona una imagen para tu avatar.',
-  avatarType: 'El avatar debe ser un archivo de imagen.',
-  avatarSize: 'El avatar no puede superar los 5 MB.',
-  securityAnswer: 'Responde esta pregunta de seguridad.',
-  terms: 'Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.',
-} as const
+/** Se traducen al leerse (idioma activo); ver `localizedMessages`. */
+export const MESSAGES = localizedMessages({
+  required: 'account:registration.errors.required',
+  email: 'account:registration.errors.email',
+  password: 'account:registration.errors.password',
+  nicknameLength: 'account:registration.errors.nicknameLength',
+  avatarMissing: 'account:registration.errors.avatarMissing',
+  avatarType: 'account:registration.errors.avatarType',
+  avatarSize: 'account:registration.errors.avatarSize',
+  securityAnswer: 'account:registration.errors.securityAnswer',
+  terms: 'account:registration.errors.terms',
+})
 
 export const validateRegistration = (values: RegistrationValues): RegistrationErrors => {
   const errors: Record<string, string> = {}

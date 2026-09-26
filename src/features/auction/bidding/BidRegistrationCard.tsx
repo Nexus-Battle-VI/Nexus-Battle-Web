@@ -1,13 +1,18 @@
 import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
+import { i18n } from '@/shared/i18n/i18n'
+import { formatInteger } from '@/shared/i18n/format'
 import './bidding.css'
 
-const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g
+/** `2500` -> `2.500 créditos` en es; separador y plural del idioma activo. */
+const formatCredits = (amount: number): string => {
+  const value = Math.trunc(amount)
 
-const formatCredits = (amount: number): string =>
-  `${Math.trunc(amount).toString().replace(THOUSANDS, '.')} créditos`
+  return i18n.t('common:count.credits', { count: value, value: formatInteger(value) })
+}
 
 export type BidRegistrationStage =
   'ready' | 'processing' | 'leading' | 'rejected' | 'own-auction' | 'cooldown' | 'limit' | 'outbid'
@@ -32,19 +37,17 @@ export interface BidRegistrationCardProps {
   readonly onAccept?: () => void
 }
 
+/** Clave de la etiqueta de cada etapa (se traduce al pintar). */
 const STAGE_LABEL: Readonly<Record<BidRegistrationStage, string>> = {
-  ready: 'En curso',
-  processing: 'Registrando',
-  leading: 'Oferta líder',
-  rejected: 'Rechazada',
-  'own-auction': 'Rechazada',
-  cooldown: 'Rechazada',
-  limit: 'Rechazada',
-  outbid: 'Superada',
+  ready: 'auction:bid.stage.ready',
+  processing: 'auction:bid.stage.processing',
+  leading: 'auction:bid.stage.leading',
+  rejected: 'auction:bid.stage.rejected',
+  'own-auction': 'auction:bid.stage.rejected',
+  cooldown: 'auction:bid.stage.rejected',
+  limit: 'auction:bid.stage.rejected',
+  outbid: 'auction:bid.stage.outbid',
 }
-
-const DEFAULT_ERROR =
-  'La puja no cumple las reglas de la subasta. Revisa el monto e inténtalo de nuevo.'
 
 const Alert = ({
   tone,
@@ -90,7 +93,9 @@ export const BidRegistrationCard = ({
   onAccept,
 }: BidRegistrationCardProps): React.JSX.Element => {
   const titleId = useId()
+  const { t } = useTranslation()
   const [amount, setAmount] = useState('')
+  // Guarda la CLAVE del aviso; se traduce al pintar.
   const [validationError, setValidationError] = useState<string | undefined>()
   const effectiveBid = bidCredits ?? currentBidCredits
   const minimumSuggested =
@@ -100,7 +105,7 @@ export const BidRegistrationCard = ({
     const parsed = Number(amount)
 
     if (!Number.isSafeInteger(parsed) || parsed < 1) {
-      setValidationError('Ingresa un monto entero mayor que 0.')
+      setValidationError('auction:bid.amountInvalid')
 
       return
     }
@@ -115,7 +120,7 @@ export const BidRegistrationCard = ({
         {product.name}
       </p>
       <span className="bid-badge" data-stage={stage}>
-        {STAGE_LABEL[stage]}
+        {t(STAGE_LABEL[stage])}
       </span>
     </div>
   )
@@ -131,10 +136,14 @@ export const BidRegistrationCard = ({
         </div>
         <div>
           <div className="bid-progress-header">
-            <span>Registrando tu puja...</span>
-            <span>No cierres esta ventana</span>
+            <span>{t('auction:bid.registering')}</span>
+            <span>{t('auction:dontClose')}</span>
           </div>
-          <div className="bid-progress-track" role="progressbar" aria-label="Registrando tu puja">
+          <div
+            className="bid-progress-track"
+            role="progressbar"
+            aria-label={t('auction:bid.registeringLabel')}
+          >
             <div className="bid-progress-indicator" />
           </div>
         </div>
@@ -162,11 +171,20 @@ export const BidRegistrationCard = ({
           <hr className="bid-divider" />
           <dl className="bid-info-col">
             {currentBidCredits !== undefined && (
-              <KeyValue label="Oferta actual" value={formatCredits(currentBidCredits)} />
+              <KeyValue
+                label={t('auction:bid.currentOffer')}
+                value={formatCredits(currentBidCredits)}
+              />
             )}
-            <KeyValue label="Incremento mínimo" value={formatCredits(minimumBidCredits)} />
+            <KeyValue
+              label={t('auction:bid.minimumIncrement')}
+              value={formatCredits(minimumBidCredits)}
+            />
             {availableCredits !== undefined && (
-              <KeyValue label="Tus créditos disponibles" value={formatCredits(availableCredits)} />
+              <KeyValue
+                label={t('auction:availableCredits')}
+                value={formatCredits(availableCredits)}
+              />
             )}
           </dl>
           <hr className="bid-divider" />
@@ -178,20 +196,20 @@ export const BidRegistrationCard = ({
             }}
           >
             <TextField
-              label="Monto de puja"
+              label={t('auction:bid.amount')}
               type="number"
               inputMode="numeric"
               min={1}
               step={1}
               value={amount}
-              hint={`Mínimo sugerido: ${formatCredits(minimumSuggested)}`}
-              error={validationError}
+              hint={t('auction:bid.suggested', { credits: formatCredits(minimumSuggested) })}
+              error={validationError === undefined ? undefined : t(validationError)}
               onChange={(event) => {
                 setAmount(event.target.value)
               }}
             />
             <Button type="submit" className="bid-button" disabled={onRegister === undefined}>
-              Registrar puja
+              {t('auction:bid.register')}
             </Button>
           </form>
         </>
@@ -201,28 +219,35 @@ export const BidRegistrationCard = ({
         <>
           <Alert
             tone="success"
-            title="¡Eres la oferta líder!"
-            message="Tu puja está liderando esta subasta. Te avisaremos si otro jugador la supera."
+            title={t('auction:bid.leadingTitle')}
+            message={t('auction:bid.leadingBody')}
           />
           <dl className="bid-info-col">
             {effectiveBid !== undefined && (
-              <KeyValue label="Monto registrado" value={formatCredits(effectiveBid)} />
+              <KeyValue
+                label={t('auction:bid.registeredAmount')}
+                value={formatCredits(effectiveBid)}
+              />
             )}
             {effectiveBid !== undefined && (
-              <KeyValue label="Créditos reservados" value={formatCredits(effectiveBid)} />
+              <KeyValue label={t('auction:bid.reserved')} value={formatCredits(effectiveBid)} />
             )}
           </dl>
           <Button type="button" className="bid-button" onClick={onAccept}>
-            Aceptar
+            {t('auction:accept')}
           </Button>
         </>
       )}
 
       {stage === 'rejected' && (
         <>
-          <Alert tone="danger" title="Monto insuficiente" message={errorMessage ?? DEFAULT_ERROR} />
+          <Alert
+            tone="danger"
+            title={t('auction:bid.insufficientTitle')}
+            message={errorMessage ?? t('auction:bid.defaultError')}
+          />
           <Button type="button" variant="danger" className="bid-button" onClick={onRetry}>
-            Reintentar
+            {t('auction:retry')}
           </Button>
         </>
       )}
@@ -231,11 +256,11 @@ export const BidRegistrationCard = ({
         <>
           <Alert
             tone="danger"
-            title="No puedes pujar en tu propia subasta"
-            message="El vendedor no puede registrar pujas en la subasta que publicó."
+            title={t('auction:bid.ownTitle')}
+            message={t('auction:bid.ownBody')}
           />
           <Button type="button" variant="danger" className="bid-button" onClick={onClose}>
-            Entendido
+            {t('auction:understood')}
           </Button>
         </>
       )}
@@ -244,11 +269,11 @@ export const BidRegistrationCard = ({
         <>
           <Alert
             tone="danger"
-            title="Debes esperar 5 segundos"
-            message="No se permite pujar más de una vez cada 5 segundos."
+            title={t('auction:bid.cooldownTitle')}
+            message={t('auction:bid.cooldownBody')}
           />
           <Button type="button" variant="danger" className="bid-button" onClick={onRetry}>
-            Reintentar
+            {t('auction:retry')}
           </Button>
         </>
       )}
@@ -257,11 +282,11 @@ export const BidRegistrationCard = ({
         <>
           <Alert
             tone="danger"
-            title="Límite alcanzado"
-            message="Ya tienes 50 pujas activas. Abandona algunas antes de registrar nuevas."
+            title={t('auction:bid.limitTitle')}
+            message={t('auction:bid.limitBody')}
           />
           <Button type="button" variant="danger" className="bid-button" onClick={onClose}>
-            Cerrar
+            {t('auction:close')}
           </Button>
         </>
       )}
@@ -270,19 +295,22 @@ export const BidRegistrationCard = ({
         <>
           <Alert
             tone="warning"
-            title="Tu puja fue superada"
-            message="Otro jugador registró una puja más alta en esta subasta."
+            title={t('auction:bid.outbidTitle')}
+            message={t('auction:bid.outbidBody')}
           />
           <dl className="bid-info-col">
             {effectiveBid !== undefined && (
-              <KeyValue label="Tu puja" value={formatCredits(effectiveBid)} />
+              <KeyValue label={t('auction:bid.yourBid')} value={formatCredits(effectiveBid)} />
             )}
             {effectiveBid !== undefined && (
-              <KeyValue label="Créditos liberados" value={`+${formatCredits(effectiveBid)}`} />
+              <KeyValue
+                label={t('auction:bid.released')}
+                value={`+${formatCredits(effectiveBid)}`}
+              />
             )}
           </dl>
           <Button type="button" className="bid-button bid-button-warning" onClick={onAccept}>
-            Aceptar
+            {t('auction:accept')}
           </Button>
         </>
       )}

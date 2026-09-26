@@ -1,4 +1,7 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
+
+import { localizedMessages } from '@/shared/i18n/messages'
 
 /**
  * Etiqueta de PRESENTACION del tipo de cambio (HU-38). La logica funcional
@@ -15,15 +18,23 @@ import clsx from 'clsx'
  * no reconoce debe perder el estilo/etiqueta especifica, no reventar la
  * pantalla.
  */
-const LABELS: Readonly<Record<string, string>> = {
-  PRODUCT_CREATED: 'Nuevo',
-  PRODUCT_INVENTORY_ADJUSTED: 'Tiraje actualizado',
-  PRODUCT_SUSPENDED: 'Suspendido',
-  PRODUCT_REACTIVATED: 'Reactivado',
-  PRODUCT_PREMIUM_CONFIGURED: 'Premium',
-  AUCTION_CHANGED: 'Subasta actualizada',
-  AUCTION_CLOSING_SOON: 'Cierre próximo',
-}
+/** Etiquetas en el idioma activo (`notifications:changeTypes.*`), se traducen al leerse. */
+const LABELS: Readonly<Record<string, string>> = localizedMessages({
+  PRODUCT_CREATED: 'notifications:changeTypes.PRODUCT_CREATED',
+  PRODUCT_INVENTORY_ADJUSTED: 'notifications:changeTypes.PRODUCT_INVENTORY_ADJUSTED',
+  PRODUCT_SUSPENDED: 'notifications:changeTypes.PRODUCT_SUSPENDED',
+  PRODUCT_REACTIVATED: 'notifications:changeTypes.PRODUCT_REACTIVATED',
+  PRODUCT_PREMIUM_CONFIGURED: 'notifications:changeTypes.PRODUCT_PREMIUM_CONFIGURED',
+  AUCTION_CHANGED: 'notifications:changeTypes.AUCTION_CHANGED',
+  AUCTION_CLOSING_SOON: 'notifications:changeTypes.AUCTION_CLOSING_SOON',
+  AUCTION_BID_OUTBID: 'notifications:changeTypes.AUCTION_BID_OUTBID',
+  AUCTION_CLOSED_BY_BUY_NOW: 'notifications:changeTypes.AUCTION_CLOSED_BY_BUY_NOW',
+  AUCTION_AUTO_BID_LIMIT_REACHED: 'notifications:changeTypes.AUCTION_AUTO_BID_LIMIT_REACHED',
+  AUCTION_SETTLED_SELLER: 'notifications:changeTypes.AUCTION_SETTLED_SELLER',
+  AUCTION_SETTLED_WINNER: 'notifications:changeTypes.AUCTION_SETTLED_WINNER',
+  AUCTION_SETTLED_LOSER: 'notifications:changeTypes.AUCTION_SETTLED_LOSER',
+  AUCTION_SETTLED_WITHOUT_BIDS: 'notifications:changeTypes.AUCTION_SETTLED_WITHOUT_BIDS',
+})
 
 const TONE: Readonly<Record<string, string>> = {
   PRODUCT_CREATED: 'bg-success/15 text-success',
@@ -41,13 +52,18 @@ export interface CatalogNotificationBadgeProps {
 
 export const CatalogNotificationBadge = ({
   changeType,
-}: CatalogNotificationBadgeProps): React.JSX.Element => (
-  <span
-    className={clsx(
-      'inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
-      TONE[changeType] ?? 'bg-border text-muted',
-    )}
-  >
-    {LABELS[changeType] ?? changeType}
-  </span>
-)
+}: CatalogNotificationBadgeProps): React.JSX.Element => {
+  // Se suscribe al idioma: la etiqueta se vuelve a pintar al cambiarlo.
+  useTranslation()
+
+  return (
+    <span
+      className={clsx(
+        'inline-flex shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
+        TONE[changeType] ?? 'bg-border text-muted',
+      )}
+    >
+      {LABELS[changeType] ?? changeType}
+    </span>
+  )
+}

@@ -1,0 +1,51 @@
+{
+  "genericError": "No se pudo completar la operación. Intenta nuevamente más tarde.",
+  "sending": "Enviando…",
+  "sessionExpiredComment": "Tu sesión ha caducado. Vuelve a iniciar sesión para comentar o calificar.",
+  "form": {
+    "title": "Comentarios y calificación",
+    "commentRequired": "Escribe un comentario antes de publicar.",
+    "publishedBoth": "Tu comentario y tu calificación se publicaron correctamente.",
+    "published": "Tu comentario se publicó correctamente.",
+    "alreadyRatedNotice": "Tu comentario se publicó correctamente. Ya habías registrado una calificación para este producto antes: se mantiene la que ya tenías.",
+    "comment": "Comentario",
+    "commentPlaceholder": "Cuéntanos qué te pareció este producto.",
+    "images": "Imágenes (opcional)",
+    "image": "Imagen {{index}}",
+    "removeImage": "Quitar",
+    "addImage": "Agregar imagen",
+    "alreadyRated": "Ya calificaste este producto anteriormente.",
+    "rating": "Calificación (opcional)",
+    "publish": "Publicar"
+  },
+  "stars": {
+    "label": "Calificación",
+    "option": "{{value}} de 5 estrellas"
+  },
+  "list": {
+    "empty": "Todavía no hay comentarios sobre este producto.",
+    "report": "Reportar"
+  },
+  "report": {
+    "categories": {
+      "SPAM": "Spam",
+      "OFFENSIVE_CONTENT": "Contenido ofensivo",
+      "HARASSMENT": "Acoso",
+      "FALSE_INFORMATION": "Información falsa",
+      "INAPPROPRIATE_CONTENT": "Contenido inapropiado",
+      "COPYRIGHT_VIOLATION": "Violación de derechos de autor"
+    },
+    "rateLimited": "Has alcanzado el límite de reportes permitido. Intenta nuevamente más adelante.",
+    "categoryRequired": "Selecciona un motivo para continuar.",
+    "sent": "Tu reporte fue enviado para revisión.",
+    "close": "Cerrar",
+    "formLabel": "Reportar comentario {{id}}",
+    "sessionExpired": "Tu sesión ha caducado. Vuelve a iniciar sesión para reportar este comentario.",
+    "notFound": "Este comentario ya no está disponible.",
+    "reason": "Motivo del reporte",
+    "reasonPlaceholder": "Selecciona un motivo",
+    "description": "Descripción adicional (opcional)",
+    "descriptionPlaceholder": "Cuéntanos más sobre el motivo del reporte…",
+    "submit": "Enviar reporte"
+  }
+}

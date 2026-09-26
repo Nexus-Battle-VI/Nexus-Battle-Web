@@ -1,14 +1,19 @@
 import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
 import { formatDateTime } from '@/lib/format'
+import { i18n } from '@/shared/i18n/i18n'
+import { formatInteger } from '@/shared/i18n/format'
 import './auto-bid.css'
 
-const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g
+/** `2500` -> `2.500 créditos` en es; separador y plural del idioma activo. */
+const formatCredits = (amount: number): string => {
+  const value = Math.trunc(amount)
 
-const formatCredits = (amount: number): string =>
-  `${Math.trunc(amount).toString().replace(THOUSANDS, '.')} créditos`
+  return i18n.t('common:count.credits', { count: value, value: formatInteger(value) })
+}
 
 export type AutoBidConfigStage =
   'ready' | 'processing' | 'configured' | 'rejected' | 'own-auction' | 'auction-not-active'
@@ -24,17 +29,15 @@ export interface AutoBidConfigCardProps {
   readonly onClose?: () => void
 }
 
+/** Clave de la etiqueta de cada etapa (se traduce al pintar). */
 const STAGE_LABEL: Readonly<Record<AutoBidConfigStage, string>> = {
-  ready: 'Sin configurar',
-  processing: 'Guardando',
-  configured: 'Activa',
-  rejected: 'Rechazada',
-  'own-auction': 'Rechazada',
-  'auction-not-active': 'Rechazada',
+  ready: 'auction:autoBid.stage.ready',
+  processing: 'auction:autoBid.stage.processing',
+  configured: 'auction:autoBid.stage.configured',
+  rejected: 'auction:autoBid.stage.rejected',
+  'own-auction': 'auction:autoBid.stage.rejected',
+  'auction-not-active': 'auction:autoBid.stage.rejected',
 }
-
-const DEFAULT_ERROR =
-  'El límite no cumple las reglas de la subasta. Revisa el valor e inténtalo de nuevo.'
 
 const Alert = ({
   tone,
@@ -77,14 +80,16 @@ export const AutoBidConfigCard = ({
   onClose,
 }: AutoBidConfigCardProps): React.JSX.Element => {
   const titleId = useId()
+  const { t } = useTranslation()
   const [amount, setAmount] = useState('')
+  // Guarda la CLAVE del aviso; se traduce al pintar.
   const [validationError, setValidationError] = useState<string | undefined>()
 
   const submit = (): void => {
     const parsed = Number(amount)
 
     if (!Number.isSafeInteger(parsed) || parsed < 1) {
-      setValidationError('Ingresa un límite entero mayor que 0.')
+      setValidationError('auction:autoBid.limitInvalid')
 
       return
     }
@@ -96,10 +101,10 @@ export const AutoBidConfigCard = ({
   const header = (
     <div className="auto-bid-header-row">
       <p className="auto-bid-title" id={titleId}>
-        Puja automática
+        {t('auction:autoBid.title')}
       </p>
       <span className="auto-bid-badge" data-stage={stage}>
-        {STAGE_LABEL[stage]}
+        {t(STAGE_LABEL[stage])}
       </span>
     </div>
   )
@@ -110,13 +115,13 @@ export const AutoBidConfigCard = ({
         {header}
         <div>
           <div className="auto-bid-progress-header">
-            <span>Guardando tu límite...</span>
-            <span>No cierres esta ventana</span>
+            <span>{t('auction:autoBid.saving')}</span>
+            <span>{t('auction:dontClose')}</span>
           </div>
           <div
             className="auto-bid-progress-track"
             role="progressbar"
-            aria-label="Guardando tu límite"
+            aria-label={t('auction:autoBid.savingLabel')}
           >
             <div className="auto-bid-progress-indicator" />
           </div>
@@ -135,16 +140,13 @@ export const AutoBidConfigCard = ({
 
       {stage === 'ready' && (
         <>
-          <p className="auto-bid-summary">
-            Configura un límite máximo y el sistema pujará automáticamente por ti, sin superarlo,
-            cada vez que otro jugador te desplace del liderazgo.
-          </p>
+          <p className="auto-bid-summary">{t('auction:autoBid.summary')}</p>
           {availableCredits !== undefined && (
             <>
               <hr className="auto-bid-divider" />
               <dl className="auto-bid-info-col">
                 <KeyValue
-                  label="Tus créditos disponibles"
+                  label={t('auction:availableCredits')}
                   value={formatCredits(availableCredits)}
                 />
               </dl>
@@ -159,20 +161,20 @@ export const AutoBidConfigCard = ({
             }}
           >
             <TextField
-              label="Límite máximo"
+              label={t('auction:autoBid.limit')}
               type="number"
               inputMode="numeric"
               min={1}
               step={1}
               value={amount}
-              hint="Nunca pujaremos automáticamente por encima de este monto."
-              error={validationError}
+              hint={t('auction:autoBid.limitHint')}
+              error={validationError === undefined ? undefined : t(validationError)}
               onChange={(event) => {
                 setAmount(event.target.value)
               }}
             />
             <Button type="submit" className="auto-bid-button" disabled={onConfigure === undefined}>
-              Configurar puja automática
+              {t('auction:autoBid.configure')}
             </Button>
           </form>
         </>
@@ -182,15 +184,21 @@ export const AutoBidConfigCard = ({
         <>
           <Alert
             tone="success"
-            title="Puja automática configurada"
-            message="Reaccionaremos por ti ante cualquier oferta rival, sin superar tu límite."
+            title={t('auction:autoBid.configuredTitle')}
+            message={t('auction:autoBid.configuredBody')}
           />
           <dl className="auto-bid-info-col">
             {maxAmountCredits !== undefined && (
-              <KeyValue label="Límite máximo" value={formatCredits(maxAmountCredits)} />
+              <KeyValue
+                label={t('auction:autoBid.limit')}
+                value={formatCredits(maxAmountCredits)}
+              />
             )}
             {configuredAt !== undefined && (
-              <KeyValue label="Configurada el" value={formatDateTime(configuredAt)} />
+              <KeyValue
+                label={t('auction:autoBid.configuredAt')}
+                value={formatDateTime(configuredAt)}
+              />
             )}
           </dl>
         </>
@@ -198,9 +206,13 @@ export const AutoBidConfigCard = ({
 
       {stage === 'rejected' && (
         <>
-          <Alert tone="danger" title="Límite inválido" message={errorMessage ?? DEFAULT_ERROR} />
+          <Alert
+            tone="danger"
+            title={t('auction:autoBid.invalidTitle')}
+            message={errorMessage ?? t('auction:autoBid.defaultError')}
+          />
           <Button type="button" variant="danger" className="auto-bid-button" onClick={onRetry}>
-            Reintentar
+            {t('auction:retry')}
           </Button>
         </>
       )}
@@ -209,11 +221,11 @@ export const AutoBidConfigCard = ({
         <>
           <Alert
             tone="danger"
-            title="No puedes configurar puja automática en tu propia subasta"
-            message="El vendedor no puede configurar una puja automática en la subasta que publicó."
+            title={t('auction:autoBid.ownTitle')}
+            message={t('auction:autoBid.ownBody')}
           />
           <Button type="button" variant="danger" className="auto-bid-button" onClick={onClose}>
-            Entendido
+            {t('auction:understood')}
           </Button>
         </>
       )}
@@ -222,11 +234,11 @@ export const AutoBidConfigCard = ({
         <>
           <Alert
             tone="danger"
-            title="Esta subasta ya no está activa"
-            message="No puedes configurar una puja automática en una subasta que ya cerró."
+            title={t('auction:autoBid.notActiveTitle')}
+            message={t('auction:autoBid.notActiveBody')}
           />
           <Button type="button" variant="danger" className="auto-bid-button" onClick={onClose}>
-            Entendido
+            {t('auction:understood')}
           </Button>
         </>
       )}

@@ -6,6 +6,8 @@ import { invalidateWallet } from '@/shared/wallet'
 import type { AuctionDetail } from '../detail-api'
 import { registerBid, type RegisteredBid } from './api'
 import { BidRegistrationCard, type BidRegistrationStage } from './BidRegistrationCard'
+import { i18n } from '@/shared/i18n/i18n'
+import { currentLanguage } from '@/shared/i18n/language'
 
 interface AuctionBidPanelProps {
   readonly auction: AuctionDetail
@@ -61,13 +63,13 @@ const stageFromError = (error: unknown): BidRegistrationStage => {
 const messageForError = (error: unknown): string | undefined => {
   switch (errorCode(error)) {
     case 'BID_TOO_LOW':
-      return 'La puja debe superar la oferta actual y cumplir con el incremento mínimo configurado.'
     case 'MINIMUM_INCREMENT_NOT_MET':
-      return 'La puja no cumple con el incremento mínimo configurado.'
     case 'INSUFFICIENT_BID_CREDITS':
-      return 'No tienes créditos disponibles suficientes para reservar esta puja.'
+      return i18n.t(`auction:bid.errors.${String(errorCode(error))}`)
     default:
-      return errorMessage(error)
+      // El mensaje del servicio solo se muestra tal cual en español; en otro
+      // idioma se usa el texto generico traducido.
+      return currentLanguage() === 'es' ? errorMessage(error) : undefined
   }
 }
 
@@ -123,9 +125,7 @@ export const AuctionBidPanel = ({
       {...(lastError === undefined
         ? {}
         : {
-            errorMessage:
-              messageForError(lastError) ??
-              'La puja no cumple las reglas de la subasta. Revisa el monto e inténtalo de nuevo.',
+            errorMessage: messageForError(lastError) ?? i18n.t('auction:bid.defaultError'),
           })}
       onRegister={(amountCredits) => {
         mutation.mutate({ amountCredits, idempotencyKey: createIdempotencyKey() })

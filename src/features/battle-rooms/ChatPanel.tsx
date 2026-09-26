@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { SyntheticEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { SocketFactory, TicketProvider } from './realtime'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { formatLocale } from '@/shared/i18n/format'
 
 import type { ChatMessage } from './chatProtocol'
 import type { ChatChannel } from './chatProtocol'
@@ -28,7 +30,7 @@ const formatTime = (iso: string): string => {
 
   return Number.isNaN(date.getTime())
     ? ''
-    : date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+    : date.toLocaleTimeString(formatLocale(), { hour: '2-digit', minute: '2-digit' })
 }
 
 interface MessageRowProps {
@@ -41,20 +43,24 @@ interface MessageRowProps {
  * como HTML. Combat lo entrega tal cual lo escribio la persona (no lo escapa),
  * asi que esta es la unica barrera contra que un mensaje inyecte marcado.
  */
-const MessageRow = ({ message, mine }: MessageRowProps): React.JSX.Element => (
-  <li className="flex flex-col gap-0.5 rounded-md px-2 py-1">
-    <div className="flex items-baseline gap-2">
-      <span className="text-sm font-medium text-ink">
-        {message.senderName}
-        {mine && <span className="ml-1 text-xs font-normal text-muted">(tú)</span>}
-      </span>
-      <time dateTime={message.sentAt} className="text-xs text-muted">
-        {formatTime(message.sentAt)}
-      </time>
-    </div>
-    <p className="whitespace-pre-wrap break-words text-sm text-ink">{message.text}</p>
-  </li>
-)
+const MessageRow = ({ message, mine }: MessageRowProps): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <li className="flex flex-col gap-0.5 rounded-md px-2 py-1">
+      <div className="flex items-baseline gap-2">
+        <span className="text-sm font-medium text-ink">
+          {message.senderName}
+          {mine && <span className="ml-1 text-xs font-normal text-muted">{t('battle:you')}</span>}
+        </span>
+        <time dateTime={message.sentAt} className="text-xs text-muted">
+          {formatTime(message.sentAt)}
+        </time>
+      </div>
+      <p className="whitespace-pre-wrap break-words text-sm text-ink">{message.text}</p>
+    </li>
+  )
+}
 
 /**
  * Chat de un contexto de Jugar Online (HU-13, RF-13): el lobby (la vista
@@ -75,6 +81,7 @@ export const ChatPanel = ({
     ...(hasSession === undefined ? {} : { hasSession }),
   })
   const { state, connection } = chat
+  const { t } = useTranslation()
   const [draft, setDraft] = useState('')
   const inputId = useId()
   const listRef = useRef<HTMLOListElement>(null)
@@ -111,12 +118,14 @@ export const ChatPanel = ({
       <div className="flex flex-col gap-3">
         {connection === 'disabled' && (
           <p role="status" className="text-xs text-muted">
-            Inicia sesión para usar el chat.
+            {t('battle:chat.signIn')}
           </p>
         )}
         {(connection === 'connecting' || connection === 'reconnecting') && (
           <p role="status" className="text-xs text-muted">
-            {connection === 'connecting' ? 'Conectando al chat…' : 'Reconectando al chat…'}
+            {connection === 'connecting'
+              ? t('battle:chat.connecting')
+              : t('battle:chat.reconnecting')}
           </p>
         )}
         {state.closedReason !== null && (
@@ -128,18 +137,16 @@ export const ChatPanel = ({
         <ol
           ref={listRef}
           role="log"
-          aria-label={`Mensajes de ${title.toLowerCase()}`}
+          aria-label={t('battle:chat.messagesOf', { title: title.toLowerCase() })}
           aria-live="polite"
           aria-relevant="additions"
           className="flex h-64 flex-col gap-1 overflow-y-auto rounded-md border border-border bg-surface p-2"
         >
           {state.truncated && (
-            <li className="px-2 py-1 text-xs text-muted">
-              Hay mensajes anteriores que no se muestran.
-            </li>
+            <li className="px-2 py-1 text-xs text-muted">{t('battle:chat.truncated')}</li>
           )}
           {state.messages.length === 0 && state.pending.length === 0 && connection === 'open' && (
-            <li className="px-2 py-1 text-xs text-muted">Todavía no hay mensajes.</li>
+            <li className="px-2 py-1 text-xs text-muted">{t('battle:chat.empty')}</li>
           )}
           {state.messages.map((message) => (
             <MessageRow
@@ -155,12 +162,12 @@ export const ChatPanel = ({
             >
               <p className="whitespace-pre-wrap break-words text-sm text-ink">{item.text}</p>
               {item.status === 'sending' ? (
-                <span className="text-xs text-muted">Enviando…</span>
+                <span className="text-xs text-muted">{t('battle:chat.sending')}</span>
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   <span role="alert" className="text-xs text-danger">
                     {item.failure === null
-                      ? 'No se pudo enviar el mensaje.'
+                      ? t('battle:chat.sendFailed')
                       : describeChatFailure(item.failure)}
                   </span>
                   <Button
@@ -170,7 +177,7 @@ export const ChatPanel = ({
                       chat.retry(item.commandId)
                     }}
                   >
-                    Reintentar
+                    {t('battle:chat.retry')}
                   </Button>
                   <Button
                     variant="secondary"
@@ -179,7 +186,7 @@ export const ChatPanel = ({
                       chat.dismiss(item.commandId)
                     }}
                   >
-                    Descartar
+                    {t('battle:chat.dismiss')}
                   </Button>
                 </div>
               )}
@@ -189,7 +196,7 @@ export const ChatPanel = ({
 
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <label htmlFor={inputId} className="sr-only">
-            Mensaje
+            {t('battle:chat.message')}
           </label>
           <input
             id={inputId}
@@ -198,14 +205,14 @@ export const ChatPanel = ({
             maxLength={CHAT_MAX_LENGTH_HINT}
             autoComplete="off"
             disabled={!canWrite}
-            placeholder="Escribe un mensaje"
+            placeholder={t('battle:chat.placeholder')}
             onChange={(event) => {
               setDraft(event.target.value)
             }}
             className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
           />
           <Button type="submit" disabled={!canSubmit}>
-            Enviar
+            {t('battle:chat.send')}
           </Button>
         </form>
       </div>

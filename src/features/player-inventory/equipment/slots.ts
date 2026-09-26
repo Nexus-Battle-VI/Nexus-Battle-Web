@@ -1,3 +1,5 @@
+import { i18n } from '@/shared/i18n/i18n'
+
 import type { EquipmentSlotId } from './api'
 
 /**
@@ -34,6 +36,9 @@ export const SLOT_META: readonly SlotMeta[] = [
   { id: 'ITEM_1', label: 'Ítem 1', group: 'items', productType: 'ITEM' },
   { id: 'ITEM_2', label: 'Ítem 2', group: 'items', productType: 'ITEM' },
 ]
+
+/** Nombre de la ranura en el idioma activo (`label` queda como respaldo en español). */
+export const slotLabel = (slot: EquipmentSlotId): string => i18n.t(`inventory:slots.${slot}`)
 
 export const SLOT_META_BY_ID: ReadonlyMap<EquipmentSlotId, SlotMeta> = new Map(
   SLOT_META.map((meta) => [meta.id, meta]),
