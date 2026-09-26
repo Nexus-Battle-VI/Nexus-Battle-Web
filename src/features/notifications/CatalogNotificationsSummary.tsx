@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { formatDateTime } from '@/lib/format'
 import { CatalogNotificationBadge } from './CatalogNotificationBadge'
@@ -18,11 +19,12 @@ import { usePendingCatalogNotifications } from './usePendingCatalogNotifications
  */
 export const CatalogNotificationsSummary = (): React.JSX.Element | null => {
   const { items, isLoading, error } = usePendingCatalogNotifications()
+  const { t } = useTranslation()
 
   if (isLoading) {
     return (
       <p role="status" className="text-sm text-muted">
-        Cargando novedades del catálogo...
+        {t('notifications:summary.loading')}
       </p>
     )
   }
@@ -30,7 +32,7 @@ export const CatalogNotificationsSummary = (): React.JSX.Element | null => {
   if (error !== null) {
     return (
       <p role="alert" className="text-sm text-danger">
-        No se pudieron cargar las novedades del catálogo.
+        {t('notifications:summary.failed')}
       </p>
     )
   }
@@ -41,14 +43,11 @@ export const CatalogNotificationsSummary = (): React.JSX.Element | null => {
 
   return (
     <section
-      aria-label="Novedades del catálogo"
+      aria-label={t('notifications:summary.title')}
       className="rounded-lg border border-border bg-surface-raised p-5"
     >
-      <h2 className="text-lg font-semibold text-ink">Novedades del catálogo</h2>
-      <p className="mt-1 text-sm text-muted">
-        Resumen desde tu última sesión. Cambios repetidos al mismo producto se consolidan en una
-        sola notificación.
-      </p>
+      <h2 className="text-lg font-semibold text-ink">{t('notifications:summary.title')}</h2>
+      <p className="mt-1 text-sm text-muted">{t('notifications:summary.subtitle')}</p>
 
       <ul className="mt-4 flex flex-col divide-y divide-border">
         {items.map((item) => (
@@ -66,7 +65,7 @@ export const CatalogNotificationsSummary = (): React.JSX.Element | null => {
         to="/notifications"
         className="mt-4 inline-block text-sm font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
-        Ver historial ›
+        {t('notifications:summary.history')}
       </Link>
     </section>
   )

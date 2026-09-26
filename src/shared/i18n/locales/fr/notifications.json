@@ -1,0 +1,61 @@
+{
+  "home": "Accueil",
+  "loading": "Chargement...",
+  "history": {
+    "crumb": "Historique des nouveautés",
+    "title": "Nouveautés du catalogue",
+    "subtitle": "Historique complet des changements notifiés.",
+    "failed": "L'historique des nouveautés n'a pas pu être chargé.",
+    "empty": "Il n'y a pas encore de nouveautés enregistrées."
+  },
+  "summary": {
+    "loading": "Chargement des nouveautés du catalogue...",
+    "failed": "Les nouveautés du catalogue n'ont pas pu être chargées.",
+    "title": "Nouveautés du catalogue",
+    "subtitle": "Résumé depuis votre dernière session. Les changements répétés sur un même produit sont regroupés en une seule notification.",
+    "history": "Voir l'historique ›"
+  },
+  "banner": {
+    "failed": "L'avis du catalogue n'a pas pu être chargé.",
+    "label": "Avis du catalogue",
+    "previous": "Bannière précédente",
+    "next": "Bannière suivante"
+  },
+  "changeTypes": {
+    "PRODUCT_CREATED": "Nouveau",
+    "PRODUCT_INVENTORY_ADJUSTED": "Tirage mis à jour",
+    "PRODUCT_SUSPENDED": "Suspendu",
+    "PRODUCT_REACTIVATED": "Réactivé",
+    "PRODUCT_PREMIUM_CONFIGURED": "Premium",
+    "AUCTION_CHANGED": "Enchère mise à jour",
+    "AUCTION_CLOSING_SOON": "Clôture imminente",
+    "AUCTION_BID_OUTBID": "Enchère dépassée",
+    "AUCTION_CLOSED_BY_BUY_NOW": "Achat immédiat",
+    "AUCTION_AUTO_BID_LIMIT_REACHED": "Limite d'enchère atteinte",
+    "AUCTION_SETTLED_SELLER": "Enchère vendue",
+    "AUCTION_SETTLED_WINNER": "Vous avez remporté l'enchère",
+    "AUCTION_SETTLED_LOSER": "Enchère terminée",
+    "AUCTION_SETTLED_WITHOUT_BIDS": "Enchère sans offres"
+  },
+  "admin": {
+    "crumb": "Bannière d'information",
+    "title": "Bannière d'information",
+    "subtitle": "Validité par dates. Hors validité, elle est exclue silencieusement.",
+    "titleField": "Titre de la bannière",
+    "content": "Message de la bannière",
+    "publishAt": "Début de validité",
+    "expiresAt": "Fin de validité",
+    "required": "Renseignez le titre, le message, le début et la fin de validité.",
+    "invalidDates": "Les dates de validité ne sont pas valides.",
+    "dateOrder": "Le début de validité doit être antérieur ou égal à la fin de validité.",
+    "failed": "La bannière n'a pas pu être publiée.",
+    "published": "Bannière publiée.",
+    "publish": "Publier la bannière",
+    "list": "Bannières gérées",
+    "listFailed": "La liste des bannières n'a pas pu être chargée.",
+    "empty": "Aucune bannière n'a encore été publiée.",
+    "active": "En vigueur",
+    "inactive": "Hors validité",
+    "back": "← Retour"
+  }
+}

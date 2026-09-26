@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Swords } from '@/components/ui/icons'
 import { useSession } from '@/shared/session'
@@ -16,18 +17,18 @@ interface ActiveStatusCopy {
 /** Texto y destino por estado. Solo estados NO terminales: Combat no devuelve otros. */
 const STATUS_COPY: Readonly<Partial<Record<BattleRoomStatus, ActiveStatusCopy>>> = {
   WAITING_FOR_PLAYERS: {
-    title: 'Tu sala está esperando jugadores',
-    action: 'Volver a la sala',
+    title: 'battle:active.WAITING_FOR_PLAYERS',
+    action: 'battle:backToRoom',
     toBattle: false,
   },
   PREPARING: {
-    title: 'Tu sala está lista para comenzar',
-    action: 'Volver a la sala',
+    title: 'battle:active.PREPARING',
+    action: 'battle:backToRoom',
     toBattle: false,
   },
   IN_BATTLE: {
-    title: 'Tienes una batalla en curso',
-    action: 'Continuar batalla',
+    title: 'battle:active.IN_BATTLE',
+    action: 'battle:active.continue',
     toBattle: true,
   },
 }
@@ -49,6 +50,7 @@ interface ActiveRoomItemProps {
 
 const ActiveRoomItem = ({ room, subject }: ActiveRoomItemProps): React.JSX.Element | null => {
   const copy = STATUS_COPY[room.status]
+  const { t } = useTranslation()
 
   if (copy === undefined) {
     return null
@@ -58,22 +60,22 @@ const ActiveRoomItem = ({ room, subject }: ActiveRoomItemProps): React.JSX.Eleme
   const details = [
     modeLabel(room.mode),
     formatOf(room),
-    myTeam === null ? null : `Tu equipo: ${myTeam}`,
-    room.createdBy === subject ? 'Eres el propietario' : null,
+    myTeam === null ? null : t('battle:active.myTeam', { team: myTeam }),
+    room.createdBy === subject ? t('battle:active.owner') : null,
   ].filter((detail): detail is string => detail !== null)
   const target = copy.toBattle ? `/play/rooms/${room.id}/battle` : `/play/rooms/${room.id}`
 
   return (
     <li className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="font-semibold text-ink">{copy.title}</p>
+        <p className="font-semibold text-ink">{t(copy.title)}</p>
         <p className="text-sm text-muted">{details.join(' · ')}</p>
       </div>
       <Link
         to={target}
         className="inline-flex shrink-0 items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
-        {copy.action}
+        {t(copy.action)}
       </Link>
     </li>
   )
@@ -93,6 +95,7 @@ const ActiveRoomItem = ({ room, subject }: ActiveRoomItemProps): React.JSX.Eleme
 export const ActiveRoomBanner = (): React.JSX.Element | null => {
   const subject = useSession((state) => state.subject)
   const rooms = useMyActiveRooms()
+  const { t } = useTranslation()
   const active = (rooms.data ?? []).filter((room) => STATUS_COPY[room.status] !== undefined)
 
   if (subject === null || active.length === 0) {
@@ -101,7 +104,7 @@ export const ActiveRoomBanner = (): React.JSX.Element | null => {
 
   return (
     <section
-      aria-label={active.length === 1 ? 'Partida en curso' : 'Tus partidas en curso'}
+      aria-label={active.length === 1 ? t('battle:active.labelOne') : t('battle:active.labelMany')}
       className="flex gap-3 rounded-lg border border-brand bg-brand/10 p-4"
     >
       <span aria-hidden="true" className="hidden shrink-0 text-brand sm:block">

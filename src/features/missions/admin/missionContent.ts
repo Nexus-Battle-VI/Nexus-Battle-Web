@@ -1,3 +1,5 @@
+import { localizedMessages } from '@/shared/i18n/messages'
+import { i18n } from '@/shared/i18n/i18n'
 /**
  * Modelo del editor de contenido de misiones (`/admin/missions`).
  *
@@ -18,11 +20,11 @@
 export const MISSION_CATEGORIES = ['STORY', 'CHALLENGE', 'EXPLORATION'] as const
 export type MissionContentCategory = (typeof MISSION_CATEGORIES)[number]
 
-export const CATEGORY_LABELS: Readonly<Record<MissionContentCategory, string>> = {
-  STORY: 'Historia',
-  CHALLENGE: 'Desafío',
-  EXPLORATION: 'Exploración',
-}
+export const CATEGORY_LABELS: Readonly<Record<MissionContentCategory, string>> = localizedMessages({
+  STORY: 'missions:category.STORY',
+  CHALLENGE: 'missions:category.CHALLENGE',
+  EXPLORATION: 'missions:category.EXPLORATION',
+})
 
 export const HERO_SUBTYPES = [
   'GUERRERO_TANQUE',
@@ -38,27 +40,52 @@ export const HERO_SUBTYPES = [
 export const DIFFICULTY_LEVELS = ['NORMAL', 'HEROIC', 'LEGENDARY', 'MYTHIC'] as const
 export type ContentDifficulty = (typeof DIFFICULTY_LEVELS)[number]
 
-export const DIFFICULTY_LABELS: Readonly<Record<ContentDifficulty, string>> = {
-  NORMAL: 'Normal',
-  HEROIC: 'Heroico',
-  LEGENDARY: 'Legendario',
-  MYTHIC: 'Mítico',
-}
+export const DIFFICULTY_LABELS: Readonly<Record<ContentDifficulty, string>> = localizedMessages({
+  NORMAL: 'missions:difficulty.NORMAL',
+  HEROIC: 'missions:difficulty.HEROIC',
+  LEGENDARY: 'missions:difficulty.LEGENDARY',
+  MYTHIC: 'missions:difficulty.MYTHIC',
+})
 
-export const AI_LABELS = {
-  AGGRESSIVE: 'Agresivo: ataca siempre',
-  GUARDED: 'Defensivo: se protege',
-  BOSS: 'Jefe: se enfurece con poca vida',
-} as const
-export type FighterAi = keyof typeof AI_LABELS
+export const AI_LABELS = localizedMessages({
+  AGGRESSIVE: 'admin:missions.ai.AGGRESSIVE',
+  GUARDED: 'admin:missions.ai.GUARDED',
+  BOSS: 'admin:missions.ai.BOSS',
+})
+export type FighterAi = 'AGGRESSIVE' | 'GUARDED' | 'BOSS'
 
 /** Ilustraciones que dibuja la Web (P-J11); sin una, se usa la de la categoria. */
 export const IMAGE_REFS: readonly { readonly value: string; readonly label: string }[] = [
-  { value: 'mision-camino-templo', label: 'Camino al templo' },
-  { value: 'mision-templo-olvidado', label: 'Templo olvidado' },
-  { value: 'mision-camara-sellada', label: 'Cámara sellada' },
-  { value: 'mision-arena-caidos', label: 'Arena de los caídos' },
-  { value: 'mision-travesia-bosque', label: 'Bosque sombrío' },
+  {
+    value: 'mision-camino-templo',
+    get label() {
+      return i18n.t('admin:missions.image.caminoTemplo')
+    },
+  },
+  {
+    value: 'mision-templo-olvidado',
+    get label() {
+      return i18n.t('admin:missions.image.temploOlvidado')
+    },
+  },
+  {
+    value: 'mision-camara-sellada',
+    get label() {
+      return i18n.t('admin:missions.image.camaraSellada')
+    },
+  },
+  {
+    value: 'mision-arena-caidos',
+    get label() {
+      return i18n.t('admin:missions.image.arenaCaidos')
+    },
+  },
+  {
+    value: 'mision-travesia-bosque',
+    get label() {
+      return i18n.t('admin:missions.image.travesiaBosque')
+    },
+  },
 ]
 
 export type DamageSpec =
@@ -126,14 +153,16 @@ export const OBJECTIVE_TYPES = [
 ] as const
 export type ObjectiveType = (typeof OBJECTIVE_TYPES)[number]
 
-export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveType | 'NONE', string>> = {
-  NONE: 'Narrativo (no se evalúa)',
-  DEFEAT_BOSS: 'Derrotar al jefe final',
-  CLEAR_ENCOUNTERS: 'Superar encuentros',
-  MIN_HEALTH_PERCENT: 'Terminar con un mínimo de vida',
-  DEFEAT_MASTER: 'Derrotar al Máster',
-  COLLECT_LOOT: 'Conseguir botín',
-}
+export const OBJECTIVE_LABELS: Readonly<Record<ObjectiveType | 'NONE', string>> = localizedMessages(
+  {
+    NONE: 'admin:missions.objective.NONE',
+    DEFEAT_BOSS: 'admin:missions.objective.DEFEAT_BOSS',
+    CLEAR_ENCOUNTERS: 'admin:missions.objective.CLEAR_ENCOUNTERS',
+    MIN_HEALTH_PERCENT: 'admin:missions.objective.MIN_HEALTH_PERCENT',
+    DEFEAT_MASTER: 'admin:missions.objective.DEFEAT_MASTER',
+    COLLECT_LOOT: 'admin:missions.objective.COLLECT_LOOT',
+  },
+)
 
 export type ObjectiveRule =
   | { readonly type: 'DEFEAT_BOSS' }

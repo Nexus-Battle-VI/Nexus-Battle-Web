@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/form/CheckboxField'
@@ -28,6 +29,7 @@ import {
   type RewardLabel,
 } from './missionContent'
 import { validateMissionContent, type FieldErrors } from './missionContentValidation'
+import { i18n } from '@/shared/i18n/i18n'
 
 export interface SectionProps {
   readonly content: MissionContent
@@ -36,11 +38,18 @@ export interface SectionProps {
 }
 
 const durationHint = (minutes: number): string => {
-  if (!Number.isInteger(minutes) || minutes < 1) return 'Tiempo real que tarda la misión.'
+  if (!Number.isInteger(minutes) || minutes < 1) {
+    return i18n.t('admin:missions.content.durationHintUnknown')
+  }
   const hours = Math.floor(minutes / 60)
   const rest = minutes % 60
-  const parts = [hours > 0 ? `${String(hours)} h` : '', rest > 0 ? `${String(rest)} min` : '']
-  return `Tiempo real que tarda la misión: ${parts.filter((part) => part !== '').join(' ')}.`
+  const parts = [
+    hours > 0 ? i18n.t('admin:missions.content.hours', { value: String(hours) }) : '',
+    rest > 0 ? i18n.t('admin:missions.content.minutes', { value: String(rest) }) : '',
+  ]
+  return i18n.t('admin:missions.content.durationHint', {
+    parts: parts.filter((part) => part !== '').join(' '),
+  })
 }
 
 export const GeneralSection = ({
@@ -53,6 +62,7 @@ export const GeneralSection = ({
   readonly isNew: boolean
   readonly otherMissions: readonly { readonly missionId: string; readonly name: string }[]
 }): React.JSX.Element => {
+  const { t } = useTranslation()
   const set = (changes: Partial<MissionContent>): void => {
     onChange({ ...content, ...changes })
   }
@@ -60,7 +70,7 @@ export const GeneralSection = ({
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2">
         <TextField
-          label="Nombre"
+          label={t('admin:missions.content.name')}
           required
           value={content.name}
           error={errors.name}
@@ -69,14 +79,14 @@ export const GeneralSection = ({
           }}
         />
         <TextField
-          label="Identificador"
+          label={t('admin:missions.content.missionId')}
           required
           value={content.missionId}
           readOnly={!isNew}
           hint={
             isNew
-              ? 'No se cambia después de guardar: minúsculas, números, guion o guion bajo.'
-              : 'No se cambia: lo usan las matrículas y los reportes.'
+              ? t('admin:missions.content.missionIdHintNew')
+              : t('admin:missions.content.missionIdHintExisting')
           }
           error={errors.missionId}
           onChange={(event) => {
@@ -84,7 +94,7 @@ export const GeneralSection = ({
           }}
         />
         <SelectField
-          label="Categoría"
+          label={t('admin:missions.content.category')}
           value={content.category}
           options={MISSION_CATEGORIES.map((category) => ({
             value: category,
@@ -95,16 +105,16 @@ export const GeneralSection = ({
           }}
         />
         <SelectField
-          label="Ilustración"
+          label={t('admin:missions.content.illustration')}
           value={content.imageRef ?? ''}
-          placeholder="La de su categoría"
+          placeholder={t('admin:missions.content.illustrationPlaceholder')}
           options={IMAGE_REFS}
           onChange={(event) => {
             set({ imageRef: event.target.value === '' ? null : event.target.value })
           }}
         />
         <NumberField
-          label="Duración (minutos)"
+          label={t('admin:missions.content.durationMinutes')}
           value={content.estimatedDurationMinutes}
           min={1}
           max={10080}
@@ -115,11 +125,11 @@ export const GeneralSection = ({
           }}
         />
         <NumberField
-          label="Poder recomendado (opcional)"
+          label={t('admin:missions.content.recommendedPower')}
           value={content.recommendedPower}
           min={0}
           optional
-          hint="Solo informativo: no impide matricularse."
+          hint={t('admin:missions.content.recommendedPowerHint')}
           error={errors.recommendedPower}
           onChange={(power) => {
             set({ recommendedPower: power })
@@ -127,7 +137,7 @@ export const GeneralSection = ({
         />
       </div>
       <TextareaField
-        label="Resumen del tablón"
+        label={t('admin:missions.content.boardSummary')}
         required
         rows={2}
         value={content.summary}
@@ -137,7 +147,7 @@ export const GeneralSection = ({
         }}
       />
       <TextareaField
-        label="Historia"
+        label={t('admin:missions.content.story')}
         required
         rows={4}
         value={content.narrative}
@@ -147,12 +157,12 @@ export const GeneralSection = ({
         }}
       />
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-ink">Misiones previas</legend>
-        <p className="text-xs text-muted">
-          El jugador debe completarlas antes de poder matricularse en esta.
-        </p>
+        <legend className="text-sm font-medium text-ink">
+          {t('admin:missions.content.prereqTitle')}
+        </legend>
+        <p className="text-xs text-muted">{t('admin:missions.content.prereqHint')}</p>
         {otherMissions.length === 0 ? (
-          <p className="text-sm text-muted">No hay otras misiones.</p>
+          <p className="text-sm text-muted">{t('admin:missions.content.noOtherMissions')}</p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2">
             {otherMissions.map((mission) => (
@@ -173,8 +183,8 @@ export const GeneralSection = ({
         )}
       </fieldset>
       <CheckboxField
-        label="Publicada"
-        hint="Visible en el tablón. Mientras la preparas, déjala sin marcar."
+        label={t('admin:missions.content.published')}
+        hint={t('admin:missions.content.publishedHint')}
         checked={content.active}
         onChange={(event) => {
           set({ active: event.target.checked })
@@ -206,6 +216,7 @@ export const ObjectivesSection = ({
   onChange,
   errors,
 }: SectionProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const lootLabels = (content.finalBoss.drops ?? []).map((drop) => drop.label)
   const setObjectives = (objectives: readonly ContentObjective[]): void => {
     onChange({ ...content, objectives })
@@ -219,10 +230,7 @@ export const ObjectivesSection = ({
   }
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted">
-        La misión se completa cuando se cumplen todos los objetivos principales. Los secundarios
-        solo se informan en el reporte.
-      </p>
+      <p className="text-sm text-muted">{t('admin:missions.content.objectivesHelp')}</p>
       <ListError message={errors.objectives} />
       {content.objectives.map((objective, index) => {
         const path = `objectives.${String(index)}`
@@ -230,14 +238,14 @@ export const ObjectivesSection = ({
         return (
           <ItemBox
             key={objective.id}
-            title={`Objetivo ${String(index + 1)}`}
-            removeLabel={`Quitar el objetivo ${String(index + 1)}`}
+            title={t('admin:missions.content.objectiveN', { n: index + 1 })}
+            removeLabel={t('admin:missions.content.removeObjectiveN', { n: index + 1 })}
             onRemove={() => {
               setObjectives(content.objectives.filter((_, position) => position !== index))
             }}
           >
             <TextField
-              label="Texto que ve el jugador"
+              label={t('admin:missions.content.objectiveText')}
               value={objective.text}
               error={errors[`${path}.text`]}
               onChange={(event) => {
@@ -246,7 +254,7 @@ export const ObjectivesSection = ({
             />
             <div className="grid gap-3 md:grid-cols-2">
               <SelectField
-                label="Cómo se cumple"
+                label={t('admin:missions.content.howMet')}
                 value={rule?.type ?? 'NONE'}
                 options={(['NONE', ...OBJECTIVE_TYPES] as const).map((type) => ({
                   value: type,
@@ -263,7 +271,7 @@ export const ObjectivesSection = ({
               />
               {rule?.type === 'CLEAR_ENCOUNTERS' && (
                 <NumberField
-                  label="Encuentros que hay que superar"
+                  label={t('admin:missions.content.encountersToClear')}
                   value={rule.count}
                   min={1}
                   max={50}
@@ -275,7 +283,7 @@ export const ObjectivesSection = ({
               )}
               {rule?.type === 'MIN_HEALTH_PERCENT' && (
                 <NumberField
-                  label="Vida mínima al terminar (%)"
+                  label={t('admin:missions.content.minHealthAtEnd')}
                   value={rule.percent}
                   min={0}
                   max={100}
@@ -288,9 +296,9 @@ export const ObjectivesSection = ({
               {rule?.type === 'COLLECT_LOOT' && (
                 <div className="grid grid-cols-2 gap-2">
                   <SelectField
-                    label="Botín"
+                    label={t('admin:missions.content.loot')}
                     value={rule.label}
-                    placeholder="Elige un botín del jefe"
+                    placeholder={t('admin:missions.content.chooseBossLoot')}
                     options={lootLabels.map((label) => ({ value: label, label }))}
                     error={errors[`${path}.rule`]}
                     onChange={(event) => {
@@ -298,7 +306,7 @@ export const ObjectivesSection = ({
                     }}
                   />
                   <NumberField
-                    label="Cantidad"
+                    label={t('admin:missions.content.quantity')}
                     value={rule.count}
                     min={1}
                     max={100}
@@ -310,8 +318,8 @@ export const ObjectivesSection = ({
               )}
             </div>
             <CheckboxField
-              label="Principal"
-              hint="Si no se cumple, la misión termina fallida."
+              label={t('admin:missions.content.primary')}
+              hint={t('admin:missions.content.primaryHint')}
               checked={objective.primary}
               onChange={(event) => {
                 update(index, { primary: event.target.checked })
@@ -330,11 +338,11 @@ export const ObjectivesSection = ({
             )
             setObjectives([
               ...content.objectives,
-              { id, text: 'Nuevo objetivo.', primary: false, rule: null },
+              { id, text: t('admin:missions.content.newObjective'), primary: false, rule: null },
             ])
           }}
         >
-          Añadir objetivo
+          {t('admin:missions.content.addObjective')}
         </Button>
       </div>
     </div>
@@ -355,66 +363,71 @@ const LabelList = ({
   readonly onChange: (items: readonly RewardLabel[]) => void
   readonly errors: FieldErrors
   readonly path: string
-}): React.JSX.Element => (
-  <fieldset className="flex flex-col gap-2">
-    <legend className="text-sm font-medium text-ink">{title}</legend>
-    <p className="text-xs text-muted">{hint}</p>
-    {items.map((item, index) => (
-      <div key={`${path}-${String(index)}`} className="flex items-start gap-2">
-        <div className="flex-1">
-          <TextField
-            label={`${title}: recompensa ${String(index + 1)}`}
-            value={item.label}
-            error={errors[`${path}.${String(index)}`]}
-            onChange={(event) => {
-              onChange(
-                items.map((entry, position) =>
-                  position === index ? { ...entry, label: event.target.value } : entry,
-                ),
-              )
+}): React.JSX.Element => {
+  const { t } = useTranslation()
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-sm font-medium text-ink">{title}</legend>
+      <p className="text-xs text-muted">{hint}</p>
+      {items.map((item, index) => (
+        <div key={`${path}-${String(index)}`} className="flex items-start gap-2">
+          <div className="flex-1">
+            <TextField
+              label={t('admin:missions.content.labelItemN', { title, n: index + 1 })}
+              value={item.label}
+              error={errors[`${path}.${String(index)}`]}
+              onChange={(event) => {
+                onChange(
+                  items.map((entry, position) =>
+                    position === index ? { ...entry, label: event.target.value } : entry,
+                  ),
+                )
+              }}
+            />
+          </div>
+          <Button
+            variant="secondary"
+            className="mt-6"
+            aria-label={t('admin:missions.content.removeLabelItem', {
+              title: title.toLowerCase(),
+              n: index + 1,
+            })}
+            onClick={() => {
+              onChange(items.filter((_, position) => position !== index))
             }}
-          />
+          >
+            {t('admin:missions.content.remove')}
+          </Button>
         </div>
+      ))}
+      <div>
         <Button
           variant="secondary"
-          className="mt-6"
-          aria-label={`Quitar ${title.toLowerCase()}: recompensa ${String(index + 1)}`}
+          aria-label={t('admin:missions.content.addToLabel', { title: title.toLowerCase() })}
           onClick={() => {
-            onChange(items.filter((_, position) => position !== index))
+            onChange([...items, { label: '' }])
           }}
         >
-          Quitar
+          {t('admin:missions.content.add')}
         </Button>
       </div>
-    ))}
-    <div>
-      <Button
-        variant="secondary"
-        aria-label={`Añadir a ${title.toLowerCase()}`}
-        onClick={() => {
-          onChange([...items, { label: '' }])
-        }}
-      >
-        Añadir
-      </Button>
-    </div>
-  </fieldset>
-)
+    </fieldset>
+  )
+}
 
 export const RewardsSection = ({ content, onChange, errors }: SectionProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const setRewards = (changes: Partial<MissionContent['rewards']>): void => {
     onChange({ ...content, rewards: { ...content.rewards, ...changes } })
   }
   return (
     <div className="flex flex-col gap-5">
       <p className="rounded-md border border-border bg-surface/40 p-3 text-sm text-ink">
-        Hoy el jugador recibe la experiencia de cada enemigo, el botín del jefe (pestaña «Jefe y
-        botín») y la épica de cada Máster. Estas listas son solo texto: los créditos, cofres y
-        títulos no se entregan hasta que esté HU-10.
+        {t('admin:missions.content.rewardsNote')}
       </p>
       <LabelList
-        title="Garantizadas"
-        hint="Por completar la misión."
+        title={t('admin:missions.content.guaranteed')}
+        hint={t('admin:missions.content.guaranteedHint')}
         items={content.rewards.guaranteed}
         errors={errors}
         path="rewards.guaranteed"
@@ -423,8 +436,8 @@ export const RewardsSection = ({ content, onChange, errors }: SectionProps): Rea
         }}
       />
       <LabelList
-        title="Primera vez"
-        hint="Solo la primera vez que el jugador la completa."
+        title={t('admin:missions.content.firstTime')}
+        hint={t('admin:missions.content.firstTimeHint')}
         items={content.rewards.firstTime}
         errors={errors}
         path="rewards.firstTime"
@@ -433,8 +446,8 @@ export const RewardsSection = ({ content, onChange, errors }: SectionProps): Rea
         }}
       />
       <LabelList
-        title="Por objetivos"
-        hint="Por cumplir objetivos secundarios."
+        title={t('admin:missions.content.byObjectives')}
+        hint={t('admin:missions.content.byObjectivesHint')}
         items={content.rewards.objectiveBonuses}
         errors={errors}
         path="rewards.objectiveBonuses"
@@ -447,6 +460,7 @@ export const RewardsSection = ({ content, onChange, errors }: SectionProps): Rea
 }
 
 export const RulesSection = ({ content, onChange, errors }: SectionProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const rules = content.combatRules
   const set = (changes: Partial<ContentRules>): void => {
     onChange({ ...content, combatRules: { ...rules, ...changes } })
@@ -454,35 +468,32 @@ export const RulesSection = ({ content, onChange, errors }: SectionProps): React
   const multipliers = rules.difficultyMultipliers ?? DEFAULT_RULES.difficultyMultipliers
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted">
-        Cómo simula Combat esta misión. Los valores por defecto ya están equilibrados: cámbialos
-        solo si sabes qué efecto tienen.
-      </p>
+      <p className="text-sm text-muted">{t('admin:missions.content.rulesHelp')}</p>
       <div className="grid gap-4 md:grid-cols-3">
         <NumberField
-          label="Segundos por turno"
+          label={t('admin:missions.content.secondsPerTurn')}
           value={rules.turnDurationSeconds}
           min={1}
           max={3600}
-          hint="Tiempo real que representa cada turno de la bitácora."
+          hint={t('admin:missions.content.secondsPerTurnHint')}
           error={errors['combatRules.turnDurationSeconds']}
           onChange={(value) => {
             set({ turnDurationSeconds: value ?? Number.NaN })
           }}
         />
         <NumberField
-          label="Turnos máximos por encuentro"
+          label={t('admin:missions.content.maxTurnsPerEncounter')}
           value={rules.maxTurnsPerEncounter}
           min={1}
           max={1000}
-          hint="Si se agotan, el encuentro termina por tiempo."
+          hint={t('admin:missions.content.maxTurnsHint')}
           error={errors['combatRules.maxTurnsPerEncounter']}
           onChange={(value) => {
             set({ maxTurnsPerEncounter: value ?? Number.NaN })
           }}
         />
         <NumberField
-          label="Recuperación entre encuentros (%)"
+          label={t('admin:missions.content.recoveryBetween')}
           value={rules.recoveryPercent}
           min={0}
           max={100}
@@ -492,7 +503,7 @@ export const RulesSection = ({ content, onChange, errors }: SectionProps): React
           }}
         />
         <PercentField
-          label="Probabilidad de crítico (%)"
+          label={t('admin:missions.content.criticalChance')}
           value={rules.criticalChance}
           error={errors['combatRules.criticalChance']}
           onChange={(criticalChance) => {
@@ -500,7 +511,7 @@ export const RulesSection = ({ content, onChange, errors }: SectionProps): React
           }}
         />
         <NumberField
-          label="Multiplicador de crítico"
+          label={t('admin:missions.content.criticalMultiplier')}
           value={rules.criticalMultiplier}
           min={1}
           max={1.8}
@@ -513,9 +524,9 @@ export const RulesSection = ({ content, onChange, errors }: SectionProps): React
       </div>
       <fieldset className="flex flex-col gap-2">
         <legend className="text-sm font-medium text-ink">
-          Estadísticas enemigas por dificultad
+          {t('admin:missions.content.difficultyStatsTitle')}
         </legend>
-        <p className="text-xs text-muted">Multiplican la vida, el ataque y la defensa enemigos.</p>
+        <p className="text-xs text-muted">{t('admin:missions.content.difficultyStatsHint')}</p>
         <div className="grid gap-3 md:grid-cols-4">
           {DIFFICULTY_LEVELS.map((level) => (
             <NumberField
@@ -535,13 +546,13 @@ export const RulesSection = ({ content, onChange, errors }: SectionProps): React
         </div>
       </fieldset>
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-ink">Héroes sanadores</legend>
-        <p className="text-xs text-muted">
-          Cómo actúa un héroe sin ataque propio (Chamán o Médico).
-        </p>
+        <legend className="text-sm font-medium text-ink">
+          {t('admin:missions.content.healersTitle')}
+        </legend>
+        <p className="text-xs text-muted">{t('admin:missions.content.healersHint')}</p>
         <div className="grid gap-3 md:grid-cols-3">
           <NumberField
-            label="Ataque de apoyo"
+            label={t('admin:missions.content.supportAttack')}
             value={rules.supportAttack ?? DEFAULT_RULES.supportAttack ?? null}
             min={0}
             max={100}
@@ -551,7 +562,7 @@ export const RulesSection = ({ content, onChange, errors }: SectionProps): React
             }}
           />
           <NumberField
-            label="Daño de apoyo"
+            label={t('admin:missions.content.supportDamage')}
             value={rules.supportDamage ?? DEFAULT_RULES.supportDamage ?? null}
             min={0}
             max={100}
@@ -561,7 +572,7 @@ export const RulesSection = ({ content, onChange, errors }: SectionProps): React
             }}
           />
           <NumberField
-            label="Regeneración por turno"
+            label={t('admin:missions.content.supportRegen')}
             value={rules.supportRegen ?? DEFAULT_RULES.supportRegen ?? null}
             min={0}
             max={100}
@@ -633,11 +644,13 @@ const shapeProblem = (record: Record<string, unknown>): string | null => {
 /** El JSON pegado a mano solo se acepta si el formulario puede pintarlo. */
 const parseContent = (source: string, missionId: string, isNew: boolean): MissionContent => {
   const parsed: unknown = JSON.parse(source)
-  if (!isRecord(parsed)) throw new Error('El JSON debe ser un objeto.')
+  if (!isRecord(parsed)) throw new Error(i18n.t('admin:missions.content.jsonNotObject'))
   const problem = shapeProblem(parsed)
-  if (problem !== null) throw new Error(`Falta «${problem}» o no tiene la forma esperada.`)
+  if (problem !== null) {
+    throw new Error(i18n.t('admin:missions.content.jsonShapeProblem', { field: problem }))
+  }
   if (!isNew && parsed.missionId !== missionId) {
-    throw new Error('El identificador de una misión guardada no se cambia.')
+    throw new Error(i18n.t('admin:missions.content.jsonIdImmutable'))
   }
   const content = {
     ...parsed,
@@ -650,7 +663,7 @@ const parseContent = (source: string, missionId: string, isNew: boolean): Missio
     prepareForSave(content)
     validateMissionContent(content, { isNew, takenIds: new Set() })
   } catch {
-    throw new Error('El JSON no tiene la forma de una misión: revisa sus listas y textos.')
+    throw new Error(i18n.t('admin:missions.content.jsonInvalidShape'))
   }
   return content
 }
@@ -660,6 +673,7 @@ export const JsonSection = ({
   onChange,
   isNew,
 }: Omit<SectionProps, 'errors'> & { readonly isNew: boolean }): React.JSX.Element => {
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [source, setSource] = useState('')
   const [problem, setProblem] = useState<string | null>(null)
@@ -667,15 +681,11 @@ export const JsonSection = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted">
-        Esto es lo que se enviará a Missions al guardar. Solo hace falta en casos avanzados: el
-        formulario ya calcula el total de cada enemigo, el encuentro del jefe y sus estadísticas
-        visibles.
-      </p>
+      <p className="text-sm text-muted">{t('admin:missions.content.jsonHelp')}</p>
       {editing ? (
         <>
           <TextareaField
-            label="Definición JSON"
+            label={t('admin:missions.content.jsonDefinition')}
             rows={24}
             spellCheck={false}
             className={`${FIELD_CLASS} font-mono text-xs`}
@@ -695,13 +705,13 @@ export const JsonSection = ({
                 } catch (error: unknown) {
                   setProblem(
                     error instanceof SyntaxError || !(error instanceof Error)
-                      ? 'El JSON no es válido.'
+                      ? t('admin:missions.content.jsonInvalid')
                       : error.message,
                   )
                 }
               }}
             >
-              Aplicar JSON
+              {t('admin:missions.content.applyJson')}
             </Button>
             <Button
               variant="secondary"
@@ -710,14 +720,14 @@ export const JsonSection = ({
                 setProblem(null)
               }}
             >
-              Cancelar
+              {t('admin:missions.content.cancel')}
             </Button>
           </div>
         </>
       ) : (
         <>
           <pre
-            aria-label="Vista previa del JSON"
+            aria-label={t('admin:missions.content.jsonPreview')}
             className="max-h-[32rem] overflow-auto rounded-md border border-border bg-surface p-3 font-mono text-xs text-ink"
           >
             {preview}
@@ -730,7 +740,7 @@ export const JsonSection = ({
                 setEditing(true)
               }}
             >
-              Editar como JSON
+              {t('admin:missions.content.editAsJson')}
             </Button>
           </div>
         </>

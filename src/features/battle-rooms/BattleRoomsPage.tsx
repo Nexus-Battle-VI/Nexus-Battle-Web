@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { Swords } from '@/components/ui/icons'
 import { ChatPanel } from './ChatPanel'
 import { LOBBY_CHANNEL } from './chatProtocol'
@@ -21,34 +23,36 @@ import { CreateBattleRoomPanel } from './CreateBattleRoomPanel'
  * Arriba de los paneles, "Partida en curso" (`ActiveRoomBanner`): la sala o
  * batalla del jugador que aun no termino, leida del servidor.
  */
-export const BattleRoomsPage = (): React.JSX.Element => (
-  <section aria-label="Jugar Online" className="flex flex-col gap-6">
-    <header className="flex items-center gap-3">
-      <span
-        aria-hidden="true"
-        className="hidden shrink-0 items-center justify-center rounded-lg bg-brand/10 p-2 text-brand sm:flex"
-      >
-        <Swords className="h-6 w-6" />
-      </span>
-      <div>
-        <h1 className="text-2xl font-semibold text-ink">Jugar Online</h1>
-        <p className="text-sm text-muted">
-          Lobby de combate: crea una sala o unete a una existente.
-        </p>
+export const BattleRoomsPage = (): React.JSX.Element => {
+  const { t } = useTranslation()
+
+  return (
+    <section aria-label={t('battle:page.title')} className="flex flex-col gap-6">
+      <header className="flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="hidden shrink-0 items-center justify-center rounded-lg bg-brand/10 p-2 text-brand sm:flex"
+        >
+          <Swords className="h-6 w-6" />
+        </span>
+        <div>
+          <h1 className="text-2xl font-semibold text-ink">{t('battle:page.title')}</h1>
+          <p className="text-sm text-muted">{t('battle:page.subtitle')}</p>
+        </div>
+      </header>
+
+      <ActiveRoomBanner />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
+        <CreateBattleRoomPanel />
+        <AvailableBattleRoomsPanel />
       </div>
-    </header>
 
-    <ActiveRoomBanner />
-
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
-      <CreateBattleRoomPanel />
-      <AvailableBattleRoomsPanel />
-    </div>
-
-    <ChatPanel
-      channel={LOBBY_CHANNEL}
-      title="Chat del lobby"
-      description="Organiza partidas con otros jugadores."
-    />
-  </section>
-)
+      <ChatPanel
+        channel={LOBBY_CHANNEL}
+        title={t('battle:page.lobbyChat')}
+        description={t('battle:page.lobbyChatDescription')}
+      />
+    </section>
+  )
+}

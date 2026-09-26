@@ -12,6 +12,7 @@ import {
   type FighterProfile,
 } from './missionContent'
 import type { FieldErrors } from './missionContentValidation'
+import { useTranslation } from 'react-i18next'
 
 const shown = (value: number | null): string =>
   value === null || Number.isNaN(value) ? '' : String(value)
@@ -106,15 +107,16 @@ export const DamageField = ({
   readonly onChange: (damage: DamageSpec) => void
   readonly error?: string | undefined
 }): React.JSX.Element => {
+  const { t } = useTranslation()
   const damage = damageOf(value)
   return (
     <div className="flex flex-col gap-2">
       <SelectField
-        label="Daño"
+        label={t('admin:missions.fields.damage')}
         value={damage.mode}
         options={[
-          { value: 'FIXED', label: 'Fijo' },
-          { value: 'DICE', label: 'Dados' },
+          { value: 'FIXED', label: t('admin:missions.fields.damageFixed') },
+          { value: 'DICE', label: t('admin:missions.fields.damageDice') },
         ]}
         onChange={(event) => {
           onChange(
@@ -126,7 +128,7 @@ export const DamageField = ({
       />
       {damage.mode === 'FIXED' ? (
         <NumberField
-          label="Puntos de daño"
+          label={t('admin:missions.fields.damagePoints')}
           value={damage.amount}
           min={0}
           error={error}
@@ -137,7 +139,7 @@ export const DamageField = ({
       ) : (
         <div className="grid grid-cols-2 gap-2">
           <NumberField
-            label="Dados"
+            label={t('admin:missions.fields.dice')}
             value={damage.count}
             min={1}
             max={100}
@@ -147,7 +149,7 @@ export const DamageField = ({
             }}
           />
           <NumberField
-            label="Caras"
+            label={t('admin:missions.fields.diceSides')}
             value={damage.sides}
             min={2}
             max={8000}
@@ -175,6 +177,7 @@ export const FighterFields = ({
   readonly path: string
   readonly aiOptions: readonly FighterAi[]
 }): React.JSX.Element => {
+  const { t } = useTranslation()
   const set = (changes: Partial<FighterProfile>): void => {
     onChange({ ...profile, ...changes })
   }
@@ -182,7 +185,7 @@ export const FighterFields = ({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <NumberField
-        label="Vida"
+        label={t('admin:missions.fields.health')}
         value={profile.maxHealth}
         min={1}
         error={errors[`${path}.maxHealth`]}
@@ -191,7 +194,7 @@ export const FighterFields = ({
         }}
       />
       <NumberField
-        label="Ataque"
+        label={t('admin:missions.fields.attack')}
         value={profile.attack}
         min={0}
         error={errors[`${path}.attack`]}
@@ -200,7 +203,7 @@ export const FighterFields = ({
         }}
       />
       <NumberField
-        label="Defensa"
+        label={t('admin:missions.fields.defense')}
         value={profile.defense}
         min={0}
         error={errors[`${path}.defense`]}
@@ -209,7 +212,7 @@ export const FighterFields = ({
         }}
       />
       <SelectField
-        label="Comportamiento"
+        label={t('admin:missions.fields.behavior')}
         value={ai}
         options={aiOptions.map((option) => ({ value: option, label: AI_LABELS[option] }))}
         onChange={(event) => {
@@ -228,7 +231,7 @@ export const FighterFields = ({
       {ai === 'BOSS' && (
         <>
           <NumberField
-            label="Se enfurece bajo (% de vida)"
+            label={t('admin:missions.fields.enrageBelow')}
             value={profile.enrageBelowPercent ?? 50}
             min={1}
             max={100}
@@ -238,7 +241,7 @@ export const FighterFields = ({
             }}
           />
           <NumberField
-            label="Ataque de más al enfurecerse"
+            label={t('admin:missions.fields.enrageBonus')}
             value={profile.enrageAttackBonus ?? 0}
             min={0}
             error={errors[`${path}.enrageAttackBonus`]}
@@ -263,19 +266,22 @@ export const ItemBox = ({
   readonly onRemove?: () => void
   readonly removeLabel?: string
   readonly children: ReactNode
-}): React.JSX.Element => (
-  <section className="flex flex-col gap-3 rounded-md border border-border bg-surface/40 p-4">
-    <header className="flex flex-wrap items-center justify-between gap-2">
-      <h3 className="text-sm font-semibold text-ink">{title}</h3>
-      {onRemove !== undefined && (
-        <Button variant="secondary" onClick={onRemove}>
-          {removeLabel ?? 'Quitar'}
-        </Button>
-      )}
-    </header>
-    {children}
-  </section>
-)
+}): React.JSX.Element => {
+  const { t } = useTranslation()
+  return (
+    <section className="flex flex-col gap-3 rounded-md border border-border bg-surface/40 p-4">
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-ink">{title}</h3>
+        {onRemove !== undefined && (
+          <Button variant="secondary" onClick={onRemove}>
+            {removeLabel ?? t('admin:missions.fields.remove')}
+          </Button>
+        )}
+      </header>
+      {children}
+    </section>
+  )
+}
 
 /** Error de una lista entera (no de un campo), anunciado como alerta. */
 export const ListError = ({

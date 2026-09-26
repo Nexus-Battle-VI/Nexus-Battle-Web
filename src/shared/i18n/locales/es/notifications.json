@@ -1,0 +1,61 @@
+{
+  "home": "Inicio",
+  "loading": "Cargando...",
+  "history": {
+    "crumb": "Historial de novedades",
+    "title": "Novedades del catálogo",
+    "subtitle": "Historial completo de cambios notificados.",
+    "failed": "No se pudo cargar el historial de novedades.",
+    "empty": "Todavía no hay novedades registradas."
+  },
+  "summary": {
+    "loading": "Cargando novedades del catálogo...",
+    "failed": "No se pudieron cargar las novedades del catálogo.",
+    "title": "Novedades del catálogo",
+    "subtitle": "Resumen desde tu última sesión. Cambios repetidos al mismo producto se consolidan en una sola notificación.",
+    "history": "Ver historial ›"
+  },
+  "banner": {
+    "failed": "No se pudo cargar el aviso del catálogo.",
+    "label": "Aviso del catálogo",
+    "previous": "Banner anterior",
+    "next": "Banner siguiente"
+  },
+  "changeTypes": {
+    "PRODUCT_CREATED": "Nuevo",
+    "PRODUCT_INVENTORY_ADJUSTED": "Tiraje actualizado",
+    "PRODUCT_SUSPENDED": "Suspendido",
+    "PRODUCT_REACTIVATED": "Reactivado",
+    "PRODUCT_PREMIUM_CONFIGURED": "Premium",
+    "AUCTION_CHANGED": "Subasta actualizada",
+    "AUCTION_CLOSING_SOON": "Cierre próximo",
+    "AUCTION_BID_OUTBID": "Puja superada",
+    "AUCTION_CLOSED_BY_BUY_NOW": "Compra inmediata",
+    "AUCTION_AUTO_BID_LIMIT_REACHED": "Límite de puja alcanzado",
+    "AUCTION_SETTLED_SELLER": "Subasta vendida",
+    "AUCTION_SETTLED_WINNER": "Ganaste la subasta",
+    "AUCTION_SETTLED_LOSER": "Subasta finalizada",
+    "AUCTION_SETTLED_WITHOUT_BIDS": "Subasta sin pujas"
+  },
+  "admin": {
+    "crumb": "Banner informativo",
+    "title": "Banner informativo",
+    "subtitle": "Vigencia por fechas. Fuera de vigencia se excluye silenciosamente.",
+    "titleField": "Título del banner",
+    "content": "Mensaje del banner",
+    "publishAt": "Inicio de vigencia",
+    "expiresAt": "Fin de vigencia",
+    "required": "Completa título, mensaje, inicio y fin de vigencia.",
+    "invalidDates": "Las fechas de vigencia no son válidas.",
+    "dateOrder": "El inicio de vigencia debe ser anterior o igual al fin de vigencia.",
+    "failed": "No se pudo publicar el banner.",
+    "published": "Banner publicado.",
+    "publish": "Publicar banner",
+    "list": "Banners administrados",
+    "listFailed": "No se pudo cargar el listado de banners.",
+    "empty": "Todavía no se ha publicado ningún banner.",
+    "active": "Vigente",
+    "inactive": "Fuera de vigencia",
+    "back": "← Volver"
+  }
+}

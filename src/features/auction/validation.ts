@@ -1,3 +1,4 @@
+import { i18n } from '@/shared/i18n/i18n'
 export interface AuctionFormValues {
   readonly productId: string
   readonly durationHours: 24 | 48
@@ -39,16 +40,14 @@ export const validateAuctionForm = (values: AuctionFormValues): AuctionFormError
   const minimum = positiveInteger(values.minimumBidCredits)
   const buyNow = values.buyNowCredits === '' ? null : positiveInteger(values.buyNowCredits)
   return {
-    ...(values.productId === '' ? { productId: 'Selecciona un producto de tu inventario.' } : {}),
-    ...(minimum === null ? { minimumBidCredits: 'Ingresa un número entero mayor que cero.' } : {}),
+    ...(values.productId === '' ? { productId: i18n.t('auction:validation.productRequired') } : {}),
+    ...(minimum === null ? { minimumBidCredits: i18n.t('auction:validation.positiveNumber') } : {}),
     ...(values.buyNowCredits !== '' && buyNow === null
-      ? { buyNowCredits: 'Ingresa un número entero mayor que cero.' }
+      ? { buyNowCredits: i18n.t('auction:validation.positiveNumber') }
       : buyNow !== null && minimum !== null && buyNow <= minimum
-        ? { buyNowCredits: 'Debe ser mayor que el precio mínimo de puja.' }
+        ? { buyNowCredits: i18n.t('auction:validation.buyNowAboveMinimum') }
         : {}),
-    ...(!values.confirmed
-      ? { confirmed: 'Confirma que deseas cobrar la comisión y bloquear el producto.' }
-      : {}),
+    ...(!values.confirmed ? { confirmed: i18n.t('auction:validation.confirmFee') } : {}),
   }
 }
 
@@ -59,19 +58,19 @@ export const validateOfficialAuctionForm = (
   const buyNow = values.buyNowAmountMinor === '' ? null : positiveInteger(values.buyNowAmountMinor)
   return {
     ...(values.productId.trim() === ''
-      ? { productId: 'Ingresa el identificador del producto.' }
+      ? { productId: i18n.t('auction:validation.productIdRequired') }
       : {}),
     ...(!/^[A-Z]{3}$/u.test(values.currency)
-      ? { currency: 'Usa un código ISO 4217 de tres letras mayúsculas.' }
+      ? { currency: i18n.t('auction:validation.currency') }
       : {}),
-    ...(minimum === null ? { minimumBidAmountMinor: 'Ingresa un entero mayor que cero.' } : {}),
+    ...(minimum === null
+      ? { minimumBidAmountMinor: i18n.t('auction:validation.positiveInteger') }
+      : {}),
     ...(values.buyNowAmountMinor !== '' && buyNow === null
-      ? { buyNowAmountMinor: 'Ingresa un entero mayor que cero.' }
+      ? { buyNowAmountMinor: i18n.t('auction:validation.positiveInteger') }
       : buyNow !== null && minimum !== null && buyNow <= minimum
-        ? { buyNowAmountMinor: 'Debe ser mayor que el precio mínimo.' }
+        ? { buyNowAmountMinor: i18n.t('auction:validation.aboveMinimum') }
         : {}),
-    ...(!values.confirmed
-      ? { confirmed: 'Confirma que Catalog decidirá la elegibilidad y la marca.' }
-      : {}),
+    ...(!values.confirmed ? { confirmed: i18n.t('auction:validation.confirmCatalog') } : {}),
   }
 }

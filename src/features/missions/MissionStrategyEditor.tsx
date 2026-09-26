@@ -17,9 +17,15 @@ import {
   type RotationStep,
 } from './missionStrategyApi'
 import type { EstimatedAbility } from './missionPlayApi'
+import { useTranslation } from 'react-i18next'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 const PRIORITIES = ['HIGH', 'MEDIUM', 'LOW'] as const
-const PRIORITY_LABELS = ['Alta', 'Media', 'Baja'] as const
+const PRIORITY_LABELS = localizedMessages({
+  HIGH: 'missions:strategy.priority.HIGH',
+  MEDIUM: 'missions:strategy.priority.MEDIUM',
+  LOW: 'missions:strategy.priority.LOW',
+})
 const BASIC: RotationStep = { kind: 'BASIC_ATTACK' }
 const initialRotations = (): Rotation[] => [{ priority: 'HIGH', steps: [BASIC] }]
 
@@ -46,6 +52,7 @@ export const MissionStrategyEditor = ({
   onVersionChange,
   abilityChecks,
 }: MissionStrategyEditorProps): React.JSX.Element => {
+  const { t } = useTranslation()
   const unusable = new Set(
     (abilityChecks ?? []).filter((ability) => !ability.usable).map((ability) => ability.abilityId),
   )
@@ -134,25 +141,24 @@ export const MissionStrategyEditor = ({
   const abilityOptions = abilities.data ?? []
 
   return (
-    <Card
-      title="Estrategia de rotaciones"
-      description="La IA prueba Alta, Media y Baja en ese orden. Si no hay estrategia guardada, usa ataque básico."
-    >
+    <Card title={t('missions:strategy.title')} description={t('missions:strategy.description')}>
       <QueryState isLoading={strategy.isPending} error={strategy.error}>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted">
             {strategy.data === null
-              ? 'Sin estrategia guardada: la IA usará ataque básico.'
-              : `Versión guardada: ${String(strategy.data?.version ?? '')}`}
+              ? t('missions:strategy.noSaved')
+              : t('missions:strategy.savedVersion', {
+                  version: String(strategy.data?.version ?? ''),
+                })}
           </p>
           {hero.abilities.length > 0 && abilities.isPending && (
             <p role="status" className="text-sm text-muted">
-              Cargando habilidades del héroe...
+              {t('missions:strategy.loadingAbilities')}
             </p>
           )}
           {abilities.isError && (
             <p role="alert" className="text-sm text-danger">
-              No se pudieron resolver las habilidades en Catalog. Puedes configurar ataque básico.
+              {t('missions:strategy.abilitiesError')}
             </p>
           )}
 
@@ -160,7 +166,10 @@ export const MissionStrategyEditor = ({
             <div key={rotation.priority} className="rounded-lg border border-border bg-surface p-4">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-medium text-ink">
-                  Rotación {rotationIndex + 1}: {PRIORITY_LABELS[rotationIndex]}
+                  {t('missions:strategy.rotationHeading', {
+                    n: rotationIndex + 1,
+                    priority: PRIORITY_LABELS[rotation.priority],
+                  })}
                 </h3>
                 {rotations.length > 1 && (
                   <Button
@@ -176,7 +185,7 @@ export const MissionStrategyEditor = ({
                       )
                     }}
                   >
-                    Quitar rotación
+                    {t('missions:strategy.removeRotation')}
                   </Button>
                 )}
               </div>
@@ -184,7 +193,7 @@ export const MissionStrategyEditor = ({
                 {rotation.steps.map((step, stepIndex) => (
                   <div key={stepIndex} className="flex flex-wrap items-end gap-2">
                     <label className="flex min-w-48 flex-1 flex-col gap-1 text-sm text-ink">
-                      Acción {stepIndex + 1}
+                      {t('missions:strategy.actionN', { n: stepIndex + 1 })}
                       <select
                         value={step.kind === 'ABILITY' ? step.abilityId : 'BASIC_ATTACK'}
                         onChange={(event) => {
@@ -192,18 +201,22 @@ export const MissionStrategyEditor = ({
                         }}
                         className="rounded-md border border-border bg-surface-raised px-3 py-2"
                       >
-                        <option value="BASIC_ATTACK">Ataque básico</option>
+                        <option value="BASIC_ATTACK">{t('missions:strategy.basicAttack')}</option>
                         {abilityOptions.map((ability) => (
                           <option key={ability.abilityId} value={ability.abilityId}>
                             {ability.name}
-                            {unusable.has(ability.abilityId) ? ' (no funciona en misiones)' : ''}
+                            {unusable.has(ability.abilityId)
+                              ? t('missions:strategy.notUsableSuffix')
+                              : ''}
                           </option>
                         ))}
                         {step.kind === 'ABILITY' &&
                           !abilityOptions.some(
                             (ability) => ability.abilityId === step.abilityId,
                           ) && (
-                            <option value={step.abilityId}>{step.abilityId} (sin nombre)</option>
+                            <option value={step.abilityId}>
+                              {t('missions:strategy.unnamedAbility', { id: step.abilityId })}
+                            </option>
                           )}
                       </select>
                     </label>
@@ -225,7 +238,7 @@ export const MissionStrategyEditor = ({
                         )
                       }}
                     >
-                      Quitar acción
+                      {t('missions:strategy.removeAction')}
                     </Button>
                   </div>
                 ))}
@@ -243,7 +256,7 @@ export const MissionStrategyEditor = ({
                       )
                     }}
                   >
-                    Añadir acción
+                    {t('missions:strategy.addAction')}
                   </Button>
                 )}
               </div>
@@ -261,7 +274,7 @@ export const MissionStrategyEditor = ({
                 ])
               }}
             >
-              Añadir rotación
+              {t('missions:strategy.addRotation')}
             </Button>
           )}
           {save.error !== null && (
@@ -277,7 +290,7 @@ export const MissionStrategyEditor = ({
                 save.mutate(rotations)
               }}
             >
-              Guardar estrategia
+              {t('missions:strategy.save')}
             </Button>
             {dirty && (
               <Button
@@ -288,7 +301,7 @@ export const MissionStrategyEditor = ({
                   onVersionChange(strategy.data?.version ?? null, true)
                 }}
               >
-                Descartar cambios
+                {t('missions:strategy.discard')}
               </Button>
             )}
           </div>

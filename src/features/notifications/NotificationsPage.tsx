@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { formatDateTime } from '@/lib/format'
 import { CatalogNotificationBadge } from './CatalogNotificationBadge'
@@ -17,32 +19,36 @@ import { useCatalogNotificationHistory } from './useCatalogNotificationHistory'
  */
 export const NotificationsPage = (): React.JSX.Element => {
   const { items, isLoading, error } = useCatalogNotificationHistory()
+  const { t } = useTranslation()
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
       <Breadcrumb
-        items={[{ label: 'Inicio', to: '/ecommerce' }, { label: 'Historial de novedades' }]}
+        items={[
+          { label: t('notifications:home'), to: '/ecommerce' },
+          { label: t('notifications:history.crumb') },
+        ]}
       />
 
       <header>
-        <h1 className="text-2xl font-semibold text-ink">Novedades del catálogo</h1>
-        <p className="mt-1 text-sm text-muted">Historial completo de cambios notificados.</p>
+        <h1 className="text-2xl font-semibold text-ink">{t('notifications:history.title')}</h1>
+        <p className="mt-1 text-sm text-muted">{t('notifications:history.subtitle')}</p>
       </header>
 
       {isLoading && (
         <p role="status" className="text-sm text-muted">
-          Cargando...
+          {t('notifications:loading')}
         </p>
       )}
 
       {!isLoading && error !== null && (
         <p role="alert" className="text-sm text-danger">
-          No se pudo cargar el historial de novedades.
+          {t('notifications:history.failed')}
         </p>
       )}
 
       {!isLoading && error === null && items.length === 0 && (
-        <p className="text-sm text-muted">Todavía no hay novedades registradas.</p>
+        <p className="text-sm text-muted">{t('notifications:history.empty')}</p>
       )}
 
       {!isLoading && error === null && items.length > 0 && (

@@ -1,5 +1,9 @@
-import { PRODUCT_TYPE_LABELS, initialFunctionalStatus } from '../contract'
+import { useTranslation } from 'react-i18next'
+
+import { PRODUCT_TYPE_LABELS, initialFunctionalStatusLabel } from '../contract'
 import type { ProductDraft } from '../draft'
+import { i18n } from '@/shared/i18n/i18n'
+import { countLabel } from '@/shared/i18n/format'
 
 export interface ReviewStepProps {
   readonly draft: ProductDraft
@@ -14,14 +18,14 @@ const describePrintRun = (raw: string): string => {
   const value = Number(raw.trim())
 
   if (value === -1) {
-    return 'Infinito (-1)'
+    return i18n.t('admin:products.review.infinite')
   }
 
   if (value === 1) {
-    return '1 unidad (producto único)'
+    return i18n.t('admin:products.review.unique')
   }
 
-  return `${String(value)} unidades`
+  return countLabel(i18n.t, 'admin:products.review.units', value)
 }
 
 /**
@@ -34,24 +38,37 @@ const describePrintRun = (raw: string): string => {
  */
 export const ReviewStep = ({ draft }: ReviewStepProps): React.JSX.Element => {
   const printRun = Number(draft.printRun.trim())
+  const { t } = useTranslation()
 
   const rows: readonly SummaryRow[] = [
-    { label: 'Nombre', value: draft.name.trim() },
-    { label: 'Tipo', value: draft.type === '' ? '—' : PRODUCT_TYPE_LABELS[draft.type] },
-    { label: 'Descripción', value: draft.description.trim() },
-    { label: 'Imagen', value: draft.imageUrl.trim() },
-    { label: 'Tiraje', value: describePrintRun(draft.printRun) },
-    { label: 'Precio en créditos', value: `${draft.creditsPrice.trim()} créditos` },
-    { label: 'Premium', value: draft.premium ? 'Sí' : 'No' },
+    { label: t('admin:products.review.name'), value: draft.name.trim() },
+    {
+      label: t('admin:products.review.type'),
+      value: draft.type === '' ? '—' : PRODUCT_TYPE_LABELS[draft.type],
+    },
+    { label: t('admin:products.review.description'), value: draft.description.trim() },
+    { label: t('admin:products.review.image'), value: draft.imageUrl.trim() },
+    { label: t('admin:products.review.printRun'), value: describePrintRun(draft.printRun) },
+    {
+      label: t('admin:products.review.credits'),
+      value: t('admin:products.review.creditsValue', { value: draft.creditsPrice.trim() }),
+    },
+    {
+      label: t('admin:products.review.premium'),
+      value: draft.premium ? t('common:yes') : t('common:no'),
+    },
     ...(draft.premium
       ? [
           {
-            label: 'Precio en moneda real',
+            label: t('admin:products.review.realMoney'),
             value: `${draft.realMoneyAmount.trim()} ${draft.realMoneyCurrency}`,
           },
         ]
       : []),
-    { label: 'Estado inicial', value: initialFunctionalStatus(printRun) },
+    {
+      label: t('admin:products.review.initialStatus'),
+      value: initialFunctionalStatusLabel(printRun),
+    },
   ]
 
   return (
@@ -67,10 +84,7 @@ export const ReviewStep = ({ draft }: ReviewStepProps): React.JSX.Element => {
         ))}
       </dl>
 
-      <p className="text-xs text-muted">
-        Al confirmar, Catalog valida los atributos contra el esquema del tipo, persiste el producto
-        y registra el evento de auditoría. Si algo falla, no se crea nada.
-      </p>
+      <p className="text-xs text-muted">{t('admin:products.review.note')}</p>
     </div>
   )
 }

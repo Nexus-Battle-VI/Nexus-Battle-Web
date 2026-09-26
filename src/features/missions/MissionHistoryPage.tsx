@@ -16,13 +16,15 @@ import {
   fetchMissionHistorySummary,
   type MissionOutcome,
 } from './missionReportApi'
+import { useTranslation } from 'react-i18next'
+import { localizedMessages } from '@/shared/i18n/messages'
 
-const OUTCOME_LABEL: Readonly<Record<MissionOutcome, string>> = {
-  COMPLETED: 'Completada',
-  FAILED: 'Fallida',
-  ABANDONED: 'Abandonada',
-  VOIDED: 'Anulada',
-}
+const OUTCOME_LABEL: Readonly<Record<MissionOutcome, string>> = localizedMessages({
+  COMPLETED: 'missions:history.outcome.COMPLETED',
+  FAILED: 'missions:history.outcome.FAILED',
+  ABANDONED: 'missions:history.outcome.ABANDONED',
+  VOIDED: 'missions:history.outcome.VOIDED',
+})
 
 const dateLabel = (iso: string): string => formatDateTime(iso)
 
@@ -41,38 +43,42 @@ export const MissionHistoryPage = (): React.JSX.Element => {
     enabled: subject !== null,
   })
   const items = history.data?.pages.flatMap((page) => page.items) ?? []
+  const { t } = useTranslation()
 
   return (
-    <section aria-label="Historial de misiones" className="flex flex-col gap-6">
+    <section aria-label={t('missions:history.pageLabel')} className="flex flex-col gap-6">
       <Link to="/missions" className="w-fit text-sm text-brand hover:underline">
-        ← Volver al tablón
+        {t('missions:history.backToBoard')}
       </Link>
       <header>
-        <h1 className="text-2xl font-semibold text-ink">Historial de misiones</h1>
-        <p className="text-sm text-muted">
-          Resultados terminados, del más reciente al más antiguo.
-        </p>
+        <h1 className="text-2xl font-semibold text-ink">{t('missions:history.title')}</h1>
+        <p className="text-sm text-muted">{t('missions:history.subtitle')}</p>
       </header>
 
-      <Card title="Resumen">
+      <Card title={t('missions:history.summaryTitle')}>
         <QueryState isLoading={summary.isPending} error={summary.error}>
           {summary.data !== undefined && (
             <div className="flex flex-col gap-5 text-sm text-ink">
               <div>
-                <h3 className="font-medium">Por categoría</h3>
+                <h3 className="font-medium">{t('missions:history.byCategory')}</h3>
                 <ul className="mt-1 grid gap-2 sm:grid-cols-3">
                   {summary.data.byCategory.map((item) => (
                     <li key={item.category}>
-                      {categoryLabel[item.category]}: {item.completed} completadas, {item.failed}{' '}
-                      fallidas, {item.abandoned} abandonadas. Daño causado: {item.damageDealt};
-                      recibido: {item.damageTaken}.
+                      {t('missions:history.byCategoryLine', {
+                        category: categoryLabel[item.category],
+                        completed: item.completed,
+                        failed: item.failed,
+                        abandoned: item.abandoned,
+                        damageDealt: item.damageDealt,
+                        damageTaken: item.damageTaken,
+                      })}
                     </li>
                   ))}
                 </ul>
               </div>
               {summary.data.bestTimes.length > 0 && (
                 <div>
-                  <h3 className="font-medium">Mejores tiempos simulados</h3>
+                  <h3 className="font-medium">{t('missions:history.bestTimes')}</h3>
                   <ul className="mt-1 list-inside list-disc">
                     {summary.data.bestTimes.map((item) => (
                       <li key={item.enrollmentId}>
@@ -85,14 +91,14 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               )}
               {summary.data.epicCollection.length > 0 && (
                 <div>
-                  <h3 className="font-medium">Épicas</h3>
+                  <h3 className="font-medium">{t('missions:history.epics')}</h3>
                   <ul className="mt-1 list-inside list-disc">
                     {summary.data.epicCollection.map((item) => (
                       <li key={`${item.epicRef}-${item.obtainedAt}`}>
                         {item.name}
                         {item.masterName === undefined || item.masterName === null
                           ? ''
-                          : ` · Máster: ${item.masterName}`}{' '}
+                          : t('missions:history.epicMaster', { name: item.masterName })}{' '}
                         · {rewardStatusLabel[item.status]}
                       </li>
                     ))}
@@ -101,7 +107,7 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               )}
               {summary.data.lootCollection.length > 0 && (
                 <div>
-                  <h3 className="font-medium">Botín de jefes conseguido</h3>
+                  <h3 className="font-medium">{t('missions:history.bossLoot')}</h3>
                   <ul className="mt-1 list-inside list-disc">
                     {summary.data.lootCollection.map((drop) => (
                       <li key={`${drop.productId ?? 'material'}-${drop.label}`}>
@@ -113,12 +119,15 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               )}
               {summary.data.narrativeProgress.length > 0 && (
                 <div>
-                  <h3 className="font-medium">Progreso narrativo</h3>
+                  <h3 className="font-medium">{t('missions:history.narrativeProgress')}</h3>
                   <ul className="mt-1 list-inside list-disc">
                     {summary.data.narrativeProgress.map((item) => (
                       <li key={item.chainId}>
-                        {(item.missionNames ?? item.missions).join(' → ')}: {item.completed} de{' '}
-                        {item.total} misiones completadas
+                        {t('missions:history.narrativeLine', {
+                          chain: (item.missionNames ?? item.missions).join(' → '),
+                          completed: item.completed,
+                          total: item.total,
+                        })}
                       </li>
                     ))}
                   </ul>
@@ -131,12 +140,12 @@ export const MissionHistoryPage = (): React.JSX.Element => {
 
       <EpicAlbum entries={summary.data?.epicAlbum ?? []} />
 
-      <Card title="Misiones terminadas">
+      <Card title={t('missions:history.finishedTitle')}>
         <QueryState
           isLoading={history.isPending}
           error={history.data === undefined ? history.error : null}
           isEmpty={items.length === 0}
-          emptyMessage="Aún no tienes misiones terminadas."
+          emptyMessage={t('missions:history.noFinished')}
         >
           <ul className="flex flex-col divide-y divide-border">
             {items.map((item) => (
@@ -151,7 +160,9 @@ export const MissionHistoryPage = (): React.JSX.Element => {
                     {dateLabel(item.finishedAt)}
                     {item.simulatedDuration === null
                       ? ''
-                      : ` · Tiempo simulado: ${durationLabel(item.simulatedDuration)}`}
+                      : t('missions:history.simulatedTime', {
+                          time: durationLabel(item.simulatedDuration),
+                        })}
                   </p>
                 </div>
                 {item.reportAvailable ? (
@@ -159,10 +170,10 @@ export const MissionHistoryPage = (): React.JSX.Element => {
                     to={`/missions/reports/${encodeURIComponent(item.enrollmentId)}`}
                     className="text-sm text-brand hover:underline"
                   >
-                    Ver reporte de {item.name}
+                    {t('missions:history.viewReportOf', { mission: item.name })}
                   </Link>
                 ) : (
-                  <span className="text-sm text-muted">Sin reporte</span>
+                  <span className="text-sm text-muted">{t('missions:history.noReport')}</span>
                 )}
               </li>
             ))}
@@ -179,7 +190,7 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               loading={history.isFetchingNextPage}
               onClick={() => void history.fetchNextPage()}
             >
-              Cargar más
+              {t('missions:history.loadMore')}
             </Button>
           )}
         </QueryState>

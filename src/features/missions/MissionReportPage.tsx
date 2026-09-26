@@ -1,11 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { formatDateTime } from '@/lib/format'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
+import { localizedMessages } from '@/shared/i18n/messages'
 
 import { difficultyName } from './difficultyPresentation'
 import {
@@ -22,55 +25,69 @@ import { experienceLinesOf, readExperience } from './missionReport'
 import { fetchMissionReport, type MissionReport } from './missionReportApi'
 import { useMissionReport } from './useMissionReport'
 
-const OUTCOME_LABEL = {
-  COMPLETED: 'Completada',
-  FAILED: 'Fallida',
-  ABANDONED: 'Abandonada',
-} as const
+const OUTCOME_LABEL: Readonly<Record<'COMPLETED' | 'FAILED' | 'ABANDONED', string>> =
+  localizedMessages({
+    COMPLETED: 'missions:report.outcome.COMPLETED',
+    FAILED: 'missions:report.outcome.FAILED',
+    ABANDONED: 'missions:report.outcome.ABANDONED',
+  })
 
-const objectiveStatus = (met: boolean | null): string =>
-  met === null ? 'Sin evaluar' : met ? 'Cumplido' : 'No cumplido'
+const objectiveStatus = (met: boolean | null, t: TFunction): string =>
+  met === null
+    ? t('missions:report.objectiveUnevaluated')
+    : met
+      ? t('missions:report.objectiveMet')
+      : t('missions:report.objectiveNotMet')
 
-const valueLabel = (value: number | null): string => (value === null ? 'Sin dato' : String(value))
+const valueLabel = (value: number | null, t: TFunction): string =>
+  value === null ? t('missions:report.noValue') : String(value)
 
 /** «3 veces», «1 vez». */
-const timesLabel = (times: number): string => (times === 1 ? '1 vez' : `${String(times)} veces`)
+const timesLabel = (times: number, t: TFunction): string =>
+  times === 1 ? t('missions:report.timesOnce') : t('missions:report.timesMany', { count: times })
 
 /** Qué hizo la estrategia (P-J5): lo que se usó y por qué se saltó lo demás. */
 const StrategyCard = ({
   strategy,
 }: {
   readonly strategy: NonNullable<MissionReport['strategy']>
-}): React.JSX.Element => (
-  <Card title="Tu estrategia">
-    <ul className="flex flex-col gap-2 text-sm text-ink">
-      {strategy.abilities.map((ability) => {
-        const skipped = Object.entries(ability.skipped)
-        return (
-          <li key={ability.abilityId}>
-            <span className="font-medium">{ability.name}</span>:{' '}
-            {ability.used === 0 ? 'no se usó' : `usada ${timesLabel(ability.used)}`}
-            {skipped.length === 0
-              ? ''
-              : `; se saltó ${skipped
-                  .map(
-                    ([reason, times]) => `${timesLabel(times)} porque ${skipReasonLabel(reason)}`,
-                  )
-                  .join(', ')}`}
-            .
-          </li>
-        )
-      })}
-      <li>Ataques básicos elegidos por la estrategia: {strategy.basicAttacks}.</li>
-      {strategy.fallbackAttacks > 0 && (
-        <li>
-          Ataques básicos de respaldo, cuando ninguna rotación se podía usar:{' '}
-          {strategy.fallbackAttacks}.
-        </li>
-      )}
-    </ul>
-  </Card>
-)
+}): React.JSX.Element => {
+  const { t } = useTranslation()
+  return (
+    <Card title={t('missions:report.strategyTitle')}>
+      <ul className="flex flex-col gap-2 text-sm text-ink">
+        {strategy.abilities.map((ability) => {
+          const skipped = Object.entries(ability.skipped)
+          return (
+            <li key={ability.abilityId}>
+              <span className="font-medium">{ability.name}</span>:{' '}
+              {ability.used === 0
+                ? t('missions:report.abilityNotUsed')
+                : t('missions:report.abilityUsed', { times: timesLabel(ability.used, t) })}
+              {skipped.length === 0
+                ? ''
+                : t('missions:report.skippedIntro', {
+                    list: skipped
+                      .map(([reason, times]) =>
+                        t('missions:report.skippedReason', {
+                          times: timesLabel(times, t),
+                          reason: skipReasonLabel(reason),
+                        }),
+                      )
+                      .join(', '),
+                  })}
+              .
+            </li>
+          )
+        })}
+        <li>{t('missions:report.basicAttacksChosen', { count: strategy.basicAttacks })}</li>
+        {strategy.fallbackAttacks > 0 && (
+          <li>{t('missions:report.fallbackAttacks', { count: strategy.fallbackAttacks })}</li>
+        )}
+      </ul>
+    </Card>
+  )
+}
 
 const ReportContent = ({
   report,
@@ -79,6 +96,7 @@ const ReportContent = ({
   readonly report: MissionReport
   readonly experienceReport: ExperienceReport | undefined
 }): React.JSX.Element => {
+  const { t } = useTranslation()
   // Los nombres de las habilidades salen de la estrategia del reporte (P-J5).
   const abilityNames = new Map(
     (report.strategy?.abilities ?? []).map((ability) => [ability.abilityId, ability.name]),
@@ -91,18 +109,24 @@ const ReportContent = ({
         <p className="text-sm text-muted">
           {categoryLabel[report.mission.category]} · {difficultyName(report.mission.difficulty)}
         </p>
-        <h1 className="text-2xl font-semibold text-ink">Reporte: {report.mission.name}</h1>
+        <h1 className="text-2xl font-semibold text-ink">
+          {t('missions:report.title', { mission: report.mission.name })}
+        </h1>
         <p className="mt-2 text-sm text-ink">
-          {OUTCOME_LABEL[report.summary.outcome]} · Héroe:{' '}
-          {report.summary.hero.name ?? report.summary.hero.heroId} · Terminó{' '}
-          {formatDateTime(report.summary.finishedAt)}
+          {t('missions:report.summaryLine', {
+            outcome: OUTCOME_LABEL[report.summary.outcome],
+            hero: report.summary.hero.name ?? report.summary.hero.heroId,
+            date: formatDateTime(report.summary.finishedAt),
+          })}
         </p>
         {report.summary.outcomeReason !== null && (
           <p className="mt-1 text-sm text-muted">{report.summary.outcomeReason}</p>
         )}
         {report.summary.simulatedDuration !== null && (
           <p className="mt-1 text-sm text-muted">
-            Tiempo simulado: {durationLabel(report.summary.simulatedDuration)}
+            {t('missions:report.simulatedTime', {
+              time: durationLabel(report.summary.simulatedDuration),
+            })}
           </p>
         )}
       </header>
@@ -115,40 +139,53 @@ const ReportContent = ({
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Combate">
+        <Card title={t('missions:report.combatTitle')}>
           <dl className="grid grid-cols-2 gap-2 text-sm text-ink">
             <Stat
-              label="Encuentros completados"
-              value={valueLabel(report.combatStats.encountersCompleted)}
+              label={t('missions:report.encountersCompleted')}
+              value={valueLabel(report.combatStats.encountersCompleted, t)}
             />
             <Stat
-              label="Encuentros totales"
-              value={valueLabel(report.combatStats.encountersTotal)}
+              label={t('missions:report.encountersTotal')}
+              value={valueLabel(report.combatStats.encountersTotal, t)}
             />
-            <Stat label="Turnos" value={valueLabel(report.combatStats.totalTurns)} />
-            <Stat label="Daño causado" value={valueLabel(report.combatStats.damageDealt)} />
-            <Stat label="Daño recibido" value={valueLabel(report.combatStats.damageTaken)} />
-            <Stat label="Efectos críticos" value={valueLabel(report.combatStats.criticalEffects)} />
+            <Stat
+              label={t('missions:report.turns')}
+              value={valueLabel(report.combatStats.totalTurns, t)}
+            />
+            <Stat
+              label={t('missions:report.damageDealt')}
+              value={valueLabel(report.combatStats.damageDealt, t)}
+            />
+            <Stat
+              label={t('missions:report.damageTaken')}
+              value={valueLabel(report.combatStats.damageTaken, t)}
+            />
+            <Stat
+              label={t('missions:report.criticalEffects')}
+              value={valueLabel(report.combatStats.criticalEffects, t)}
+            />
             {report.combatStats.healingDone !== undefined && (
               <Stat
-                label="Vida curada con habilidades"
-                value={valueLabel(report.combatStats.healingDone)}
+                label={t('missions:report.healingDone')}
+                value={valueLabel(report.combatStats.healingDone, t)}
               />
             )}
             {report.combatStats.abilityDamage !== undefined && (
               <Stat
-                label="Daño de habilidades"
-                value={valueLabel(report.combatStats.abilityDamage)}
+                label={t('missions:report.abilityDamage')}
+                value={valueLabel(report.combatStats.abilityDamage, t)}
               />
             )}
           </dl>
           {report.combatStats.skillsUsed.length > 0 && (
             <div className="mt-4 text-sm text-ink">
-              <h3 className="font-medium">Habilidades usadas</h3>
+              <h3 className="font-medium">{t('missions:report.skillsUsedTitle')}</h3>
               <ul className="list-inside list-disc">
                 {report.combatStats.skillsUsed.map((skill) => (
                   <li key={skill.abilityId}>
-                    {abilityNames.get(skill.abilityId) ?? 'Habilidad'}: {timesLabel(skill.count)}
+                    {abilityNames.get(skill.abilityId) ?? t('missions:report.unnamedAbility')}:{' '}
+                    {timesLabel(skill.count, t)}
                   </li>
                 ))}
               </ul>
@@ -158,7 +195,7 @@ const ReportContent = ({
 
         {report.strategy !== undefined && <StrategyCard strategy={report.strategy} />}
 
-        <Card title="Enemigos">
+        <Card title={t('missions:report.enemiesTitle')}>
           <ul className="list-inside list-disc text-sm text-ink">
             {report.enemies.defeated.map((enemy) => (
               <li key={enemy.enemyRef}>
@@ -167,34 +204,41 @@ const ReportContent = ({
             ))}
           </ul>
           <p className="mt-2 text-sm text-ink">
-            Jefe {report.enemies.boss.name}:{' '}
-            {report.enemies.boss.defeated ? 'derrotado' : 'no derrotado'}
+            {t('missions:report.bossLine', {
+              name: report.enemies.boss.name,
+              status: report.enemies.boss.defeated
+                ? t('missions:report.bossDefeated')
+                : t('missions:report.bossNotDefeated'),
+            })}
           </p>
           {report.enemies.masters.length > 0 && (
             <ul className="mt-2 list-inside list-disc text-sm text-ink">
               {report.enemies.masters.map((master) => (
                 <li key={master.masterRef}>
-                  Máster {master.name}: {masterStatusLabel(master.status)}
+                  {t('missions:report.masterLine', {
+                    name: master.name,
+                    status: masterStatusLabel(master.status),
+                  })}
                 </li>
               ))}
             </ul>
           )}
         </Card>
 
-        <Card title="Objetivos">
+        <Card title={t('missions:detail.objectivesTitle')}>
           <ul className="flex flex-col gap-2 text-sm text-ink">
             {report.objectives.map((objective) => (
               <li key={objective.id}>
-                {objective.text} · {objectiveStatus(objective.met)}
+                {objective.text} · {objectiveStatus(objective.met, t)}
               </li>
             ))}
           </ul>
         </Card>
 
-        <Card title="Recompensas">
+        <Card title={t('missions:report.rewardsTitle')}>
           {/* La experiencia tiene su propio panel: aquí van las épicas y los objetos. */}
           {deliveries.length === 0 ? (
-            <p className="text-sm text-muted">No hay épicas ni objetos que entregar.</p>
+            <p className="text-sm text-muted">{t('missions:report.noDeliveries')}</p>
           ) : (
             <ul className="flex flex-col gap-2 text-sm text-ink">
               {deliveries.map((reward, index) => (
@@ -211,9 +255,9 @@ const ReportContent = ({
         </Card>
 
         {report.loot !== undefined && (
-          <Card title="Botín del jefe">
+          <Card title={t('missions:report.bossLootTitle')}>
             {report.loot.length === 0 ? (
-              <p className="text-sm text-muted">No se obtuvo botín del jefe.</p>
+              <p className="text-sm text-muted">{t('missions:report.noBossLoot')}</p>
             ) : (
               <ul className="flex flex-col gap-2 text-sm text-ink">
                 {report.loot.map((drop) => (
@@ -244,6 +288,7 @@ const Stat = ({
 )
 
 export const MissionReportPage = (): React.JSX.Element => {
+  const { t } = useTranslation()
   const { enrollmentId } = useParams<{ enrollmentId: string }>()
   const subject = useSession((state) => state.subject)
   const report = useQuery({
@@ -257,13 +302,13 @@ export const MissionReportPage = (): React.JSX.Element => {
   const withExperience = useMissionReport(enrollmentId ?? null)
 
   if (enrollmentId === undefined) {
-    return <p role="alert">Falta el identificador de la matrícula.</p>
+    return <p role="alert">{t('missions:report.missingEnrollmentId')}</p>
   }
 
   return (
-    <section aria-label="Reporte de misión" className="flex flex-col gap-6">
+    <section aria-label={t('missions:report.label')} className="flex flex-col gap-6">
       <Link to="/missions/history" className="w-fit text-sm text-brand hover:underline">
-        ← Volver al historial
+        {t('missions:report.backToHistory')}
       </Link>
       <QueryState isLoading={report.isPending} error={report.error}>
         {report.data !== undefined && (

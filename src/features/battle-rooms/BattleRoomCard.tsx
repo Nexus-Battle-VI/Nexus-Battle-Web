@@ -1,9 +1,11 @@
 import { useId, useState } from 'react'
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Coins } from '@/components/ui/icons'
+import { formatInteger } from '@/shared/i18n/format'
 
 import { modeLabel, occupancyOf, teamByLetter } from './presentation'
 import type { JoinBattleRoomFailure } from './presentation'
@@ -87,6 +89,7 @@ export const BattleRoomCard = ({
   const teamB = teamByLetter(room, 'B')
   const canJoin = room.status === 'WAITING_FOR_PLAYERS'
   const stakeFieldId = useId()
+  const { t } = useTranslation()
 
   const [stakeInput, setStakeInput] = useState('0')
   const [stakeError, setStakeError] = useState<string | null>(null)
@@ -141,7 +144,11 @@ export const BattleRoomCard = ({
           requestJoin(letter)
         }}
       >
-        Unirse — Equipo {letter} ({team.participants.length}/{team.capacity})
+        {t('battle:card.join', {
+          team: letter,
+          filled: String(team.participants.length),
+          capacity: String(team.capacity),
+        })}
       </Button>
     )
   }
@@ -157,16 +164,16 @@ export const BattleRoomCard = ({
           <span className="text-sm font-medium text-ink">{modeLabel(room.mode)}</span>
         </div>
         <p className="flex items-center gap-1.5 text-sm text-muted">
-          <span>
-            {filled}/{total} jugadores
-          </span>
+          <span>{t('battle:card.players', { filled: String(filled), total: String(total) })}</span>
           <span aria-hidden="true">·</span>
           <Coins aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
-          <span>{room.reward.amount.toLocaleString('es-CO')}</span>
+          <span>{formatInteger(room.reward.amount)}</span>
         </p>
         {hasStakes && (
           <p className="text-xs font-medium text-brand">
-            {`Apuestas activas: ${creditAmountText(room.stakePool?.total ?? 0)}`}
+            {t('battle:card.activeStakes', {
+              amount: creditAmountText(room.stakePool?.total ?? 0),
+            })}
           </p>
         )}
         {joinError !== null && (
@@ -193,7 +200,7 @@ export const BattleRoomCard = ({
               onCancel(room.id)
             }}
           >
-            Cancelar
+            {t('battle:cancel')}
           </Button>
         )}
         {isParticipant ? (
@@ -201,7 +208,7 @@ export const BattleRoomCard = ({
             to={`/play/rooms/${room.id}`}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
-            Ver sala
+            {t('battle:card.viewRoom')}
           </Link>
         ) : pendingJoin !== null ? (
           <div className="flex flex-col items-stretch gap-2 rounded-lg border border-brand/40 p-2 sm:items-end">
@@ -215,10 +222,10 @@ export const BattleRoomCard = ({
                   setPendingJoin(null)
                 }}
               >
-                Cancelar
+                {t('battle:cancel')}
               </Button>
               <Button loading={joiningTeam === pendingJoin.team} onClick={confirmJoin}>
-                {`Confirmar y unirse al equipo ${pendingJoin.team}`}
+                {t('battle:card.confirmJoin', { team: pendingJoin.team })}
               </Button>
             </div>
           </div>
@@ -226,7 +233,7 @@ export const BattleRoomCard = ({
           <>
             <div className="flex flex-col items-stretch gap-1 sm:items-end">
               <label htmlFor={stakeFieldId} className="text-xs text-muted">
-                Apostar créditos (opcional)
+                {t('battle:card.stakeLabel')}
               </label>
               <input
                 id={stakeFieldId}

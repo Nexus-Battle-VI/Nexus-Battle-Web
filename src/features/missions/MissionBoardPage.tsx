@@ -12,6 +12,7 @@ import { ActiveMissionsPanel } from './ActiveMissionsPanel'
 import { MissionArt } from './art/MissionArt'
 import { fetchMissionBoard, type MissionCategory, type PlayerMissionStatus } from './missionApi'
 import { categoryLabel, durationLabel, missionStatusLabel } from './missionPresentation'
+import { useTranslation } from 'react-i18next'
 
 const CATEGORIES: readonly MissionCategory[] = ['STORY', 'CHALLENGE', 'EXPLORATION']
 const STATUSES: readonly PlayerMissionStatus[] = [
@@ -33,19 +34,18 @@ export const MissionBoardPage = (): React.JSX.Element => {
     enabled: subject !== null,
   })
   const items = board.data?.items ?? []
+  const { t } = useTranslation()
 
   return (
-    <section aria-label="Misiones" className="flex flex-col gap-6">
+    <section aria-label={t('missions:board.title')} className="flex flex-col gap-6">
       <header>
-        <h1 className="text-2xl font-semibold text-ink">Misiones</h1>
-        <p className="text-sm text-muted">
-          Elige una misión y revisa sus objetivos antes de iniciar.
-        </p>
+        <h1 className="text-2xl font-semibold text-ink">{t('missions:board.title')}</h1>
+        <p className="text-sm text-muted">{t('missions:board.subtitle')}</p>
         <Link
           to="/missions/history"
           className="mt-2 inline-block text-sm text-brand hover:underline"
         >
-          Ver mi historial
+          {t('missions:board.viewHistory')}
         </Link>
       </header>
 
@@ -53,7 +53,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm text-ink">
-          Categoría
+          {t('missions:board.category')}
           <select
             value={category ?? ''}
             onChange={(event) => {
@@ -61,7 +61,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
             }}
             className="rounded-md border border-border bg-surface px-3 py-2"
           >
-            <option value="">Todas</option>
+            <option value="">{t('missions:board.all')}</option>
             {CATEGORIES.map((value) => (
               <option key={value} value={value}>
                 {categoryLabel[value]}
@@ -70,7 +70,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm text-ink">
-          Estado
+          {t('missions:board.status')}
           <select
             value={status ?? ''}
             onChange={(event) => {
@@ -78,7 +78,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
             }}
             className="rounded-md border border-border bg-surface px-3 py-2"
           >
-            <option value="">Todos</option>
+            <option value="">{t('missions:board.allStatuses')}</option>
             {STATUSES.map((value) => (
               <option key={value} value={value}>
                 {missionStatusLabel[value]}
@@ -91,7 +91,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
           disabled={board.isFetching}
           onClick={() => void board.refetch()}
         >
-          Actualizar
+          {t('missions:board.refresh')}
         </Button>
       </div>
 
@@ -99,7 +99,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
         isLoading={board.isPending}
         error={board.error}
         isEmpty={items.length === 0}
-        emptyMessage="No hay misiones para estos filtros."
+        emptyMessage={t('missions:board.noResults')}
       >
         <ul className="grid gap-4 md:grid-cols-2">
           {items.map((mission) => (
@@ -117,12 +117,15 @@ export const MissionBoardPage = (): React.JSX.Element => {
                     {durationLabel(mission.estimatedDuration)}
                   </p>
                   {mission.recommendedPower !== null && (
-                    <p className="text-muted">Poder recomendado: {mission.recommendedPower}</p>
+                    <p className="text-muted">
+                      {t('missions:board.recommendedPower', { power: mission.recommendedPower })}
+                    </p>
                   )}
                   {mission.highlightedRewards.length > 0 && (
                     <p className="text-muted">
-                      Recompensas:{' '}
-                      {mission.highlightedRewards.map((reward) => reward.label).join(', ')}
+                      {t('missions:board.rewards', {
+                        list: mission.highlightedRewards.map((reward) => reward.label).join(', '),
+                      })}
                     </p>
                   )}
                   {mission.lockReason !== null && <p className="text-ink">{mission.lockReason}</p>}
@@ -131,14 +134,14 @@ export const MissionBoardPage = (): React.JSX.Element => {
                       to={`/missions/progress/${encodeURIComponent(mission.activeEnrollmentId)}`}
                       className="w-fit font-medium text-brand underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand"
                     >
-                      Seguir la misión en curso
+                      {t('missions:board.followActive')}
                     </Link>
                   )}
                   <Link
                     to={`/missions/${encodeURIComponent(mission.missionId)}`}
                     className="w-fit rounded-md text-brand underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand"
                   >
-                    Ver detalle de {mission.name}
+                    {t('missions:board.viewDetail', { mission: mission.name })}
                   </Link>
                 </div>
               </Card>

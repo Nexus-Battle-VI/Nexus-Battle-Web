@@ -34,6 +34,7 @@ import {
   probabilityLabel,
   statLabel,
 } from './missionPresentation'
+import { useTranslation } from 'react-i18next'
 
 const isExpiredAttempt = (error: unknown): boolean =>
   error instanceof HttpError &&
@@ -65,6 +66,7 @@ const RewardList = ({
 
 /** Solo lo que se entrega de verdad (P-J2): experiencia, botín del jefe y épicas. */
 const RewardsCard = ({ detail }: { readonly detail: MissionDetail }): React.JSX.Element => {
+  const { t } = useTranslation()
   const epics = detail.masterEncounter.candidates.flatMap((candidate) =>
     candidate.epic === null ? [] : [{ master: candidate.name, epic: candidate.epic.name }],
   )
@@ -73,17 +75,19 @@ const RewardsCard = ({ detail }: { readonly detail: MissionDetail }): React.JSX.
     detail.rewards.potential.length === 0 &&
     epics.length === 0
   return (
-    <Card title="Recompensas">
+    <Card title={t('missions:detail.rewardsTitle')}>
       <div className="flex flex-col gap-3 text-sm text-ink">
-        {detail.rewards.experience === true && <p>Experiencia por cada enemigo derrotado.</p>}
+        {detail.rewards.experience === true && <p>{t('missions:detail.rewardsExperience')}</p>}
         {detail.rewards.potential.length > 0 && (
           <div>
-            <h3 className="font-medium">Botín del jefe</h3>
+            <h3 className="font-medium">{t('missions:detail.bossLoot')}</h3>
             <ul className="mt-1 list-inside list-disc">
               {detail.rewards.potential.map((reward) => (
                 <li key={reward.label}>
                   {reward.label} · {probabilityLabel(reward.probability)}
-                  {reward.rolls > 1 ? ` en cada una de sus ${String(reward.rolls)} tiradas` : ''}
+                  {reward.rolls > 1
+                    ? t('missions:detail.rollsSuffix', { count: String(reward.rolls) })
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -91,26 +95,30 @@ const RewardsCard = ({ detail }: { readonly detail: MissionDetail }): React.JSX.
         )}
         {epics.length > 0 && (
           <div>
-            <h3 className="font-medium">Épicas de Máster</h3>
+            <h3 className="font-medium">{t('missions:detail.masterEpics')}</h3>
             <ul className="mt-1 list-inside list-disc">
               {epics.map((item) => (
                 <li key={item.master}>
-                  {item.epic} · Máster: {item.master}
+                  {t('missions:detail.epicMaster', { epic: item.epic, master: item.master })}
                 </li>
               ))}
             </ul>
           </div>
         )}
-        <RewardList title="Garantizadas" items={detail.rewards.guaranteed} />
-        <RewardList title="Por objetivos" items={detail.rewards.objectiveBonuses} />
-        <RewardList title="Primera vez" items={detail.rewards.firstTime} />
-        {nothing && <p className="text-muted">Esta misión todavía no entrega recompensas.</p>}
+        <RewardList title={t('missions:detail.guaranteed')} items={detail.rewards.guaranteed} />
+        <RewardList
+          title={t('missions:detail.objectiveBonuses')}
+          items={detail.rewards.objectiveBonuses}
+        />
+        <RewardList title={t('missions:detail.firstTime')} items={detail.rewards.firstTime} />
+        {nothing && <p className="text-muted">{t('missions:detail.noRewardsYet')}</p>}
       </div>
     </Card>
   )
 }
 
 const MissionDetailContent = ({ missionId }: { readonly missionId: string }): React.JSX.Element => {
+  const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
   const [heroId, setHeroId] = useState('')
@@ -200,9 +208,9 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
     []
 
   return (
-    <section aria-label="Detalle de misión" className="flex flex-col gap-6">
+    <section aria-label={t('missions:detail.label')} className="flex flex-col gap-6">
       <Link to="/missions" className="w-fit text-sm text-brand hover:underline">
-        ← Volver al tablón
+        {t('missions:detail.backToBoard')}
       </Link>
       <QueryState isLoading={mission.isPending} error={mission.error}>
         {detail !== undefined && (
@@ -218,26 +226,33 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                 <h1 className="text-2xl font-semibold text-ink">{detail.name}</h1>
                 <p className="mt-2 text-sm text-muted">{detail.narrative}</p>
                 <p className="mt-2 text-sm text-ink">
-                  {missionStatusLabel[detail.playerStatus]} · Duración:{' '}
-                  {durationLabel(detail.estimatedDuration)}
+                  {t('missions:detail.statusDuration', {
+                    status: missionStatusLabel[detail.playerStatus],
+                    duration: durationLabel(detail.estimatedDuration),
+                  })}
                   {detail.recommendedPower === null
                     ? ''
-                    : ` · Poder recomendado: ${String(detail.recommendedPower)}`}
+                    : t('missions:detail.recommendedPowerSuffix', {
+                        power: String(detail.recommendedPower),
+                      })}
                 </p>
               </div>
             </header>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <Card title="Objetivos">
+              <Card title={t('missions:detail.objectivesTitle')}>
                 <ul className="list-inside list-disc space-y-2 text-sm text-ink">
                   {detail.objectives.map((objective) => (
                     <li key={objective.id}>
-                      {objective.text} {objective.primary ? '(principal)' : '(secundario)'}
+                      {objective.text}{' '}
+                      {objective.primary
+                        ? t('missions:detail.primary')
+                        : t('missions:detail.secondary')}
                     </li>
                   ))}
                 </ul>
               </Card>
-              <Card title="Encuentros">
+              <Card title={t('missions:detail.encountersTitle')}>
                 <ul className="list-inside list-disc space-y-2 text-sm text-ink">
                   {detail.enemies.map((enemy) => (
                     <li key={enemy.name}>
@@ -247,14 +262,14 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                   ))}
                 </ul>
                 <p className="mt-3 text-sm font-medium text-ink">
-                  Jefe final: {detail.finalBoss.name}
+                  {t('missions:detail.finalBoss', { name: detail.finalBoss.name })}
                 </p>
                 {detail.finalBoss.description !== null && (
                   <p className="text-sm text-muted">{detail.finalBoss.description}</p>
                 )}
                 {detail.finalBoss.heroType !== null && (
                   <p className="text-sm text-muted">
-                    Tipo: {heroTypeLabel(detail.finalBoss.heroType)}
+                    {t('missions:detail.type', { type: heroTypeLabel(detail.finalBoss.heroType) })}
                   </p>
                 )}
                 {Object.entries(detail.finalBoss.stats).length > 0 && (
@@ -269,11 +284,11 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                 )}
                 {detail.masterEncounter.candidates.length > 0 && (
                   <div className="mt-3 text-sm text-ink">
-                    <h3 className="font-medium">Posibles Máster</h3>
+                    <h3 className="font-medium">{t('missions:detail.possibleMasters')}</h3>
                     <p className="text-muted">
-                      Hay un {probabilityLabel(detail.masterEncounter.probability)} de probabilidad
-                      de que aparezca uno, dos niveles por encima de tu héroe. Derrótalo para ganar
-                      su épica.
+                      {t('missions:detail.masterChanceIntro', {
+                        percent: probabilityLabel(detail.masterEncounter.probability),
+                      })}
                     </p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {detail.masterEncounter.candidates.map((candidate) => (
@@ -285,10 +300,10 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                             {masterChanceLabel(candidate.probabilityByHeroType)}
                           </p>
                           {candidate.epic === null ? (
-                            <p className="text-muted">Su épica aún no se puede entregar.</p>
+                            <p className="text-muted">{t('missions:detail.epicNotDeliverable')}</p>
                           ) : (
                             <p className="text-muted">
-                              Épica: {candidate.epic.name}
+                              {t('missions:detail.epicLine', { name: candidate.epic.name })}
                               {candidate.epic.generalEffect === null
                                 ? ''
                                 : ` · ${candidate.epic.generalEffect}`}
@@ -304,9 +319,9 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                 )}
               </Card>
               <RewardsCard detail={detail} />
-              <Card title="Requisitos">
+              <Card title={t('missions:detail.requirementsTitle')}>
                 {prerequisites.length === 0 ? (
-                  <p className="text-sm text-muted">Sin misiones previas.</p>
+                  <p className="text-sm text-muted">{t('missions:detail.noPrerequisites')}</p>
                 ) : (
                   <ul className="list-inside list-disc text-sm text-ink">
                     {prerequisites.map((prerequisite) => (
@@ -321,18 +336,18 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
             </div>
 
             <Card
-              title="Iniciar misión"
-              description="El servicio validará el héroe, su equipamiento y el nivel elegido."
+              title={t('missions:detail.startTitle')}
+              description={t('missions:detail.startDescription')}
             >
               <div className="flex flex-col gap-5">
                 <QueryState
                   isLoading={heroes.isPending}
                   error={heroes.error}
                   isEmpty={heroList.length === 0}
-                  emptyMessage="Aún no tienes héroes disponibles en tu inventario."
+                  emptyMessage={t('missions:detail.noHeroesAvailable')}
                 >
                   <label className="flex max-w-md flex-col gap-1 text-sm text-ink">
-                    Héroe
+                    {t('missions:detail.heroLabel')}
                     <select
                       value={heroId}
                       onChange={(event) => {
@@ -344,7 +359,7 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                       }}
                       className="rounded-md border border-border bg-surface px-3 py-2"
                     >
-                      <option value="">Elige un héroe</option>
+                      <option value="">{t('missions:detail.chooseHero')}</option>
                       {heroList.map((hero) => (
                         <option key={hero.heroId} value={hero.heroId}>
                           {hero.name}
@@ -384,20 +399,26 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                 )}
                 {enrollment.data !== undefined && (
                   <div role="status" className="flex flex-col gap-1 text-sm text-ink">
-                    <p className="font-semibold">¡Misión iniciada!</p>
+                    <p className="font-semibold">{t('missions:detail.started')}</p>
                     {enrollment.data.endsAt !== null && (
-                      <p>Termina el {formatDateTime(enrollment.data.endsAt)}</p>
+                      <p>
+                        {t('missions:detail.endsAt', {
+                          date: formatDateTime(enrollment.data.endsAt),
+                        })}
+                      </p>
                     )}
                     <Link
                       to={`/missions/progress/${encodeURIComponent(enrollment.data.enrollmentId)}`}
                       className="w-fit font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
                     >
-                      Seguir la misión
+                      {t('missions:detail.follow')}
                     </Link>
                   </div>
                 )}
                 <Button disabled={!canSubmit} loading={enrollment.isPending} onClick={submit}>
-                  {enrollment.isError ? 'Reintentar matrícula' : 'Iniciar misión'}
+                  {enrollment.isError
+                    ? t('missions:detail.retryEnroll')
+                    : t('missions:detail.startButton')}
                 </Button>
               </div>
             </Card>
@@ -410,6 +431,9 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
 
 export const MissionDetailPage = (): React.JSX.Element => {
   const { missionId } = useParams()
-  if (missionId === undefined) return <p role="alert">Falta el identificador de la misión.</p>
+  const { t } = useTranslation()
+  if (missionId === undefined) {
+    return <p role="alert">{t('missions:detail.missingId')}</p>
+  }
   return <MissionDetailContent key={missionId} missionId={missionId} />
 }

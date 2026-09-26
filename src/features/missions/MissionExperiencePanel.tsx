@@ -15,6 +15,7 @@ import {
   lineStateText,
 } from './experiencePresentation'
 import type { MissionExperience } from './missionReport'
+import { useTranslation } from 'react-i18next'
 
 export interface MissionExperiencePanelProps {
   readonly experience: MissionExperience | null
@@ -46,6 +47,7 @@ export const MissionExperiencePanel = ({
   lines,
 }: MissionExperiencePanelProps): React.JSX.Element => {
   const headingId = useId()
+  const { t } = useTranslation()
   const presentation = experience === null ? null : describeExperience(experience)
   const level = experience === null ? null : levelText(experience)
   const levelUp = experience === null ? null : levelUpText(experience)
@@ -60,17 +62,15 @@ export const MissionExperiencePanel = ({
       )}
     >
       <h2 id={headingId} className="text-lg font-semibold text-ink">
-        Experiencia
+        {t('missions:expPanel.title')}
       </h2>
 
       {experience === null && (
-        <p className="text-sm text-muted">Este informe no incluye el resumen de experiencia.</p>
+        <p className="text-sm text-muted">{t('missions:expPanel.noSummary')}</p>
       )}
 
       {experience !== null && experience.defeats === 0 && (
-        <p className="text-sm text-muted">
-          Esta misión no registró derrotas: no hay experiencia que acreditar.
-        </p>
+        <p className="text-sm text-muted">{t('missions:expPanel.noDefeats')}</p>
       )}
 
       {experience !== null && experience.defeats > 0 && (
@@ -87,30 +87,30 @@ export const MissionExperiencePanel = ({
             </p>
           ) : (
             <p role="status" className="text-center text-sm text-muted">
-              Todavía no hay experiencia acreditada.
+              {t('missions:expPanel.notCreditedYet')}
             </p>
           )}
 
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted">Derrotas con experiencia</span>
+            <span className="text-muted">{t('missions:expPanel.defeatsWithXp')}</span>
             <span className="tabular-nums font-semibold text-ink">{creditedText(experience)}</span>
           </div>
 
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted">Derrotas registradas</span>
+            <span className="text-muted">{t('missions:expPanel.defeatsRecorded')}</span>
             <span className="font-semibold text-ink">{defeatsText(experience)}</span>
           </div>
 
           {level !== null && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted">Héroe</span>
+              <span className="text-muted">{t('missions:expPanel.hero')}</span>
               <span className="font-semibold text-ink">{level}</span>
             </div>
           )}
 
           {currentXp !== null && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted">Experiencia acumulada</span>
+              <span className="text-muted">{t('missions:expPanel.accumulatedXp')}</span>
               <span className="tabular-nums font-semibold text-ink">{currentXp}</span>
             </div>
           )}
@@ -140,7 +140,7 @@ export const MissionExperiencePanel = ({
           {lines.length > 0 && (
             <details className="rounded-lg border border-border p-3">
               <summary className="cursor-pointer text-sm font-semibold text-ink">
-                Detalle por derrota
+                {t('missions:expPanel.detailByDefeat')}
               </summary>
               <ul className="mt-2 flex flex-col gap-1 text-sm">
                 {lines.map((line) => (
@@ -153,7 +153,9 @@ export const MissionExperiencePanel = ({
                       {/* La XP de una línea es su cantidad: Missions la escribe al
                           acreditarla, y la línea pendiente todavía no la tiene. */}
                       <span className="tabular-nums">
-                        {line.status === 'CREDITED' ? `+${String(line.quantity)} XP` : '—'}
+                        {line.status === 'CREDITED'
+                          ? t('missions:expPanel.xpAmount', { amount: String(line.quantity) })
+                          : '—'}
                       </span>
                       <span>{lineStateText(line.status)}</span>
                     </span>

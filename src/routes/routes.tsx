@@ -258,7 +258,7 @@ export const routes: RouteObject[] = [
           </RequireAdministrator>
         ),
       },
-      { path: 'tournament', element: <ModuleUnavailable title="Torneo" /> },
+      { path: 'tournament', element: <ModuleUnavailable titleKey="app:nav.tournament" /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,
       // verlo y equiparlo viven ahora en la misma pantalla (`/inventory`).

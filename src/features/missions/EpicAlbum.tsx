@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 
 import { heroTypeLabel } from './missionPresentation'
 import type { MissionEpicAlbumEntry } from './missionReportApi'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Álbum de épicas (diseño «misiones jugables», P-J3): cada épica que se puede ganar
@@ -16,13 +17,17 @@ export const EpicAlbum = ({
 }: {
   readonly entries: readonly MissionEpicAlbumEntry[]
 }): React.JSX.Element | null => {
+  const { t } = useTranslation()
   if (entries.length === 0) return null
   const owned = entries.filter((entry) => entry.obtained).length
 
   return (
     <Card
-      title="Álbum de épicas"
-      description={`Tienes ${String(owned)} de ${String(entries.length)}. Cada Máster entrega la épica de su tipo de héroe.`}
+      title={t('missions:album.title')}
+      description={t('missions:album.description', {
+        owned: String(owned),
+        total: String(entries.length),
+      })}
     >
       <ul className="grid gap-3 sm:grid-cols-2">
         {entries.map((entry) => (
@@ -36,14 +41,16 @@ export const EpicAlbum = ({
             <p className="flex items-center justify-between gap-2 font-semibold text-ink">
               <span>{entry.name}</span>
               <span className="text-xs font-medium">
-                {entry.obtained ? 'Obtenida' : 'Por conseguir'}
+                {entry.obtained ? t('missions:album.obtained') : t('missions:album.pending')}
               </span>
             </p>
-            <p className="text-muted">Potencia a: {heroTypeLabel(entry.heroType)}</p>
+            <p className="text-muted">
+              {t('missions:album.boosts', { hero: heroTypeLabel(entry.heroType) })}
+            </p>
             {entry.generalEffect !== null && <p className="text-ink">{entry.generalEffect}</p>}
             {entry.epicEffect !== null && <p className="text-ink">{entry.epicEffect}</p>}
             <p className="text-muted">
-              Máster: {entry.masterName} ·{' '}
+              {t('missions:album.master', { name: entry.masterName })} ·{' '}
               <Link
                 to={`/missions/${encodeURIComponent(entry.missionId)}`}
                 className="text-brand hover:underline"
