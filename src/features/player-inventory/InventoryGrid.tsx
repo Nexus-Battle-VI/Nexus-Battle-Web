@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
 import type { OwnedInventoryItem } from './api'
 import { ProductThumb } from './ProductThumb'
 import { typeLabel } from './typeLabels'
@@ -54,7 +55,19 @@ export const InventoryGrid = ({
                 !compatible && 'opacity-40',
               )}
             >
-              <ProductThumb src={item.product?.imageUrl ?? null} alt={name} />
+              {(() => {
+                const heroId =
+                  item.product === null
+                    ? null
+                    : heroIdOfProduct(item.product.type, item.product.sku)
+                return heroId === null ? (
+                  <ProductThumb src={item.product?.imageUrl ?? null} alt={name} />
+                ) : (
+                  // El nombre ya lo muestra la tarjeta en el <h3> de abajo; se
+                  // oculta la etiqueta que Hero3D repite por defecto.
+                  <Hero3D heroId={heroId} className="[&>p]:hidden" />
+                )
+              })()}
 
               <div className="min-w-0">
                 <h3 className="truncate text-sm font-semibold text-ink" title={name}>

@@ -9,6 +9,7 @@ import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 import { TextareaField } from '@/components/ui/form/TextareaField'
 import { ProductImage } from '@/components/ui/ProductImage'
+import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { formatMoney } from '@/lib/format'
 import { countLabel, formatInteger } from '@/shared/i18n/format'
@@ -93,6 +94,11 @@ export const ProductManagementPage = ({
     setPage(1)
   }
 
+  // HABILIDAD no se vende por separado: va empaquetada con su HEROE (Tabla 7,
+  // PI2). Se excluye del listado por defecto para no confundirla con un
+  // producto gestionable de forma independiente; un administrador que
+  // realmente necesite encontrarla (p. ej. para corregir una errata) la ve
+  // igual seleccionando "Habilidad" en el filtro de tipo.
   const queryParams = {
     page,
     query: debouncedTerm,
@@ -107,7 +113,7 @@ export const ProductManagementPage = ({
         {
           page,
           ...(debouncedTerm === '' ? {} : { query: debouncedTerm }),
-          ...(type === '' ? {} : { type }),
+          ...(type === '' ? { excludeType: 'HABILIDAD' } : { type }),
           ...(lifecycleStatus === '' ? {} : { lifecycleStatus }),
         },
         signal,
@@ -301,11 +307,18 @@ export const ProductManagementPage = ({
                 <div className="rounded-lg border border-border bg-surface-raised p-4">
                   <div className="flex flex-wrap items-start gap-4">
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border">
-                      <ProductImage
-                        source={product.imageUrl}
-                        name={product.name}
-                        className="size-full object-contain"
-                      />
+                      {(() => {
+                        const heroId = heroIdOfProduct(product.type, product.sku)
+                        return heroId === null ? (
+                          <ProductImage
+                            source={product.imageUrl}
+                            name={product.name}
+                            className="size-full object-contain"
+                          />
+                        ) : (
+                          <Hero3D heroId={heroId} className="size-full [&>p]:hidden" />
+                        )
+                      })()}
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -328,6 +341,12 @@ export const ProductManagementPage = ({
                       <p className="mt-1 text-xs text-muted">
                         SKU {product.sku} · {PRODUCT_TYPE_LABELS[product.type]}
                       </p>
+
+                      {product.type === 'HABILIDAD' && (
+                        <p className="mt-1 text-xs text-muted italic">
+                          {t('admin:products.manage.bundledWithHero')}
+                        </p>
+                      )}
 
                       <p className="mt-1 text-sm text-ink">
                         {t('admin:products.review.creditsValue', {
