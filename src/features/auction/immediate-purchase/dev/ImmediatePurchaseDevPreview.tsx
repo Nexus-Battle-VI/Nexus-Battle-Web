@@ -48,7 +48,7 @@ const InteractiveCard = (): React.JSX.Element => {
 export const ImmediatePurchaseDevPreview = (): React.JSX.Element => (
   <main className="mx-auto flex max-w-[1560px] flex-col gap-6 p-6">
     <header className="flex items-center justify-between gap-4">
-      <h1 className="text-xl font-semibold">HU-64.1 — Compra inmediata (vista previa)</h1>
+      <h1 className="text-xl font-semibold">Compra inmediata (vista previa)</h1>
       <ThemeToggle />
     </header>
     <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] items-start gap-6">
