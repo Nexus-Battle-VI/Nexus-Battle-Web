@@ -126,12 +126,22 @@ describe('PrimaryNav', () => {
     expect(screen.getByRole('link', { name: 'Jugar Online' })).toHaveFocus()
   })
 
-  it('incluye "Gestionar roles" solo para el rol primario SUPER_ADMINISTRATOR', () => {
+  it('sin rol administrativo no muestra la entrada agrupadora "Administrador"', () => {
     renderNav()
+    expect(screen.queryByTestId('admin-nav-trigger')).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Gestionar roles' })).not.toBeInTheDocument()
+  })
 
+  it('incluye "Gestionar roles" dentro del desplegable "Administrador" solo para SUPER_ADMINISTRATOR', async () => {
+    const user = userEvent.setup()
     useSession.setState({ roles: ['SUPER_ADMINISTRATOR'] })
     renderNav()
-    expect(screen.getAllByRole('link', { name: 'Gestionar roles' }).length).toBeGreaterThan(0)
+
+    const trigger = screen.getByTestId('admin-nav-trigger')
+    expect(screen.queryByRole('menuitem', { name: 'Gestionar roles' })).not.toBeInTheDocument()
+
+    await user.click(trigger)
+
+    expect(screen.getAllByRole('menuitem', { name: 'Gestionar roles' }).length).toBeGreaterThan(0)
   })
 })

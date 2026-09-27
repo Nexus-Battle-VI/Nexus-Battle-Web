@@ -13,7 +13,13 @@ import { i18n } from '@/shared/i18n/i18n'
  * servicio, que valida el rol del testimonio antes de ejecutar la operacion
  * protegida.
  */
-const KNOWN_ROLES = new Set(['PLAYER', 'MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])
+const KNOWN_ROLES = new Set([
+  'PLAYER',
+  'MODERATOR',
+  'ADMINISTRATOR',
+  'SUPER_ADMINISTRATOR',
+  'GAME_MASTER',
+])
 
 /**
  * Etiqueta legible de un rol en el idioma activo. Devuelve el valor original si
@@ -22,7 +28,13 @@ const KNOWN_ROLES = new Set(['PLAYER', 'MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMI
 export const roleLabel = (role: string): string =>
   KNOWN_ROLES.has(role) ? i18n.t(`common:roles.${role}`) : role
 
-const ROLE_PRECEDENCE = ['SUPER_ADMINISTRATOR', 'ADMINISTRATOR', 'MODERATOR', 'PLAYER'] as const
+const ROLE_PRECEDENCE = [
+  'SUPER_ADMINISTRATOR',
+  'ADMINISTRATOR',
+  'MODERATOR',
+  'GAME_MASTER',
+  'PLAYER',
+] as const
 
 export const ADMIN_USER_PRIMARY_ROLES = ['ADMINISTRATOR', 'SUPER_ADMINISTRATOR'] as const
 
@@ -57,3 +69,15 @@ export const canModerateComments = (roles: readonly string[]): boolean => {
 
   return COMMENT_MODERATION_PRIMARY_ROLES.some((allowedRole) => allowedRole === role)
 }
+
+/**
+ * Presentacion de HU-66; Auction sigue siendo la autoridad (rol MAS subject
+ * configurado, HU-66.1) y valida el testimonio.
+ *
+ * A diferencia de `canViewAdminUsers`/`canModerateComments`, comprueba
+ * pertenencia directa y no `primaryRole`: GAME_MASTER no participa de la
+ * jerarquia administrativa (ADMINISTRATOR/SUPER_ADMINISTRATOR no lo heredan,
+ * ni el lo hereda a ellos).
+ */
+export const canPublishOfficialAuctions = (roles: readonly string[]): boolean =>
+  roles.includes('GAME_MASTER')

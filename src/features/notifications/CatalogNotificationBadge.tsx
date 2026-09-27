@@ -44,6 +44,13 @@ const TONE: Readonly<Record<string, string>> = {
   PRODUCT_PREMIUM_CONFIGURED: 'bg-brand/15 text-brand',
   AUCTION_CHANGED: 'bg-brand/15 text-brand',
   AUCTION_CLOSING_SOON: 'bg-warning/15 text-warning',
+  AUCTION_BID_OUTBID: 'bg-warning/15 text-warning',
+  AUCTION_CLOSED_BY_BUY_NOW: 'bg-brand/15 text-brand',
+  AUCTION_AUTO_BID_LIMIT_REACHED: 'bg-warning/15 text-warning',
+  AUCTION_SETTLED_SELLER: 'bg-success/15 text-success',
+  AUCTION_SETTLED_WINNER: 'bg-success/15 text-success',
+  AUCTION_SETTLED_LOSER: 'bg-border text-muted',
+  AUCTION_SETTLED_WITHOUT_BIDS: 'bg-border text-muted',
 }
 
 export interface CatalogNotificationBadgeProps {

@@ -1,0 +1,214 @@
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { BadgeDollarSign, ShieldCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+
+import { Button } from '@/components/ui/Button'
+import { SelectField } from '@/components/ui/form/SelectField'
+import { TextField } from '@/components/ui/form/TextField'
+import { formatMoney } from '@/lib/format'
+import { queryKeys } from '@/shared/query-keys'
+import { countLabel } from '@/shared/i18n/format'
+import {
+  describeAuctionError,
+  publishOfficialAuction,
+  type OfficialAuctionPublication,
+} from './api'
+import { validateOfficialAuctionForm, type OfficialAuctionFormValues } from './validation'
+
+const INITIAL_VALUES: OfficialAuctionFormValues = {
+  productId: '',
+  durationHours: 24,
+  currency: 'COP',
+  minimumBidAmountMinor: '',
+  buyNowAmountMinor: '',
+  confirmed: false,
+}
+
+const newOperationId = (): string => globalThis.crypto.randomUUID()
+
+export const OfficialAuctionPublisher = (): React.JSX.Element => {
+  const queryClient = useQueryClient()
+  const { t } = useTranslation()
+  const [values, setValues] = useState(INITIAL_VALUES)
+  const [submitted, setSubmitted] = useState(false)
+  const [operationId, setOperationId] = useState(newOperationId)
+  const [created, setCreated] = useState<OfficialAuctionPublication | null>(null)
+  const errors = submitted ? validateOfficialAuctionForm(values) : {}
+  const minimum = Number(values.minimumBidAmountMinor)
+  const preview =
+    Number.isSafeInteger(minimum) && minimum > 0
+      ? formatMoney(minimum, values.currency)
+      : t('auction:official.undefined')
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      publishOfficialAuction(
+        {
+          productId: values.productId.trim(),
+          durationHours: values.durationHours,
+          currency: values.currency,
+          minimumBidAmountMinor: Number(values.minimumBidAmountMinor),
+          ...(values.buyNowAmountMinor === ''
+            ? {}
+            : { buyNowAmountMinor: Number(values.buyNowAmountMinor) }),
+        },
+        operationId,
+      ),
+    onSuccess: async (auction) => {
+      setCreated(auction)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.auctions.active })
+    },
+  })
+
+  const reset = (): void => {
+    setValues(INITIAL_VALUES)
+    setSubmitted(false)
+    setCreated(null)
+    setOperationId(newOperationId())
+    mutation.reset()
+  }
+
+  if (created !== null) {
+    return (
+      <section aria-labelledby="official-created" className="space-y-4">
+        <div className="rounded-xl border border-success/40 bg-success/10 p-5">
+          <div className="flex items-center gap-3">
+            <ShieldCheck aria-hidden="true" className="size-6 text-success" />
+            <h1 id="official-created" className="text-xl font-semibold text-ink">
+              {t('auction:official.activeTitle')}
+            </h1>
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            {t('auction:official.markAssigned', {
+              mark: t(
+                created.mark === 'PREMIUM' ? 'auction:marks.PREMIUM' : 'auction:marks.OFFICIAL',
+              ),
+            })}
+          </p>
+          <p className="mt-2 font-semibold text-ink">
+            {t('auction:official.minimumPrice', {
+              price: formatMoney(created.minimumBidAmountMinor, created.currency),
+            })}
+          </p>
+        </div>
+        <Button variant="secondary" onClick={reset}>
+          {t('auction:official.another')}
+        </Button>
+      </section>
+    )
+  }
+
+  return (
+    <section aria-labelledby="official-auction-title" className="space-y-4">
+      <header className="rounded-xl border border-brand/40 bg-brand/10 p-5">
+        <div className="flex items-center gap-3">
+          <ShieldCheck aria-hidden="true" className="size-6 text-brand" />
+          <h1 id="official-auction-title" className="text-xl font-semibold text-ink">
+            {t('auction:official.title')}
+          </h1>
+        </div>
+        <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:official.subtitle')}</p>
+      </header>
+      <form
+        noValidate
+        aria-label={t('auction:official.formLabel')}
+        className="grid gap-4 rounded-xl border border-border bg-surface-raised p-5 sm:grid-cols-2"
+        onSubmit={(event) => {
+          event.preventDefault()
+          setSubmitted(true)
+          if (Object.keys(validateOfficialAuctionForm(values)).length === 0 && !mutation.isPending)
+            mutation.mutate()
+        }}
+      >
+        <div className="sm:col-span-2">
+          <TextField
+            label={t('auction:official.productId')}
+            required
+            value={values.productId}
+            error={errors.productId}
+            onChange={(event) => {
+              setValues({ ...values, productId: event.target.value })
+            }}
+          />
+        </div>
+        <SelectField
+          label={t('auction:official.duration')}
+          value={String(values.durationHours)}
+          options={[
+            { value: '24', label: countLabel(t, 'auction:hours', 24) },
+            { value: '48', label: countLabel(t, 'auction:hours', 48) },
+          ]}
+          onChange={(event) => {
+            setValues({ ...values, durationHours: event.target.value === '48' ? 48 : 24 })
+          }}
+        />
+        <SelectField
+          label={t('auction:official.currency')}
+          value={values.currency}
+          error={errors.currency}
+          options={['COP', 'USD', 'EUR'].map((currency) => ({ value: currency, label: currency }))}
+          onChange={(event) => {
+            setValues({ ...values, currency: event.target.value })
+          }}
+        />
+        <TextField
+          label={t('auction:official.minimum')}
+          type="number"
+          inputMode="numeric"
+          min="1"
+          step="1"
+          required
+          value={values.minimumBidAmountMinor}
+          error={errors.minimumBidAmountMinor}
+          hint={t('auction:official.preview', { preview })}
+          onChange={(event) => {
+            setValues({ ...values, minimumBidAmountMinor: event.target.value })
+          }}
+        />
+        <TextField
+          label={t('auction:official.buyNow')}
+          type="number"
+          inputMode="numeric"
+          min="1"
+          step="1"
+          value={values.buyNowAmountMinor}
+          error={errors.buyNowAmountMinor}
+          onChange={(event) => {
+            setValues({ ...values, buyNowAmountMinor: event.target.value })
+          }}
+        />
+        <div className="sm:col-span-2 rounded-lg border border-border p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+            <BadgeDollarSign aria-hidden="true" className="size-5 text-brand" />{' '}
+            {t('auction:official.fee', { credits: countLabel(t, 'common:count.credits', 0) })}
+          </p>
+          <label className="mt-3 flex items-start gap-3 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={values.confirmed}
+              onChange={(event) => {
+                setValues({ ...values, confirmed: event.target.checked })
+              }}
+              className="mt-1 accent-brand"
+            />
+            <span>{t('auction:official.confirm')}</span>
+          </label>
+          {errors.confirmed !== undefined && (
+            <p role="alert" className="mt-2 text-sm text-danger">
+              {errors.confirmed}
+            </p>
+          )}
+          {mutation.error !== null && (
+            <p role="alert" className="mt-3 text-sm text-danger">
+              {describeAuctionError(mutation.error)}
+            </p>
+          )}
+          <Button type="submit" loading={mutation.isPending} className="mt-4 w-full sm:w-auto">
+            {t('auction:official.submit')}
+          </Button>
+        </div>
+      </form>
+    </section>
+  )
+}

@@ -6,25 +6,25 @@ import { useTranslation } from 'react-i18next'
 import { navigationForPrimaryRole } from '@/routes/routes'
 import { primaryRole } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
+import { AdminNavMenu } from './AdminNavMenu'
 
 /**
  * Etiqueta traducida de cada acceso, por ruta. `routes.tsx` conserva su
  * `label` en español como respaldo: asi este cambio no toca la lista de rutas
  * (que otras features editan) y un acceso nuevo sin traduccion sigue
  * mostrandose, en español, en lugar de desaparecer.
+ *
+ * Los cinco accesos administrativos (antes sueltos aqui) viven ahora en
+ * `ADMIN_NAVIGATION` y se pintan agrupados por `AdminNavMenu`, no como
+ * segmentos de este carril: ver el comentario de esa lista en `routes.tsx`.
  */
 const NAV_LABEL_KEYS: Readonly<Record<string, string>> = {
   '/ecommerce': 'app:nav.ecommerce',
   '/play': 'app:nav.play',
   '/missions': 'app:nav.missions',
-  '/admin/missions': 'app:nav.editMissions',
   '/tournament': 'app:nav.tournament',
   '/inventory': 'app:nav.inventory',
   '/auction': 'app:nav.auction',
-  '/admin/products/new': 'app:nav.createProduct',
-  '/admin/banners': 'app:nav.banners',
-  '/admin/roles': 'app:nav.roles',
-  '/admin/comments/moderation': 'app:nav.moderation',
 }
 
 export interface PrimaryNavProps {
@@ -107,51 +107,61 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
        * pixeles. Si el contenido no cabe (movil), cada columna se queda en su
        * `max-content` y el carril hace scroll horizontal INTERNO.
        */}
-      <div className="relative overflow-x-auto">
-        {activePath !== null && (
-          <span
-            ref={pillRef}
-            aria-hidden="true"
-            data-testid="primary-nav-indicator"
-            className="nb-nav-pill pointer-events-none absolute inset-y-1 left-0 rounded-md opacity-0"
-          />
-        )}
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1 overflow-x-auto">
+          {activePath !== null && (
+            <span
+              ref={pillRef}
+              aria-hidden="true"
+              data-testid="primary-nav-indicator"
+              className="nb-nav-pill pointer-events-none absolute inset-y-1 left-0 rounded-md opacity-0"
+            />
+          )}
 
-        <ul
-          ref={listRef}
-          className="nb-nav-rail grid auto-cols-[minmax(max-content,1fr)] grid-flow-col p-1"
-        >
-          {navigation.map((item) => {
-            const labelKey = NAV_LABEL_KEYS[item.path]
+          <ul
+            ref={listRef}
+            className="nb-nav-rail grid auto-cols-[minmax(max-content,1fr)] grid-flow-col p-1"
+          >
+            {navigation.map((item) => {
+              const labelKey = NAV_LABEL_KEYS[item.path]
 
-            return (
-              <li
-                key={item.path}
-                ref={(element) => {
-                  if (element === null) {
-                    itemRefs.current.delete(item.path)
-                  } else {
-                    itemRefs.current.set(item.path, element)
-                  }
-                }}
-                className="relative z-10"
-              >
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    clsx(
-                      'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',
-                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                      isActive ? 'font-medium text-brand-ink' : 'text-muted',
-                    )
-                  }
+              return (
+                <li
+                  key={item.path}
+                  ref={(element) => {
+                    if (element === null) {
+                      itemRefs.current.delete(item.path)
+                    } else {
+                      itemRefs.current.set(item.path, element)
+                    }
+                  }}
+                  className="relative z-10"
                 >
-                  {labelKey === undefined ? item.label : t(labelKey)}
-                </NavLink>
-              </li>
-            )
-          })}
-        </ul>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      clsx(
+                        'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',
+                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+                        isActive ? 'font-medium text-brand-ink' : 'text-muted',
+                      )
+                    }
+                  >
+                    {labelKey === undefined ? item.label : t(labelKey)}
+                  </NavLink>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+
+        {/*
+         * Entrada "Administrador" (pedido del profesor, 2026-09-26): vive
+         * FUERA del `<ul>` de segmentos -no es un modulo central, es un
+         * desplegable que agrupa accesos administrativos-, mismo criterio que
+         * el indicador de pildora, que tampoco es un `<li>`.
+         */}
+        <AdminNavMenu />
       </div>
     </nav>
   )

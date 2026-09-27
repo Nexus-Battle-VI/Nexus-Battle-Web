@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { QueryState } from '@/components/ui/QueryState'
 import { formatMoney } from '@/lib/format'
 import { formatInteger } from '@/shared/i18n/format'
+import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
 
 import type { EquipmentSlotId } from './equipment/api'
 import { SLOT_META_BY_ID, slotLabel } from './equipment/slots'
@@ -78,11 +79,18 @@ export const ItemDetailPanel = ({
         {detail !== undefined && attributes !== null && (
           <>
             <div className="flex items-start gap-3">
-              <ProductThumb
-                src={detail.product.imageUrl}
-                alt={detail.product.name}
-                className="max-w-28 shrink-0 basis-28"
-              />
+              {(() => {
+                const heroId = heroIdOfProduct(detail.product.type, detail.product.sku)
+                return heroId === null ? (
+                  <ProductThumb
+                    src={detail.product.imageUrl}
+                    alt={detail.product.name}
+                    className="max-w-28 shrink-0 basis-28"
+                  />
+                ) : (
+                  <Hero3D heroId={heroId} className="max-w-28 shrink-0 basis-28 [&>p]:hidden" />
+                )
+              })()}
 
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-ink">{detail.product.name}</h2>

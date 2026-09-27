@@ -94,13 +94,14 @@ describe('Paginacion visible de 12 sobre el contrato HTTP de 16', () => {
 
     expect(result.items).toEqual(products.slice(12, 24))
     expect(query).toBe(
-      'page=2&query=heroe+%26+espada&type=HEROE&minPrice=0&maxPrice=4000&currency=EUR',
+      'page=2&premium=true&query=heroe+%26+espada&type=HEROE&minPrice=0&maxPrice=4000&currency=EUR',
     )
     for (const [input] of fetcher.mock.calls) {
       const url = new URL(input, globalThis.location.origin)
       expect(url.pathname).toBe('/api/v1/catalog/products')
       expect(Object.fromEntries(url.searchParams)).toEqual({
         page: expect.stringMatching(/^[12]$/u),
+        premium: 'true',
         query: 'heroe & espada',
         type: 'HEROE',
         minPrice: '0',
