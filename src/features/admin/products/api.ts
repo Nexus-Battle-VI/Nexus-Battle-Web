@@ -1,6 +1,6 @@
 import { HttpError, httpClient } from '@/lib/http'
 
-import type { CreateProductRequest, CreatedProduct } from './contract'
+import type { CreateProductRequest, CreatedProduct, ProductType, RealMoneyPrice } from './contract'
 import { i18n } from '@/shared/i18n/i18n'
 import { currentLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
@@ -183,4 +183,143 @@ export const describeLifecycleStatusFailure = (error: unknown): string => {
   }
 
   return i18n.t('admin:products.failures.status')
+}
+
+/**
+ * Fila del catalogo tal y como la ve la administracion (Gestion de
+ * productos, pedido del profesor 2026-09-26): `GET /v1/admin/products`.
+ *
+ * A diferencia de `AdministeredProduct` (una sola ficha, HU-34), esta forma
+ * es la de una FILA de listado: incluye `sku` e `imageUrl` -que la ficha de
+ * ajuste de tiraje no necesita- para que la tabla pueda mostrarlas sin una
+ * peticion adicional por fila.
+ */
+export interface AdminProductSummary {
+  readonly productId: string
+  readonly sku: string
+  readonly name: string
+  readonly imageUrl: string
+  readonly type: ProductType
+  readonly lifecycleStatus: 'ACTIVE' | 'SUSPENDED'
+  readonly creditsPrice: number
+  readonly premium: boolean
+  readonly realMoneyPrice: RealMoneyPrice | null
+  readonly availableUnits: number | null
+}
+
+export interface AdminProductPage {
+  readonly items: readonly AdminProductSummary[]
+  readonly page: number
+  readonly pageSize: number
+  readonly total: number
+}
+
+export interface AdminProductSearchParams {
+  readonly page: number
+  /** Subcadena libre contra nombre/descripcion/SKU. Ausente = sin filtro. */
+  readonly query?: string
+  readonly type?: ProductType
+  readonly lifecycleStatus?: 'ACTIVE' | 'SUSPENDED'
+}
+
+/**
+ * Busca/pagina el catalogo administrativo.
+ *
+ * MISMA CONVENCION DE PAGINACION que la vitrina publica (`fetchShowcase` en
+ * `commerce/showcase/api.ts`): `page` es 1-based y viaja como parametro de
+ * consulta, y la respuesta trae `items`/`page`/`pageSize`/`total`. No se
+ * inventa un estilo de paginacion distinto para esta pantalla.
+ */
+export const searchAdministeredProducts = (
+  params: AdminProductSearchParams,
+  signal?: AbortSignal,
+): Promise<AdminProductPage> => {
+  const query = new URLSearchParams({ page: String(params.page) })
+
+  if (params.query !== undefined && params.query.trim() !== '') {
+    query.set('query', params.query.trim())
+  }
+  if (params.type !== undefined) {
+    query.set('type', params.type)
+  }
+  if (params.lifecycleStatus !== undefined) {
+    query.set('lifecycleStatus', params.lifecycleStatus)
+  }
+
+  return httpClient.get<AdminProductPage>(`/v1/admin/products?${query.toString()}`, signal)
+}
+
+/** Traduce el fallo de la busqueda. Misma taxonomia que el resto de esta API. */
+export const describeSearchFailure = (error: unknown): string => {
+  if (!(error instanceof HttpError)) {
+    return i18n.t('admin:products.failures.searchNetwork')
+  }
+
+  if (error.status === 401) {
+    return i18n.t('admin:products.failures.session')
+  }
+
+  if (error.status === 403) {
+    return i18n.t('admin:products.failures.forbidden')
+  }
+
+  return i18n.t('admin:products.failures.search')
+}
+
+/**
+ * Subconjunto editable de un producto ya creado (Gestion de productos):
+ * `PATCH /v1/admin/products/{id}/details`. AL MENOS UN CAMPO -el servicio
+ * rechaza un cuerpo vacio-; por eso los tres son opcionales y esta pantalla
+ * solo envia los que la persona efectivamente cambio.
+ */
+export interface UpdateProductDetailsRequest {
+  readonly name?: string
+  readonly description?: string
+  readonly imageUrl?: string
+}
+
+export const updateProductDetails = (
+  productId: string,
+  request: UpdateProductDetailsRequest,
+): Promise<AdministeredProduct> =>
+  httpClient.patch<AdministeredProduct>(`/v1/admin/products/${productId}/details`, request)
+
+/**
+ * Traduce el fallo de la edicion.
+ *
+ * Misma taxonomia que `describeAdjustmentFailure`: 401 sesion, 403 permisos o
+ * segundo factor, 404 el producto ya no existe, 409 lo modifico otra persona
+ * mientras se editaba, 422/400 el mensaje exacto del servicio, 503 no se pudo
+ * comprobar el segundo factor.
+ */
+export const describeUpdateDetailsFailure = (error: unknown): string => {
+  if (!(error instanceof HttpError)) {
+    return i18n.t('admin:products.failures.updateDetailsNetwork')
+  }
+
+  if (error.status === 401) {
+    return i18n.t('admin:products.failures.session')
+  }
+
+  if (error.status === 403) {
+    return i18n.t('admin:products.failures.forbidden')
+  }
+
+  if (error.status === 404) {
+    return i18n.t('admin:products.failures.notFound')
+  }
+
+  if (error.status === 409) {
+    return i18n.t('admin:products.failures.concurrentEdit')
+  }
+
+  if (error.status === 422 || error.status === 400) {
+    return describeFailure(error, i18n.t, currentLanguage())
+  }
+
+  if (error.status === 503) {
+    return i18n.t('admin:products.failures.mfaUnavailable')
+  }
+
+  return i18n.t('admin:products.failures.updateDetails')
 }
