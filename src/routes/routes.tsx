@@ -36,6 +36,7 @@ import { RecoveryPage } from '@/features/auth/recovery/RecoveryPage'
 import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
+import { ProductManagementPage } from '@/features/admin/products/ProductManagementPage'
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
@@ -93,7 +94,6 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: ECOMMERCE_PATH, label: 'E-commerce' },
   { path: '/play', label: 'Jugar Online' },
   { path: '/missions', label: 'Misiones' },
-  { path: '/admin/missions', label: 'Editar misiones', requiredPrimaryRole: 'ADMINISTRATOR' },
   { path: '/tournament', label: 'Torneo' },
   { path: '/inventory', label: 'Mi Inventario' },
   // HU-07 ya NO tiene entrada propia (2026-09-22, retiro de "Mi Héroe" por
@@ -105,9 +105,31 @@ export const NAVIGATION: readonly NavigationItem[] = [
   { path: '/auction', label: 'Subasta' },
   // "Mi Cuenta" ya no vive en la navegacion central (HU-05.4): el acceso a la
   // cuenta es `SessionControl`. La ruta `/account` sigue montada mas abajo.
+]
+
+/**
+ * Accesos administrativos, agrupados bajo UNA entrada "Administrador" en la
+ * cabecera (pedido del profesor, dueno del producto, 2026-09-26): antes eran
+ * cinco items sueltos mezclados con los seis modulos centrales de arriba, lo
+ * que saturaba la barra principal con asuntos que solo interesan a un rol
+ * administrativo. `AdminNavMenu` los pinta como un desplegable -mismo patron
+ * que "Mi cuenta" (`SessionControl`)- y muestra la entrada "Administrador"
+ * solo si la persona califica para AL MENOS UNO de estos; dentro, solo
+ * aparecen los que su rol primario efectivamente habilita.
+ *
+ * NINGUNA RUTA CAMBIA DE PATH por este reagrupamiento (siguen siendo las
+ * mismas guardas -`RequireAdministrator`/`RequireSuperAdministrator`/
+ * `RequireModerator`- montadas mas abajo): solo cambia DONDE vive el enlace.
+ * La unica excepcion es "Crear producto": ese acceso ahora apunta a
+ * `/admin/products`, la nueva pantalla de gestion (buscar/editar/eliminar/
+ * restaurar), que a su vez enlaza a `/admin/products/new` -sin tocar esa
+ * ruta- para seguir creando productos desde el mismo lugar.
+ */
+export const ADMIN_NAVIGATION: readonly NavigationItem[] = [
+  { path: '/admin/missions', label: 'Editar misiones', requiredPrimaryRole: 'ADMINISTRATOR' },
   {
-    path: '/admin/products/new',
-    label: 'Crear producto',
+    path: '/admin/products',
+    label: 'Gestionar productos',
     requiredPrimaryRole: 'ADMINISTRATOR',
   },
   // HU-38 (Task #181): gestion del banner informativo. No depende de un
@@ -152,16 +174,27 @@ const ADMINISTRATIVE_RANK: Readonly<Record<string, number>> = {
   MODERATOR: 1,
 }
 
+const passesPrimaryRole = (item: NavigationItem, role: string | null): boolean => {
+  if (item.requiredPrimaryRole === undefined) {
+    return true
+  }
+
+  const held = role === null ? 0 : (ADMINISTRATIVE_RANK[role] ?? 0)
+
+  return held >= (ADMINISTRATIVE_RANK[item.requiredPrimaryRole] ?? 0)
+}
+
+/**
+ * Ninguno de los seis modulos centrales exige rol: esta funcion se conserva
+ * porque `PrimaryNav` la usa desde HU-02, pero hoy equivale a `NAVIGATION`
+ * completa. El filtro por rol real vive en `adminNavigationForPrimaryRole`.
+ */
 export const navigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
-  NAVIGATION.filter((item) => {
-    if (item.requiredPrimaryRole === undefined) {
-      return true
-    }
+  NAVIGATION.filter((item) => passesPrimaryRole(item, role))
 
-    const held = role === null ? 0 : (ADMINISTRATIVE_RANK[role] ?? 0)
-
-    return held >= (ADMINISTRATIVE_RANK[item.requiredPrimaryRole] ?? 0)
-  })
+/** Los accesos administrativos que el rol primario dado efectivamente habilita. */
+export const adminNavigationForPrimaryRole = (role: string | null): readonly NavigationItem[] =>
+  ADMIN_NAVIGATION.filter((item) => passesPrimaryRole(item, role))
 
 export const routes: RouteObject[] = [
   // La raiz ya no es un menu propio de "elige iniciar sesion o crear cuenta":
@@ -312,6 +345,20 @@ export const routes: RouteObject[] = [
           <RequireSuperAdministrator>
             <RoleManagementPage />
           </RequireSuperAdministrator>
+        ),
+      },
+      // Gestion de productos (buscar, editar, eliminar/restaurar): el destino
+      // real de "Gestionar productos" en `ADMIN_NAVIGATION`. NO sustituye a
+      // `admin/products/new` ni a `admin/products/:productId/inventory` -son
+      // rutas propias, con su propio path, que esta pantalla enlaza en vez de
+      // reemplazar-. Misma guarda de presentacion que el resto: Catalog
+      // exige ademas evidencia de segundo factor y responde 403 por su cuenta.
+      {
+        path: 'admin/products',
+        element: (
+          <RequireAdministrator>
+            <ProductManagementPage />
+          </RequireAdministrator>
         ),
       },
       // Catalogo administrativo (HU-33). La guarda es de presentacion: Catalog

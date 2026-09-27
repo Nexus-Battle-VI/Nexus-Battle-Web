@@ -7,7 +7,14 @@ import { RouterProvider, createMemoryRouter } from 'react-router'
 
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
 import { jsonResponse, showcaseProduct } from '@/test/commerce-fixtures'
-import { ECOMMERCE_PATH, NAVIGATION, navigationForPrimaryRole, routes } from './routes'
+import {
+  ADMIN_NAVIGATION,
+  ECOMMERCE_PATH,
+  NAVIGATION,
+  adminNavigationForPrimaryRole,
+  navigationForPrimaryRole,
+  routes,
+} from './routes'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useSession } from '@/shared/session'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
@@ -19,8 +26,14 @@ describe('NAVIGATION', () => {
    * HU-02 fija esta lista: son los accesos de producto que el cliente
    * confirmo (Task #91, seccion 6), no los nombres tecnicos de los bounded
    * contexts que la navegacion mostraba antes.
+   *
+   * Desde el reagrupamiento administrativo (pedido del profesor,
+   * 2026-09-26), `NAVIGATION` solo declara los seis modulos centrales: los
+   * accesos administrativos viven en `ADMIN_NAVIGATION` y se pintan
+   * agrupados bajo "Administrador" (`AdminNavMenu`), no como segmentos
+   * sueltos de este carril.
    */
-  it('declara los accesos de producto confirmados (HU-02, HU-05.4), sin "Mi Cuenta" y sin duplicados', () => {
+  it('declara los seis modulos centrales confirmados (HU-02, HU-05.4), sin "Mi Cuenta" y sin duplicados', () => {
     const paths = NAVIGATION.map((item) => item.path)
 
     // HU-05.4: "Mi Cuenta" deja de vivir en la navegacion central (el acceso a
@@ -29,7 +42,6 @@ describe('NAVIGATION', () => {
       '/ecommerce',
       '/play',
       '/missions',
-      '/admin/missions',
       '/tournament',
       '/inventory',
       // HU-07 (2026-09-22): "Mi Héroe" se retiro de la navegacion -se
@@ -37,18 +49,20 @@ describe('NAVIGATION', () => {
       // entrada propia aqui. La ruta sigue montada como redirect (ver
       // "Proteccion visual de rutas").
       '/auction',
-      // HU-33: catalogo administrativo. Solo lo ven los roles administrativos;
-      // el filtro se comprueba mas abajo.
-      '/admin/products/new',
-      // HU-38 (Task #181): gestion del banner informativo.
-      '/admin/banners',
-      '/admin/roles',
-      // HU-41.10: acceso visible a la cola de moderacion de comentarios para
-      // Moderador, Administrador y Super Administrador.
-      '/admin/comments/moderation',
     ])
     expect(paths).not.toContain('/account')
     expect(new Set(paths).size).toBe(paths.length)
+    // Ningun modulo central exige rol: el reagrupamiento administrativo no
+    // debe filtrarse a los que se comparten con cualquier jugador.
+    expect(NAVIGATION.every((item) => item.requiredPrimaryRole === undefined)).toBe(true)
+  })
+
+  it('navigationForPrimaryRole devuelve los seis modulos centrales para cualquier rol, incluido ninguno', () => {
+    for (const role of [null, 'PLAYER', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR']) {
+      expect(navigationForPrimaryRole(role).map((item) => item.path)).toEqual(
+        NAVIGATION.map((item) => item.path),
+      )
+    }
   })
 
   it('no nombra bounded contexts como acceso de navegacion', () => {
@@ -58,13 +72,33 @@ describe('NAVIGATION', () => {
       expect(labels).not.toContain(technicalName)
     }
   })
+})
+
+describe('ADMIN_NAVIGATION', () => {
+  it('declara los cinco accesos administrativos agrupados, sin duplicados', () => {
+    const paths = ADMIN_NAVIGATION.map((item) => item.path)
+
+    expect(paths).toEqual([
+      '/admin/missions',
+      // "Crear producto" se convirtio en "Gestionar productos": el destino
+      // ahora es la pantalla de gestion (buscar/editar/eliminar/restaurar),
+      // que a su vez enlaza a `/admin/products/new` sin tocar ese path.
+      '/admin/products',
+      '/admin/banners',
+      '/admin/roles',
+      '/admin/comments/moderation',
+    ])
+    expect(new Set(paths).size).toBe(paths.length)
+  })
 
   it('filtra la gestion de roles para el rol primario SUPER_ADMINISTRATOR', () => {
-    expect(navigationForPrimaryRole('PLAYER').some((item) => item.path === '/admin/roles')).toBe(
-      false,
-    )
     expect(
-      navigationForPrimaryRole('SUPER_ADMINISTRATOR').some((item) => item.path === '/admin/roles'),
+      adminNavigationForPrimaryRole('PLAYER').some((item) => item.path === '/admin/roles'),
+    ).toBe(false)
+    expect(
+      adminNavigationForPrimaryRole('SUPER_ADMINISTRATOR').some(
+        (item) => item.path === '/admin/roles',
+      ),
     ).toBe(true)
   })
 
@@ -74,26 +108,26 @@ describe('NAVIGATION', () => {
    * NO ve la gestion de roles. Sin el segundo caso, «hay jerarquia» podria
    * cumplirse dandoselo todo a cualquier rol administrativo.
    */
-  it('un Administrador ve el catalogo administrativo y el banner, pero no la gestion de roles', () => {
-    const paths = navigationForPrimaryRole('ADMINISTRATOR').map((item) => item.path)
+  it('un Administrador ve la gestion de productos y el banner, pero no la gestion de roles', () => {
+    const paths = adminNavigationForPrimaryRole('ADMINISTRATOR').map((item) => item.path)
 
-    expect(paths).toContain('/admin/products/new')
+    expect(paths).toContain('/admin/products')
     expect(paths).toContain('/admin/banners')
     expect(paths).not.toContain('/admin/roles')
   })
 
   it('un Super Administrador ve tambien lo que se exige a un Administrador', () => {
-    const paths = navigationForPrimaryRole('SUPER_ADMINISTRATOR').map((item) => item.path)
+    const paths = adminNavigationForPrimaryRole('SUPER_ADMINISTRATOR').map((item) => item.path)
 
-    expect(paths).toContain('/admin/products/new')
+    expect(paths).toContain('/admin/products')
     expect(paths).toContain('/admin/banners')
     expect(paths).toContain('/admin/roles')
   })
 
   it('un jugador no ve ningun acceso administrativo', () => {
-    const paths = navigationForPrimaryRole('PLAYER').map((item) => item.path)
+    const paths = adminNavigationForPrimaryRole('PLAYER').map((item) => item.path)
 
-    expect(paths.some((path) => path.startsWith('/admin/'))).toBe(false)
+    expect(paths).toHaveLength(0)
   })
 
   /**
@@ -103,14 +137,14 @@ describe('NAVIGATION', () => {
   it.each(['MODERATOR', 'ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
     'el rol %s ve el acceso a la cola de moderacion de comentarios',
     (role) => {
-      const paths = navigationForPrimaryRole(role).map((item) => item.path)
+      const paths = adminNavigationForPrimaryRole(role).map((item) => item.path)
 
       expect(paths).toContain('/admin/comments/moderation')
     },
   )
 
   it('un jugador no ve el acceso a la cola de moderacion de comentarios', () => {
-    const paths = navigationForPrimaryRole('PLAYER').map((item) => item.path)
+    const paths = adminNavigationForPrimaryRole('PLAYER').map((item) => item.path)
 
     expect(paths).not.toContain('/admin/comments/moderation')
   })
@@ -666,7 +700,8 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/403/)
   })
 
-  it('el Super Administrador ve el acceso y abre la pantalla de roles', async () => {
+  it('el Super Administrador ve el acceso agrupado y abre la pantalla de roles', async () => {
+    const user = userEvent.setup()
     useSession.setState({
       ...AUTHENTICATED_STATE,
       roles: ['PLAYER', 'SUPER_ADMINISTRATOR'],
@@ -674,7 +709,11 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     renderRoute('/admin/roles')
 
     expect(await screen.findByRole('heading', { name: 'Gestion de roles' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Gestionar roles' })).toBeInTheDocument()
+
+    // El acceso vive agrupado bajo "Administrador" (`AdminNavMenu`), no
+    // suelto en la barra: hay que abrir el desplegable para verlo.
+    await user.click(screen.getByTestId('admin-nav-trigger'))
+    expect(screen.getByRole('menuitem', { name: 'Gestionar roles' })).toBeInTheDocument()
   })
 
   /**
@@ -696,7 +735,8 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     }
   })
 
-  it('un Administrador ve el acceso y abre la gestion del banner', async () => {
+  it('un Administrador ve el acceso agrupado y abre la gestion del banner', async () => {
+    const user = userEvent.setup()
     useSession.setState({ ...AUTHENTICATED_STATE, roles: ['PLAYER', 'ADMINISTRATOR'] })
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ items: [] })))
 
@@ -704,7 +744,45 @@ describe('Proteccion visual de rutas (HU-02)', () => {
       renderRoute('/admin/banners')
 
       expect(await screen.findByRole('heading', { name: 'Banner informativo' })).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: 'Gestionar banner' })).toBeInTheDocument()
+
+      // Mismo criterio: el acceso vive agrupado bajo "Administrador".
+      await user.click(screen.getByTestId('admin-nav-trigger'))
+      expect(screen.getByRole('menuitem', { name: 'Gestionar banner' })).toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  /**
+   * Gestion de productos (pedido del profesor, 2026-09-26): destino real de
+   * "Gestionar productos" en el desplegable "Administrador". Misma guarda
+   * que el resto de superficies administrativas.
+   */
+  it('un jugador recibe 403 visual al intentar la gestion de productos', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/admin/products')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(/403/)
+  })
+
+  it('un Administrador ve el acceso agrupado y abre la gestion de productos', async () => {
+    const user = userEvent.setup()
+    useSession.setState({ ...AUTHENTICATED_STATE, roles: ['PLAYER', 'ADMINISTRATOR'] })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ items: [], page: 1, pageSize: 20, total: 0 })),
+    )
+
+    try {
+      renderRoute('/admin/products')
+
+      expect(
+        await screen.findByRole('heading', { name: 'Gestión de productos' }),
+      ).toBeInTheDocument()
+
+      await user.click(screen.getByTestId('admin-nav-trigger'))
+      expect(screen.getByRole('menuitem', { name: 'Gestionar productos' })).toBeInTheDocument()
     } finally {
       vi.unstubAllGlobals()
     }
