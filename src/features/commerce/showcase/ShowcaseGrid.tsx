@@ -2,8 +2,12 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { ProductImage } from '@/features/commerce/ProductImage'
+import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
 import { PRODUCT_TYPE_LABELS, type ShowcaseProduct } from './api'
 import { ProductPrice } from './ProductPrice'
+
+const heroIdOf = (product: ShowcaseProduct): string | null =>
+  heroIdOfProduct(product.type, product.sku, product.attributes.values)
 
 export interface ShowcaseGridProps {
   readonly products: readonly ShowcaseProduct[]
@@ -88,11 +92,21 @@ export const ShowcaseGrid = ({
                 }}
                 className="commerce-product-heading text-left focus-visible:outline-2 focus-visible:outline-brand"
               >
-                <ProductImage
-                  source={product.imageUrl}
-                  name={product.name}
-                  className="commerce-product-image rounded-lg bg-surface object-contain"
-                />
+                {(() => {
+                  const heroId = heroIdOf(product)
+                  return heroId === null ? (
+                    <ProductImage
+                      source={product.imageUrl}
+                      name={product.name}
+                      className="commerce-product-image rounded-lg bg-surface object-contain"
+                    />
+                  ) : (
+                    // El nombre ya lo muestra la propia tarjeta justo al lado
+                    // (`commerce-product-name`); se oculta la etiqueta que
+                    // `Hero3D` repite por defecto para no duplicarlo.
+                    <Hero3D heroId={heroId} className="commerce-product-image [&>p]:hidden" />
+                  )
+                })()}
                 <span className="min-w-0">
                   <span
                     className="commerce-product-name text-sm font-semibold text-ink"

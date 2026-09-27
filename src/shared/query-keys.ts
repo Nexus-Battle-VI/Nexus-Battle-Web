@@ -11,6 +11,21 @@ export const queryKeys = {
     byCategory: (category: string | null) => ['catalog', 'products', category] as const,
     detail: (sku: string) => ['catalog', 'product', sku] as const,
   },
+  admin: {
+    /**
+     * Pagina de "Gestion de productos" (busqueda/filtro/edicion/eliminacion,
+     * pedido del profesor 2026-09-26). Lleva pagina, termino y filtros en la
+     * clave porque la busqueda y el filtrado ocurren en el servicio: cada
+     * combinacion es una consulta distinta, mismo criterio que
+     * `inventory.mine`.
+     */
+    products: (params: {
+      readonly page: number
+      readonly query: string
+      readonly type: string | null
+      readonly lifecycleStatus: string | null
+    }) => ['admin', 'products', params] as const,
+  },
   inventory: {
     byOwner: (ownerId: string) => ['inventory', ownerId] as const,
     /**
@@ -199,5 +214,9 @@ export const queryKeys = {
     banners: ['notifications', 'banners', 'active'] as const,
     /** Listado administrativo (`GET /api/v1/admin/banners`). */
     adminBanners: ['notifications', 'banners', 'admin'] as const,
+  },
+  auctions: {
+    active: ['auctions', 'active'] as const,
+    activePage: (page: number) => ['auctions', 'active', page] as const,
   },
 } as const
