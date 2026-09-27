@@ -374,6 +374,7 @@
       "resultsCount_many": "{{value}} products",
       "resultsCount_other": "{{value}} products",
       "notPremium": "no real-money price",
+      "bundledWithHero": "Bundled with its hero: not sold separately in the storefront.",
       "edit": "Edit",
       "adjustInventory": "Print run",
       "suspend": "Remove",

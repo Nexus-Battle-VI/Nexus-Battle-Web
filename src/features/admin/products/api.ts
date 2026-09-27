@@ -219,6 +219,14 @@ export interface AdminProductSearchParams {
   /** Subcadena libre contra nombre/descripcion/SKU. Ausente = sin filtro. */
   readonly query?: string
   readonly type?: ProductType
+  /**
+   * Ignorado por el servicio si `type` tambien viene informado. Se usa para
+   * que la vista por defecto no muestre HABILIDAD -no es un producto vendible
+   * por separado, va empaquetada con su HEROE (Tabla 7, PI2)- sin impedir que
+   * un administrador la busque a proposito seleccionando "Habilidad" en el
+   * filtro de tipo.
+   */
+  readonly excludeType?: ProductType
   readonly lifecycleStatus?: 'ACTIVE' | 'SUSPENDED'
 }
 
@@ -241,6 +249,9 @@ export const searchAdministeredProducts = (
   }
   if (params.type !== undefined) {
     query.set('type', params.type)
+  }
+  if (params.excludeType !== undefined) {
+    query.set('excludeType', params.excludeType)
   }
   if (params.lifecycleStatus !== undefined) {
     query.set('lifecycleStatus', params.lifecycleStatus)

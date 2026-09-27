@@ -65,6 +65,19 @@ describe('searchAdministeredProducts', () => {
     expect(parsed.searchParams.get('lifecycleStatus')).toBe('SUSPENDED')
   })
 
+  it('incluye excludeType cuando se proporciona', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(200, { items: [], page: 1, pageSize: 20, total: 0 }))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    await searchAdministeredProducts({ page: 1, excludeType: 'HABILIDAD' })
+
+    const [url] = fetchImpl.mock.calls[0] as [string]
+    const parsed = new URL(url, 'https://nexus.test')
+    expect(parsed.searchParams.get('excludeType')).toBe('HABILIDAD')
+  })
+
   it('recorta el termino de busqueda y omite un termino en blanco', async () => {
     const fetchImpl = vi
       .fn()

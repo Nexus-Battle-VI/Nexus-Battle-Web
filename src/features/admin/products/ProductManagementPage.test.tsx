@@ -72,7 +72,7 @@ const page = (
 })
 
 describe('ProductManagementPage (Gestion de productos)', () => {
-  it('busca sin filtros por defecto y muestra el listado', async () => {
+  it('busca sin filtros por defecto y muestra el listado, excluyendo HABILIDAD', async () => {
     const onSearch = vi.fn<SearchFn>(() => Promise.resolve(page([summary()])))
 
     renderWithProviders(<ProductManagementPage onSearch={onSearch} />)
@@ -81,7 +81,7 @@ describe('ProductManagementPage (Gestion de productos)', () => {
     const list = screen.getByTestId('product-management-list')
     expect(within(list).getByText(/SKU-001/)).toBeInTheDocument()
     expect(within(list).getByText('Activo')).toBeInTheDocument()
-    expect(onSearch.mock.calls[0]?.[0]).toEqual({ page: 1 })
+    expect(onSearch.mock.calls[0]?.[0]).toEqual({ page: 1, excludeType: 'HABILIDAD' })
   })
 
   it('no hay productos para estos filtros', async () => {

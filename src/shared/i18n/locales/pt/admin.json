@@ -379,6 +379,7 @@
       "resultsCount_many": "{{value}} de produtos",
       "resultsCount_other": "{{value}} produtos",
       "notPremium": "sem preço em dinheiro real",
+      "bundledWithHero": "Incluída com o seu herói: não é vendida separadamente na vitrine.",
       "edit": "Editar",
       "adjustInventory": "Tiragem",
       "suspend": "Remover",

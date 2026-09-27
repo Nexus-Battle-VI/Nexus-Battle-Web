@@ -93,7 +93,7 @@ interface CatalogPage extends Omit<ShowcasePage, 'pageSize'> {
 
 /** Serializa filtros de Catalog y el numero de pagina visible de la vitrina. */
 export const showcaseQuery = (filters: ShowcaseFilters, page: number): string => {
-  const query = new URLSearchParams({ page: String(page) })
+  const query = new URLSearchParams({ page: String(page), premium: 'true' })
   if (filters.term.trim() !== '') query.set('query', filters.term.trim())
   if (filters.type !== null) query.set('type', filters.type)
   if (filters.minPrice !== null) query.set('minPrice', String(filters.minPrice))
@@ -130,15 +130,14 @@ export const fetchShowcase = async (query: string, signal?: AbortSignal): Promis
     items.push(...second.items.slice(0, SHOWCASE_PAGE_SIZE - firstCount))
   }
 
-  // Catalog solo admite un valor en `type` (confirmado por auditoria) y no
-  // filtra por `premium`, asi que no hay forma de pedirle de una sola vez "los
-  // 4 tipos comercializables": se excluyen aqui ITEM y EPICA, que el dominio
-  // del E-commerce nunca vende (ver `isShowcaseType`). `total`/`pageSize`
-  // siguen siendo los que reporta Catalog (incluyen ITEM/EPICA), asi que una
-  // pagina visible puede traer menos de `SHOWCASE_PAGE_SIZE` tarjetas cuando
-  // el lote traia productos no comercializables; no es una segunda fuente de
-  // verdad del precio/elegibilidad, solo evita listar tipos que este dominio
-  // nunca ofrece.
+  // `premium=true` (arriba, en showcaseQuery) hace que Catalog pagine SOLO
+  // sobre productos comercializables: sin ese filtro, una pagina de 16 podia
+  // llegar casi vacia si la mayoria eran habilidades base de un heroe u otros
+  // productos no premium (bug reportado por el cliente el 2026-09-26). Catalog
+  // no impide que un ITEM/EPICA se marque premium por error administrativo, asi
+  // que esta segunda linea de defensa se mantiene: nunca listar tipos que el
+  // dominio del E-commerce no vende (ver `isShowcaseType`), aunque ya no deberia
+  // producir paginas con huecos en el caso normal.
   const visible = items.filter((item) => isShowcaseType(item.type))
 
   return { items: visible, page, pageSize: SHOWCASE_PAGE_SIZE, total: first.total }

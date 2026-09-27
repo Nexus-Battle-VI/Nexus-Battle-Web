@@ -172,6 +172,7 @@ describe('Vitrina canonica', () => {
     expect(lastRequests).toEqual([
       {
         page: '1',
+        premium: 'true',
         query: 'espada',
         type: 'ARMA',
         currency: 'USD',
@@ -180,6 +181,7 @@ describe('Vitrina canonica', () => {
       },
       {
         page: '2',
+        premium: 'true',
         query: 'espada',
         type: 'ARMA',
         currency: 'USD',
@@ -208,7 +210,7 @@ describe('Vitrina canonica', () => {
       .at(-1)!
     expect(
       Object.fromEntries(new URL(lastRequest[0], globalThis.location.origin).searchParams),
-    ).toEqual({ page: '1' })
+    ).toEqual({ page: '1', premium: 'true' })
   })
   it('abre un detalle modal por UUID con los atributos completos y permite cerrarlo', async () => {
     const fetcher = setup()
