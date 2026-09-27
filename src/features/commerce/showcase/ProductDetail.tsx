@@ -30,7 +30,8 @@ const heroIdOf = (
   type: string | undefined,
   sku: string | undefined,
   values: Readonly<Record<string, unknown>> | undefined,
-): string | null => (type === undefined || sku === undefined ? null : heroIdOfProduct(type, sku, values))
+): string | null =>
+  type === undefined || sku === undefined ? null : heroIdOfProduct(type, sku, values)
 
 export const ProductDetail = ({
   reference,
