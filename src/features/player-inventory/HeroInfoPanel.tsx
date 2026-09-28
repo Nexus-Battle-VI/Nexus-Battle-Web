@@ -16,9 +16,11 @@ const PENDIENTE = 'PENDIENTE'
  * de equipar; enseñarlas aquí como si fueran las mismas confundiría dos números
  * distintos.
  *
- * LO QUE EL CATÁLOGO NO PUBLICA SE MARCA `PENDIENTE`. El nivel no forma parte
- * del contrato canónico del héroe, y el ataque, el daño y la sanación son
- * opcionales. Escribir un «1» de relleno donde el dominio no dice nada sería
+ * EL NIVEL ES EL REAL. Sale de `hero.progression.level`, que publica
+ * Player-Inventory (HU-08); el cliente no lo calcula ni conoce los umbrales.
+ *
+ * LO QUE EL CATÁLOGO NO PUBLICA SE MARCA `PENDIENTE`. El ataque, el daño y la
+ * sanación son opcionales. Escribir un «1» de relleno donde el dominio no dice nada sería
  * mostrar una estadística que nadie calculó, que es justo el riesgo que la
  * TASK HU-07.3 enumera. El prototipo usa esa misma palabra para los huecos.
  *
@@ -35,7 +37,8 @@ export const HeroInfoPanel = ({ hero }: HeroInfoPanelProps): React.JSX.Element =
   }
 
   const stats: readonly { readonly label: string; readonly value: string }[] = [
-    { label: 'Nivel', value: PENDIENTE },
+    // Nivel REAL del héroe (HU-08): lo publica Player-Inventory en `progression`.
+    { label: 'Nivel', value: String(hero.progression.level) },
     { label: 'Poder', value: String(hero.baseStats.power) },
     { label: 'Vida', value: String(hero.baseStats.health) },
     { label: 'Defensa', value: String(hero.baseStats.defense) },

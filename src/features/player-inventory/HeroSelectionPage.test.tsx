@@ -23,7 +23,7 @@ const heroe = (patch: Partial<api.AvailableHero> = {}): api.AvailableHero => ({
     level: 1,
     currentXp: 0,
     floorForCurrentLevel: 0,
-    nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 200 },
+    nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
     maxLevel: 8,
   },
   ...patch,
@@ -142,9 +142,8 @@ describe('Selección de héroe (HU-07)', () => {
   })
 
   /**
-   * Lo que el catálogo no publica se dice, no se rellena. El nivel no forma
-   * parte del contrato canónico del héroe: escribir un «1» sería enseñar una
-   * estadística que nadie calculó.
+   * Lo que el catálogo no publica se dice, no se rellena. El nivel ya
+   * no es uno de ellos: es el real de `progression.level`.
    */
   it('marca como PENDIENTE lo que el catálogo no publica', async () => {
     vi.spyOn(api, 'fetchAvailableHeroes').mockResolvedValue([
@@ -156,8 +155,9 @@ describe('Selección de héroe (HU-07)', () => {
 
     montar()
 
-    // Nivel, Ataque y Daño: tres huecos que el contrato canónico no llena.
-    expect(await screen.findAllByText('PENDIENTE')).toHaveLength(3)
+    // // Ataque y Daño: dos huecos que el contrato canónico no llena. El nivel ya no
+    // es un hueco: viene de `progression.level` (HU-08).
+    expect(await screen.findAllByText('PENDIENTE')).toHaveLength(2)
   })
 
   it('un héroe suspendido se muestra pero no se puede preparar', async () => {

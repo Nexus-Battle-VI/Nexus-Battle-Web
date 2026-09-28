@@ -26,7 +26,7 @@ const hero: AvailableHero = {
     level: 1,
     currentXp: 0,
     floorForCurrentLevel: 0,
-    nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 200 },
+    nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
     maxLevel: 8,
   },
 }

@@ -22,7 +22,7 @@ const NO_PROGRESSION: HeroProgression = {
   level: 1,
   currentXp: 0,
   floorForCurrentLevel: 0,
-  nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 200 },
+  nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
   maxLevel: 8,
 }
 
@@ -202,16 +202,16 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
     const user = userEvent.setup()
     const guerrero = ownedHero('guerrero-tanque', 'Guerrero Tanque', 'GUERRERO_TANQUE', {
       level: 2,
-      currentXp: 315,
-      floorForCurrentLevel: 200,
-      nextLevel: { status: 'AVAILABLE', forNextLevel: 3, amount: 400 },
+      currentXp: 215,
+      floorForCurrentLevel: 100,
+      nextLevel: { status: 'AVAILABLE', forNextLevel: 3, amount: 300 },
       maxLevel: 8,
     })
     const mago = ownedHero('mago-hielo', 'Mago Hielo', 'MAGO_HIELO', {
       level: 3,
-      currentXp: 657,
-      floorForCurrentLevel: 400,
-      nextLevel: { status: 'AVAILABLE', forNextLevel: 4, amount: 800 },
+      currentXp: 357,
+      floorForCurrentLevel: 300,
+      nextLevel: { status: 'AVAILABLE', forNextLevel: 4, amount: 500 },
       maxLevel: 8,
     })
     fetchMock.mockImplementation(
@@ -225,16 +225,16 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
     renderWithProviders(<Harness />)
     await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
     expect(await screen.findByText('Nivel 2')).toBeInTheDocument()
-    expect(screen.getByText('315 XP acumulada')).toBeInTheDocument()
+    expect(screen.getByText('215 XP acumulada')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Seleccionar Mago Hielo' }))
     expect(await screen.findByText('Nivel 3')).toBeInTheDocument()
-    expect(screen.getByText('657 XP acumulada')).toBeInTheDocument()
+    expect(screen.getByText('357 XP acumulada')).toBeInTheDocument()
     expect(screen.queryByText('Nivel 2')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
     expect(await screen.findByText('Nivel 2')).toBeInTheDocument()
-    expect(screen.getByText('315 XP acumulada')).toBeInTheDocument()
+    expect(screen.getByText('215 XP acumulada')).toBeInTheDocument()
   })
 
   it('sin heroes propios lo explica y no permite equipar', async () => {
