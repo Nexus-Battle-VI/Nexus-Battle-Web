@@ -22,6 +22,13 @@ const hero: AvailableHero = {
   baseStats: { power: 1, health: 30, defense: 4, attack: null, damage: null, healing: null },
   abilities: [{ reference: 'golpe-sku', name: 'Golpe especial' }],
   selected: false,
+  progression: {
+    level: 1,
+    currentXp: 0,
+    floorForCurrentLevel: 0,
+    nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
+    maxLevel: 8,
+  },
 }
 
 afterEach(() => {

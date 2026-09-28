@@ -33,6 +33,13 @@ const heroe = (
   baseStats: { ...stats, attack: null, damage: null, healing: null },
   abilities: [],
   selected: false,
+  progression: {
+    level: 1,
+    currentXp: 0,
+    floorForCurrentLevel: 0,
+    nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
+    maxLevel: 8,
+  },
   ...patch,
 })
 

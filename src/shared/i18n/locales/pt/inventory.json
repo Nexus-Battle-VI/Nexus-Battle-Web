@@ -25,7 +25,14 @@
     "preparing": "Confirmando…",
     "prepared": "Preparado para a batalha ✓",
     "prepareHint": "Confirmar deixa este herói, com o equipamento atual, como o que você leva para as batalhas.",
-    "notReady": "Este herói ainda não pode entrar em uma batalha."
+    "notReady": "Este herói ainda não pode entrar em uma batalha.",
+    "progression": {
+      "level": "Nível {{level}}",
+      "maxLevel": "Nível máximo",
+      "xpToNext": "{{current}} / {{required}} XP para o nível {{level}}",
+      "xpAccumulated": "{{value}} XP acumulada",
+      "barLabel": "Experiência até o próximo nível"
+    }
   },
   "blockers": {
     "HERO_NOT_ACTIVE": "Este herói não está mais ativo no catálogo vigente.",
@@ -76,6 +83,7 @@
     "title": "Estatísticas",
     "attribute": "Atributo",
     "base": "Base",
+    "leveled": "Base × nível",
     "effective": "Efetiva",
     "delta": "Δ",
     "ATTACK": "Ataque",

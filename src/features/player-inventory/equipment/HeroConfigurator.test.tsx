@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 
 import { setLanguage } from '@/shared/i18n/language'
 import { renderWithProviders } from '@/test/render'
+import type { HeroProgression } from '../heroSelectionApi'
 import type { EquipmentSlotId } from './api'
 import { HeroConfigurator } from './HeroConfigurator'
 
@@ -16,8 +17,22 @@ const NO_SELECTION = (): Response => json({ message: 'Sin seleccion.' }, 404)
 
 const BASE_STATS = { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null }
 
+/** Progresion nivel 1 / XP 0, la misma semantica perezosa de HU-08 para un heroe sin recompensas. */
+const NO_PROGRESSION: HeroProgression = {
+  level: 1,
+  currentXp: 0,
+  floorForCurrentLevel: 0,
+  nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
+  maxLevel: 8,
+}
+
 /** Un heroe POSEIDO tal como lo devuelve `GET /inventories/me/heroes`. */
-const ownedHero = (reference: string, name: string, subtype: string) => ({
+const ownedHero = (
+  reference: string,
+  name: string,
+  subtype: string,
+  progression: HeroProgression = NO_PROGRESSION,
+) => ({
   heroId: `pid-${reference}`,
   reference,
   subtype,
@@ -27,6 +42,7 @@ const ownedHero = (reference: string, name: string, subtype: string) => ({
   baseStats: BASE_STATS,
   abilities: [],
   selected: false,
+  progression,
 })
 
 const OWNED = [ownedHero('guerrero-tanque', 'Guerrero Tanque', 'GUERRERO_TANQUE')]
@@ -174,6 +190,51 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
     expect(screen.getByText('7 héroes del juego que aún no tienes')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Mago Fuego: no disponible' })).toBeDisabled()
     expect(screen.getAllByRole('button', { name: /no disponible$/u })).toHaveLength(7)
+  })
+
+  /**
+   * HU-08: la progresion es del HEROE, no del jugador. Cambiar de heroe activo
+   * debe mostrar la progresion del heroe recien elegido, y volver al anterior
+   * debe recuperar la suya intacta -- nunca la del que quedo "preparado" ni un
+   * dato mezclado entre los dos.
+   */
+  it('la progresion mostrada cambia con el heroe activo, y vuelve a la anterior al regresar', async () => {
+    const user = userEvent.setup()
+    const guerrero = ownedHero('guerrero-tanque', 'Guerrero Tanque', 'GUERRERO_TANQUE', {
+      level: 2,
+      currentXp: 215,
+      floorForCurrentLevel: 100,
+      nextLevel: { status: 'AVAILABLE', forNextLevel: 3, amount: 300 },
+      maxLevel: 8,
+    })
+    const mago = ownedHero('mago-hielo', 'Mago Hielo', 'MAGO_HIELO', {
+      level: 3,
+      currentXp: 357,
+      floorForCurrentLevel: 300,
+      nextLevel: { status: 'AVAILABLE', forNextLevel: 4, amount: 500 },
+      maxLevel: 8,
+    })
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        NO_SELECTION,
+        () => json([guerrero, mago]),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    expect(await screen.findByText('Nivel 2')).toBeInTheDocument()
+    expect(screen.getByText('215 XP acumulada')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Seleccionar Mago Hielo' }))
+    expect(await screen.findByText('Nivel 3')).toBeInTheDocument()
+    expect(screen.getByText('357 XP acumulada')).toBeInTheDocument()
+    expect(screen.queryByText('Nivel 2')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    expect(await screen.findByText('Nivel 2')).toBeInTheDocument()
+    expect(screen.getByText('215 XP acumulada')).toBeInTheDocument()
   })
 
   it('sin heroes propios lo explica y no permite equipar', async () => {

@@ -24,7 +24,14 @@
     "preparing": "Confirming…",
     "prepared": "Ready for battle ✓",
     "prepareHint": "Confirming makes this hero, with its current equipment, the one you take into battles.",
-    "notReady": "This hero cannot enter a battle yet."
+    "notReady": "This hero cannot enter a battle yet.",
+    "progression": {
+      "level": "Level {{level}}",
+      "maxLevel": "Max level",
+      "xpToNext": "{{current}} / {{required}} XP to level {{level}}",
+      "xpAccumulated": "{{value}} XP accumulated",
+      "barLabel": "Experience toward the next level"
+    }
   },
   "blockers": {
     "HERO_NOT_ACTIVE": "This hero is no longer active in the current catalog.",
@@ -75,6 +82,7 @@
     "title": "Stats",
     "attribute": "Attribute",
     "base": "Base",
+    "leveled": "Base × level",
     "effective": "Effective",
     "delta": "Δ",
     "ATTACK": "Attack",

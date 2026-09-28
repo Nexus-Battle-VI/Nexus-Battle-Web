@@ -25,7 +25,14 @@
     "preparing": "Confirmation…",
     "prepared": "Prêt pour le combat ✓",
     "prepareHint": "Confirmer fait de ce héros, avec son équipement actuel, celui que vous emmenez en combat.",
-    "notReady": "Ce héros ne peut pas encore entrer en combat."
+    "notReady": "Ce héros ne peut pas encore entrer en combat.",
+    "progression": {
+      "level": "Niveau {{level}}",
+      "maxLevel": "Niveau maximum",
+      "xpToNext": "{{current}} / {{required}} XP vers le niveau {{level}}",
+      "xpAccumulated": "{{value}} XP accumulée",
+      "barLabel": "Expérience vers le niveau suivant"
+    }
   },
   "blockers": {
     "HERO_NOT_ACTIVE": "Ce héros n'est plus actif dans le catalogue en vigueur.",
@@ -76,6 +83,7 @@
     "title": "Statistiques",
     "attribute": "Attribut",
     "base": "Base",
+    "leveled": "Base × niveau",
     "effective": "Effective",
     "delta": "Δ",
     "ATTACK": "Attaque",

@@ -75,6 +75,13 @@ const ownedHero = (reference: string, name: string, subtype: string) => ({
   baseStats: BASE_STATS,
   abilities: [],
   selected: false,
+  progression: {
+    level: 1,
+    currentXp: 0,
+    floorForCurrentLevel: 0,
+    nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
+    maxLevel: 8,
+  },
 })
 
 const GUERRERO = ownedHero('guerrero-tanque', 'Guerrero Tanque', 'GUERRERO_TANQUE')

@@ -86,7 +86,16 @@ export interface HeroEquipment {
     readonly armor: Readonly<Record<string, EquippedProduct | null>>
     readonly items: readonly EquippedProduct[]
   }
+  /**
+   * Nivel del heroe (HU-08). Lo publica Player/Inventory y `effectiveStats` YA lo
+   * incorpora (CA-06): `(base x nivel) + equipamiento`. Opcional para tolerar un
+   * backend anterior a CA-06; el cliente NUNCA multiplica por el nivel.
+   */
+  readonly level?: number
+  /** Estadisticas base de Catalog (nivel 1). */
   readonly baseStats: HeroStats
+  /** Base x nivel, antes del equipamiento (CA-06). `damage` y `healing` no se escalan. */
+  readonly levelStats?: HeroStats
   readonly effectiveStats: HeroStats
   readonly deltas: readonly HeroStatDelta[]
   readonly activeEffects: readonly EquippedEffect[]

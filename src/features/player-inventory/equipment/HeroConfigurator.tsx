@@ -121,6 +121,7 @@ export const HeroConfigurator = ({
         preparedRef={preparedRef}
         activeModel={activeModel}
         activeName={activeName}
+        activeProgression={activeHero?.progression ?? null}
         readiness={isPreparedActive ? (selection?.readiness ?? null) : null}
         preparing={selectMutation.isPending}
         prepareError={
