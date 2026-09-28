@@ -8,7 +8,7 @@ const progression = (overrides: Partial<HeroProgression> = {}): HeroProgression 
   level: 1,
   currentXp: 0,
   floorForCurrentLevel: 0,
-  nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 200 },
+  nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: 100 },
   maxLevel: 8,
   ...overrides,
 })
@@ -17,12 +17,12 @@ describe('HeroProgressionBar', () => {
   it('muestra el nivel y la experiencia acumulada REALES, tal como los publica el backend', () => {
     render(
       <HeroProgressionBar
-        progression={progression({ level: 2, currentXp: 315, floorForCurrentLevel: 200 })}
+        progression={progression({ level: 2, currentXp: 215, floorForCurrentLevel: 100 })}
       />,
     )
 
     expect(screen.getByText('Nivel 2')).toBeInTheDocument()
-    expect(screen.getByText('315 XP acumulada')).toBeInTheDocument()
+    expect(screen.getByText('215 XP acumulada')).toBeInTheDocument()
   })
 
   it('la barra usa los valores recibidos, sin tabla de umbrales en el cliente', () => {
@@ -30,9 +30,9 @@ describe('HeroProgressionBar', () => {
       <HeroProgressionBar
         progression={progression({
           level: 2,
-          currentXp: 315,
-          floorForCurrentLevel: 200,
-          nextLevel: { status: 'AVAILABLE', forNextLevel: 3, amount: 400 },
+          currentXp: 215,
+          floorForCurrentLevel: 100,
+          nextLevel: { status: 'AVAILABLE', forNextLevel: 3, amount: 300 },
         })}
       />,
     )
@@ -50,8 +50,8 @@ describe('HeroProgressionBar', () => {
       <HeroProgressionBar
         progression={progression({
           level: 8,
-          currentXp: 13500,
-          floorForCurrentLevel: 12800,
+          currentXp: 1500,
+          floorForCurrentLevel: 1300,
           nextLevel: { status: 'MAX_LEVEL', currentLevel: 8, forNextLevel: null, amount: null },
         })}
       />,
@@ -61,6 +61,6 @@ describe('HeroProgressionBar', () => {
     expect(screen.getByText('Nivel máximo')).toBeInTheDocument()
     expect(screen.queryByText(/nivel 9/iu)).toBeNull()
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
-    expect(screen.getByText('13.500 XP acumulada')).toBeInTheDocument()
+    expect(screen.getByText('1.500 XP acumulada')).toBeInTheDocument()
   })
 })
