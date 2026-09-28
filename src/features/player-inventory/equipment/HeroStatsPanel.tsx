@@ -15,21 +15,49 @@ export interface HeroStatsPanelProps {
 /**
  * Tabla de estadisticas base → efectivas (RF-28, §24, §25).
  *
- * El frontend NO calcula: muestra `baseStats`, `effectiveStats` y `deltas` tal
- * como los devuelve el backend. El daño se presenta como magnitud (dado, caras
+ * El frontend NO calcula: muestra `baseStats`, `levelStats` (base x nivel, CA-06),
+ * `effectiveStats` y `deltas` (solo equipamiento) tal como los devuelve el backend.
+ * NUNCA multiplica por el nivel: la columna «Base × nivel» solo aparece si el
+ * backend publica `levelStats`. El daño se presenta como magnitud (dado, caras
  * y rango base), nunca como un "daño final": ese lo decide Combat.
  */
 export const HeroStatsTable = ({ equipment }: HeroStatsPanelProps): React.JSX.Element => {
   const { t } = useTranslation()
-  const { baseStats, effectiveStats, deltas } = equipment
+  const { baseStats, levelStats, effectiveStats, deltas } = equipment
   const deltaBy = new Map(deltas.map((delta) => [delta.statistic, delta]))
 
-  const numericRows: readonly { key: string; base: number; effective: number }[] = [
-    { key: 'ATTACK', base: baseStats.attack ?? 0, effective: effectiveStats.attack ?? 0 },
-    { key: 'DEFENSE', base: baseStats.defense, effective: effectiveStats.defense },
-    { key: 'HEALTH', base: baseStats.health, effective: effectiveStats.health },
-    { key: 'POWER', base: baseStats.power, effective: effectiveStats.power },
+  const numericRows: readonly {
+    key: string
+    base: number
+    leveled: number | null
+    effective: number
+  }[] = [
+    {
+      key: 'ATTACK',
+      base: baseStats.attack ?? 0,
+      leveled: levelStats === undefined ? null : (levelStats.attack ?? 0),
+      effective: effectiveStats.attack ?? 0,
+    },
+    {
+      key: 'DEFENSE',
+      base: baseStats.defense,
+      leveled: levelStats?.defense ?? null,
+      effective: effectiveStats.defense,
+    },
+    {
+      key: 'HEALTH',
+      base: baseStats.health,
+      leveled: levelStats?.health ?? null,
+      effective: effectiveStats.health,
+    },
+    {
+      key: 'POWER',
+      base: baseStats.power,
+      leveled: levelStats?.power ?? null,
+      effective: effectiveStats.power,
+    },
   ]
+  const hasLevelColumn = levelStats !== undefined
   const damageRange = describeMagnitudeRange(effectiveStats.damage)
   const healingRange = describeMagnitudeRange(effectiveStats.healing, 'use')
 
@@ -41,6 +69,9 @@ export const HeroStatsTable = ({ equipment }: HeroStatsPanelProps): React.JSX.El
           <tr className="text-xs text-muted">
             <th className="py-0.5 text-left font-normal">{t('inventory:stats.attribute')}</th>
             <th className="py-0.5 text-right font-normal">{t('inventory:stats.base')}</th>
+            {hasLevelColumn && (
+              <th className="py-0.5 text-right font-normal">{t('inventory:stats.leveled')}</th>
+            )}
             <th className="py-0.5 text-right font-normal">{t('inventory:stats.effective')}</th>
             <th className="py-0.5 text-right font-normal">{t('inventory:stats.delta')}</th>
           </tr>
@@ -52,6 +83,14 @@ export const HeroStatsTable = ({ equipment }: HeroStatsPanelProps): React.JSX.El
               <tr key={row.key} className="border-t border-border/60">
                 <td className="py-1 text-ink">{statisticLabel(row.key)}</td>
                 <td className="py-1 text-right tabular-nums text-muted">{row.base}</td>
+                {hasLevelColumn && (
+                  <td
+                    className="py-1 text-right tabular-nums text-muted"
+                    data-testid={`leveled-${row.key}`}
+                  >
+                    {row.leveled}
+                  </td>
+                )}
                 <td className="py-1 text-right tabular-nums font-semibold text-ink">
                   {row.effective}
                 </td>
@@ -73,7 +112,7 @@ export const HeroStatsTable = ({ equipment }: HeroStatsPanelProps): React.JSX.El
           })}
           <tr className="border-t border-border/60">
             <td className="py-1 align-top text-ink">{t('inventory:stats.damage')}</td>
-            <td className="py-1 text-right" colSpan={3}>
+            <td className="py-1 text-right" colSpan={hasLevelColumn ? 4 : 3}>
               <span className="block font-semibold tabular-nums text-ink">
                 {formatMagnitude(effectiveStats.damage)}
               </span>
@@ -85,7 +124,7 @@ export const HeroStatsTable = ({ equipment }: HeroStatsPanelProps): React.JSX.El
           {effectiveStats.healing !== null && (
             <tr className="border-t border-border/60">
               <td className="py-1 align-top text-ink">{t('inventory:stats.healing')}</td>
-              <td className="py-1 text-right" colSpan={3}>
+              <td className="py-1 text-right" colSpan={hasLevelColumn ? 4 : 3}>
                 <span className="block font-semibold tabular-nums text-ink">
                   {formatMagnitude(effectiveStats.healing)}
                 </span>

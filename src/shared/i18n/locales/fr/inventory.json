@@ -83,6 +83,7 @@
     "title": "Statistiques",
     "attribute": "Attribut",
     "base": "Base",
+    "leveled": "Base × niveau",
     "effective": "Effective",
     "delta": "Δ",
     "ATTACK": "Attaque",

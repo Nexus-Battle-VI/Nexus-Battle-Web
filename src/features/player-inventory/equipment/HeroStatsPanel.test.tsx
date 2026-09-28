@@ -101,4 +101,44 @@ describe('HeroStatsPanel — daño comprensible sin inventar un resultado', () =
 
     expect(screen.getByText('Base: 3 por golpe')).toBeInTheDocument()
   })
+
+  it('CA-06: muestra la columna «Base × nivel» que publica el backend, sin calcularla', () => {
+    render(
+      <HeroStatsPanel
+        equipment={equipment({
+          level: 3,
+          // Backend: base 10 x nivel 3 = 30; +2 del arma = 32. El cliente no multiplica.
+          levelStats: {
+            power: 15,
+            health: 120,
+            defense: 24,
+            attack: 30,
+            damage: null,
+            healing: null,
+          },
+          effectiveStats: {
+            power: 15,
+            health: 120,
+            defense: 24,
+            attack: 32,
+            damage: { mode: 'DICE', count: 1, sides: 4 },
+            healing: null,
+          },
+          deltas: [{ statistic: 'ATTACK', base: 30, effective: 32, delta: 2 }],
+        })}
+      />,
+    )
+
+    expect(screen.getByText('Base × nivel')).toBeInTheDocument()
+    expect(screen.getByTestId('leveled-ATTACK')).toHaveTextContent('30')
+    expect(screen.getByTestId('leveled-HEALTH')).toHaveTextContent('120')
+    expect(screen.getByTestId('delta-ATTACK')).toHaveTextContent('+2')
+  })
+
+  it('sin levelStats (backend anterior a CA-06) no aparece la columna ni se inventa el nivel', () => {
+    render(<HeroStatsPanel equipment={equipment()} />)
+
+    expect(screen.queryByText('Base × nivel')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('leveled-ATTACK')).not.toBeInTheDocument()
+  })
 })
