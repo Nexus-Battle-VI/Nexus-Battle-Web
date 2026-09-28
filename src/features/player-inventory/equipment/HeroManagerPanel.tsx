@@ -7,9 +7,10 @@ import { i18n } from '@/shared/i18n/i18n'
 import { useLanguage } from '@/shared/i18n/language'
 import { Hero3D, HERO_VISUAL_SPECS_BY_ID, type HeroId } from '@/shared/visual-library/heroes'
 
-import type { AvailableHero, HeroReadiness } from '../heroSelectionApi'
+import type { AvailableHero, HeroProgression, HeroReadiness } from '../heroSelectionApi'
 import type { EquipmentSlotId } from './api'
 import { EQUIPMENT_SLOTS } from './api'
+import { HeroProgressionBar } from './HeroProgressionBar'
 import { slotLabel } from './slots'
 
 export interface HeroManagerPanelProps {
@@ -23,6 +24,12 @@ export interface HeroManagerPanelProps {
   readonly preparedRef: string | null
   readonly activeModel: HeroId
   readonly activeName: string | null
+  /**
+   * Progresion INDIVIDUAL del heroe activo (HU-08). `null` solo cuando no hay
+   * heroe activo: mientras exista uno, siempre tiene progresion -perezosa,
+   * nivel 1 con 0 de experiencia si aun no gano ninguna-.
+   */
+  readonly activeProgression: HeroProgression | null
   /** Solo cuando el heroe activo es el preparado: elegibilidad que informa el servicio. */
   readonly readiness: HeroReadiness | null
   readonly preparing: boolean
@@ -51,6 +58,7 @@ export const HeroManagerPanel = ({
   preparedRef,
   activeModel,
   activeName,
+  activeProgression,
   readiness,
   preparing,
   prepareError,
@@ -190,6 +198,8 @@ export const HeroManagerPanel = ({
                   : t('inventory:hero.notPreparedBadge')}
               </span>
             </div>
+
+            {activeProgression !== null && <HeroProgressionBar progression={activeProgression} />}
 
             {isPrepared && readiness !== null && !readiness.ready && (
               <div role="status" className="rounded border border-danger/40 bg-surface p-2">

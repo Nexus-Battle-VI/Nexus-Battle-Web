@@ -32,6 +32,39 @@ export interface HeroAbility {
   readonly name: string | null
 }
 
+/**
+ * Umbral hacia el siguiente nivel (HU-08), o nivel máximo. Union discriminada
+ * por `status`, igual que la publica Player/Inventory: NO se colapsa a un
+ * único número, porque `forNextLevel`/`amount` son `null` en `MAX_LEVEL`.
+ */
+export type HeroProgressionThreshold =
+  | { readonly status: 'AVAILABLE'; readonly forNextLevel: number; readonly amount: number }
+  | {
+      readonly status: 'MAX_LEVEL'
+      readonly currentLevel: number
+      readonly forNextLevel: null
+      readonly amount: null
+    }
+
+/**
+ * Progresión INDIVIDUAL de un héroe (HU-08, RF-08): nivel y experiencia
+ * acumulada. NUNCA es del jugador -- haber usado un héroe en misiones no
+ * mueve el nivel de otro héroe del mismo jugador.
+ *
+ * `currentXp` es el ACUMULADO, no lo que falta. `floorForCurrentLevel` es la
+ * XP acumulada mínima para estar en `level` (0 en el nivel 1). Con estos dos
+ * valores y `nextLevel.amount` se construye la barra de progreso SIN conocer
+ * la tabla de umbrales de HU-08: esa tabla vive únicamente en Player/Inventory
+ * (`ExperiencePolicy`) y este cliente no la reimplementa.
+ */
+export interface HeroProgression {
+  readonly level: number
+  readonly currentXp: number
+  readonly floorForCurrentLevel: number
+  readonly nextLevel: HeroProgressionThreshold
+  readonly maxLevel: number
+}
+
 export interface AvailableHero {
   readonly heroId: string
   readonly reference: string
@@ -42,6 +75,7 @@ export interface AvailableHero {
   readonly baseStats: HeroStats
   readonly abilities: readonly HeroAbility[]
   readonly selected: boolean
+  readonly progression: HeroProgression
 }
 
 export type HeroReadinessBlockerCode =
