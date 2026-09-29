@@ -47,7 +47,9 @@ describe('El filtro de tipo solo ofrece lo que la vitrina puede vender', () => {
   })
 
   it('marca como activo solo el boton del tipo seleccionado', () => {
-    renderWithProviders(<ShowcaseFiltersBar filters={{ ...NO_FILTERS, type: 'ARMA' }} onChange={vi.fn()} />)
+    renderWithProviders(
+      <ShowcaseFiltersBar filters={{ ...NO_FILTERS, type: 'ARMA' }} onChange={vi.fn()} />,
+    )
 
     const group = within(screen.getByRole('group', { name: 'Tipo de producto' }))
     expect(group.getByRole('button', { name: 'Arma' })).toHaveAttribute('aria-pressed', 'true')

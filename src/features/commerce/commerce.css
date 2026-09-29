@@ -141,7 +141,8 @@
  */
 .mk-card:hover,
 .mk-card:focus-within {
-  filter: brightness(1.06) drop-shadow(0 10px 18px color-mix(in oklab, var(--color-brand) 45%, transparent));
+  filter: brightness(1.06)
+    drop-shadow(0 10px 18px color-mix(in oklab, var(--color-brand) 45%, transparent));
 }
 @media (prefers-reduced-motion: reduce) {
   .mk-card {
@@ -741,7 +742,11 @@
 }
 :root[data-theme='light'] .commerce-cart-bubble,
 :root:not([data-theme]) .commerce-cart-bubble {
-  background: linear-gradient(180deg, var(--color-surface-raised), color-mix(in oklab, var(--color-brand) 10%, var(--color-surface-raised)));
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-raised),
+    color-mix(in oklab, var(--color-brand) 10%, var(--color-surface-raised))
+  );
   border: 2px solid color-mix(in oklab, var(--color-brand) 45%, var(--color-accent-gold));
 }
 .commerce-cart-bubble:hover {

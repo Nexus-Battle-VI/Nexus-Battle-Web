@@ -230,7 +230,9 @@ describe('Vitrina canonica', () => {
     ).toBe(true)
     // 6a pasada: el boton "Cerrar detalle" se retiro por redundante con la X
     // real del dialogo -unica accion de cierre que queda-.
-    await userEvent.click(within(modal).getByRole('button', { name: 'Cerrar Detalle del producto' }))
+    await userEvent.click(
+      within(modal).getByRole('button', { name: 'Cerrar Detalle del producto' }),
+    )
     expect(screen.queryByRole('dialog', { name: 'Detalle del producto' })).not.toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Detalle del producto' })).not.toBeInTheDocument()
   })

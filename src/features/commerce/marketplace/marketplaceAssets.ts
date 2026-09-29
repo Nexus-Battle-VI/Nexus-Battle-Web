@@ -106,7 +106,9 @@ export const marketplaceFrames: Readonly<
 }
 
 /** Botones primarios: 4 estados reales (default/hover/active/disabled), sin texto quemado. */
-export const marketplacePrimaryButton: ByTheme<Record<'default' | 'hover' | 'active' | 'disabled', string>> = {
+export const marketplacePrimaryButton: ByTheme<
+  Record<'default' | 'hover' | 'active' | 'disabled', string>
+> = {
   dark: {
     default: `${BASE}/buttons/primary-dark-default.png`,
     hover: `${BASE}/buttons/primary-dark-hover.png`,
@@ -127,7 +129,11 @@ export const marketplacePrimaryButton: ByTheme<Record<'default' | 'hover' | 'act
  * recorte de borde angosto (`slice`) que deliberadamente EXCLUYE el centro
  * donde vive el texto del sprite; el centro real lo pone el HTML/i18n.
  */
-export const marketplaceSecondaryButton: ByTheme<{ default: string; hover: string; slice: string }> = {
+export const marketplaceSecondaryButton: ByTheme<{
+  default: string
+  hover: string
+  slice: string
+}> = {
   dark: {
     default: `${BASE}/buttons/secondary-dark-default.png`,
     hover: `${BASE}/buttons/secondary-dark-hover.png`,

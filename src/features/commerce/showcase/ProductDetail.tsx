@@ -11,7 +11,10 @@ import {
   type PublishCommentTransport,
   type SubmitRatingTransport,
 } from '@/features/product-reviews/ProductCommentsAndRating'
-import { ProductCommentsList, type ListCommentsTransport } from '@/features/product-reviews/ProductCommentsList'
+import {
+  ProductCommentsList,
+  type ListCommentsTransport,
+} from '@/features/product-reviews/ProductCommentsList'
 import { fetchProduct, PRODUCT_TYPE_LABELS } from './api'
 import { ProductAttributes } from './ProductAttributes'
 import { ProductPrice } from './ProductPrice'

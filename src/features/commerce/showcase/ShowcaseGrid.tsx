@@ -149,7 +149,10 @@ export const ShowcaseGrid = ({
                   data-testid={`wish-${product.sku}`}
                   className="commerce-wish disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-brand"
                 >
-                  <MarketplacePixelIcon icon={wished ? 'wishlistFilled' : 'wishlistOutline'} size="sm" />
+                  <MarketplacePixelIcon
+                    icon={wished ? 'wishlistFilled' : 'wishlistOutline'}
+                    size="sm"
+                  />
                 </button>
               )}
               <p
@@ -211,9 +214,13 @@ export const ShowcaseGrid = ({
                   onClick={() => {
                     onAddToCart(product)
                   }}
-                  disabled={disabled || busySku === product.productId || unavailable || otherCurrency}
+                  disabled={
+                    disabled || busySku === product.productId || unavailable || otherCurrency
+                  }
                   aria-label={t('commerce:grid.addLabel', { name: product.name })}
-                  aria-describedby={reason === undefined ? undefined : `reason-${product.productId}`}
+                  aria-describedby={
+                    reason === undefined ? undefined : `reason-${product.productId}`
+                  }
                   title={reason}
                 >
                   {ownedUnique

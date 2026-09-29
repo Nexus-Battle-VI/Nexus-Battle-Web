@@ -31,7 +31,10 @@ const base: ShowcaseProduct = {
   version: 1,
 }
 
-const product = (overrides: Partial<ShowcaseProduct>): ShowcaseProduct => ({ ...base, ...overrides })
+const product = (overrides: Partial<ShowcaseProduct>): ShowcaseProduct => ({
+  ...base,
+  ...overrides,
+})
 
 export const MARKETPLACE_PREVIEW_PRODUCTS: readonly ShowcaseProduct[] = [
   product({

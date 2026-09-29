@@ -130,7 +130,10 @@ export const Showcase = ({
               wishlistUnavailable={wishlistUnavailable}
             />
           </QueryState>
-          <nav aria-label={t('commerce:showcase.pagination')} className="commerce-pagination mk-panel">
+          <nav
+            aria-label={t('commerce:showcase.pagination')}
+            className="commerce-pagination mk-panel"
+          >
             <Button
               variant="secondary"
               className="mk-btn-secondary"
