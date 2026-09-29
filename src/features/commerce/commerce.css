@@ -910,6 +910,27 @@
   padding: 4px 10px;
   font-size: 12px;
 }
+/*
+ * Micro-polish final del carrito flotante: dentro del modal, `.mk-panel`
+ * pierde su propio marco (`border-width: 0`, ver regla de arriba), asi que
+ * el unico aire horizontal real que quedaba era el `p-4` (16px) del
+ * `<section>` -se sentia pegado al frame exterior del dialogo. Este
+ * `padding-inline` adicional es la UNICA capa que lo resuelve (cabecera,
+ * lista de lineas y footer de total/checkout comparten el mismo
+ * envoltorio en `CartPanel.tsx`), en vez de ajustar cada linea por separado.
+ * `box-sizing: border-box` evita que el padding extra provoque overflow
+ * horizontal: el ancho de `.commerce-cart-body` sigue siendo el 100% del
+ * `<section>`, el padding resta del area de contenido, no se suma al ancho.
+ */
+.commerce-cart-body {
+  box-sizing: border-box;
+  padding-inline: 20px;
+}
+@media (max-width: 640px) {
+  .commerce-cart-body {
+    padding-inline: 14px;
+  }
+}
 @media (min-width: 1200px) and (min-height: 768px) {
   .commerce-layout {
     display: flex;
