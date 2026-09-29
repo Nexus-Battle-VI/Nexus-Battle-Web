@@ -64,6 +64,12 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   WAITING_FOR_PLAYERS: 'Esperando jugadores',
   // Sala de batalla en preparacion, tras llenarse (HU-15).
   PREPARING: 'Preparando batalla',
+  // Rareza de producto (Catalog `printRunMode`, remaster visual E-commerce
+  // Sprint 3): el dato ya existia en el contrato pero no se mostraba en la
+  // vitrina. Reutiliza `StatusBadge` en vez de crear un componente nuevo.
+  UNIQUE: 'Unico',
+  LIMITED: 'Edicion limitada',
+  INFINITE: 'Disponibilidad continua',
 }
 
 /**

@@ -32,7 +32,10 @@
     "EDITED": "Editado",
     "MARKED": "Marcado",
     "WAITING_FOR_PLAYERS": "Esperando jugadores",
-    "PREPARING": "Preparando batalla"
+    "PREPARING": "Preparando batalla",
+    "UNIQUE": "Único",
+    "LIMITED": "Edición limitada",
+    "INFINITE": "Disponibilidad continua"
   },
   "breadcrumb": "Ruta de navegacion",
   "password": {

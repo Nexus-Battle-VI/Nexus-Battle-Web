@@ -2,13 +2,19 @@ import { useEffect, useRef } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
 import { queryKeys } from '@/shared/query-keys'
 import { ProductImage } from '@/features/commerce/ProductImage'
 import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
-import { ProductCommentsAndRating } from '@/features/product-reviews/ProductCommentsAndRating'
-import { ProductCommentsList } from '@/features/product-reviews/ProductCommentsList'
+import {
+  ProductCommentsAndRating,
+  type PublishCommentTransport,
+  type SubmitRatingTransport,
+} from '@/features/product-reviews/ProductCommentsAndRating'
+import {
+  ProductCommentsList,
+  type ListCommentsTransport,
+} from '@/features/product-reviews/ProductCommentsList'
 import { fetchProduct, PRODUCT_TYPE_LABELS } from './api'
 import { ProductAttributes } from './ProductAttributes'
 import { ProductPrice } from './ProductPrice'
@@ -33,13 +39,28 @@ const heroIdOf = (
 ): string | null =>
   type === undefined || sku === undefined ? null : heroIdOfProduct(type, sku, values)
 
+export interface ProductDetailProps {
+  readonly reference: string
+  /**
+   * Transportes inyectables de comentarios/calificacion (6a pasada): solo los
+   * usa `MarketplacePreviewPage` (harness DEV) para precargar fixtures y
+   * evitar que la lista de comentarios pegue de verdad contra Community con
+   * un `productId` ficticio -causa real del "Internal server error" que
+   * aparecia en el preview, ver informe-. En produccion nunca se pasan: cada
+   * hijo cae a su transporte real por defecto, mismo comportamiento de
+   * siempre.
+   */
+  readonly listComments?: ListCommentsTransport
+  readonly publishComment?: PublishCommentTransport
+  readonly submitRating?: SubmitRatingTransport
+}
+
 export const ProductDetail = ({
   reference,
-  onClose,
-}: {
-  readonly reference: string
-  readonly onClose: () => void
-}): React.JSX.Element => {
+  listComments,
+  publishComment,
+  submitRating,
+}: ProductDetailProps): React.JSX.Element => {
   const region = useRef<HTMLElement>(null)
   const { t } = useTranslation()
   useEffect(() => {
@@ -71,14 +92,19 @@ export const ProductDetail = ({
       ref={region}
       tabIndex={-1}
       aria-label={t('commerce:detail.title')}
-      className="flex flex-col gap-4 rounded-lg border border-brand bg-surface-raised p-5"
+      className="mk-panel flex flex-col gap-4 p-5"
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-ink">{t('commerce:detail.title')}</h2>
-        <Button variant="secondary" onClick={onClose}>
-          {t('commerce:detail.close')}
-        </Button>
-      </div>
+      {/*
+        6a pasada: se retira el boton "Cerrar detalle" -era una segunda
+        accion de cierre redundante con la X real del `CommerceDialog` que
+        siempre envuelve este componente (unico consumidor: `Showcase.tsx`,
+        que ya le pasa su propio `onClose` a `CommerceDialog`)-. La prop
+        `onClose` de este componente quedo sin ningun uso interno al quitar
+        el boton, asi que se elimino de la interfaz en vez de dejarla muerta.
+      */}
+      <h2 className="font-game-display text-lg font-semibold tracking-wide text-ink uppercase">
+        {t('commerce:detail.title')}
+      </h2>
       <QueryState isLoading={query.isLoading} error={query.error}>
         {query.data !== undefined && (
           <>
@@ -88,7 +114,7 @@ export const ProductDetail = ({
                 <ProductImage
                   source={query.data.imageUrl}
                   name={query.data.name}
-                  className="max-h-80 w-full rounded object-contain"
+                  className="commerce-detail-image max-h-80 w-full rounded object-contain"
                 />
               ) : (
                 // El nombre ya se muestra debajo (`query.data.name`); se
@@ -96,7 +122,7 @@ export const ProductDetail = ({
                 <Hero3D heroId={heroId} className="max-h-80 w-full [&>p]:hidden" />
               )
             })()}
-            <h3 className="text-xl font-semibold text-ink">{query.data.name}</h3>
+            <h3 className="font-game-display text-xl font-semibold text-ink">{query.data.name}</h3>
             <p className="text-sm text-muted">{PRODUCT_TYPE_LABELS[query.data.type]}</p>
             <p className="whitespace-pre-wrap text-sm text-ink">{query.data.description}</p>
             <ProductPrice product={query.data} />
@@ -106,14 +132,21 @@ export const ProductDetail = ({
                 : t('commerce:detail.available', { units: String(query.data.availableUnits) })}
             </p>
             <div className="rounded-lg border border-border bg-surface p-4">
-              <h4 className="mb-3 text-sm font-semibold text-ink">
+              <h4 className="font-game-display mb-3 text-sm font-semibold tracking-wide text-ink uppercase">
                 {t('commerce:detail.attributes')}
               </h4>
               <ProductAttributes values={displayedValues ?? query.data.attributes.values} />
             </div>
             <div className="space-y-6 rounded-lg border border-border bg-surface p-4">
-              <ProductCommentsList productId={query.data.productId} />
-              <ProductCommentsAndRating productId={query.data.productId} />
+              <ProductCommentsList
+                productId={query.data.productId}
+                {...(listComments === undefined ? {} : { listComments })}
+              />
+              <ProductCommentsAndRating
+                productId={query.data.productId}
+                {...(publishComment === undefined ? {} : { publishComment })}
+                {...(submitRating === undefined ? {} : { submitRating })}
+              />
             </div>
           </>
         )}

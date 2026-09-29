@@ -78,6 +78,16 @@ export const NO_FILTERS: ShowcaseFilters = {
   maxPrice: null,
   currency: null,
 }
+/*
+ * 6a pasada (final): el requisito real de negocio es 12 productos por pagina
+ * visible -la 2a pasada de este remaster lo habia igualado a 16 para
+ * simplificar el adaptador, pero auditando de nuevo la fuente de verdad
+ * (esta constante) el page size REAL seguia siendo 16, contradiciendo el
+ * requisito-. Catalog sigue paginando de 16 en 16 (`CATALOG_PAGE_SIZE`, su
+ * propio contrato, sin tocar): esta funcion vuelve a "particionar" esas
+ * paginas de 16 en paginas visibles de 12, sin huecos ni duplicados, exacto
+ * mecanismo que existia antes de la 2a pasada.
+ */
 export const SHOWCASE_PAGE_SIZE = 12
 const CATALOG_PAGE_SIZE = 16
 

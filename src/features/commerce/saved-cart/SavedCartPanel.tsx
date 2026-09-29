@@ -42,10 +42,7 @@ export const SavedCartPanel = ({
 
   if (unavailable) {
     return (
-      <section
-        aria-label={t('commerce:saved.label')}
-        className="rounded-lg border border-border bg-surface-raised p-4"
-      >
+      <section aria-label={t('commerce:saved.label')} className="mk-panel p-4">
         <h2 className="text-base font-semibold text-ink">{t('commerce:saved.title')}</h2>
         {/*
           No es un error: es una condicion de la funcionalidad. HU-61 exige
@@ -59,13 +56,10 @@ export const SavedCartPanel = ({
   }
 
   return (
-    <section
-      aria-label={t('commerce:saved.label')}
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
-    >
+    <section aria-label={t('commerce:saved.label')} className="mk-panel flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-ink">{t('commerce:saved.title')}</h2>
-        <Button onClick={onSave} disabled={!canSave || isBusy}>
+        <Button variant="marketplace" onClick={onSave} disabled={!canSave || isBusy}>
           {t('commerce:saved.save')}
         </Button>
       </div>
@@ -110,10 +104,15 @@ export const SavedCartPanel = ({
           <p className="text-xs text-muted">{t('commerce:saved.replaceWarning')}</p>
 
           <div className="flex flex-wrap gap-3">
-            <Button onClick={onRestore} disabled={isBusy}>
+            <Button variant="marketplace" onClick={onRestore} disabled={isBusy}>
               {t('commerce:saved.restore')}
             </Button>
-            <Button variant="secondary" onClick={onDiscard} disabled={isBusy}>
+            <Button
+              variant="secondary"
+              className="mk-btn-secondary"
+              onClick={onDiscard}
+              disabled={isBusy}
+            >
               {t('commerce:saved.discard')}
             </Button>
           </div>

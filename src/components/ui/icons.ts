@@ -35,12 +35,29 @@
  * reimportar, como acento decorativo del encabezado de "Jugar Online"
  * (HU-14.4): mismo icono, misma política de "decorativo + `aria-hidden`".
  *
+ * `Coins` (ya listado arriba para HU-14.4) se reutiliza en el precio en
+ * creditos de la vitrina de E-commerce (remaster visual Sprint 3): fallback
+ * deliberado, igual que `CreditCard` -ninguna hoja PixelLab aprobada trae un
+ * icono de moneda/credito-.
+ *
  * `Clock` se añade para los productos ganados pendientes de reclamo
  * (HU-69.7): acompaña el plazo restante en cada tarjeta. `Package` (ya
  * listado arriba) se reutiliza tal cual como icono decorativo de producto en
  * esas mismas tarjetas y en el contador de la cabecera, mismo criterio que
  * `Swords` en HU-14.4. Ambos son decorativos (`aria-hidden`): el plazo y el
  * conteo siempre viajan como texto.
+ *
+ * `CreditCard` se añade para el formulario de pago simulado de E-commerce
+ * (remaster visual Sprint 3): fallback deliberado -ninguna de las 3 hojas de
+ * iconos PixelLab aprobadas (categories/commerce/utility) incluye una
+ * tarjeta de credito, ver informe de la 3a pasada del remaster-. Decorativo
+ * (`aria-hidden`); el texto sigue siendo la fuente del significado.
+ *
+ * Nota Sprint 3 (remaster visual E-commerce): `Heart`, `ShoppingBag`,
+ * `ShoppingCart`, `Search`, `SlidersHorizontal`, `X` y `ChevronRight`
+ * pasaron por aqui en una pasada intermedia y se retiraron: E-commerce ahora
+ * usa los iconos PixelLab reales via `MarketplacePixelIcon` (ver
+ * `features/commerce/marketplace/`), no Lucide, para esos conceptos.
  */
 export {
   ChevronDown,
@@ -60,4 +77,5 @@ export {
   RefreshCw,
   Coins,
   Clock,
+  CreditCard,
 } from 'lucide-react'

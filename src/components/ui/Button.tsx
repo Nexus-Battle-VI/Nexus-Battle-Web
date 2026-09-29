@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import clsx from 'clsx'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger'
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'marketplace'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant
@@ -13,6 +13,16 @@ const VARIANTS: Readonly<Record<ButtonVariant, string>> = {
   primary: 'bg-brand text-brand-ink hover:opacity-90',
   secondary: 'bg-surface-raised text-ink border border-border hover:bg-surface',
   danger: 'bg-danger text-white hover:opacity-90',
+  /*
+   * CTA "de mercado" (remaster visual E-commerce Sprint 3). El aspecto real
+   * (border-image sobre `Buttons/ecommerce-buttons-primary-*`, con sus 4
+   * estados reales) vive en `features/commerce/commerce.css` bajo la clase
+   * `mk-btn-primary` -no aqui-, porque es un asset propio de E-commerce y
+   * este componente es compartido por toda la app. Aqui solo se declara el
+   * gancho de clase; el texto de color usa `text-ink` (no `text-brand-ink`)
+   * porque el sprite ya trae su propio fondo, no el de `--color-brand`.
+   */
+  marketplace: 'mk-btn-primary text-ink',
 }
 
 export const Button = ({

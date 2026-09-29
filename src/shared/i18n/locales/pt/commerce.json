@@ -47,6 +47,7 @@
   "grid": {
     "label": "Produtos",
     "openDetail": "Ver detalhes de {{name}}",
+    "viewDetails": "Ver detalhes",
     "wishRemove": "Remover {{name}} da lista de desejos",
     "wishAdd": "Adicionar {{name}} à lista de desejos",
     "premium": "Premium",
@@ -71,6 +72,7 @@
     "allTypes": "Todos",
     "currency": "Moeda do preço",
     "allCurrencies": "Todas",
+    "priceRange": "Faixa de preço",
     "minPrice": "Preço a partir de",
     "maxPrice": "Preço até",
     "currencyHint": "Selecione uma moeda para filtrar preços. Os valores são exibidos na moeda de cada produto.",
@@ -79,7 +81,6 @@
   },
   "detail": {
     "title": "Detalhe do produto",
-    "close": "Fechar detalhe",
     "unlimited": "Disponibilidade ilimitada",
     "available": "Disponíveis: {{units}}",
     "attributes": "Atributos"
