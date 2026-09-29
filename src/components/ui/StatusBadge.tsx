@@ -24,6 +24,12 @@ const TONE: Readonly<Record<string, string>> = {
   WAITING_FOR_PLAYERS: 'bg-success/15 text-success',
   // Sala de batalla en preparacion, tras llenarse (HU-15).
   PREPARING: 'bg-warning/15 text-warning',
+  // Rareza de producto (`printRunMode` de Catalog), remaster visual
+  // E-commerce Sprint 3. Usa el acento dorado del sistema en vez de
+  // exito/peligro/advertencia: la rareza no es un estado de exito ni de error.
+  UNIQUE: 'bg-accent-gold/15 text-accent-gold',
+  LIMITED: 'bg-brand/15 text-brand',
+  INFINITE: 'bg-border text-muted',
 }
 
 export const StatusBadge = ({ status }: StatusBadgeProps): React.JSX.Element => (

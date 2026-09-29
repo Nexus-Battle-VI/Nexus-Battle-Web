@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
@@ -12,6 +11,7 @@ import { CommerceDialog } from '@/features/commerce/CommerceDialog'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
 import { countLabel } from '@/shared/i18n/format'
+import { MarketplacePixelIcon } from '@/features/commerce/marketplace/MarketplacePixelIcon'
 import {
   fetchShowcase,
   NO_FILTERS,
@@ -66,11 +66,13 @@ export const Showcase = ({
   }
   return (
     <section aria-label={t('commerce:showcase.label')} className="commerce-showcase">
-      <div className="commerce-search-row rounded-xl border border-border bg-surface-raised">
-        <h2 className="text-base font-semibold text-ink">{t('commerce:showcase.title')}</h2>
+      <div className="commerce-search-row mk-panel">
+        <h2 className="font-game-display text-lg font-semibold tracking-wide text-ink uppercase">
+          {t('commerce:showcase.title')}
+        </h2>
         <label className="commerce-search">
           <span className="sr-only">{t('commerce:showcase.search')}</span>
-          <Search aria-hidden="true" className="size-4 shrink-0 text-muted" />
+          <MarketplacePixelIcon icon="search" size="sm" />
           <input
             type="search"
             value={filters.term}
@@ -128,27 +130,31 @@ export const Showcase = ({
               wishlistUnavailable={wishlistUnavailable}
             />
           </QueryState>
-          <nav aria-label={t('commerce:showcase.pagination')} className="commerce-pagination">
+          <nav aria-label={t('commerce:showcase.pagination')} className="commerce-pagination mk-panel">
             <Button
               variant="secondary"
+              className="mk-btn-secondary"
               disabled={query.isLoading || currentPage <= 1}
               onClick={() => {
                 setPage(currentPage - 1)
               }}
             >
+              <MarketplacePixelIcon icon="previous" size="sm" />
               {t('commerce:showcase.previous')}
             </Button>
-            <span className="text-xs text-muted">
+            <span className="commerce-pagination-indicator">
               {Math.min(currentPage, Math.max(1, pageCount))} / {Math.max(1, pageCount)}
             </span>
             <Button
               variant="secondary"
+              className="mk-btn-secondary"
               disabled={query.isLoading || currentPage >= pageCount}
               onClick={() => {
                 setPage(currentPage + 1)
               }}
             >
               {t('commerce:showcase.next')}
+              <MarketplacePixelIcon icon="next" size="sm" />
             </Button>
           </nav>
         </div>
@@ -160,13 +166,7 @@ export const Showcase = ({
             setSelected(null)
           }}
         >
-          <ProductDetail
-            key={selected}
-            reference={selected}
-            onClose={() => {
-              setSelected(null)
-            }}
-          />
+          <ProductDetail key={selected} reference={selected} />
         </CommerceDialog>
       )}
     </section>

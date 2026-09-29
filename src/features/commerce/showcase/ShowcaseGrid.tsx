@@ -1,13 +1,26 @@
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
+import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ProductImage } from '@/features/commerce/ProductImage'
+import { MarketplacePixelIcon } from '@/features/commerce/marketplace/MarketplacePixelIcon'
 import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
-import { PRODUCT_TYPE_LABELS, type ShowcaseProduct } from './api'
+import type { MarketplaceIconName } from '@/features/commerce/marketplace/marketplaceAssets'
+import { PRODUCT_TYPE_LABELS, type ProductType, type ShowcaseProduct } from './api'
 import { ProductPrice } from './ProductPrice'
 
 const heroIdOf = (product: ShowcaseProduct): string | null =>
   heroIdOfProduct(product.type, product.sku, product.attributes.values)
+
+/** Icono PixelLab de categoria por tipo de producto (`Icons/ecommerce-icons-categories-*`). */
+const TYPE_ICON: Readonly<Record<ProductType, MarketplaceIconName>> = {
+  HEROE: 'hero',
+  HABILIDAD: 'ability',
+  ARMA: 'weapon',
+  ARMADURA: 'armor',
+  ITEM: 'chest',
+  EPICA: 'sparkle',
+}
 
 export interface ShowcaseGridProps {
   readonly products: readonly ShowcaseProduct[]
@@ -82,7 +95,7 @@ export const ShowcaseGrid = ({
           <li key={product.productId} className="min-h-0 min-w-0">
             <article
               data-testid={`product-${product.sku}`}
-              className="commerce-product-card rounded-xl border border-border bg-surface-raised transition-colors hover:border-brand focus-within:border-brand"
+              className="commerce-product-card mk-card"
             >
               <button
                 type="button"
@@ -114,7 +127,8 @@ export const ShowcaseGrid = ({
                   >
                     {product.name}
                   </span>
-                  <span className="block text-xs text-muted">
+                  <span className="flex items-center gap-1 text-xs text-muted">
+                    <MarketplacePixelIcon icon={TYPE_ICON[product.type]} size="sm" />
                     {PRODUCT_TYPE_LABELS[product.type]}
                   </span>
                 </span>
@@ -133,9 +147,9 @@ export const ShowcaseGrid = ({
                       : t('commerce:grid.wishAdd', { name: product.name })
                   }
                   data-testid={`wish-${product.sku}`}
-                  className="commerce-wish rounded-full text-xl text-brand disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-brand"
+                  className="commerce-wish disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-brand"
                 >
-                  <span aria-hidden="true">{wished ? '♥' : '♡'}</span>
+                  <MarketplacePixelIcon icon={wished ? 'wishlistFilled' : 'wishlistOutline'} size="sm" />
                 </button>
               )}
               <p
@@ -148,9 +162,12 @@ export const ShowcaseGrid = ({
                 <div className="commerce-product-price">
                   <ProductPrice product={product} />
                 </div>
-                <div className="flex items-center gap-1 text-[10px] font-medium">
+                <div className="flex flex-wrap items-center gap-1 text-[10px] font-medium">
                   {product.premium && (
                     <span className="text-brand">{t('commerce:grid.premium')}</span>
+                  )}
+                  {product.printRunMode !== 'INFINITE' && (
+                    <StatusBadge status={product.printRunMode} />
                   )}
                   {wished && (
                     <span
@@ -170,26 +187,46 @@ export const ShowcaseGrid = ({
                   )}
                 </div>
               </div>
-              <Button
-                className="commerce-add"
-                onClick={() => {
-                  onAddToCart(product)
-                }}
-                disabled={disabled || busySku === product.productId || unavailable || otherCurrency}
-                aria-label={t('commerce:grid.addLabel', { name: product.name })}
-                aria-describedby={reason === undefined ? undefined : `reason-${product.productId}`}
-                title={reason}
-              >
-                {ownedUnique
-                  ? t('commerce:grid.actionOwned')
-                  : otherCurrency
-                    ? t('commerce:grid.actionCurrency')
-                    : soldOut
-                      ? t('commerce:grid.actionSoldOut')
-                      : suspended
-                        ? t('commerce:grid.actionSuspended')
-                        : t('commerce:grid.actionAdd')}
-              </Button>
+              <div className="commerce-product-actions">
+                {/*
+                  Icono de ojo restaurado (6a pasada): la 5a pasada lo habia
+                  retirado, Richard revirtio esa decision tras el QA visual.
+                  El texto real sigue siendo HTML/i18n (ES/EN/FR/PT), nunca el
+                  "VIEW DETAILS" quemado del sprite: el PNG solo aporta el
+                  marco (`.mk-btn-secondary`, `border-image`).
+                */}
+                <Button
+                  variant="secondary"
+                  className="commerce-view mk-btn-secondary font-game-display tracking-wide uppercase"
+                  onClick={() => {
+                    onOpenDetail(product.productId)
+                  }}
+                >
+                  <MarketplacePixelIcon icon="view" size="sm" />
+                  {t('commerce:grid.viewDetails')}
+                </Button>
+                <Button
+                  variant="marketplace"
+                  className="commerce-add"
+                  onClick={() => {
+                    onAddToCart(product)
+                  }}
+                  disabled={disabled || busySku === product.productId || unavailable || otherCurrency}
+                  aria-label={t('commerce:grid.addLabel', { name: product.name })}
+                  aria-describedby={reason === undefined ? undefined : `reason-${product.productId}`}
+                  title={reason}
+                >
+                  {ownedUnique
+                    ? t('commerce:grid.actionOwned')
+                    : otherCurrency
+                      ? t('commerce:grid.actionCurrency')
+                      : soldOut
+                        ? t('commerce:grid.actionSoldOut')
+                        : suspended
+                          ? t('commerce:grid.actionSuspended')
+                          : t('commerce:grid.actionAdd')}
+                </Button>
+              </div>
               {reason !== undefined && (
                 <p id={`reason-${product.productId}`} className="sr-only">
                   {reason}

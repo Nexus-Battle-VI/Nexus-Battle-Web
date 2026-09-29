@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { ShoppingCart } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
 import { ProductImage } from '@/features/commerce/ProductImage'
+import { MarketplacePixelIcon } from '@/features/commerce/marketplace/MarketplacePixelIcon'
 import { countLabel } from '@/shared/i18n/format'
 import type { Cart } from './api'
 
@@ -18,6 +18,16 @@ export interface CartPanelProps {
   /** Referencia sobre la que hay una operacion en curso. */
   readonly busySku?: string | null
   readonly disabled?: boolean
+  /**
+   * Ultimo polish del carrito flotante: dentro de `CommerceDialog floating`
+   * ya existe la X real para cerrar, asi que el boton "Minimizar" de este
+   * panel es una segunda accion redundante alli (Richard lo pidio fuera del
+   * modal). El carrito INLINE de `commerce-cart-launcher` y el panel inline
+   * del preview DEV siguen necesitando su propio control, por eso el default
+   * preserva el comportamiento existente y solo `CommercePage` lo desactiva
+   * para la instancia que vive dentro del dialogo flotante.
+   */
+  readonly showMinimize?: boolean
 }
 
 /** Cantidad maxima que admite el servicio. */
@@ -122,6 +132,7 @@ export const CartPanel = ({
   onCheckout,
   busySku = null,
   disabled = false,
+  showMinimize = true,
 }: CartPanelProps): React.JSX.Element => {
   const itemCount = cart?.itemCount ?? 0
   const { t } = useTranslation()
@@ -136,14 +147,11 @@ export const CartPanel = ({
         // con lector de pantalla necesita saber cuantos productos lleva.
         aria-label={countLabel(t, 'commerce:cart.bubble', itemCount)}
         aria-haspopup="dialog"
-        className="commerce-cart-bubble inline-flex items-center gap-3 rounded-full border border-brand/40 bg-brand px-5 py-3 text-sm font-semibold text-brand-ink shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="commerce-cart-bubble"
       >
-        <ShoppingCart aria-hidden="true" className="size-5" />
-        <span>{t('commerce:cart.title')}</span>
-        <span
-          data-testid="cart-item-count"
-          className="min-w-6 rounded-full bg-surface px-1.5 py-0.5 text-center text-xs font-semibold text-ink"
-        >
+        <MarketplacePixelIcon icon="cart" size="md" />
+        <span className="commerce-cart-bubble-label">{t('commerce:cart.title')}</span>
+        <span data-testid="cart-item-count" className="commerce-cart-bubble-count">
           {itemCount}
         </span>
       </button>
@@ -151,10 +159,7 @@ export const CartPanel = ({
   }
 
   return (
-    <section
-      aria-label={t('commerce:cart.label')}
-      className="rounded-lg border border-border bg-surface-raised p-4"
-    >
+    <section aria-label={t('commerce:cart.label')} className="mk-panel p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-ink">
           {t('commerce:cart.title')}{' '}
@@ -162,9 +167,11 @@ export const CartPanel = ({
             ({itemCount})
           </span>
         </h2>
-        <Button variant="secondary" onClick={onToggle} aria-expanded>
-          {t('commerce:cart.minimize')}
-        </Button>
+        {showMinimize && (
+          <Button variant="secondary" onClick={onToggle} aria-expanded>
+            {t('commerce:cart.minimize')}
+          </Button>
+        )}
       </div>
 
       {cart === null || cart.lines.length === 0 ? (
@@ -174,7 +181,7 @@ export const CartPanel = ({
           <ul
             aria-label={t('commerce:cart.lines')}
             tabIndex={0}
-            className="commerce-cart-lines mt-4 flex max-h-[32dvh] flex-col gap-3 overflow-y-auto overscroll-contain pr-1 focus-visible:outline-2 focus-visible:outline-brand"
+            className="commerce-cart-lines mt-4 flex max-h-[32dvh] flex-col gap-3 overflow-y-auto overscroll-contain pr-2 focus-visible:outline-2 focus-visible:outline-brand"
           >
             {cart.lines.map((line) => (
               <li
@@ -237,7 +244,11 @@ export const CartPanel = ({
                 {formatMoney(cart.total, cart.currency)}
               </span>
             </p>
-            <Button onClick={onCheckout} disabled={disabled || onCheckout === undefined}>
+            <Button
+              variant="marketplace"
+              onClick={onCheckout}
+              disabled={disabled || onCheckout === undefined}
+            >
               {t('commerce:cart.checkout')}
             </Button>
           </div>

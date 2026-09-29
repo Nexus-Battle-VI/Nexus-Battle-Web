@@ -1,8 +1,9 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react'
-import { CreditCard, ShoppingBag } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
+import { CreditCard } from '@/components/ui/icons'
+import { MarketplacePixelIcon } from '@/features/commerce/marketplace/MarketplacePixelIcon'
 import { formatMoney } from '@/lib/format'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
@@ -166,10 +167,7 @@ export const CheckoutPanel = ({
 
   if (processing) {
     return (
-      <section
-        aria-label={t('commerce:checkout.processingLabel')}
-        className="rounded-lg border border-border bg-surface-raised p-5"
-      >
+      <section aria-label={t('commerce:checkout.processingLabel')} className="mk-panel p-5">
         <h2 className="text-lg font-semibold text-ink">{t('commerce:checkout.processingLabel')}</h2>
         <p role="status" className="mt-2 text-sm text-muted">
           {t('commerce:checkout.processingBody')}
@@ -185,10 +183,7 @@ export const CheckoutPanel = ({
 
   if (result?.status === 'COMPLETED') {
     return (
-      <section
-        aria-label={t('commerce:checkout.completed')}
-        className="rounded-lg border border-border bg-surface-raised p-5"
-      >
+      <section aria-label={t('commerce:checkout.completed')} className="mk-panel p-5">
         <h2 className="text-lg font-semibold text-ink">{t('commerce:checkout.completed')}</h2>
         <p className="mt-2 text-sm text-muted">
           {t('commerce:checkout.reference')}{' '}
@@ -224,16 +219,14 @@ export const CheckoutPanel = ({
   return (
     <section
       aria-label={t('commerce:checkout.paymentLabel')}
-      className="flex max-h-[calc(100dvh-8rem)] min-h-0 flex-col overflow-y-auto rounded-2xl border border-border bg-surface-raised md:grid md:h-[min(34rem,calc(100dvh-8rem))] md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:overflow-hidden"
+      className="mk-panel flex max-h-[calc(100dvh-8rem)] min-h-0 flex-col overflow-y-auto md:grid md:h-[min(34rem,calc(100dvh-8rem))] md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:overflow-hidden"
     >
       <section
         aria-labelledby={`${headingId}-summary`}
         className="flex min-h-0 shrink-0 flex-col border-b border-border bg-surface/60 p-5 md:border-r md:border-b-0"
       >
         <header className="flex shrink-0 items-center gap-3">
-          <span className="rounded-xl bg-brand/10 p-2.5 text-brand">
-            <ShoppingBag aria-hidden="true" className="size-5" />
-          </span>
+          <MarketplacePixelIcon icon="cart" size="lg" />
           <div className="min-w-0">
             <h2 id={`${headingId}-summary`} className="text-base font-semibold text-ink">
               {t('commerce:checkout.summary')}
@@ -294,6 +287,11 @@ export const CheckoutPanel = ({
       >
         <header className="shrink-0 border-b border-border px-5 pt-5 pb-4">
           <div className="flex items-center gap-2 text-ink">
+            {/*
+              Sin equivalente PixelLab aprobado (ninguna de las 3 hojas de
+              iconos incluye una tarjeta de credito): fallback Lucide
+              deliberado, ver informe de la 3a pasada.
+            */}
             <CreditCard aria-hidden="true" className="size-5 text-brand" />
             <h2 id={`${headingId}-payment`} className="text-base font-semibold">
               {t('commerce:checkout.paymentData')}
@@ -368,7 +366,13 @@ export const CheckoutPanel = ({
         </div>
 
         <div className="flex shrink-0 flex-col gap-2 border-t border-border px-5 py-4">
-          <Button type="submit" loading={isPaying} disabled={disabled} className="w-full">
+          <Button
+            type="submit"
+            variant="marketplace"
+            loading={isPaying}
+            disabled={disabled}
+            className="w-full"
+          >
             {t('commerce:checkout.confirm')}
           </Button>
           <Button
@@ -376,7 +380,7 @@ export const CheckoutPanel = ({
             variant="secondary"
             onClick={onCancel}
             disabled={isPaying}
-            className="w-full"
+            className="mk-btn-secondary w-full"
           >
             {t('commerce:checkout.backToCart')}
           </Button>
