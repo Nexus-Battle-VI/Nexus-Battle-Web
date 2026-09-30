@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
@@ -74,6 +74,7 @@ const activeAuctionPage = (total: number, page = 1) => ({
 })
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   useSession.setState({ roles: [] })
 })
@@ -229,5 +230,45 @@ describe('AuctionMarketplace', () => {
       within(card).getByText('Pujas').nextElementSibling?.textContent ?? null
     expect(bidsOf(cards[0]!)).toBe('0')
     expect(bidsOf(cards[1]!)).toBe('3')
+  })
+
+  it('cada tarjeta muestra su propia cuenta regresiva y la actualiza sin volver a pedir la lista', async () => {
+    // Solo el reloj: `setTimeout` sigue real para React Query y los `findBy*`.
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    vi.setSystemTime(Date.parse('2026-09-25T11:59:58.000Z'))
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = urlOf(input)
+      if (url.includes('/v1/catalog/products/exclusive-1'))
+        return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+      if (url.includes('/v1/catalog/products/owned-1'))
+        return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+      return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderWithProviders(<AuctionMarketplace />)
+
+    await screen.findByText('Espada del Nexo')
+    const cards = screen.getAllByRole('article')
+    const timeOf = (card: HTMLElement): string | null =>
+      within(card).getByText('Tiempo restante').nextElementSibling?.textContent ?? null
+    expect(timeOf(cards[0]!)).toBe('1d 00h 00m 02s')
+    expect(timeOf(cards[1]!)).toBe('02s')
+    const listCalls = (): number =>
+      fetchMock.mock.calls.filter(([input]) => urlOf(input).includes('/v1/auctions')).length
+    const callsBefore = listCalls()
+
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+    expect(timeOf(cards[0]!)).toBe('1d 00h 00m 01s')
+    expect(timeOf(cards[1]!)).toBe('01s')
+
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+    expect(timeOf(cards[1]!)).toBe('Finalizada')
+    expect(timeOf(cards[0]!)).toBe('23h 59m 56s')
+    expect(timeOf(cards[1]!)).not.toMatch(/-/u)
+    expect(listCalls()).toBe(callsBefore)
   })
 })

@@ -13,6 +13,7 @@ import { useSession } from '@/shared/session'
 import { AUCTION_PAGE_SIZE, listActiveAuctions, type ActiveAuction } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
+import { AuctionCountdown } from './AuctionCountdown'
 import { AuctionProductSummary } from './AuctionProductSummary'
 
 const priceOf = (auction: ActiveAuction): string =>
@@ -58,6 +59,12 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
               dateStyle: 'medium',
               timeStyle: 'short',
             }).format(new Date(auction.closesAt))}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted">{t('auction:market.timeRemaining')}</dt>
+          <dd className="font-medium text-ink">
+            <AuctionCountdown closesAt={auction.closesAt} />
           </dd>
         </div>
         <div>
