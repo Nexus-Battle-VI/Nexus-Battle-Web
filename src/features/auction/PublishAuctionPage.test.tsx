@@ -17,6 +17,7 @@ const inventory = {
         imageUrl: '/sword.png',
         type: 'ARMA',
         lifecycleStatus: 'ACTIVE',
+        premium: false,
       },
     },
   ],
@@ -96,6 +97,31 @@ describe('PublishAuctionPage', () => {
         buyNowCredits: 20,
       }),
     })
+  })
+
+  it('no ofrece productos premium para publicarlos en subasta', async () => {
+    const premiumItems = inventory.items.map((item) => ({
+      ...item,
+      itemId: 'item-premium',
+      product: {
+        ...item.product,
+        productId: 'product-premium',
+        name: 'Corona premium',
+        premium: true,
+      },
+    }))
+    vi.mocked(globalThis.fetch).mockImplementation((input: RequestInfo | URL) =>
+      Promise.resolve(
+        urlOf(input).includes('/inventories/me/items')
+          ? jsonResponse({ ...inventory, items: [...inventory.items, ...premiumItems] })
+          : jsonResponse(created, 201),
+      ),
+    )
+
+    renderWithProviders(<PublishAuctionPage />)
+
+    expect(await screen.findByRole('radio', { name: /Espada del nexo/u })).toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: /Corona premium/u })).not.toBeInTheDocument()
   })
 
   it('señala la compra inmediata inválida antes de enviar y conserva los datos', async () => {

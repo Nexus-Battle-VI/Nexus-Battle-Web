@@ -23,6 +23,8 @@ export interface CatalogProductSummary {
   readonly imageUrl: string
   readonly type: string
   readonly lifecycleStatus: string
+  /** Los productos premium no pueden publicarse en subasta. */
+  readonly premium: boolean
 }
 
 export interface OwnedInventoryItem {
