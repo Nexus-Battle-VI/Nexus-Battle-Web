@@ -8,6 +8,9 @@ import { AuctionMarketplace } from './AuctionMarketplace'
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' }, status })
 
+const urlOf = (input: RequestInfo | URL): string =>
+  typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
 const product = (productId: string, name: string, type: string, imageUrl = '') => ({
   productId,
   sku: productId,
@@ -70,7 +73,7 @@ describe('AuctionMarketplace', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
-        const url = typeof input === 'string' ? input : input.toString()
+        const url = urlOf(input)
         if (url.includes('/v1/catalog/products/exclusive-1'))
           return Promise.resolve(
             jsonResponse(
@@ -109,7 +112,7 @@ describe('AuctionMarketplace', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
-        const url = typeof input === 'string' ? input : input.toString()
+        const url = urlOf(input)
         if (url.includes('/v1/catalog/products/exclusive-1'))
           return Promise.resolve(jsonResponse({ message: 'not found' }, 404))
         if (url.includes('/v1/catalog/products/owned-1'))
@@ -127,7 +130,7 @@ describe('AuctionMarketplace', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
-        const url = typeof input === 'string' ? input : input.toString()
+        const url = urlOf(input)
         if (url.includes('/v1/catalog/products/'))
           return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona', 'EPICA')))
         return Promise.resolve(
