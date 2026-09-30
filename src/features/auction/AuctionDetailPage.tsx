@@ -12,6 +12,7 @@ import { formatInteger } from '@/shared/i18n/format'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { describeFollowError } from './api'
+import { AuctionCountdown } from './AuctionCountdown'
 import { AuctionBidPanel } from './bidding/AuctionBidPanel'
 import { AutoBidPanel } from './auto-bid/AutoBidPanel'
 import {
@@ -147,9 +148,22 @@ export const AuctionDetailPage = (): React.JSX.Element => {
           {auction !== undefined && (
             <>
               {/* Visible para cualquier rol, vendedor incluido: no depende del panel de puja. */}
-              <dl className="flex items-baseline gap-2 text-sm">
-                <dt className="text-muted">{t('auction:detail.bids')}</dt>
-                <dd className="font-semibold text-ink">{formatInteger(auction.bidCount)}</dd>
+              <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
+                <div className="flex items-baseline gap-2">
+                  <dt className="text-muted">{t('auction:detail.timeRemaining')}</dt>
+                  <dd className="font-semibold text-ink">
+                    {/* El cierre lo decide Auction: fuera de ACTIVE no hay cuenta que mostrar. */}
+                    {auction.status === 'ACTIVE' ? (
+                      <AuctionCountdown closesAt={auction.closesAt} />
+                    ) : (
+                      t('auction:countdown.ended')
+                    )}
+                  </dd>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <dt className="text-muted">{t('auction:detail.bids')}</dt>
+                  <dd className="font-semibold text-ink">{formatInteger(auction.bidCount)}</dd>
+                </div>
               </dl>
               {auction.status === 'ACTIVE' && !isSeller && (
                 <div className="flex flex-wrap items-center gap-3">

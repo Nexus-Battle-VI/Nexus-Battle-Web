@@ -50,7 +50,8 @@
     "minimumPrice": "Precio mínimo",
     "closes": "Cierra",
     "viewDetail": "Ver detalle",
-    "bids": "Pujas"
+    "bids": "Pujas",
+    "timeRemaining": "Tiempo restante"
   },
   "validation": {
     "productRequired": "Selecciona un producto de tu inventario.",
@@ -92,7 +93,15 @@
     "currentStatus": "Estado actual: {{status}}.",
     "ownTitle": "Es tu propia subasta",
     "ownDescription": "No puedes ejecutar la compra inmediata de un producto que tu mismo publicaste.",
-    "bids": "Número de pujas"
+    "bids": "Número de pujas",
+    "timeRemaining": "Tiempo restante"
+  },
+  "countdown": {
+    "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",
+    "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+    "minutes": "{{minutes}}m {{seconds}}s",
+    "seconds": "{{seconds}}s",
+    "ended": "Finalizada"
   },
   "publish": {
     "remainingEnding": "Finalizando",

@@ -1,7 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderWithProviders } from '@/test/render'
 import * as catalogApi from '@/features/catalog/api'
@@ -71,6 +71,10 @@ const montar = (): void => {
 }
 
 describe('AuctionDetailPage (HU-64.1)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     vi.restoreAllMocks()
     useSession.setState({ subject: 'buyer-1', accessToken: 'token', expiresAt: null })
@@ -332,5 +336,61 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
     expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
     expect(screen.getByText('Número de pujas').nextElementSibling).toHaveTextContent(/^4$/)
+  })
+
+  describe('tiempo restante', () => {
+    const timeLeft = (): string | null =>
+      screen.getByText('Tiempo restante').nextElementSibling?.textContent ?? null
+
+    beforeEach(() => {
+      // Solo el reloj: `setTimeout` sigue real para React Query y los `findBy*`.
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+      vi.setSystemTime(Date.parse('2026-09-22T11:59:58.000Z'))
+    })
+
+    it('decrementa cada segundo y al llegar a 0 muestra Finalizada sin valores negativos', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+
+      montar()
+
+      await screen.findByText('Tiempo restante')
+      expect(timeLeft()).toBe('02s')
+
+      act(() => {
+        vi.advanceTimersByTime(1_000)
+      })
+      expect(timeLeft()).toBe('01s')
+
+      act(() => {
+        vi.advanceTimersByTime(3_000)
+      })
+      expect(timeLeft()).toBe('Finalizada')
+      expect(timeLeft()).not.toMatch(/-/u)
+      expect(detailApi.fetchAuctionDetail).toHaveBeenCalledTimes(1)
+    })
+
+    it('el vendedor tambien ve la cuenta regresiva, sin controles de puja', async () => {
+      useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ closesAt: '2026-09-24T16:15:09.000Z' }),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
+      expect(timeLeft()).toBe('2d 04h 15m 11s')
+      expect(screen.queryByRole('button', { name: 'Registrar puja' })).not.toBeInTheDocument()
+    })
+
+    it('una subasta que ya no esta activa muestra Finalizada aunque su cierre sea futuro', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ status: 'SOLD', closesAt: '2026-09-23T12:00:00.000Z' }),
+      )
+
+      montar()
+
+      await screen.findByText('Tiempo restante')
+      expect(timeLeft()).toBe('Finalizada')
+    })
   })
 })

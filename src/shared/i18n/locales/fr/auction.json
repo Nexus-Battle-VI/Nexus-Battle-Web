@@ -50,7 +50,8 @@
     "minimumPrice": "Prix minimum",
     "closes": "Clôture",
     "viewDetail": "Voir le détail",
-    "bids": "Enchères"
+    "bids": "Enchères",
+    "timeRemaining": "Temps restant"
   },
   "validation": {
     "productRequired": "Sélectionnez un produit de votre inventaire.",
@@ -92,7 +93,15 @@
     "currentStatus": "Statut actuel : {{status}}.",
     "ownTitle": "C'est votre propre enchère",
     "ownDescription": "Vous ne pouvez pas acheter immédiatement un produit que vous avez vous-même publié.",
-    "bids": "Nombre d’enchères"
+    "bids": "Nombre d’enchères",
+    "timeRemaining": "Temps restant"
+  },
+  "countdown": {
+    "days": "{{days}}j {{hours}}h {{minutes}}m {{seconds}}s",
+    "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+    "minutes": "{{minutes}}m {{seconds}}s",
+    "seconds": "{{seconds}}s",
+    "ended": "Terminée"
   },
   "publish": {
     "remainingEnding": "Se termine",
