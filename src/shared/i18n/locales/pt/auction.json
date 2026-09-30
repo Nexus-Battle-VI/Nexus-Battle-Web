@@ -49,7 +49,8 @@
     "officialLabel": "Publicação oficial: {{mark}}",
     "minimumPrice": "Preço mínimo",
     "closes": "Encerra",
-    "viewDetail": "Ver detalhes"
+    "viewDetail": "Ver detalhes",
+    "bids": "Lances"
   },
   "validation": {
     "productRequired": "Selecione um produto do seu inventário.",
@@ -90,7 +91,8 @@
     "notActive": "Este leilão não está mais ativo",
     "currentStatus": "Status atual: {{status}}.",
     "ownTitle": "Este é o seu próprio leilão",
-    "ownDescription": "Você não pode fazer a compra imediata de um produto que você mesmo publicou."
+    "ownDescription": "Você não pode fazer a compra imediata de um produto que você mesmo publicou.",
+    "bids": "Número de lances"
   },
   "publish": {
     "remainingEnding": "Finalizando",
