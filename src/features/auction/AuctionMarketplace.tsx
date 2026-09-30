@@ -13,6 +13,7 @@ import { useSession } from '@/shared/session'
 import { listActiveAuctions, type ActiveAuction } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatLocale } from '@/shared/i18n/format'
+import { AuctionProductSummary } from './AuctionProductSummary'
 
 const priceOf = (auction: ActiveAuction): string =>
   auction.priceKind === 'REAL_MONEY'
@@ -28,9 +29,7 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
   return (
     <article className="rounded-xl border border-border bg-surface-raised p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-ink">
-          {t('auction:product', { id: auction.productId })}
-        </h3>
+        <AuctionProductSummary productId={auction.productId} />
         {official && (
           <span
             aria-label={t('auction:market.officialLabel', { mark })}

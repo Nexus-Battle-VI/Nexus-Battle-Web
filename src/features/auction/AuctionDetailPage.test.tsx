@@ -141,6 +141,23 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
     expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar puja' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Configurar puja automática' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+  })
+
+  it('un comprador conserva los controles de puja y compra', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+
+    montar()
+
+    expect(await screen.findByRole('button', { name: 'Comprar ahora' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Registrar puja' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Configurar puja automática' })).toBeInTheDocument()
   })
 
   it('CA-04: comprar sin marcar la confirmacion pide confirmar y no llega a ejecutar la compra', async () => {
