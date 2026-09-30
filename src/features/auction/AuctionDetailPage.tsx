@@ -234,7 +234,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                 </p>
               )}
 
-              {auction.status === 'ACTIVE' && product !== undefined && (
+              {auction.status === 'ACTIVE' && !isSeller && product !== undefined && (
                 <AuctionBidPanel
                   auction={auction}
                   product={{ name: product.name, description: product.description }}
@@ -243,7 +243,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                 />
               )}
 
-              {auction.status === 'ACTIVE' && (
+              {auction.status === 'ACTIVE' && !isSeller && (
                 <AutoBidPanel
                   auction={auction}
                   subject={subject}
