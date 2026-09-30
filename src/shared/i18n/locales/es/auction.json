@@ -51,7 +51,10 @@
     "closes": "Cierra",
     "viewDetail": "Ver detalle",
     "bids": "Pujas",
-    "timeRemaining": "Tiempo restante"
+    "timeRemaining": "Tiempo restante",
+    "buyNow": "Compra inmediata",
+    "buyNowNone": "No disponible",
+    "buyNowAction": "Comprar ahora"
   },
   "validation": {
     "productRequired": "Selecciona un producto de tu inventario.",

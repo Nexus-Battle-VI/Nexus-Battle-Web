@@ -51,7 +51,10 @@
     "closes": "Encerra",
     "viewDetail": "Ver detalhes",
     "bids": "Lances",
-    "timeRemaining": "Tempo restante"
+    "timeRemaining": "Tempo restante",
+    "buyNow": "Compra imediata",
+    "buyNowNone": "Não disponível",
+    "buyNowAction": "Comprar agora"
   },
   "validation": {
     "productRequired": "Selecione um produto do seu inventário.",

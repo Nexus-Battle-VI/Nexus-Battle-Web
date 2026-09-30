@@ -55,6 +55,12 @@ export interface ImmediatePurchaseCardProps {
   readonly confirmed: boolean
   /** Permite abrir la tarjeta mostrando ya el aviso "Confirmación requerida". */
   readonly initialConfirmationAttempted?: boolean
+  /**
+   * Enfoca (y desplaza hasta) la casilla de confirmacion al montarse: llegar
+   * desde "Comprar ahora" del marketplace abre directamente este paso. No
+   * confirma ni compra nada por si solo.
+   */
+  readonly focusConfirmation?: boolean
   readonly onConfirmedChange: (confirmed: boolean) => void
   /** Solo se invoca con la confirmacion marcada (CA-04). */
   readonly onBuy: () => void
@@ -135,6 +141,7 @@ export const ImmediatePurchaseCard = ({
   pickupDays = 7,
   confirmed,
   initialConfirmationAttempted = false,
+  focusConfirmation = false,
   onConfirmedChange,
   onBuy,
   onGoToBid,
@@ -247,6 +254,7 @@ export const ImmediatePurchaseCard = ({
           <hr className="m-0 h-px border-0 bg-border" />
           <CheckboxField
             label={t('auction:purchase.confirm')}
+            autoFocus={focusConfirmation}
             checked={confirmed}
             onChange={(event) => {
               handleConfirmedChange(event.target.checked)

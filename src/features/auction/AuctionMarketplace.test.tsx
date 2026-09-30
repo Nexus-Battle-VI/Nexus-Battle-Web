@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
+import { formatMoney } from '@/lib/format'
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
 import { AuctionMarketplace } from './AuctionMarketplace'
@@ -76,7 +77,7 @@ const activeAuctionPage = (total: number, page = 1) => ({
 afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
-  useSession.setState({ roles: [] })
+  useSession.setState({ roles: [], subject: null })
 })
 
 describe('AuctionMarketplace', () => {
@@ -270,5 +271,78 @@ describe('AuctionMarketplace', () => {
     expect(timeOf(cards[0]!)).toBe('23h 59m 56s')
     expect(timeOf(cards[1]!)).not.toMatch(/-/u)
     expect(listCalls()).toBe(callsBefore)
+  })
+
+  describe('compra inmediata desde la tarjeta', () => {
+    const stubMarket = (items: readonly unknown[] = auctions) => {
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        return Promise.resolve(jsonResponse({ page: 1, pageSize: 16, total: items.length, items }))
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+    const buyNowOf = (card: HTMLElement): string | null =>
+      within(card).getByText('Compra inmediata').nextElementSibling?.textContent ?? null
+
+    it('Comprar ahora abre el flujo de compra (?buyNow=1) sin comprar desde la tarjeta', async () => {
+      useSession.setState({ subject: 'buyer-1' })
+      const fetchMock = stubMarket()
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const cards = screen.getAllByRole('article')
+      expect(buyNowOf(cards[1]!)).toBe('20 créditos')
+      const buy = within(cards[1]!).getByRole('link', { name: 'Comprar ahora' })
+      expect(buy).toHaveAttribute('href', '/auction/player-1?buyNow=1')
+      // Ver detalle sigue siendo el detalle normal, sin la intencion de compra.
+      expect(within(cards[1]!).getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
+        'href',
+        '/auction/player-1',
+      )
+
+      await userEvent.click(buy)
+      expect(fetchMock.mock.calls.some(([input]) => urlOf(input).includes('/buy-now'))).toBe(false)
+    })
+
+    it('una publicacion oficial muestra su precio en dinero real pero no ofrece comprar', async () => {
+      useSession.setState({ subject: 'buyer-1' })
+      stubMarket()
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const official = screen.getAllByRole('article')[0]!
+      expect(buyNowOf(official)).toBe(formatMoney(120_000, 'COP'))
+      expect(
+        within(official).queryByRole('link', { name: 'Comprar ahora' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('el vendedor ve el precio de su subasta pero no el boton de compra', async () => {
+      useSession.setState({ subject: 'player-1' })
+      stubMarket()
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const own = screen.getAllByRole('article')[1]!
+      expect(buyNowOf(own)).toBe('20 créditos')
+      expect(within(own).queryByRole('link', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+      expect(within(own).getByRole('link', { name: 'Ver detalle' })).toBeInTheDocument()
+    })
+
+    it('sin precio de compra inmediata lo indica y no ofrece comprar', async () => {
+      useSession.setState({ subject: 'buyer-1' })
+      stubMarket([{ ...auctions[1]!, buyNowCredits: null }])
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const card = screen.getAllByRole('article')[0]!
+      expect(buyNowOf(card)).toBe('No disponible')
+      expect(within(card).queryByRole('link', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+    })
   })
 })
