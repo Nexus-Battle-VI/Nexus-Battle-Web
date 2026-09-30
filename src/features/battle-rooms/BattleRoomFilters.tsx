@@ -1,15 +1,19 @@
-import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import './battle-rooms.css'
+import { BattlePixelIcon, type BattlePixelIconProps } from './BattlePixelIcon'
 import type { BattleRoomMode } from './types'
 
 export type BattleRoomModeFilter = 'ALL' | BattleRoomMode
 
-/** `label` es la clave de traduccion de cada filtro. */
-const OPTIONS: readonly { readonly value: BattleRoomModeFilter; readonly label: string }[] = [
-  { value: 'ALL', label: 'battle:filters.ALL' },
-  { value: 'PVP', label: 'battle:filters.PVP' },
-  { value: 'PVE', label: 'battle:filters.PVE' },
+const OPTIONS: readonly {
+  readonly value: BattleRoomModeFilter
+  readonly label: string
+  readonly icon: BattlePixelIconProps['icon']
+}[] = [
+  { value: 'ALL', label: 'battle:filters.ALL', icon: 'roomList' },
+  { value: 'PVP', label: 'battle:filters.PVP', icon: 'pvp' },
+  { value: 'PVE', label: 'battle:filters.PVE', icon: 'pve' },
 ]
 
 export interface BattleRoomFiltersProps {
@@ -23,6 +27,12 @@ export interface BattleRoomFiltersProps {
  * Filtro por modalidad y busqueda por ID, ambos client-side (HU-14.4,
  * seccion 11 de la auditoria): `GET /v1/combat/rooms` no acepta parametros de
  * consulta, asi que esto nunca dispara una peticion nueva.
+ *
+ * Remaster visual Sprint 3 (2a pasada, seccion 10 del brief): tres
+ * SELECTORES CIRCULARES icon-only (`br-filter-chip`), no pestanas web
+ * genericas. El icono es decorativo (`BattlePixelIcon`, `aria-hidden`); el
+ * `aria-label`/`title` de cada boton sigue siendo texto real -- nunca se
+ * pierde informacion esencial por quitar el texto visible.
  */
 export const BattleRoomFilters = ({
   mode,
@@ -34,28 +44,25 @@ export const BattleRoomFilters = ({
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div role="group" aria-label={t('battle:filters.label')} className="flex gap-1.5">
+      <div role="group" aria-label={t('battle:filters.label')} className="flex gap-2">
         {OPTIONS.map((option) => (
           <button
             key={option.value}
             type="button"
             aria-pressed={mode === option.value}
+            aria-label={t(option.label)}
+            title={t(option.label)}
             onClick={() => {
               onModeChange(option.value)
             }}
-            className={clsx(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-              mode === option.value
-                ? 'bg-brand text-brand-ink'
-                : 'bg-surface text-muted hover:text-ink',
-            )}
+            className="br-filter-chip"
           >
-            {t(option.label)}
+            <BattlePixelIcon icon={option.icon} size="sm" />
           </button>
         ))}
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-muted">
+      <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--br-muted)' }}>
         <span className="sr-only">{t('battle:filters.search')}</span>
         <input
           type="search"

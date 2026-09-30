@@ -1,21 +1,16 @@
-import { useId, useState } from 'react'
-import clsx from 'clsx'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import type { RealtimeConnectionState } from '../realtime'
 
+import '../battle-rooms.css'
+import { BattlePixelIcon } from '../BattlePixelIcon'
 import type { AttackIntentState } from './attackIntent'
 import { SkillList } from './SkillList'
 import { initialSkillIntentState, type SkillIntentState } from './skillIntent'
 import { skillsVisible } from './skillPresentation'
-import {
-  attackableTargets,
-  attackAvailability,
-  combatantHealth,
-  combatantName,
-  describeAttackRejection,
-} from './presentation'
+import { attackableTargets, attackAvailability, describeAttackRejection } from './presentation'
 import type { BattleView, TargetRef } from './types'
 
 /** Lo que la pantalla necesita para atacar; lo aporta `useBattleRealtime`. */
@@ -44,6 +39,16 @@ export interface AttackPanelProps {
   readonly connection: RealtimeConnectionState
   readonly synced: boolean
   readonly combat: CombatControls
+  /**
+   * Objetivo CONTROLADO desde `BattleScreen` (remaster visual, 2a pasada):
+   * el heroe rival se elige haciendo clic DIRECTO sobre el en la arena
+   * (`BattleArena.tsx`) -- `BattleScreen` es quien lleva ese estado y lo
+   * entrega aqui listo. 7a pasada (secciones 37-41 del brief): ya no existe
+   * NINGUNA UI propia para elegir objetivo dentro de este panel (el radio
+   * visible se quito); sin este prop (pruebas standalone), el unico
+   * objetivo posible es el automatico de un unico rival con Vida.
+   */
+  readonly selectedTarget?: TargetRef | null
 }
 
 const keyOf = (ref: TargetRef): string => `${ref.teamLabel}#${String(ref.seat)}`
@@ -68,27 +73,30 @@ export const AttackPanel = ({
   connection,
   synced,
   combat,
+  selectedTarget,
 }: AttackPanelProps): React.JSX.Element => {
   const headingId = useId()
   const hintId = useId()
   const { t } = useTranslation()
-  const [chosen, setChosen] = useState<string | null>(null)
   const { attack } = combat
   const attackPending = attack.intent !== null
   // Una sola accion por turno: mientras una habilidad espera su resultado tampoco se ataca.
   const pending = attackPending || (combat.skill?.intent ?? null) !== null
   const ready = connection === 'open' && synced
+  const controlled = selectedTarget !== undefined
 
   const targets = attackableTargets(battle, subject)
   // Con un unico rival con Vida no hay nada que elegir: es el objetivo. Con varios, solo
-  // vale la eleccion que sigue siendo un objetivo valido (uno caido deja de serlo).
+  // vale la eleccion que sigue siendo un objetivo valido (uno caido deja de serlo). Cuando
+  // `BattleScreen` controla la seleccion (clic sobre el heroe en la arena), se usa esa misma.
   const [only] = targets
-  const selectedKey =
-    targets.length === 1 && only !== undefined
+  const selectedKey = controlled
+    ? selectedTarget !== null
+      ? keyOf(selectedTarget)
+      : null
+    : targets.length === 1 && only !== undefined
       ? keyOf(only)
-      : targets.some((entry) => keyOf(entry) === chosen)
-        ? chosen
-        : null
+      : null
   const selected = targets.find((entry) => keyOf(entry) === selectedKey) ?? null
 
   const availability = attackAvailability({
@@ -106,111 +114,103 @@ export const AttackPanel = ({
     }
   }
 
+  // 8a pasada (secciones 41-43 del brief): "Elige un objetivo" (hint generico
+  // del boton) y "Selecciona un objetivo en la arena" (esta linea) decian lo
+  // MISMO a la vez -- queda SOLO esta, mas concreta (dice DONDE elegir); el
+  // hint generico sigue existiendo para lectores de pantalla (`aria-describedby`)
+  // pero deja de duplicarse a la vista.
+  const chooseInArenaVisible = availability.visible && targets.length > 1 && selected === null
+
   return (
-    <section
-      aria-labelledby={headingId}
-      className="flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3 sm:p-4"
-    >
+    <section aria-labelledby={headingId} className="flex flex-col gap-2">
       {/* El titulo existe para los lectores de pantalla; a la vista, la barra ya es evidente. */}
       <h2 id={headingId} className="sr-only">
         {t('battle:battle.actions')}
       </h2>
 
       {/*
-       * La accion principal va primero; las habilidades (HU-19) son hermanas de este bloque y
-       * comparten el objetivo elegido. La epica no tiene boton: no existe una epica activa real.
+       * 7a pasada (secciones 37-41 del brief): el selector visible de radios
+       * ("○ Bruno Vida 40/44", "○ Carla Vida 30/30") se QUITA de la UI --
+       * Richard lo senalo explicitamente como ruido sobre las acciones. El
+       * objetivo se elige EXCLUSIVAMENTE haciendo clic sobre el heroe rival
+       * en la arena (`BattleArena.tsx`, ya real desde la 2a pasada: mismo
+       * `TargetRef`, mismo `chooseTarget`/`onSelectTarget`, MISMO estado --
+       * no se crea ningun target state nuevo). Cuando hace falta elegir
+       * (varios rivales, ninguno elegido todavia) queda SOLO esta linea
+       * compacta, nunca una fila de chips. */}
+      {chooseInArenaVisible && (
+        <p className="text-center text-xs" style={{ color: 'var(--br-muted)' }}>
+          {t('battle:attack.chooseInArena')}
+        </p>
+      )}
+
+      {/*
+       * La accion principal va primero, seguida por las habilidades (HU-19) en la MISMA fila --
+       * juntas forman la barra de acciones (`.br-action-bar`) de la referencia visual. La epica
+       * no tiene boton: no existe una epica activa real.
        */}
       {availability.visible && (
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-6">
-          <fieldset className="min-w-0 flex-1">
-            <legend className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-muted">
-              {t('battle:attack.target')}
-            </legend>
-            <div className="flex flex-wrap gap-2">
-              {targets.map((entry) => {
-                const health = combatantHealth(battle, entry)
-                const key = keyOf(entry)
-
-                return (
-                  <label
-                    key={key}
-                    className={clsx(
-                      'flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2',
-                      'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
-                      key === selectedKey ? 'border-brand bg-brand/10' : 'border-border',
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name={`${headingId}-objetivo`}
-                      value={key}
-                      checked={key === selectedKey}
-                      disabled={pending}
-                      onChange={() => {
-                        setChosen(key)
-                      }}
-                      className="size-4 accent-brand"
-                    />
-                    <span className="min-w-0 truncate text-sm font-medium text-ink">
-                      {combatantName(entry)}
-                    </span>
-                    <span className="text-xs tabular-nums text-muted">
-                      {health === null
-                        ? ''
-                        : t('battle:health.value', {
-                            current: String(health.current),
-                            max: String(health.max),
-                          })}
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-          </fieldset>
-
+        <div className="br-action-bar">
           <Button
+            variant="battle-primary"
             aria-disabled={!availability.enabled}
             aria-busy={attackPending}
             aria-describedby={availability.hint === null ? undefined : hintId}
-            className="min-h-12 w-full px-8 text-base font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50 md:w-auto md:min-w-52"
+            className="br-action-slot text-sm font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50"
             onClick={submit}
           >
+            <BattlePixelIcon icon="attack" size="sm" />
             {attackPending ? t('battle:attack.attacking') : t('battle:attack.basic')}
           </Button>
+
+          {combat.onUseSkill !== undefined && skillsVisible(battle, subject) && (
+            <SkillList
+              battle={battle}
+              subject={subject}
+              connection={connection}
+              synced={synced}
+              pending={pending}
+              target={selected}
+              skill={combat.skill ?? initialSkillIntentState}
+              onUse={combat.onUseSkill}
+              onRetry={combat.onRetrySkill ?? noop}
+              onDismissRejection={combat.onDismissSkillRejection ?? noop}
+            />
+          )}
         </div>
       )}
 
-      {availability.visible &&
-        combat.onUseSkill !== undefined &&
-        skillsVisible(battle, subject) && (
-          <SkillList
-            battle={battle}
-            subject={subject}
-            connection={connection}
-            synced={synced}
-            pending={pending}
-            target={selected}
-            skill={combat.skill ?? initialSkillIntentState}
-            onUse={combat.onUseSkill}
-            onRetry={combat.onRetrySkill ?? noop}
-            onDismissRejection={combat.onDismissSkillRejection ?? noop}
-          />
-        )}
-
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        {availability.hint !== null && (
-          <p id={hintId} className="text-sm text-muted">
-            {availability.hint}
-          </p>
-        )}
-        <p className="text-xs text-muted">{t('battle:attack.epicSoon')}</p>
-      </div>
+      {/*
+       * 8a pasada (secciones 36-40 del brief): el texto "la habilidad epica
+       * llegara..." se quita de la vista -- es una nota tecnica sin
+       * contraparte real (no hay ninguna epica activa), y no la describe
+       * ningun control (`aria-describedby`), asi que no hace falta version
+       * sr-only para accesibilidad.
+       */}
+      {/*
+       * 9a pasada (secciones 33-36 del brief): "Esperando el resultado de tu
+       * accion..." se repetia debajo de Ataque basico Y de cada habilidad a
+       * la vez (mismo hint, `attack.hints.pending`, tanto aqui como en cada
+       * `SkillRow` -- ver `SkillList.tsx`). El pending REAL sigue
+       * bloqueando el boton (`aria-disabled`/`aria-busy`, sin tocar); solo
+       * el TEXTO se oculta visualmente mientras `pending` es cierto, y
+       * queda accesible via el mismo `aria-describedby` de siempre.
+       */}
+      {availability.hint !== null && (
+        <p
+          id={hintId}
+          className={chooseInArenaVisible || pending ? 'sr-only' : 'text-xs'}
+          style={chooseInArenaVisible || pending ? undefined : { color: 'var(--br-muted)' }}
+        >
+          {availability.hint}
+        </p>
+      )}
 
       {attack.unconfirmed && attack.intent !== null && (
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
           <p>{t('battle:attack.unconfirmed')}</p>
           <Button
-            variant="secondary"
+            variant="battle-secondary"
             aria-disabled={!ready}
             className="min-h-11 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
             onClick={() => {
@@ -227,7 +227,11 @@ export const AttackPanel = ({
       {attack.rejection !== null && (
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
           <p>{describeAttackRejection(attack.rejection)}</p>
-          <Button variant="secondary" className="min-h-11" onClick={combat.onDismissRejection}>
+          <Button
+            variant="battle-secondary"
+            className="min-h-11"
+            onClick={combat.onDismissRejection}
+          >
             {t('battle:understood')}
           </Button>
         </div>

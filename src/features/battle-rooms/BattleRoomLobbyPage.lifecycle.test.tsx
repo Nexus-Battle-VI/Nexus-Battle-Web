@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import { Route, Routes } from 'react-router'
+import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
@@ -395,15 +396,25 @@ describe('BattleRoomLobbyPage — deteccion de cancelacion vs. sala llena (HU-15
 })
 
 describe('BattleRoomLobbyPage — chat de la sala (HU-13)', () => {
-  // Al llenarse la sala (PREPARING) HU-17 lleva a la persona a la pantalla de batalla; el chat de
-  // la sala sigue alli (`BattleWithChat.test.tsx`). Aqui solo queda la sala de espera.
-  it('un participante ve el chat de SU sala', async () => {
+  // Remaster visual Sprint 3 (3a pasada): el chat de la sala de espera vive
+  // detras de una burbuja flotante (`FloatingChatPanel`, cerrada por
+  // defecto). Al llenarse la sala (PREPARING) HU-17 lleva a la persona a la
+  // pantalla de batalla, que YA NO muestra chat (`BattleWithChat.test.tsx`,
+  // 3a pasada, seccion 55 del brief): coordinarse por chat es cosa de ANTES
+  // de pelear, no durante.
+  it('un participante ve el chat de SU sala (burbuja flotante)', async () => {
     useSession.setState({ subject: GUEST, accessToken: null, expiresAt: null })
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [room()])))
 
     montar()
 
-    expect(await screen.findByRole('heading', { name: 'Chat de la sala' })).toBeInTheDocument()
+    const bubble = await screen.findByRole('button', { name: 'Chat de la sala' })
+
+    expect(screen.queryByRole('heading', { name: 'Chat de la sala' })).not.toBeInTheDocument()
+
+    await userEvent.click(bubble)
+
+    expect(screen.getByRole('heading', { name: 'Chat de la sala' })).toBeInTheDocument()
     expect(screen.getByRole('log')).toBeInTheDocument()
   })
 

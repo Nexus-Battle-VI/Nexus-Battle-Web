@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { FIELD_CLASS, FIELD_LABEL_CLASS } from '@/components/ui/form/fieldStyles'
-import { Coins } from '@/components/ui/icons'
 
+import './battle-rooms.css'
+import { BattlePixelIcon } from './BattlePixelIcon'
 import { SelectableCard } from './SelectableCard'
 import { useCreateBattleRoom } from './hooks'
 import {
@@ -127,7 +128,14 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
   }
 
   return (
-    <Card title={t('battle:create.title')} description={t('battle:create.description')}>
+    <Card className="br-panel br-panel--corners">
+      <div className="mb-4 flex items-center gap-2">
+        <BattlePixelIcon icon="createJoin" size="md" />
+        <div>
+          <h2 className="br-section-title text-lg">{t('battle:create.title')}</h2>
+          <p className="text-sm text-muted">{t('battle:create.description')}</p>
+        </div>
+      </div>
       <form className="flex flex-col gap-5" onSubmit={handleSubmit} noValidate>
         <div>
           <span id="battle-room-mode-label" className={FIELD_LABEL_CLASS}>
@@ -144,6 +152,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
                 selected={mode === option}
                 title={MODE_LABELS[option]}
                 description={MODE_DESCRIPTIONS[option]}
+                className="br-selectable"
                 onSelect={() => {
                   setMode(option)
                   // HU-23 (D4): la apuesta no existe en JcE; al volver a JcJ el
@@ -171,6 +180,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
                 key={format.capacity}
                 selected={capacity === format.capacity}
                 title={format.label}
+                className="br-selectable"
                 onSelect={() => {
                   setCapacity(format.capacity)
                 }}
@@ -186,9 +196,10 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
             {t('battle:create.reward')}
           </label>
           <div className="relative mt-1.5">
-            <Coins
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            <BattlePixelIcon
+              icon="credits"
+              size="sm"
+              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2"
             />
             <input
               id="battle-room-reward"
@@ -204,7 +215,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
               onChange={(event) => {
                 setRewardInput(event.target.value)
               }}
-              className={`${FIELD_CLASS} pl-9`}
+              className={`${FIELD_CLASS} pl-10`}
             />
           </div>
           {rewardError === undefined ? (
@@ -224,9 +235,10 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
               {t('battle:card.stakeLabel')}
             </label>
             <div className="relative mt-1.5">
-              <Coins
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+              <BattlePixelIcon
+                icon="wager"
+                size="sm"
+                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2"
               />
               <input
                 id="battle-room-stake"
@@ -242,7 +254,7 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
                 onChange={(event) => {
                   setStakeInput(event.target.value)
                 }}
-                className={`${FIELD_CLASS} pl-9`}
+                className={`${FIELD_CLASS} pl-10`}
               />
             </div>
             {stakeError === undefined ? (
@@ -274,7 +286,16 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
           </p>
         )}
 
-        <Button type="submit" loading={createRoom.isPending}>
+        {/* 5a pasada (secciones 6C/94/95 del brief): en Dark recupera el
+            marco PixelLab (`.br-pixellab-primary`, scopeada a
+            `[data-theme='dark']`); en Light NO hace nada -- se conserva a
+            proposito el boton CSS actual (excepcion consciente). */}
+        <Button
+          type="submit"
+          variant="battle-primary"
+          className="br-pixellab-primary"
+          loading={createRoom.isPending}
+        >
           {t('battle:create.title')}
         </Button>
       </form>

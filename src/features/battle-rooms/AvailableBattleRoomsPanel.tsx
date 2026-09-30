@@ -7,10 +7,11 @@ import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { Button } from '@/components/ui/Button'
-import { RefreshCw } from '@/components/ui/icons'
 import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 
+import './battle-rooms.css'
+import { BattlePixelIcon } from './BattlePixelIcon'
 import { BattleRoomCard } from './BattleRoomCard'
 import { BattleRoomFilters, type BattleRoomModeFilter } from './BattleRoomFilters'
 import { useBattleRooms, useCancelBattleRoom, useJoinBattleRoom } from './hooks'
@@ -110,7 +111,14 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
   }
 
   return (
-    <Card title={t('battle:available.title')} description={t('battle:available.description')}>
+    <Card className="br-panel br-panel--corners">
+      <div className="mb-4 flex items-center gap-2">
+        <BattlePixelIcon icon="roomList" size="md" />
+        <div>
+          <h2 className="br-section-title text-lg">{t('battle:available.title')}</h2>
+          <p className="text-sm text-muted">{t('battle:available.description')}</p>
+        </div>
+      </div>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <BattleRoomFilters
@@ -120,16 +128,17 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
             onSearchChange={setSearch}
           />
           <Button
-            variant="secondary"
+            variant="battle-compact"
             disabled={rooms.isFetching}
             aria-busy={rooms.isFetching}
             onClick={() => {
               void rooms.refetch()
             }}
           >
-            <RefreshCw
-              aria-hidden="true"
-              className={clsx('h-4 w-4', rooms.isFetching && 'motion-safe:animate-spin')}
+            <BattlePixelIcon
+              icon="refresh"
+              size="sm"
+              className={clsx(rooms.isFetching && 'motion-safe:animate-spin')}
             />
             {t('battle:available.refresh')}
           </Button>
@@ -141,7 +150,7 @@ export const AvailableBattleRoomsPanel = (): React.JSX.Element => {
           </p>
         )}
 
-        <div className="max-h-[70vh] overflow-y-auto lg:max-h-[60vh]">
+        <div className="br-rooms-scroll br-scrollbar br-scrollbar--rooms">
           <QueryState
             isLoading={rooms.isPending}
             error={displayErrorOf(rooms.error)}

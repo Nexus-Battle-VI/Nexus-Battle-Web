@@ -5,6 +5,7 @@ export interface SelectableCardProps {
   readonly title: string
   readonly description?: string
   readonly onSelect: () => void
+  readonly className?: string
 }
 
 /**
@@ -24,6 +25,7 @@ export const SelectableCard = ({
   title,
   description,
   onSelect,
+  className,
 }: SelectableCardProps): React.JSX.Element => (
   <button
     type="button"
@@ -31,12 +33,15 @@ export const SelectableCard = ({
     aria-checked={selected}
     onClick={onSelect}
     className={clsx(
-      'flex flex-1 flex-col gap-1 rounded-lg border p-3 text-left transition-colors motion-safe:duration-150 motion-safe:ease-out',
+      'flex flex-1 flex-col gap-1 p-3 text-left transition-colors motion-safe:duration-150 motion-safe:ease-out',
       'motion-safe:active:scale-[0.98]',
       'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-      selected
-        ? 'border-brand bg-brand/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-        : 'border-border bg-surface hover:border-brand/50 hover:bg-surface-raised',
+      className === undefined && 'rounded-lg border',
+      className === undefined &&
+        (selected
+          ? 'border-brand bg-brand/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+          : 'border-border bg-surface hover:border-brand/50 hover:bg-surface-raised'),
+      className,
     )}
   >
     <span className={clsx('text-sm font-semibold', selected ? 'text-brand' : 'text-ink')}>

@@ -44,11 +44,19 @@ describe('BattleTimers (HU-21)', () => {
     )
   }
 
-  it('muestra «Tu turno: 0:30» y el tiempo de batalla «6:00», sin leer cada segundo', () => {
+  it('muestra «Turno» + «0:30» y «Batalla» + «6:00», sin leer cada segundo', () => {
     renderTimers()
 
-    expect(screen.getByText(/Tu turno: 0:30/u)).toBeInTheDocument()
-    expect(screen.getByText(/Tiempo de batalla: 6:00/u)).toBeInTheDocument()
+    // 5a pasada (secciones 32-34 del brief): la etiqueta visible ya NO
+    // repite el nombre ("Tu turno"/"Bruno") -- siempre dice "Turno" (el
+    // nombre ya esta arriba, en "Nexus · Arena"). El `aria-label` real
+    // (accesible) SI sigue diciendo de quien es el turno.
+    const turnTimer = screen.getByRole('timer', { name: 'Tiempo de tu turno' })
+    expect(turnTimer).toHaveTextContent('Turno')
+    expect(turnTimer).toHaveTextContent('0:30')
+    const battleTimer = screen.getByRole('timer', { name: 'Tiempo de batalla' })
+    expect(battleTimer).toHaveTextContent('Batalla')
+    expect(battleTimer).toHaveTextContent('6:00')
 
     for (const timer of screen.getAllByRole('timer')) {
       expect(timer).toHaveAttribute('aria-live', 'off')
@@ -63,7 +71,7 @@ describe('BattleTimers (HU-21)', () => {
       vi.advanceTimersByTime(250)
     })
 
-    expect(screen.getByText(/Tu turno: 0:29/u)).toBeInTheDocument()
+    expect(screen.getByRole('timer', { name: 'Tiempo de tu turno' })).toHaveTextContent('0:29')
   })
 
   it('anuncia los umbrales de 10 s y 5 s UNA sola vez, en una region polite aparte', () => {
@@ -96,7 +104,7 @@ describe('BattleTimers (HU-21)', () => {
       vi.advanceTimersByTime(250)
     })
 
-    expect(screen.getByText(/Tu turno: 0:00/u)).toBeInTheDocument()
+    expect(screen.getByRole('timer', { name: 'Tiempo de tu turno' })).toHaveTextContent('0:00')
     expect(screen.getByText('Esperando a Combat…')).toBeInTheDocument()
     expect(screen.queryAllByRole('button')).toHaveLength(0)
   })
@@ -142,11 +150,17 @@ describe('BattleTimers (HU-21)', () => {
     )
   })
 
-  it('con el turno del rival nombra a quien le toca', () => {
+  it('con el turno del rival, el nombre sigue en el aria-label accesible (visualmente dice "Turno", nunca el nombre)', () => {
     renderTimers(false)
 
-    expect(screen.getByText(/Turno de Bruno: 0:30/u)).toBeInTheDocument()
-    expect(screen.queryByText(/Tu turno/u)).not.toBeInTheDocument()
+    // 5a pasada (seccion 32 del brief): "de quien le toca" ya NO se nombra
+    // visualmente aqui (ya lo dice "Nexus · Arena" arriba) -- el
+    // `aria-label` del `role="timer"` SI lo sigue diciendo, para quien usa
+    // lector de pantalla.
+    const turnTimer = screen.getByRole('timer', { name: 'Tiempo del turno de Bruno' })
+    expect(turnTimer).toHaveTextContent('Turno')
+    expect(turnTimer).toHaveTextContent('0:30')
+    expect(screen.queryByText('Tu turno')).not.toBeInTheDocument()
   })
 
   it('los deadlines usados son los del contrato (turno 30 s, batalla 6 min)', () => {
