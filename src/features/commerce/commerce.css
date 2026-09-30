@@ -1,33 +1,386 @@
-/* El alto acotado se aplica solo a E-commerce y a escritorios capaces de alojar 4 × 3 tarjetas.
-   Ventanas menores y zoom conservan el flujo natural: ninguna acción queda recortada. */
+/*
+ * Fuente display "de juego" (5a pasada, final visual polish). Solo el
+ * `@font-face` (peso 600/700/800, subconjuntos `latin` + `latin-ext` para
+ * cubrir Á/É/Í/Ó/Ú, Ñ, Ç, ã/õ y los caracteres franceses necesarios):
+ * OFL-1.1, empaquetada localmente via `@fontsource/cinzel` -sin URL remota de
+ * Google Fonts en runtime, sin llamada de red en produccion-. El token
+ * `--font-game-display` vive en `index.css` (global, reutilizable para Jugar
+ * Online/Mi Cuenta/Subasta mas adelante); este import solo trae el peso real
+ * de las variables que E-commerce usa hoy, asi que el navbar y el resto de la
+ * app no pagan ese peso todavia.
+ */
+@import '@fontsource/cinzel/latin-600.css';
+@import '@fontsource/cinzel/latin-ext-600.css';
+@import '@fontsource/cinzel/latin-700.css';
+@import '@fontsource/cinzel/latin-ext-700.css';
+@import '@fontsource/cinzel/latin-800.css';
+@import '@fontsource/cinzel/latin-ext-800.css';
+
+/* El alto acotado se aplica solo a E-commerce y a escritorios capaces de alojar 4 × 3 tarjetas
+   (12 productos por página, requisito real confirmado en la 6a pasada). Ventanas menores y
+   zoom conservan el flujo natural: ninguna acción queda recortada. */
 .commerce-main {
   max-width: 1440px;
 }
 .commerce-page {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-bottom: 64px;
+  gap: 12px;
+  padding: 14px 14px 64px;
 }
+
+/*
+ * ============================================================
+ * MARKETPLACE — remaster visual E-commerce Sprint 3 (4a pasada: dirección de
+ * arte, composición y cobertura del escenario)
+ * ============================================================
+ * Referencia visual: Sprint-3-Remaster-Visual/Ecommerce/02-PixelLab. La
+ * infraestructura de assets reales (backgrounds/frames/buttons/icons via
+ * `border-image` y `MarketplacePixelIcon`) quedó aprobada en la 3a pasada y
+ * NO se rehace aqui. Esta pasada corrige composición/jerarquía/cobertura.
+ *
+ * Los numeros de `border-image-slice`/`-width` deben mantenerse en sincronia
+ * con los mismos valores documentados en `marketplace/marketplaceAssets.ts`
+ * (`marketplaceFrames`), que es la fuente de verdad de las rutas.
+ *
+ * Todo vive en ESTE archivo, que solo `CommercePage` importa: no toca ningún
+ * otro módulo ni el navbar global.
+ */
+
+/*
+ * Escenario — capa `::before` propia, detrás de TODO el contenido de
+ * E-commerce (`z-index: -1` dentro de un `isolation: isolate` local, para no
+ * afectar el stacking de ningún otro módulo). `inset: 0` la estira exacto al
+ * alto real de `.commerce-page` -crece con 0 productos, con 16, con el
+ * carrito abierto, etc.-, así que el escenario SIEMPRE cubre toda el área,
+ * nunca solo un recuadro central (defecto reportado en la 3a pasada).
+ *
+ * `background-size: cover` (no un alto fijo): la imagen pixel-art nunca se
+ * DEFORMA -`cover` solo escala uniformemente y recorta el sobrante, jamás
+ * estira un eje mas que el otro-. En una pagina alta (muchas cards) se ve una
+ * porcion mas recortada/ampliada de la escena; `image-rendering: pixelated`
+ * mantiene el pixel art nitido en vez de difuminarlo al ampliar.
+ *
+ * El overlay de legibilidad (`::after`) es una franja LOCALIZADA arriba (donde
+ * vive la cabecera), no una capa opaca sobre toda la escena: el resto del
+ * escenario queda visible detras de los paneles reales, que ya garantizan su
+ * propio contraste.
+ */
+.commerce-page {
+  position: relative;
+  isolation: isolate;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.commerce-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url('/assets/ecommerce/backgrounds/marketplace-light.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  image-rendering: pixelated;
+}
+.commerce-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-surface) 55%, transparent) 0%,
+    color-mix(in oklab, var(--color-surface) 12%, transparent) 200px,
+    transparent 420px
+  );
+}
+:root[data-theme='dark'] .commerce-page::before {
+  background-image: url('/assets/ecommerce/backgrounds/marketplace-dark.png');
+}
+:root[data-theme='dark'] .commerce-page::after {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-surface) 68%, transparent) 0%,
+    color-mix(in oklab, var(--color-surface) 18%, transparent) 200px,
+    transparent 420px
+  );
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Frames reales — Product Card / Section Panel (`border-image`).
+ * ------------------------------------------------------------------
+ * `fill` incluye el centro del PNG como relleno (parchment/violeta segun
+ * tema): en Product Card Dark ese centro es transparente en el PNG fuente, asi
+ * que se ve el `background-color` de abajo; en Product Card Light el centro
+ * SI trae textura de pergamino real, que se usa tal cual.
+ */
+.mk-card {
+  position: relative;
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: 15px;
+  border-image-repeat: stretch;
+  border-image-width: 15px;
+  border-image-slice: 24 fill;
+  border-image-source: url('/assets/ecommerce/frames/product-card-light.png');
+  background-color: var(--color-surface-raised);
+  transition: filter 160ms ease-out;
+}
+:root[data-theme='dark'] .mk-card {
+  border-image-slice: 32 fill;
+  border-image-source: url('/assets/ecommerce/frames/product-card-dark.png');
+}
+/*
+ * 5a pasada: se retira el `translateY` del hover/focus de la card (y de
+ * cualquier boton, ver `.mk-btn-primary`/`.mk-btn-secondary` mas abajo).
+ * Richard lo marco como incorrecto: un elemento que "sube" o "baja" al
+ * interactuar da sensacion de desplazamiento de layout aunque tecnicamente no
+ * lo sea. El realce ahora es solo brillo + sombra -nunca movimiento-.
+ */
+.mk-card:hover,
+.mk-card:focus-within {
+  filter: brightness(1.06)
+    drop-shadow(0 10px 18px color-mix(in oklab, var(--color-brand) 45%, transparent));
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-card {
+    transition: none;
+  }
+}
+
+/*
+ * 5a pasada — corrección geométrica del carrito en Light: el borde
+ * renderizado (`border-width`/`border-image-width`) usaba numeros DISTINTOS
+ * por tema (16/18px Light vs 18/22px Dark), copiados directamente de las
+ * proporciones de cada PNG fuente. El resultado: el mismo dialogo media unos
+ * pixeles MENOS de alto util en Light que en Dark, y la cascada de paddings
+ * internos (pensada para el marco de Dark) quedaba mas apretada en Light.
+ * Ahora el borde renderizado es EL MISMO numero en los dos temas -Dark y
+ * Light comparten exactamente la misma geometria estructural, solo cambia el
+ * asset (`border-image-source`) y el recorte relativo a CADA fuente
+ * (`border-image-slice`, que si sigue siendo propio de cada PNG)-.
+ */
+.mk-panel,
+.commerce-dialog {
+  position: relative;
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: 18px 20px;
+  border-image-repeat: stretch;
+  border-image-width: 18px 20px;
+  border-image-slice: 40 41 fill;
+  border-image-source: url('/assets/ecommerce/frames/section-panel-light.png');
+  background-color: var(--color-surface-raised);
+}
+:root[data-theme='dark'] .mk-panel,
+:root[data-theme='dark'] .commerce-dialog {
+  border-image-slice: 41 54 fill;
+  border-image-source: url('/assets/ecommerce/frames/section-panel-dark.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Botones reales — Primary (`border-image` con relleno, sin texto quemado:
+ * los 4 estados de Buttons/ecommerce-buttons-primary-* son superficies lisas)
+ * y Secondary (marco SIN relleno: el sprite original SI trae texto quemado
+ * -"VIEW DETAILS"-, y al no usar `fill` el centro con ese texto simplemente
+ * no se renderiza; el texto real siempre es HTML/i18n encima).
+ * ------------------------------------------------------------------
+ */
+.mk-btn-primary {
+  border-style: solid;
+  border-width: 10px 16px;
+  border-image-repeat: stretch;
+  border-image-slice: 32% 38% fill;
+  border-image-width: 10px 16px;
+  border-image-source: url('/assets/ecommerce/buttons/primary-light-default.png');
+  background: transparent;
+  min-height: 40px;
+  /* Sin `transform` en ningun estado (5a pasada): el boton nunca se mueve,
+     ver comentario junto a `.mk-card:hover` arriba. */
+  transition: filter 100ms ease-out;
+}
+.mk-btn-primary:hover:not(:disabled) {
+  border-image-source: url('/assets/ecommerce/buttons/primary-light-hover.png');
+  filter: brightness(1.08);
+}
+.mk-btn-primary:active:not(:disabled) {
+  border-image-source: url('/assets/ecommerce/buttons/primary-light-active.png');
+  filter: brightness(0.95);
+}
+.mk-btn-primary:disabled {
+  border-image-source: url('/assets/ecommerce/buttons/primary-light-disabled.png');
+}
+:root[data-theme='dark'] .mk-btn-primary {
+  border-image-source: url('/assets/ecommerce/buttons/primary-dark-default.png');
+}
+:root[data-theme='dark'] .mk-btn-primary:hover:not(:disabled) {
+  border-image-source: url('/assets/ecommerce/buttons/primary-dark-hover.png');
+}
+:root[data-theme='dark'] .mk-btn-primary:active:not(:disabled) {
+  border-image-source: url('/assets/ecommerce/buttons/primary-dark-active.png');
+}
+:root[data-theme='dark'] .mk-btn-primary:disabled {
+  border-image-source: url('/assets/ecommerce/buttons/primary-dark-disabled.png');
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-btn-primary {
+    transition: none;
+  }
+}
+
+/*
+ * `!important` en `border-*` (aqui y en `.mk-btn-primary` de arriba no hace
+ * falta: no coexiste con la clase `secondary` de `Button`): `.mk-btn-secondary`
+ * se aplica JUNTO a `variant="secondary"` del `Button` compartido, que ya
+ * trae `border border-border` (Tailwind). Sin forzar la cascada aqui, ese
+ * `border-width: 1px` competiria por orden de fuente -no por especificidad,
+ * son iguales- con el `border-image` real y el resultado dependeria de que
+ * script se cargue primero.
+ */
+.mk-btn-secondary {
+  border-style: solid !important;
+  border-width: 8px 12px !important;
+  border-image-repeat: stretch;
+  border-image-slice: 30%;
+  border-image-width: 8px 12px;
+  border-image-source: url('/assets/ecommerce/buttons/secondary-light-default.png');
+  background-color: color-mix(in oklab, var(--color-brand) 6%, var(--color-surface-raised));
+  min-height: 40px;
+  transition: filter 100ms ease-out;
+}
+.mk-btn-secondary:hover:not(:disabled) {
+  border-image-source: url('/assets/ecommerce/buttons/secondary-light-hover.png');
+  filter: brightness(1.05);
+}
+.mk-btn-secondary:active:not(:disabled) {
+  filter: brightness(0.93);
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-brand) 55%, transparent);
+}
+:root[data-theme='dark'] .mk-btn-secondary {
+  border-image-source: url('/assets/ecommerce/buttons/secondary-dark-default.png');
+}
+:root[data-theme='dark'] .mk-btn-secondary:hover:not(:disabled) {
+  border-image-source: url('/assets/ecommerce/buttons/secondary-dark-hover.png');
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-btn-secondary {
+    transition: none;
+  }
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Cabecera interna de E-commerce (no el navbar global).
+ * ------------------------------------------------------------------
+ * Letrero de mercader: "E-COMMERCE" es el elemento dominante -grande,
+ * centrado- con la fuente display (5a pasada) y un acabado METAL/ORO real
+ * (degradado en 3 paradas + `background-clip: text`), no una sombra amarilla
+ * plana. `@supports` cubre el fallback: si el navegador no soporta
+ * `background-clip: text`, el texto se ve en `--color-accent-gold` solido -
+ * siempre legible, nunca invisible-.
+ */
 .commerce-heading {
-  display: flex;
-  flex-wrap: wrap;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 32px;
+  gap: 14px;
+  padding: 14px 20px;
 }
+.commerce-heading-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.commerce-heading-eyebrow {
+  font-family: var(--font-game-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-accent-gold);
+}
+.commerce-heading-main {
+  font-family: var(--font-game-display);
+  font-size: clamp(22px, 2.6vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-gold);
+}
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .commerce-heading-main {
+    color: transparent;
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--color-accent-gold) 55%, white) 0%,
+      var(--color-accent-gold) 45%,
+      color-mix(in oklab, var(--color-accent-gold) 65%, black) 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    text-shadow: 0 1px 0 color-mix(in oklab, black 45%, transparent);
+  }
+}
+.commerce-heading-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-size: 11px;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.commerce-heading-cart strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.commerce-heading::after {
+  content: '';
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--color-accent-gold) 70%, transparent) 50%,
+    transparent
+  );
+}
+@media (max-width: 640px) {
+  .commerce-heading {
+    grid-template-columns: auto 1fr;
+  }
+  .commerce-heading-cart {
+    display: none;
+  }
+}
+
 .commerce-showcase {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-height: 0;
 }
+
+/*
+ * ------------------------------------------------------------------
+ * Barra de búsqueda — placa `.mk-panel` real + icono PixelLab real.
+ * ------------------------------------------------------------------
+ */
 .commerce-search-row {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 10px 16px;
+  gap: 16px;
+  padding: 12px 18px;
 }
 .commerce-search {
   display: flex;
@@ -35,18 +388,25 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
-  padding: 8px 12px;
+  padding: 6px 12px 6px 6px;
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-surface);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--color-ink) 5%, var(--color-surface));
+  box-shadow: inset 0 1px 3px color-mix(in oklab, black 18%, transparent);
 }
 .commerce-search:focus-within {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
+
+/*
+ * ------------------------------------------------------------------
+ * Panel de filtros — placa `.mk-panel` real + iconos PixelLab reales.
+ * ------------------------------------------------------------------
+ */
 .commerce-showcase-body {
   display: grid;
-  grid-template-columns: 204px minmax(0, 1fr);
+  grid-template-columns: 216px minmax(0, 1fr);
   gap: 16px;
   min-height: 0;
 }
@@ -54,17 +414,117 @@
   display: flex;
   flex-direction: column;
   align-self: start;
-  gap: 16px;
+  gap: 14px;
   padding: 16px;
+}
+/*
+ * 6a pasada: extiende la identidad tipografica a las etiquetas internas del
+ * panel ("Tipo de producto", "Moneda del precio", "Rango de precio", y -via
+ * `.commerce-price-label` mas abajo- "Precio desde"/"Precio hasta").
+ * Ortografia NATURAL, sin `text-transform: uppercase` -Cinzel ya tiene
+ * presencia visual propia sin gritar-; tamaño/peso moderados para que siga
+ * siendo legible a este tamaño (11-12px), a diferencia del titulo principal.
+ */
+.commerce-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-game-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+}
+.commerce-price-label {
+  font-family: var(--font-game-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+/*
+ * Header "FILTRO / Limpiar" (6a pasada, corrección Light): `justify-between`
+ * con `gap` propio en vez de dejar que los dos extremos se toquen; el titulo
+ * puede truncar (`min-w-0` + `truncate` en el JSX) antes de empujar a
+ * "Limpiar" fuera del panel.
+ */
+.commerce-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+/*
+ * Ver comentario en `ShowcaseFiltersBar.tsx`: los iconos `filter`/`refresh`
+ * de la hoja Light no son cuadrados (~98x52px) como los de Dark (~41x41px), y
+ * `MarketplacePixelIcon` los escala respetando esa proporcion -correcto para
+ * no deformarlos, pero en el header angosto los volvia casi el doble de
+ * anchos en Light-. Aqui, SOLO para estos dos iconos del header, se fuerza un
+ * ancho igual al alto y se usa `object-fit: contain` para que el icono se
+ * vea completo y pequeño, sin deformarse (a diferencia de forzar tambien la
+ * altura, que si lo estiraria).
+ */
+.mk-pixel-icon--header {
+  width: 18px !important;
+  height: 18px !important;
+  object-fit: contain;
 }
 .commerce-filter-footnote {
   padding-top: 12px;
-  border-top: 1px solid var(--color-border);
+  border-top: 1px dashed var(--color-border);
+}
+
+/*
+ * Rail de categorias (4a pasada): sustituye visualmente al `<select>` de tipo
+ * de producto. Grid de 2 columnas en vez de lista vertical -mas compacto en
+ * el rail de 216px de escritorio-; cada opcion es un boton real con estado
+ * `aria-pressed`, nunca un `<select>` disfrazado.
+ */
+.commerce-type-rail {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.commerce-type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--color-muted);
+  text-align: center;
+  transition:
+    border-color 120ms ease-out,
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+.commerce-type-option:hover {
+  border-color: color-mix(in oklab, var(--color-brand) 50%, var(--color-border));
+}
+.commerce-type-option:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+.commerce-type-option.is-active {
+  border-color: var(--color-brand);
+  background: color-mix(in oklab, var(--color-brand) 14%, var(--color-surface));
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-accent-gold) 45%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .commerce-type-option {
+    transition: none;
+  }
 }
 .commerce-results {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
   min-height: 0;
 }
@@ -75,20 +535,43 @@
   gap: 4px 12px;
   min-height: 16px;
 }
+
+/*
+ * Estado vacío (`QueryState` sin `role`, ver `QueryState.tsx`): se enmarca
+ * aquí por selector, sin tocar el componente compartido -que es global y lo
+ * usan decenas de pantallas fuera de E-commerce-. 4a pasada: se aligera
+ * (sin caja/borde grande) para que se integre al escenario en vez de leerse
+ * como un bloque SaaS; el mensaje real sigue siendo el texto de `QueryState`.
+ */
+.commerce-results > p:not([role]) {
+  margin: 24px auto;
+  max-width: 320px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 600;
+  /* 5a pasada: `--color-muted` se leia bien sobre `--color-surface-raised`
+     pero se perdia sobre el escenario de fondo (el estado vacio no vive
+     dentro de un `.mk-panel`). `--color-ink` + una superficie translucida
+     detras garantizan contraste en Dark y en Light. */
+  color: var(--color-ink);
+  background: color-mix(in oklab, var(--color-surface-raised) 55%, transparent);
+}
+
 .commerce-product-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 16px;
 }
 .commerce-product-card {
   position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 170px;
+  min-height: 210px;
   min-width: 0;
-  gap: 4px;
-  padding: 8px;
+  gap: 6px;
+  padding: 6px 8px 10px;
 }
 .commerce-product-heading {
   display: flex;
@@ -99,9 +582,31 @@
   min-width: 0;
 }
 .commerce-product-image {
-  height: 44px;
-  width: 44px;
+  height: 48px;
+  width: 48px;
   flex-shrink: 0;
+  border-radius: 8px;
+}
+/*
+ * Placeholder "de videojuego" cuando un producto no tiene imagen real (6a
+ * pasada): el componente compartido `ProductImage` (`components/ui/`, lo usan
+ * otras features fuera de E-commerce) ya resuelve CUANDO mostrar el
+ * placeholder -esa logica no se toca-; aqui solo se restila, por selector y
+ * SOLO dentro de Commerce, el `role="img"` que pinta cuando no hay imagen: en
+ * vez de un rectangulo plano se ve como un slot de exhibicion vacio (borde
+ * punteado + resplandor mineral centrado), coherente con Dark y con Light.
+ * `.commerce-detail-image` es el mismo tratamiento para el placeholder grande
+ * de `ProductDetail`.
+ */
+.commerce-product-image[role='img'],
+.commerce-detail-image[role='img'] {
+  border: 1.5px dashed color-mix(in oklab, var(--color-brand) 40%, var(--color-border));
+  background-color: color-mix(in oklab, var(--color-ink) 4%, var(--color-surface));
+  background-image: radial-gradient(
+    circle at 50% 42%,
+    color-mix(in oklab, var(--color-accent-gold) 18%, transparent),
+    transparent 72%
+  );
 }
 .commerce-product-name {
   display: -webkit-box;
@@ -121,10 +626,8 @@
 }
 .commerce-wish {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  height: 30px;
-  width: 30px;
+  top: 8px;
+  right: 8px;
 }
 .commerce-product-meta {
   margin-top: auto;
@@ -133,6 +636,11 @@
 .commerce-product-meta > div:last-child {
   min-height: 12px;
   line-height: 12px;
+}
+.commerce-product-price {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--color-brand) 7%, transparent);
 }
 .commerce-product-price > div {
   flex-direction: row;
@@ -146,25 +654,62 @@
 .commerce-product-price > div > p:last-child {
   font-size: 13px;
 }
-.commerce-product-card .commerce-add {
+.commerce-product-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 6px;
+}
+.commerce-product-card .commerce-add,
+.commerce-product-card .commerce-view {
   flex-shrink: 0;
-  min-height: 30px;
+  min-height: 32px;
   padding: 5px 8px;
   font-size: 12px;
 }
+
+/*
+ * ------------------------------------------------------------------
+ * Paginación — franja `.mk-panel` real + iconos/boton PixelLab reales.
+ * ------------------------------------------------------------------
+ */
 .commerce-pagination {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  min-height: 52px;
+  gap: 14px;
+  min-height: 56px;
   margin-top: auto;
+  padding: 8px 16px;
 }
 .commerce-pagination button {
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
   font-size: 12px;
 }
+.commerce-pagination-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-brand) 8%, transparent);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Carrito flotante — "tablilla de mercader" (4a pasada): mas grande, marco
+ * real (`border-image` sobre el mismo Secondary Button PixelLab que el resto
+ * de acciones secundarias, ver `.mk-btn-secondary`), icono + etiqueta +
+ * contador claramente separados. Target táctil >= 48px de alto.
+ * ------------------------------------------------------------------
+ */
 .commerce-cart-launcher {
   position: fixed;
   z-index: 20;
@@ -172,7 +717,67 @@
   bottom: 16px;
 }
 .commerce-cart-bubble {
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-brand) 35%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 20px 8px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: filter 140ms ease-out;
+  box-shadow:
+    0 10px 28px color-mix(in srgb, var(--color-brand) 35%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 20%, transparent);
+}
+:root[data-theme='dark'] .commerce-cart-bubble {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-surface-raised) 92%, transparent),
+    color-mix(in oklab, oklch(0.16 0.02 40) 80%, var(--color-surface-raised))
+  );
+  border: 2px solid color-mix(in oklab, var(--color-accent-gold) 55%, var(--color-brand));
+}
+:root[data-theme='light'] .commerce-cart-bubble,
+:root:not([data-theme]) .commerce-cart-bubble {
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-raised),
+    color-mix(in oklab, var(--color-brand) 10%, var(--color-surface-raised))
+  );
+  border: 2px solid color-mix(in oklab, var(--color-brand) 45%, var(--color-accent-gold));
+}
+.commerce-cart-bubble:hover {
+  filter: brightness(1.08);
+}
+.commerce-cart-bubble:active {
+  filter: brightness(0.94);
+}
+.commerce-cart-bubble:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+.commerce-cart-bubble-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.commerce-cart-bubble-count {
+  display: inline-flex;
+  min-width: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--color-brand-ink);
+  background: var(--color-brand);
+}
+@media (prefers-reduced-motion: reduce) {
+  .commerce-cart-bubble {
+    transition: none;
+  }
 }
 .commerce-notice {
   position: fixed;
@@ -185,40 +790,92 @@
   padding: 10px;
   background: var(--color-surface-raised);
 }
+
+/*
+ * ------------------------------------------------------------------
+ * Diálogos (detalle de producto, carrito, checkout, invitación a iniciar
+ * sesión): mismo marco real `.mk-panel`/`.commerce-dialog` de arriba.
+ * ------------------------------------------------------------------
+ */
 .commerce-dialog {
   position: fixed;
   inset: 0;
   margin: auto;
-  width: min(960px, calc(100vw - 32px));
+  box-sizing: border-box;
+  width: min(92vw, 960px);
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
   color: var(--color-ink);
-  background: var(--color-surface-raised);
   box-shadow: 0 24px 80px #0008;
 }
 .commerce-dialog::backdrop {
   background: #080b1499;
   backdrop-filter: blur(3px);
 }
+/*
+ * Ultimo polish del carrito flotante: 440px se sentia angosto con varios
+ * productos -nombre cortado, cantidad/Quitar apretados-. 720px (dentro del
+ * rango 680-760px que pidio Richard) da aire horizontal real en escritorio.
+ * `min(92vw, 720px)` es la misma tecnica que ya usaba esta regla -sigue
+ * contrayendose sin desbordar en tablet/mobile, nunca un valor rigido que
+ * solo funcione a 1920px-. `max-height` se relaja un poco (100px -> 64px de
+ * margen) porque el ancho mayor reduce cuanto envuelve el nombre de cada
+ * producto -menos altura total-, asi que el dialogo exterior necesita scroll
+ * propio con menos frecuencia (ver `.commerce-cart-lines` para la zona que
+ * SI debe crecer/hacer scroll con muchos productos).
+ */
 .commerce-dialog-cart {
   inset: auto 16px 78px auto;
   margin: 0;
-  width: min(440px, calc(100vw - 32px));
-  max-height: calc(100dvh - 100px);
+  width: min(92vw, 720px);
+  max-height: calc(100dvh - 64px);
+  display: flex;
+  flex-direction: column;
 }
-.commerce-dialog-cart > section {
+/* El titulo + cerrar del carrito flotante no deben desaparecer si el
+   contenido combinado (carrito + guardado) fuerza scroll del dialog. */
+.commerce-dialog-cart-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-surface-raised);
+}
+/*
+ * Icono de cerrar (5a pasada): area de toque >= 44x44px CSS aunque el icono
+ * en si sea mas pequeño (`size="sm"`, ~26px de alto) -no se agranda el icono
+ * hasta 44px, se agranda el BOTON alrededor-.
+ */
+.commerce-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px;
+}
+/*
+ * `:not(.mk-panel)` (remaster Sprint 3): el marco de mercado de `CartPanel`
+ * y `SavedCartPanel` debe seguir viendose dentro del dialogo flotante del
+ * carrito; sin la exclusion, esta regla les quitaba borde/frame.
+ */
+.commerce-dialog-cart > section:not(.mk-panel) {
   border: 0;
   border-radius: 0;
+}
+.commerce-dialog-cart > .mk-panel {
+  border-width: 0;
+  background-image: none;
 }
 .commerce-dialog-cart > section + section {
   border-top: 1px solid var(--color-border);
 }
 .commerce-dialog-cart [aria-label='Carrito guardado'] {
-  padding: 14px 16px;
+  /* Mismo padding horizontal/vertical que `CartPanel` (`p-4` = 16px): antes
+     usaba 14px verticalmente, una diferencia de 2px que contribuia a la
+     sensacion de "apretado" reportada en el carrito (5a pasada). */
+  padding: 16px;
   gap: 8px;
 }
 .commerce-dialog-cart [aria-label='Carrito guardado'] h2 {
@@ -258,6 +915,27 @@
   padding: 4px 10px;
   font-size: 12px;
 }
+/*
+ * Micro-polish final del carrito flotante: dentro del modal, `.mk-panel`
+ * pierde su propio marco (`border-width: 0`, ver regla de arriba), asi que
+ * el unico aire horizontal real que quedaba era el `p-4` (16px) del
+ * `<section>` -se sentia pegado al frame exterior del dialogo. Este
+ * `padding-inline` adicional es la UNICA capa que lo resuelve (cabecera,
+ * lista de lineas y footer de total/checkout comparten el mismo
+ * envoltorio en `CartPanel.tsx`), en vez de ajustar cada linea por separado.
+ * `box-sizing: border-box` evita que el padding extra provoque overflow
+ * horizontal: el ancho de `.commerce-cart-body` sigue siendo el 100% del
+ * `<section>`, el padding resta del area de contenido, no se suma al ancho.
+ */
+.commerce-cart-body {
+  box-sizing: border-box;
+  padding-inline: 20px;
+}
+@media (max-width: 640px) {
+  .commerce-cart-body {
+    padding-inline: 14px;
+  }
+}
 @media (min-width: 1200px) and (min-height: 768px) {
   .commerce-layout {
     display: flex;
@@ -296,7 +974,7 @@
 }
 @media (max-width: 800px) {
   .commerce-showcase-body {
-    grid-template-columns: 170px minmax(0, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
     gap: 10px;
   }
   .commerce-filters {
@@ -333,7 +1011,13 @@
   .commerce-filter-footnote {
     display: none;
   }
+  .commerce-product-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
   .commerce-product-price > div {
     flex-direction: column;
+  }
+  .commerce-product-actions {
+    grid-template-columns: 1fr;
   }
 }

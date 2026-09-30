@@ -116,6 +116,16 @@ if (import.meta.env.DEV) {
       default: module.PendingClaimsDevPreview,
     })),
   )
+  // Remaster visual E-commerce Sprint 3 (4a pasada): Catalog no tiene
+  // productos publicados en el entorno local, asi que este preview monta la
+  // Product Card/ProductDetail REALES con fixtures locales (sin red) para
+  // poder inspeccionar frames/botones/iconos PixelLab. Publico, como el
+  // propio `/ecommerce`: no depende de sesion.
+  const MarketplacePreviewLazy = lazy(() =>
+    import('@/features/commerce/dev/MarketplacePreviewPage').then((module) => ({
+      default: module.MarketplacePreviewPage,
+    })),
+  )
   // Perezoso a proposito: `AppLayout` importa `@/routes/routes`, y `routes.tsx`
   // espera este modulo con `await` de nivel superior. Una importacion estatica
   // cierra el ciclo y el navegador deja la aplicacion en blanco con `npm run dev`
@@ -144,6 +154,16 @@ if (import.meta.env.DEV) {
   ]
 
   resolvedPublicDevRoutes = [
+    // Remaster visual E-commerce Sprint 3 (4a pasada): ver comentario junto a
+    // `MarketplacePreviewLazy` arriba.
+    {
+      path: '__dev/ecommerce/marketplace-preview',
+      element: (
+        <Suspense fallback={null}>
+          <MarketplacePreviewLazy />
+        </Suspense>
+      ),
+    },
     // HU-68: lista de seguimiento real con respuestas simuladas de Auction.
     {
       path: '__dev/hu68/watchlist',

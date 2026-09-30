@@ -32,7 +32,10 @@
     "EDITED": "Modifié",
     "MARKED": "Signalé",
     "WAITING_FOR_PLAYERS": "En attente de joueurs",
-    "PREPARING": "Préparation du combat"
+    "PREPARING": "Préparation du combat",
+    "UNIQUE": "Unique",
+    "LIMITED": "Édition limitée",
+    "INFINITE": "Disponibilité continue"
   },
   "breadcrumb": "Fil d'Ariane",
   "password": {

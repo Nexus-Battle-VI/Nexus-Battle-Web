@@ -94,7 +94,10 @@ export const PublishAuctionPage = (): React.JSX.Element => {
     () =>
       (inventory.data?.items ?? []).filter(
         (item) =>
-          item.quantity > 0 && item.product !== null && item.product.lifecycleStatus === 'ACTIVE',
+          item.quantity > 0 &&
+          item.product !== null &&
+          item.product.lifecycleStatus === 'ACTIVE' &&
+          !item.product.premium,
       ),
     [inventory.data],
   )

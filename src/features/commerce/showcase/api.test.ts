@@ -37,6 +37,18 @@ const requestPages = (fetcher: ReturnType<typeof setup>) =>
     new URL(input, globalThis.location.origin).searchParams.get('page'),
   )
 
+/*
+ * 6a pasada (final): el requisito real es 12 productos por pagina visible
+ * (ver `api.ts`), Catalog sigue paginando de 16 en 16. Estos tests vuelven a
+ * cubrir el adaptador de particion -franja exacta por pagina combinando hasta
+ * dos peticiones de 16, recorrido completo sin perdidas ni duplicados, respeto
+ * del total, filtros/moneda intactos en ambas peticiones, senal de cancelacion
+ * propagada a ambas, no iniciar peticiones con señal ya cancelada, no iniciar
+ * la segunda si se cancela durante la primera, descartar resultado si se
+ * cancela durante la segunda, error HTTP de cualquiera de las dos peticiones
+ * propagado sin pagina parcial, pagina invalida (incluida la que desborda el
+ * entero seguro) rechazada antes de pedir nada.
+ */
 describe('Paginacion visible de 12 sobre el contrato HTTP de 16', () => {
   it.each([
     { page: 1, requests: ['1'], from: 0, to: 12 },

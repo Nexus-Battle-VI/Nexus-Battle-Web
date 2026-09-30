@@ -29,9 +29,13 @@ describe('devRoutes', () => {
     // productos ganados pendientes de reclamo (HU-69.7), que ademas de datos
     // de ejemplo falsea una sesion (necesita Auction real) y se monta dentro
     // de `AppLayout` para revisar tambien el header (badge de pendientes), y
-    // la lista de seguimiento de subastas (HU-68) con Auction falseado, y el
-    // selector de dificultad (HU-75.3), que espera la matricula de HU-70.3.
+    // la lista de seguimiento de subastas (HU-68) con Auction falseado, el
+    // selector de dificultad (HU-75.3), que espera la matricula de HU-70.3, y
+    // la vista previa de mercado (remaster visual E-commerce Sprint 3, 4a
+    // pasada) con productos ficticios, porque el catalogo local no siempre
+    // tiene productos publicados para inspeccionar la Product Card real.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
+      '__dev/ecommerce/marketplace-preview',
       '__dev/hu68/watchlist',
       '__dev/auction/immediate-purchase',
       '__dev/auction/bidding',

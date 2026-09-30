@@ -9,6 +9,7 @@ import { CatalogNotificationsSummary } from '@/features/notifications/CatalogNot
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
 import { countLabel } from '@/shared/i18n/format'
+import { MarketplacePixelIcon } from './marketplace/MarketplacePixelIcon'
 import { CartPanel } from './cart/CartPanel'
 import { useCartPanelState } from './cart/useCartPanelState'
 import { useCart } from './cart/useCart'
@@ -63,13 +64,15 @@ export const CommercePage = (): React.JSX.Element => {
   const cartError = mutationError ?? error
   return (
     <div className="commerce-page">
-      <header className="commerce-heading">
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-xl font-semibold text-ink">{t('commerce:page.title')}</h1>
-          <span className="hidden text-xs text-muted sm:inline">{t('commerce:page.tagline')}</span>
+      <header className="commerce-heading mk-panel">
+        <MarketplacePixelIcon icon="chest" size="lg" />
+        <div className="commerce-heading-title">
+          <span className="commerce-heading-eyebrow">{t('commerce:page.tagline')}</span>
+          <h1 className="commerce-heading-main">{t('commerce:page.title')}</h1>
         </div>
-        <p aria-live="polite" className="text-xs text-muted">
-          {countLabel(t, 'commerce:page.cartCount', cart?.itemCount ?? 0)}
+        <p aria-live="polite" className="commerce-heading-cart">
+          <span>{t('commerce:cart.title')}</span>
+          <strong>{countLabel(t, 'commerce:page.cartCount', cart?.itemCount ?? 0)}</strong>
         </p>
       </header>
       <CatalogBanner />
@@ -121,7 +124,15 @@ export const CommercePage = (): React.JSX.Element => {
       {panel.expanded && (
         <CommerceDialog title={t('commerce:page.cartDialog')} floating onClose={panel.toggle}>
           <QueryState isLoading={isLoading} error={error}>
-            <CartPanel {...cartProps} expanded />
+            {/*
+              Ultimo polish del carrito flotante: dentro de este dialogo ya
+              esta la X real de `CommerceDialog` para cerrar, asi que el
+              "Minimizar" propio de `CartPanel` es una segunda accion
+              redundante (Richard lo pidio fuera del modal). El lanzador
+              inline de mas abajo (`commerce-cart-launcher`) conserva su
+              comportamiento normal, sin tocar esta prop.
+            */}
+            <CartPanel {...cartProps} expanded showMinimize={false} />
           </QueryState>
           {mutationError !== null && (
             <p role="alert" className="px-4 py-2 text-sm text-danger">

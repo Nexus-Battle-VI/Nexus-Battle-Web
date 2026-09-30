@@ -97,7 +97,7 @@ describe('Vitrina canonica', () => {
     show()
     await screen.findByText(product.description)
     await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar' }), 'consulta')
-    await userEvent.selectOptions(screen.getByLabelText('Tipo de producto'), 'HEROE')
+    await userEvent.click(screen.getByRole('button', { name: 'Héroe' }))
     await userEvent.selectOptions(screen.getByLabelText('Moneda del precio'), 'USD')
     await userEvent.type(screen.getByLabelText('Precio desde'), '12')
     await userEvent.type(screen.getByLabelText('Precio hasta'), '40')
@@ -151,7 +151,7 @@ describe('Vitrina canonica', () => {
     await screen.findByText(/pagina 1 de 3/u)
     const search = screen.getByRole('searchbox', { name: 'Buscar' })
     await userEvent.type(search, 'espada')
-    await userEvent.selectOptions(screen.getByLabelText('Tipo de producto'), 'ARMA')
+    await userEvent.click(screen.getByRole('button', { name: 'Arma' }))
     await userEvent.selectOptions(screen.getByLabelText('Moneda del precio'), 'USD')
     await userEvent.type(screen.getByLabelText('Precio desde'), '12')
     await userEvent.type(screen.getByLabelText('Precio hasta'), '40')
@@ -161,7 +161,7 @@ describe('Vitrina canonica', () => {
     await screen.findByText(/pagina 2 de 3/u)
     expect(visibleNames()).toEqual(catalogProducts.slice(12, 24).map((item) => item.name))
     expect(search).toHaveValue('espada')
-    expect(screen.getByLabelText('Tipo de producto')).toHaveValue('ARMA')
+    expect(screen.getByRole('button', { name: 'Arma' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByLabelText('Moneda del precio')).toHaveValue('USD')
     expect(screen.getByLabelText('Precio desde')).toHaveValue(12)
     expect(screen.getByLabelText('Precio hasta')).toHaveValue(40)
@@ -199,7 +199,7 @@ describe('Vitrina canonica', () => {
     await screen.findByText(/pagina 1 de 3/u)
     expect(visibleNames()).toEqual(catalogProducts.slice(0, 12).map((item) => item.name))
     expect(search).toHaveValue('')
-    expect(screen.getByLabelText('Tipo de producto')).toHaveValue('')
+    expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByLabelText('Moneda del precio')).toHaveValue('')
     expect(screen.getByLabelText('Precio desde')).toHaveValue(null)
     expect(screen.getByLabelText('Precio hasta')).toHaveValue(null)
@@ -228,7 +228,11 @@ describe('Vitrina canonica', () => {
         ([url]) => url.endsWith(product.productId) && url.includes('/catalog/'),
       ),
     ).toBe(true)
-    await userEvent.click(detail.getByRole('button', { name: 'Cerrar detalle' }))
+    // 6a pasada: el boton "Cerrar detalle" se retiro por redundante con la X
+    // real del dialogo -unica accion de cierre que queda-.
+    await userEvent.click(
+      within(modal).getByRole('button', { name: 'Cerrar Detalle del producto' }),
+    )
     expect(screen.queryByRole('dialog', { name: 'Detalle del producto' })).not.toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Detalle del producto' })).not.toBeInTheDocument()
   })
