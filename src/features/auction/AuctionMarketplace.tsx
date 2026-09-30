@@ -10,7 +10,7 @@ import { formatMoney } from '@/lib/format'
 import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
-import { listActiveAuctions, type ActiveAuction } from './api'
+import { AUCTION_PAGE_SIZE, listActiveAuctions, type ActiveAuction } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatLocale } from '@/shared/i18n/format'
 import { AuctionProductSummary } from './AuctionProductSummary'
@@ -90,7 +90,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
     queryKey: queryKeys.auctions.activePage(page),
     queryFn: ({ signal }) => listActiveAuctions(page, signal),
   })
-  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / 12))
+  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / AUCTION_PAGE_SIZE))
 
   return (
     <section aria-labelledby="active-auctions-title" className="mt-8 space-y-4">
@@ -140,7 +140,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
             <AuctionCard key={auction.id} auction={auction} />
           ))}
         </div>
-        {query.data !== undefined && query.data.total > 12 && (
+        {query.data !== undefined && query.data.total > AUCTION_PAGE_SIZE && (
           <nav aria-label={t('auction:market.pagination')} className="mt-4 flex items-center gap-3">
             <Button
               variant="secondary"

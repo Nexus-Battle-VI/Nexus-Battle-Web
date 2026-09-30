@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
@@ -63,6 +64,13 @@ const auctions = [
   },
 ]
 
+const activeAuctionPage = (total: number, page = 1) => ({
+  page,
+  pageSize: 16,
+  total,
+  items: auctions,
+})
+
 afterEach(() => {
   vi.unstubAllGlobals()
   useSession.setState({ roles: [] })
@@ -87,7 +95,7 @@ describe('AuctionMarketplace', () => {
           )
         if (url.includes('/v1/catalog/products/owned-1'))
           return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
-        return Promise.resolve(jsonResponse({ page: 1, pageSize: 12, total: 2, items: auctions }))
+        return Promise.resolve(jsonResponse(activeAuctionPage(2)))
       }),
     )
     renderWithProviders(<AuctionMarketplace />)
@@ -117,7 +125,7 @@ describe('AuctionMarketplace', () => {
           return Promise.resolve(jsonResponse({ message: 'not found' }, 404))
         if (url.includes('/v1/catalog/products/owned-1'))
           return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
-        return Promise.resolve(jsonResponse({ page: 1, pageSize: 12, total: 2, items: auctions }))
+        return Promise.resolve(jsonResponse(activeAuctionPage(2)))
       }),
     )
     renderWithProviders(<AuctionMarketplace />)
@@ -133,9 +141,7 @@ describe('AuctionMarketplace', () => {
         const url = urlOf(input)
         if (url.includes('/v1/catalog/products/'))
           return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona', 'EPICA')))
-        return Promise.resolve(
-          jsonResponse({ page: 1, pageSize: 12, total: 1, items: [auctions[0]] }),
-        )
+        return Promise.resolve(jsonResponse({ ...activeAuctionPage(1), items: [auctions[0]] }))
       }),
     )
     renderWithProviders(<AuctionMarketplace />)
@@ -145,5 +151,59 @@ describe('AuctionMarketplace', () => {
         name: 'Ver detalle',
       }),
     ).not.toBeInTheDocument()
+  })
+
+  it.each([
+    [16, 1],
+    [17, 2],
+    [32, 2],
+    [33, 3],
+  ])('calcula %i resultados como %i pagina(s) de 16', async (total, pages) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona', 'EPICA')))
+        return Promise.resolve(jsonResponse(activeAuctionPage(total)))
+      }),
+    )
+    renderWithProviders(<AuctionMarketplace />)
+
+    await screen.findByText('Corona')
+    if (pages === 1) {
+      expect(
+        screen.queryByRole('navigation', { name: 'Paginaci\u00f3n de subastas' }),
+      ).not.toBeInTheDocument()
+    } else {
+      expect(await screen.findByText(`P\u00e1gina 1 de ${String(pages)}`)).toBeInTheDocument()
+    }
+  })
+
+  it('solicita 16 resultados y mantiene anterior/siguiente', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = urlOf(input)
+      if (url.includes('/v1/catalog/products/'))
+        return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona', 'EPICA')))
+      const page = url.includes('page=2') ? 2 : 1
+      return Promise.resolve(jsonResponse(activeAuctionPage(32, page)))
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderWithProviders(<AuctionMarketplace />)
+
+    await screen.findByText('P\u00e1gina 1 de 2')
+    expect(fetch.mock.calls.map(([input]) => urlOf(input as RequestInfo | URL))).toContainEqual(
+      expect.stringContaining('page=1&pageSize=16'),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByText('P\u00e1gina 2 de 2')).toBeInTheDocument()
+    expect(fetch.mock.calls.map(([input]) => urlOf(input as RequestInfo | URL))).toContainEqual(
+      expect.stringContaining('page=2&pageSize=16'),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Anterior' }))
+    expect(await screen.findByText('P\u00e1gina 1 de 2')).toBeInTheDocument()
   })
 })
