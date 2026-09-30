@@ -387,10 +387,18 @@ describe('la curacion no se decide en Web (HU-12, excepcion de sanadores)', () =
     expect(code.slice(start, end)).not.toMatch(/hasHealth|combatantHealth/u)
   })
 
-  it('el selector de companero es un `radio` nativo, igual que el objetivo del ataque basico', () => {
+  it('pasada final: el selector de companero NO es un radiogroup permanente -- es un popover (role="dialog") que solo aparece tras pulsar la habilidad', () => {
     const code = productionSources().find((source) => source.file === 'SkillList.tsx')?.code ?? ''
 
-    expect(code).toMatch(/type="radio"/u)
+    // El radiogroup siempre-visible (9a/10a pasada) desestabilizaba la altura
+    // de TODA la barra de acciones (seccion 23-28 del brief de la pasada
+    // final): Ataque basico se estiraba por `align-items: stretch` en
+    // `.br-action-bar` cada vez que ese radiogroup aparecia. Ahora el
+    // selector vive en un overlay aislado, montado condicionalmente, nunca
+    // como radiogroup nativo.
+    expect(code).not.toMatch(/type="radio"/u)
+    expect(code).toMatch(/role="dialog"/u)
+    expect(code).toMatch(/aria-modal="true"/u)
   })
 })
 

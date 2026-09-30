@@ -1668,6 +1668,29 @@
   opacity: 0.85;
 }
 
+/* Popover de objetivo aliado (pasada final, secciones 23, 32-38, 63-64 del
+   brief): overlay AISLADO de `.br-action-bar` -- `position: fixed` sobre
+   TODA la pantalla, nunca dentro del flujo de la barra de acciones, para
+   que abrir/cerrar el selector de companero jamas cambie la altura de
+   Ataque basico ni de las demas habilidades (la causa real del bug de la
+   barra con 4 acciones). El panel real usa `.br-panel` (mismo lenguaje
+   visual que el resto de la app) centrado sobre un fondo semitransparente. */
+.br-ally-target-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: color-mix(in oklab, black 55%, transparent);
+}
+.br-ally-target-overlay .br-panel {
+  width: min(320px, 100%);
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+}
+
 @media (max-width: 768px) {
   .br-battle-stage {
     min-height: clamp(420px, calc(100dvh - 180px), 760px);

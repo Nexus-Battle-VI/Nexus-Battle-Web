@@ -52,9 +52,16 @@ export interface SkillListProps {
  * en ese turno, asi que la interfaz lo avisa (texto fijo) y deja que Combat decida.
  *
  * EXCEPCION DE CURACION (HU-12, sin Task de Management): una habilidad con `targetAudience: 'ALLY'`
- * (Reanimacion) NO usa el objetivo rival del panel de ataque -- ofrece su PROPIO selector de
- * companero (`healableAllies`, sin filtrar por Vida: un aliado caido sigue siendo un objetivo
- * valido). Con un unico companero no hay nada que elegir, igual que el objetivo del ataque basico.
+ * (Reanimacion) NO usa el objetivo rival del panel de ataque -- ofrece companeros (`healableAllies`,
+ * sin filtrar por Vida: un aliado caido sigue siendo un objetivo valido; Combat, no este cliente,
+ * decide si ese objetivo concreto es valido para ESTA habilidad). Con un unico companero no hay
+ * nada que elegir, igual que el objetivo del ataque basico.
+ *
+ * Pasada final (secciones 23, 32-38, 63-64 del brief): con mas de un companero elegible, el selector
+ * ya NO vive siempre visible dentro de la barra de acciones (eso desestabilizaba la altura de TODA
+ * la barra, seccion 23-28) -- pulsar la habilidad abre un popover COMPACTO y aislado (fuera del
+ * flujo de `.br-action-bar`); elegir companero ahi envia la intencion real y lo cierra; Cancelar lo
+ * cierra sin enviar nada. El pending/feedback real no cambian: solo cambia CUANDO se pide el objetivo.
  */
 export const SkillList = ({
   battle,
@@ -76,18 +83,25 @@ export const SkillList = ({
   const using = skill.intent
   const ready = connection === 'open' && synced
   const allies = healableAllies(battle, subject)
-  const [chosenAlly, setChosenAlly] = useState<string | null>(null)
   const [onlyAlly] = allies
-  const selectedAllyKey =
-    allies.length === 1 && onlyAlly !== undefined
-      ? keyOf(onlyAlly)
-      : allies.some((entry) => keyOf(entry) === chosenAlly)
-        ? chosenAlly
-        : null
-  const selectedAlly = allies.find((entry) => keyOf(entry) === selectedAllyKey) ?? null
+  const autoAlly = allies.length === 1 ? (onlyAlly ?? null) : null
+  const [pickerAbilityId, setPickerAbilityId] = useState<string | null>(null)
+  const pickerSkill = skills.find((entry) => entry.abilityId === pickerAbilityId) ?? null
 
   if (skills.length === 0) {
     return null
+  }
+
+  const closePicker = (): void => {
+    setPickerAbilityId(null)
+  }
+
+  const chooseAllyTarget = (ally: TurnOrderEntry): void => {
+    if (pickerAbilityId === null) {
+      return
+    }
+    onUse(pickerAbilityId, { teamLabel: ally.teamLabel, seat: ally.seat })
+    closePicker()
   }
 
   return (
@@ -107,16 +121,20 @@ export const SkillList = ({
       <ul className="flex min-w-0 flex-row flex-wrap gap-2">
         {skills.map((entry) => {
           const isHeal = entry.targetAudience === 'ALLY'
-          const effectiveTarget = isHeal ? selectedAlly : target
+          const needsPicker = isHeal && allies.length > 1
+          // Pasada final (secciones 23-28 del brief): mientras hay mas de un
+          // companero, el boton solo ABRE el popover -- nunca se sabe el
+          // objetivo antes de pulsar, asi que aqui se usa el primer aliado
+          // SOLO para que `skillAvailability` no lo bloquee por falta de
+          // objetivo (nunca se envia ese objetivo por si solo: el envio real
+          // ocurre en `chooseAllyTarget`, con el aliado que el jugador elige
+          // en el popover).
+          const effectiveTarget = isHeal ? (needsPicker ? (allies[0] ?? null) : autoAlly) : target
 
           return (
             <SkillRow
               key={entry.abilityId}
               skill={entry}
-              battle={battle}
-              allies={allies}
-              selectedAllyKey={selectedAllyKey}
-              onChooseAlly={setChosenAlly}
               availability={skillAvailability({
                 connection,
                 synced,
@@ -128,6 +146,10 @@ export const SkillList = ({
               pending={pending}
               noteId={noteId}
               onUse={() => {
+                if (needsPicker) {
+                  setPickerAbilityId(entry.abilityId)
+                  return
+                }
                 if (effectiveTarget !== null) {
                   onUse(entry.abilityId, {
                     teamLabel: effectiveTarget.teamLabel,
@@ -148,6 +170,16 @@ export const SkillList = ({
       <p id={noteId} className="sr-only">
         {t('battle:skills.note')}
       </p>
+
+      {pickerSkill !== null && (
+        <AllyTargetPicker
+          skillName={pickerSkill.name}
+          allies={allies}
+          battle={battle}
+          onChoose={chooseAllyTarget}
+          onCancel={closePicker}
+        />
+      )}
 
       {skill.unconfirmed && skill.intent !== null && (
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
@@ -181,26 +213,24 @@ export const SkillList = ({
 
 interface SkillRowProps {
   readonly skill: SkillView
-  readonly battle: BattleView
-  /** Companeros elegibles para una habilidad de curacion (`targetAudience: 'ALLY'`). */
-  readonly allies: readonly TurnOrderEntry[]
-  readonly selectedAllyKey: string | null
-  readonly onChooseAlly: (key: string) => void
   readonly availability: { readonly enabled: boolean; readonly hint: string | null }
   /** Esta es la habilidad enviada que espera resultado. */
   readonly busy: boolean
   /** Hay una intencion (de ataque o de habilidad) enviada sin resultado. */
   readonly pending: boolean
   readonly noteId: string
+  /**
+   * Pasada final (secciones 23-28, 32-33 del brief): para una habilidad de
+   * curacion con mas de un companero, esto ABRE el popover (`AllyTargetPicker`,
+   * fuera de la barra de acciones) -- nunca envia la intencion por si solo.
+   * Para todo lo demas (ataque rival normal, o curacion con 0/1 companero
+   * -- nada que elegir), sigue enviando la intencion real de inmediato.
+   */
   readonly onUse: () => void
 }
 
 const SkillRow = ({
   skill,
-  battle,
-  allies,
-  selectedAllyKey,
-  onChooseAlly,
   availability,
   busy,
   pending,
@@ -209,8 +239,6 @@ const SkillRow = ({
 }: SkillRowProps): React.JSX.Element => {
   const hintId = useId()
   const stateId = useId()
-  const allyLegendId = useId()
-  const isHeal = skill.targetAudience === 'ALLY'
   const { t } = useTranslation()
 
   return (
@@ -254,54 +282,6 @@ const SkillRow = ({
         {describeSkillStatus(skill)} · {describeRecharge(skill.chargeTurns)}
       </p>
 
-      {isHeal && allies.length > 1 && (
-        <fieldset className="min-w-0">
-          <legend id={allyLegendId} className="mb-1 text-xs font-semibold text-muted">
-            {t('battle:skills.healTarget')}
-          </legend>
-          <div className="flex flex-wrap gap-2">
-            {allies.map((entry) => {
-              const key = keyOf(entry)
-              const health = combatantHealth(battle, entry)
-
-              return (
-                <label
-                  key={key}
-                  data-selected={key === selectedAllyKey}
-                  className={clsx(
-                    'br-target-chip flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2',
-                    'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
-                    key === selectedAllyKey ? 'border-brand bg-brand/10' : 'border-border',
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name={`${allyLegendId}-companero`}
-                    value={key}
-                    checked={key === selectedAllyKey}
-                    onChange={() => {
-                      onChooseAlly(key)
-                    }}
-                    className="size-4 accent-brand"
-                  />
-                  <span className="min-w-0 truncate text-sm font-medium text-ink">
-                    {combatantName(entry)}
-                  </span>
-                  <span className="text-xs tabular-nums text-muted">
-                    {health === null
-                      ? ''
-                      : t('battle:health.value', {
-                          current: String(health.current),
-                          max: String(health.max),
-                        })}
-                  </span>
-                </label>
-              )
-            })}
-          </div>
-        </fieldset>
-      )}
-
       {/* 9a pasada (secciones 33-36 del brief): mientras `pending` es cierto
           este hint es SIEMPRE "Esperando el resultado de tu accion..."
           (`attack.hints.pending`, mismo texto que `AttackPanel`) -- se
@@ -315,5 +295,82 @@ const SkillRow = ({
         </p>
       )}
     </li>
+  )
+}
+
+interface AllyTargetPickerProps {
+  readonly skillName: string
+  readonly allies: readonly TurnOrderEntry[]
+  readonly battle: BattleView
+  readonly onChoose: (ally: TurnOrderEntry) => void
+  readonly onCancel: () => void
+}
+
+/**
+ * Pasada final (secciones 23, 32-38, 63-64 del brief): popover COMPACTO y
+ * AISLADO -- vive fuera de `.br-action-bar` (overlay `position: fixed`, ver
+ * `.br-ally-target-overlay` en battle-rooms.css) para que elegir companero
+ * nunca reserve espacio permanente ni estire el resto de la barra. Solo
+ * aparece tras pulsar una habilidad de curacion con mas de un companero
+ * elegible (HU-12); elegir uno envia la intencion real de inmediato y cierra
+ * el popover; Cancelar lo cierra sin enviar nada. `healableAllies` (ya
+ * calculado por quien llama) decide la lista -- este componente solo la
+ * presenta, nunca inventa ni filtra un candidato adicional.
+ */
+const AllyTargetPicker = ({
+  skillName,
+  allies,
+  battle,
+  onChoose,
+  onCancel,
+}: AllyTargetPickerProps): React.JSX.Element => {
+  const headingId = useId()
+  const { t } = useTranslation()
+
+  return (
+    <div
+      className="br-ally-target-overlay"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onCancel()
+        }
+      }}
+    >
+      <div role="dialog" aria-modal="true" aria-labelledby={headingId} className="br-panel p-4">
+        <h4 id={headingId} className="mb-3 text-sm font-semibold text-ink">
+          {t('battle:skills.chooseHealTarget', { skill: skillName })}
+        </h4>
+        <ul className="flex flex-col gap-2">
+          {allies.map((ally) => {
+            const health = combatantHealth(battle, ally)
+
+            return (
+              <li key={keyOf(ally)}>
+                <Button
+                  variant="battle-secondary"
+                  className="min-h-11 w-full justify-between gap-3"
+                  onClick={() => {
+                    onChoose(ally)
+                  }}
+                >
+                  <span className="min-w-0 truncate">{combatantName(ally)}</span>
+                  <span className="text-xs tabular-nums text-muted">
+                    {health === null
+                      ? ''
+                      : t('battle:health.value', {
+                          current: String(health.current),
+                          max: String(health.max),
+                        })}
+                  </span>
+                </Button>
+              </li>
+            )
+          })}
+        </ul>
+        <Button variant="battle-secondary" className="mt-3 min-h-11 w-full" onClick={onCancel}>
+          {t('battle:cancel')}
+        </Button>
+      </div>
+    </div>
   )
 }

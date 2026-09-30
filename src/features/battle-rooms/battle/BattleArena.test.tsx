@@ -23,6 +23,11 @@ const THREE_A_SIDE = [
   entry(5, { seat: 2, displayName: 'Chaman', teamLabel: 'A' }),
 ]
 
+const TWO_B_SIDE = [
+  entry(0, { seat: 0, displayName: 'Mago Fuego', teamLabel: 'B' }),
+  entry(2, { seat: 1, displayName: 'Medico', teamLabel: 'B' }),
+]
+
 /** Todo lo que decide POSICION de un `<li>`, sin lo que es pura decoracion de turno/target. */
 const formationClassesOf = (li: Element): string =>
   (li.getAttribute('class') ?? '')
@@ -141,6 +146,49 @@ describe('ArenaSide/BattleArena -- formacion inmutable ante cambios de currentTu
     expect(screen.getByRole('button', { name: /Chaman/u }).getAttribute('data-selected')).toBe(
       'true',
     )
+  })
+
+  it('2v2: el <ul> tiene un ancho FIJO (w-[...]), no solo un tope (max-w-[...]), y no cambia entre turnos', () => {
+    const renderWithActive = (activePosition: number) =>
+      render(
+        <ArenaSide
+          title="Equipo B"
+          entries={TWO_B_SIDE}
+          isSelf={() => false}
+          isCurrent={(e) => e.position === activePosition}
+        />,
+      )
+
+    const first = renderWithActive(0)
+    const ulFirst = first.container.querySelector('ul')
+    if (ulFirst === null) {
+      throw new Error('La formacion de prueba debe pintar un <ul>.')
+    }
+    const classesFirst = ulFirst.getAttribute('class') ?? ''
+    first.unmount()
+
+    renderWithActive(2)
+    const ulSecond = screen.getByRole('list')
+
+    // Pasada final (secciones 3-4, causa raiz del brief): un simple tope
+    // (`max-w-*`) no bastaba porque el <ul> seguia sin un ancho PROPIO --
+    // debe existir una utilidad `w-[...]` real (ancho fijo, no solo maximo)
+    // para que la <section> que lo envuelve nunca dependa del contenido.
+    expect(classesFirst).toMatch(/\bsm:w-\[/u)
+    expect(ulSecond.getAttribute('class')).toBe(classesFirst)
+  })
+
+  it('ningun texto visible "TURNO ACTUAL" existe sobre el heroe, activo o no (solo queda el aria-label y el aro/aura)', () => {
+    render(
+      <ArenaSide
+        title="Equipo A"
+        entries={THREE_A_SIDE}
+        isSelf={() => false}
+        isCurrent={(e) => e.position === 3}
+      />,
+    )
+
+    expect(screen.queryByText(/turno actual/iu)).not.toBeInTheDocument()
   })
 })
 

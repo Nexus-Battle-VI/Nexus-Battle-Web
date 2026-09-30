@@ -96,13 +96,19 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
     expect(screen.getByLabelText('Bruno (tú), equipo B, turno actual')).toBeInTheDocument()
   })
 
-  it('el turno actual se distingue por texto ("Turno actual"), no solo por color', () => {
+  it('el turno actual se anuncia por accesibilidad y por "Turno de X"/"Tu turno", sin chip visible redundante sobre el heroe', () => {
     pintar()
 
-    // 4a pasada (seccion 36 del brief): la franja de turnos ya no se muestra
-    // en el centro -- el unico lugar visible de "Turno actual" es la
-    // insignia sobre el combatiente activo en la arena.
-    expect(screen.getAllByText('Turno actual')).toHaveLength(1)
+    // Pasada final (secciones 5-8, 82 del brief): el chip "TURNO ACTUAL"
+    // sobre el heroe se quita -- era redundante con "Turno de Bruno" (Nexus
+    // Arena, arriba) y ademas era la UNICA pieza de contenido variable entre
+    // dos turnos que desestabilizaba el ancho del nameplate. Ningun texto
+    // visible "Turno actual" debe existir ya en el DOM; la fuente textual
+    // del turno sigue siendo "Turno de X"/"Tu turno", y el aria-label del
+    // heroe activo sigue anunciandolo para lectores de pantalla.
+    expect(screen.queryByText('Turno actual')).not.toBeInTheDocument()
+    expect(screen.getByText('Turno de Bruno')).toBeInTheDocument()
+    expect(screen.getByLabelText('Bruno, equipo B, turno actual')).toBeInTheDocument()
   })
 
   it('tras avanzar el turno (el servidor publica turnsCompleted=1) el turno pasa a Ana', () => {
@@ -259,7 +265,8 @@ describe('BattleScreen — HU-17: ambos heroes, turno vigente y orden fijo (solo
     ])
     pintar({ battle: view })
 
-    expect(screen.getAllByText('Turno actual')).toHaveLength(1)
+    expect(screen.queryByText('Turno actual')).not.toBeInTheDocument()
+    expect(screen.getAllByLabelText(/turno actual/u)).toHaveLength(1)
     expect(screen.getByText('Tu turno')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Rival' })).toBeInTheDocument()
   })

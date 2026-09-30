@@ -327,6 +327,7 @@
     "unconfirmed": "Não foi possível confirmar sua habilidade. É possível que o Combat já a tenha processado: ao tentar novamente, o mesmo comando é enviado e não se duplica.",
     "retry": "Tentar habilidade novamente",
     "healTarget": "Companheiro a curar",
+    "chooseHealTarget": "Em qual companheiro você quer usar {{skill}}?",
     "using": "Usando…",
     "use": "Usar {{skill}}"
   },

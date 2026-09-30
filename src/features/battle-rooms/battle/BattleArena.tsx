@@ -131,11 +131,15 @@ const CombatantCard = ({
             {t('battle:youBadge')}
           </span>
         )}
-        {isActive && (
-          <span className="shrink-0 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-ink">
-            {t('battle:battle.currentTurn')}
-          </span>
-        )}
+        {/* Pasada final (secciones 5-8, 82 del brief): el chip "TURNO ACTUAL"
+            era redundante con "Turno de X"/"Tu turno" del Nexus Arena (arriba)
+            -- y, al aparecer/desaparecer segun `isActive`, era la UNICA pieza
+            de contenido que variaba entre dos renders con el mismo `entries`
+            pero distinto turno, lo que bastaba para desestabilizar el ancho
+            del nameplate. Se quita del heroe por completo; el aro/aura
+            (`.br-combatant--active`, ver battle-rooms.css) sigue siendo la
+            unica decoracion de turno aqui, y siempre fue un overlay absoluto
+            sin efecto en el layout. */}
       </div>
     </li>
   )
@@ -188,14 +192,26 @@ export const ArenaSide = ({
         className={clsx(
           'grid flex-1 gap-2',
           sideColumns(entries.length),
-          entries.length <= 1 && 'mx-auto w-full max-w-[10rem]',
-          /* 3v3: sin este tope, las 3 columnas `fr` se estiran hasta ocupar
-             todo el ancho flexible del lado, separando a los heroes mucho
-             mas de lo que ocupan sus propios sprites (`heroWidth`). Un
-             ancho maximo COMPARTIDO por ambos lados (mismo valor, mismo
-             selector) los agrupa por igual sin ninguna diferencia
-             izquierda/derecha. */
-          entries.length === 3 && 'sm:mx-auto sm:w-full sm:max-w-[24rem]',
+          /* CAUSA RAIZ real del layout shift (pasada final, secciones 3-4
+             del brief): este `<ul>` es el UNICO hijo (aparte del `<h2
+             class="sr-only">`, sin tamano) de la `<section>` de
+             `ArenaSide`, que a su vez es un flex-item de `.br-arena-side`
+             SIN `flex-grow` propio -- su ancho, por defecto, es el
+             "max-content" de su contenido. Con `max-width` (el ajuste de la
+             9a/10a pasada) el `<ul>` seguia sin un ancho PROPIO: cualquier
+             diferencia de contenido entre dos renders (antes, el chip
+             "TURNO ACTUAL"; en general, nombres de distinta longitud)
+             cambiaba el max-content del `<ul>`, cambiaba el ancho de TODA la
+             `<section>`, y como `.br-arena-side--mine/--enemy` usa
+             `justify-content: flex-end/flex-start` para pegar ese bloque
+             contra el VS, un bloque con ancho distinto queda en una posicion
+             distinta -- el equipo ENTERO se corria, no solo un heroe.
+             `width` (no `max-width`) fija ese ancho a un valor SIEMPRE igual
+             sin importar el contenido: la `<section>` y el bloque completo
+             dejan de depender de nada que cambie por turno. */
+          entries.length <= 1 && 'mx-auto w-[10rem]',
+          entries.length === 2 && 'sm:mx-auto sm:w-[clamp(13rem,32vw,17rem)]',
+          entries.length === 3 && 'sm:mx-auto sm:w-[clamp(18rem,44vw,24rem)]',
         )}
       >
         {entries.map((entry) => (

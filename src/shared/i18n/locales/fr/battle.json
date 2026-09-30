@@ -327,6 +327,7 @@
     "unconfirmed": "Votre compétence n'a pas pu être confirmée. Combat l'a peut-être déjà traitée : réessayer renvoie la même commande sans la dupliquer.",
     "retry": "Réessayer la compétence",
     "healTarget": "Coéquipier à soigner",
+    "chooseHealTarget": "Sur quel coéquipier veux-tu utiliser {{skill}} ?",
     "using": "Utilisation…",
     "use": "Utiliser {{skill}}"
   },

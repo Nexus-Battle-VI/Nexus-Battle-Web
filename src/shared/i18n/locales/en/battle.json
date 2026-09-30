@@ -326,6 +326,7 @@
     "unconfirmed": "Your ability couldn't be confirmed. Combat may have already processed it: retrying sends the same command and doesn't duplicate it.",
     "retry": "Retry ability",
     "healTarget": "Teammate to heal",
+    "chooseHealTarget": "Which teammate do you want to use {{skill}} on?",
     "using": "Using…",
     "use": "Use {{skill}}"
   },
