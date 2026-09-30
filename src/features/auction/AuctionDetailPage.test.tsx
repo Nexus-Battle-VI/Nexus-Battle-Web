@@ -26,6 +26,7 @@ const auction = (patch: Partial<detailApi.AuctionDetail> = {}): detailApi.Auctio
   publishedAt: '2026-09-20T12:00:00.000Z',
   closesAt: '2026-09-22T12:00:00.000Z',
   currentBid: null,
+  bidCount: 0,
   ...patch,
 })
 
@@ -141,6 +142,23 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
     expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar puja' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Configurar puja automática' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+  })
+
+  it('un comprador conserva los controles de puja y compra', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+
+    montar()
+
+    expect(await screen.findByRole('button', { name: 'Comprar ahora' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Registrar puja' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Configurar puja automática' })).toBeInTheDocument()
   })
 
   it('CA-04: comprar sin marcar la confirmacion pide confirmar y no llega a ejecutar la compra', async () => {
@@ -275,5 +293,44 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
     await screen.findByText('Es tu propia subasta')
     expect(screen.queryByRole('button', { name: 'Seguir esta subasta' })).not.toBeInTheDocument()
+  })
+
+  it('muestra el numero total de pujas persistidas', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+      auction({
+        bidCount: 7,
+        currentBid: {
+          id: 'bid-1',
+          auctionId: AUCTION_ID,
+          bidderId: 'other',
+          amountCredits: 90,
+          placedAt: '2026-09-21T12:00:00.000Z',
+        },
+      }),
+    )
+
+    montar()
+
+    const label = await screen.findByText('Número de pujas')
+    expect(label.nextElementSibling).toHaveTextContent(/^7$/)
+  })
+
+  it('muestra 0 pujas cuando nadie ha pujado', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+
+    montar()
+
+    const label = await screen.findByText('Número de pujas')
+    expect(label.nextElementSibling).toHaveTextContent(/^0$/)
+  })
+
+  it('el propio vendedor tambien ve el numero de pujas', async () => {
+    useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction({ bidCount: 4 }))
+
+    montar()
+
+    expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
+    expect(screen.getByText('Número de pujas').nextElementSibling).toHaveTextContent(/^4$/)
   })
 })

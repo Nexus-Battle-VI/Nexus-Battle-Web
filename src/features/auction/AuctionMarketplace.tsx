@@ -10,9 +10,10 @@ import { formatMoney } from '@/lib/format'
 import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
-import { listActiveAuctions, type ActiveAuction } from './api'
+import { AUCTION_PAGE_SIZE, listActiveAuctions, type ActiveAuction } from './api'
 import { i18n } from '@/shared/i18n/i18n'
-import { countLabel, formatLocale } from '@/shared/i18n/format'
+import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
+import { AuctionProductSummary } from './AuctionProductSummary'
 
 const priceOf = (auction: ActiveAuction): string =>
   auction.priceKind === 'REAL_MONEY'
@@ -28,9 +29,7 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
   return (
     <article className="rounded-xl border border-border bg-surface-raised p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-ink">
-          {t('auction:product', { id: auction.productId })}
-        </h3>
+        <AuctionProductSummary productId={auction.productId} />
         {official && (
           <span
             aria-label={t('auction:market.officialLabel', { mark })}
@@ -60,6 +59,10 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
               timeStyle: 'short',
             }).format(new Date(auction.closesAt))}
           </dd>
+        </div>
+        <div>
+          <dt className="text-muted">{t('auction:market.bids')}</dt>
+          <dd className="font-medium text-ink">{formatInteger(auction.bidCount)}</dd>
         </div>
       </dl>
       {
@@ -91,7 +94,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
     queryKey: queryKeys.auctions.activePage(page),
     queryFn: ({ signal }) => listActiveAuctions(page, signal),
   })
-  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / 12))
+  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / AUCTION_PAGE_SIZE))
 
   return (
     <section aria-labelledby="active-auctions-title" className="mt-8 space-y-4">
@@ -141,7 +144,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
             <AuctionCard key={auction.id} auction={auction} />
           ))}
         </div>
-        {query.data !== undefined && query.data.total > 12 && (
+        {query.data !== undefined && query.data.total > AUCTION_PAGE_SIZE && (
           <nav aria-label={t('auction:market.pagination')} className="mt-4 flex items-center gap-3">
             <Button
               variant="secondary"

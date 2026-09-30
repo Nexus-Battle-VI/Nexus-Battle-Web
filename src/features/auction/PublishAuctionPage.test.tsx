@@ -17,6 +17,7 @@ const inventory = {
         imageUrl: '/sword.png',
         type: 'ARMA',
         lifecycleStatus: 'ACTIVE',
+        premium: false,
       },
     },
   ],
@@ -96,6 +97,90 @@ describe('PublishAuctionPage', () => {
         buyNowCredits: 20,
       }),
     })
+  })
+
+  it('no ofrece productos premium para publicarlos en subasta', async () => {
+    const premiumItems = inventory.items.map((item) => ({
+      ...item,
+      itemId: 'item-premium',
+      product: {
+        ...item.product,
+        productId: 'product-premium',
+        name: 'Corona premium',
+        premium: true,
+      },
+    }))
+    vi.mocked(globalThis.fetch).mockImplementation((input: RequestInfo | URL) =>
+      Promise.resolve(
+        urlOf(input).includes('/inventories/me/items')
+          ? jsonResponse({ ...inventory, items: [...inventory.items, ...premiumItems] })
+          : jsonResponse(created, 201),
+      ),
+    )
+
+    renderWithProviders(<PublishAuctionPage />)
+
+    expect(await screen.findByRole('radio', { name: /Espada del nexo/u })).toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: /Corona premium/u })).not.toBeInTheDocument()
+  })
+
+  it('carga todas las paginas y solo ofrece productos publicables', async () => {
+    const page = (number: number, items: unknown[]) => ({
+      items,
+      page: number,
+      pageSize: 1,
+      totalItems: 3,
+      totalPages: 3,
+    })
+    const item = (
+      itemId: string,
+      name: string,
+      type: string,
+      patch: Record<string, unknown> = {},
+    ) => ({
+      itemId,
+      quantity: 1,
+      product: {
+        productId: `product-${itemId}`,
+        sku: itemId,
+        name,
+        imageUrl: '',
+        type,
+        lifecycleStatus: 'ACTIVE',
+        premium: false,
+        ...patch,
+      },
+    })
+    const pages = {
+      1: page(1, [item('ability', 'Chispa', 'HABILIDAD')]),
+      2: page(2, [
+        item('weapon', 'Espada del Nexo', 'ARMA'),
+        item('premium', 'Corona premium', 'EPICA', { premium: true }),
+      ]),
+      3: page(3, [
+        item('hero', 'Guardiana', 'HEROE'),
+        item('inactive', 'Casco antiguo', 'ARMADURA', { lifecycleStatus: 'SUSPENDED' }),
+        { itemId: 'empty', quantity: 0, product: item('unused', 'Pocion', 'ITEM').product },
+        { itemId: 'unknown', quantity: 1, product: null },
+      ]),
+    }
+    vi.mocked(globalThis.fetch).mockImplementation((input: RequestInfo | URL) => {
+      const url = urlOf(input)
+      if (url.includes('/inventories/me/items')) {
+        const number = Number(new URL(url, 'https://local.test').searchParams.get('page'))
+        return Promise.resolve(jsonResponse(pages[number as 1 | 2 | 3]))
+      }
+      return Promise.resolve(jsonResponse(created, 201))
+    })
+
+    renderWithProviders(<PublishAuctionPage />)
+
+    expect(await screen.findByRole('radio', { name: /Chispa/u })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Espada del Nexo/u })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Guardiana/u })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('radio', { name: /Corona premium|Casco antiguo|Pocion/u }),
+    ).not.toBeInTheDocument()
   })
 
   it('señala la compra inmediata inválida antes de enviar y conserva los datos', async () => {

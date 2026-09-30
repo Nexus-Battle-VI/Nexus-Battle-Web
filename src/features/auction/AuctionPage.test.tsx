@@ -36,28 +36,48 @@ describe('AuctionPage', () => {
       .mockResolvedValueOnce(
         json({ items: [{ auctionId: auction.id, followedAt: auction.publishedAt, auction }] }),
       )
+      .mockResolvedValueOnce(
+        json({
+          productId: 'product-1',
+          sku: 'espada',
+          name: 'Espada del Nexo',
+          description: '',
+          imageUrl: '',
+          type: 'ARMA',
+          lifecycleStatus: 'ACTIVE',
+          creditsPrice: 10,
+          premium: false,
+          realMoneyPrice: null,
+          averageRating: null,
+          reviewCount: 0,
+        }),
+      )
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(json({ items: [] }))
     vi.stubGlobal('fetch', fetchImpl)
     renderWithProviders(<AuctionPage />)
 
+    expect(await screen.findByText('Espada del Nexo')).toBeInTheDocument()
+    expect(screen.getByText('ARMA')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
+      'href',
+      '/auction/auction-1',
+    )
     await userEvent.click(await screen.findByRole('button', { name: 'Dejar de seguir' }))
     expect(await screen.findByText('Aún no sigues ninguna subasta.')).toBeInTheDocument()
-    expect(fetchImpl.mock.calls[1]?.[0]).toContain('/v1/auctions/watchlist/auction-1')
+    expect(
+      fetchImpl.mock.calls.some(([url]) =>
+        String(url).includes('/v1/auctions/watchlist/auction-1'),
+      ),
+    ).toBe(true)
   })
 
-  it('permite seguir por identificador y presenta errores controlados', async () => {
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValueOnce(json({ items: [] }))
-      .mockResolvedValueOnce(json({ code: 'AUCTION_NOT_FOLLOWABLE', message: 'cerrada' }, 422))
-    vi.stubGlobal('fetch', fetchImpl)
+  it('no expone un formulario para escribir el identificador de subasta', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ items: [] })))
     renderWithProviders(<AuctionPage />)
 
-    await userEvent.type(await screen.findByLabelText('Identificador de subasta'), 'auction-1')
-    await userEvent.click(screen.getByRole('button', { name: 'Seguir subasta' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'La subasta no está disponible para seguimiento.',
-    )
+    await screen.findByText('Aún no sigues ninguna subasta.')
+    expect(screen.queryByLabelText('Identificador de subasta')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Seguir subasta' })).not.toBeInTheDocument()
   })
 })

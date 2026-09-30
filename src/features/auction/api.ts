@@ -56,6 +56,8 @@ interface ActiveAuctionBase {
   readonly publishedAt: string
   readonly closesAt: string
   readonly currentBidAmount: number | null
+  /** Total de pujas persistidas en Auction; 0 si nadie ha pujado. */
+  readonly bidCount: number
 }
 
 export interface PlayerActiveAuction extends ActiveAuctionBase {
@@ -88,6 +90,8 @@ export interface ActiveAuctionPage {
   readonly pageSize: number
   readonly total: number
 }
+
+export const AUCTION_PAGE_SIZE = 16
 
 interface AuctionErrorBody {
   readonly code?: unknown
@@ -160,4 +164,7 @@ export const listActiveAuctions = (
   page: number,
   signal?: AbortSignal,
 ): Promise<ActiveAuctionPage> =>
-  httpClient.get<ActiveAuctionPage>(`/v1/auctions?page=${String(page)}&pageSize=12`, signal)
+  httpClient.get<ActiveAuctionPage>(
+    `/v1/auctions?page=${String(page)}&pageSize=${String(AUCTION_PAGE_SIZE)}`,
+    signal,
+  )

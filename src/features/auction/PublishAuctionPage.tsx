@@ -6,12 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
 import { TextField } from '@/components/ui/form/TextField'
-import { useOwnedInventory } from '@/features/player-inventory/useOwnedInventory'
 import { queryKeys } from '@/shared/query-keys'
 import { describeAuctionError, publishAuction, type AuctionPublication } from './api'
 import { validateAuctionForm, type AuctionFormValues } from './validation'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel } from '@/shared/i18n/format'
+import { useAuctionPublishableInventory } from './useAuctionPublishableInventory'
 
 const newOperationId = (): string => globalThis.crypto.randomUUID()
 
@@ -89,15 +89,8 @@ const INITIAL_VALUES: AuctionFormValues = {
 export const PublishAuctionPage = (): React.JSX.Element => {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
-  const inventory = useOwnedInventory({ page: 1, term: '', type: null })
-  const products = useMemo(
-    () =>
-      (inventory.data?.items ?? []).filter(
-        (item) =>
-          item.quantity > 0 && item.product !== null && item.product.lifecycleStatus === 'ACTIVE',
-      ),
-    [inventory.data],
-  )
+  const inventory = useAuctionPublishableInventory()
+  const products = useMemo(() => inventory.data ?? [], [inventory.data])
   const [values, setValues] = useState<AuctionFormValues>(INITIAL_VALUES)
   const [submitted, setSubmitted] = useState(false)
   const [operationId, setOperationId] = useState(newOperationId)
@@ -122,6 +115,7 @@ export const PublishAuctionPage = (): React.JSX.Element => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.auctions.active }),
         queryClient.invalidateQueries({ queryKey: ['inventory', 'me', 'items'] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.auctionPublishable }),
       ])
     },
   })
