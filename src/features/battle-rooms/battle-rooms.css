@@ -1531,27 +1531,27 @@
     transform: translateY(clamp(-8px, -1.2vh, -4px)) scale(0.96);
     transform-origin: bottom center;
   }
-  /* 10a pasada (secciones 16-23 del brief): SOLO 3v3 -- el mismo selector
-     aplica por igual a `.br-arena-side--mine` y `--enemy` (ambos equipos
-     traen 3 integrantes aqui), asi que ambos bajan la MISMA cantidad sin
-     ningun caso especial por lado (seccion 22-23, "misma altura visual").
-     Unicamente se ajusta el eje Y (mas abajo) y el tope de ancho del `<ul>`
-     (ver `BattleArena.tsx`, compacta las 3 columnas por igual) -- separacion
-     horizontal, orden y escala individual quedan exactamente igual que el
-     ajuste general de arriba (seccion 18: "sin cambiar separacion
-     horizontal... sin cambiar orden... sin cambiar escala individual"). */
-  .br-arena-side ul[data-side-size='3'] > li:nth-child(1) {
-    transform: translateY(clamp(14px, 2.5vh, 22px));
-  }
+  /* Ajuste final de formacion 3v3 (secciones 4-9, 26-30 del brief): los tres
+     escalones verticales DISTINTOS de la pasada anterior (14-22px, 20-30px,
+     2-8px por asiento) hacian que el trio se viera "A1 arriba, A2 medio, A3
+     abajo" en vez de alineado, y su promedio seguia demasiado cerca del HUD
+     superior. Ahora los TRES asientos comparten el MISMO `translateY` --
+     "una sola variable de offset para los seis slots, no seis numeros
+     distintos" (seccion 28) -- bajando el trio COMPLETO de forma claramente
+     perceptible, sin tocar separacion horizontal, orden ni ancho del grupo
+     (seccion 5, 18). Aplica por igual a `--mine` y `--enemy` (ambos equipos
+     traen 3 integrantes), asi que quedan a la MISMA altura sin ningun caso
+     especial por lado (seccion 6, 8). El VS (`.br-vs-divider--battle`) no
+     se toca: sigue centrado por `.br-arena-field`, ajeno a este offset por
+     asiento (seccion 7). La escala del tercer asiento se conserva EXACTA
+     (seccion 5, "mantener... escala") -- como su origen es `bottom center`,
+     encogerlo un poco no desalinea su base, solo su parte superior. */
+  .br-arena-side ul[data-side-size='3'] > li:nth-child(1),
   .br-arena-side ul[data-side-size='3'] > li:nth-child(2) {
-    transform: translateY(clamp(20px, 3.5vh, 30px));
+    transform: translateY(clamp(28px, 4.5vh, 40px));
   }
   .br-arena-side ul[data-side-size='3'] > li:nth-child(3) {
-    /* Antes recedia hacia ARRIBA (mas cerca del HUD, seccion 3 del
-       problema). Ahora baja como el resto del grupo -- conserva el
-       `scale(0.96)` (profundidad), pero ya no compite con el HUD vecino
-       (secciones 19, 58-60). */
-    transform: translateY(clamp(2px, 0.5vh, 8px)) scale(0.96);
+    transform: translateY(clamp(28px, 4.5vh, 40px)) scale(0.96);
     transform-origin: bottom center;
   }
 }
