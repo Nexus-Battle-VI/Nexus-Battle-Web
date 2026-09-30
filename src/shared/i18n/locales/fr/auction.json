@@ -46,6 +46,7 @@
     "empty": "Il n'y a aucune enchère active pour le moment.",
     "pagination": "Pagination des enchères",
     "pageOf": "Page {{page}} sur {{pages}}",
+    "itemsPerPage": "Éléments par page",
     "officialLabel": "Publication officielle : {{mark}}",
     "minimumPrice": "Prix minimum",
     "closes": "Clôture",

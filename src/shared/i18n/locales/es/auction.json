@@ -46,6 +46,7 @@
     "empty": "No hay subastas activas en este momento.",
     "pagination": "Paginación de subastas",
     "pageOf": "Página {{page}} de {{pages}}",
+    "itemsPerPage": "Elementos por página",
     "officialLabel": "Publicación oficial: {{mark}}",
     "minimumPrice": "Precio mínimo",
     "closes": "Cierra",

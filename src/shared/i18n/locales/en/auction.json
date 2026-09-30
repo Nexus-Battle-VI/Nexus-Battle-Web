@@ -45,6 +45,7 @@
     "empty": "There are no active auctions right now.",
     "pagination": "Auctions pagination",
     "pageOf": "Page {{page}} of {{pages}}",
+    "itemsPerPage": "Items per page",
     "officialLabel": "Official listing: {{mark}}",
     "minimumPrice": "Minimum price",
     "closes": "Closes",

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { formatMoney } from '@/lib/format'
@@ -343,6 +343,146 @@ describe('AuctionMarketplace', () => {
       const card = screen.getAllByRole('article')[0]!
       expect(buyNowOf(card)).toBe('No disponible')
       expect(within(card).queryByRole('link', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('selector de elementos por pagina', () => {
+    const stubPaged = (total: number) => {
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        const params = new URL(url, 'http://localhost').searchParams
+        return Promise.resolve(
+          jsonResponse({
+            page: Number(params.get('page')),
+            pageSize: Number(params.get('pageSize')),
+            total,
+            items: auctions,
+          }),
+        )
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+    const lastListUrl = (fetchMock: ReturnType<typeof stubPaged>): string =>
+      fetchMock.mock.calls
+        .map(([input]) => urlOf(input))
+        .filter((url) => url.includes('/v1/auctions?'))
+        .at(-1) ?? ''
+    const selector = (): HTMLElement =>
+      screen.getByRole('combobox', { name: 'Elementos por página' })
+
+    it('por defecto pide 16 y ofrece 16, 32 y 48', async () => {
+      const fetchMock = stubPaged(2)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      expect(lastListUrl(fetchMock)).toContain('page=1&pageSize=16')
+      expect(selector()).toHaveValue('16')
+      expect(
+        within(selector())
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+      ).toEqual(['16', '32', '48'])
+    })
+
+    it.each([
+      ['32', 'page=1&pageSize=32'],
+      ['48', 'page=1&pageSize=48'],
+    ])('al elegir %s el request usa ese tamano', async (size, expected) => {
+      const user = userEvent.setup()
+      const fetchMock = stubPaged(2)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), size)
+
+      await waitFor(() => {
+        expect(lastListUrl(fetchMock)).toContain(expected)
+      })
+      expect(selector()).toHaveValue(size)
+    })
+
+    it('cambiar el tamano estando en una pagina posterior vuelve a la pagina 1', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubPaged(100)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Página 1 de 7')
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+      await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+      expect(await screen.findByText('Página 3 de 7')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=3&pageSize=16')
+
+      await user.selectOptions(selector(), '32')
+
+      expect(await screen.findByText('Página 1 de 4')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=1&pageSize=32')
+    })
+
+    it.each([
+      [32, '16', 2],
+      [32, '32', 1],
+      [33, '32', 2],
+    ])('total %i con %s por pagina da %i pagina(s)', async (total, size, pages) => {
+      const user = userEvent.setup()
+      stubPaged(total)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), size)
+
+      if (pages === 1) {
+        await waitFor(() => {
+          expect(
+            screen.queryByRole('navigation', { name: 'Paginación de subastas' }),
+          ).not.toBeInTheDocument()
+        })
+      } else {
+        expect(await screen.findByText(`Página 1 de ${String(pages)}`)).toBeInTheDocument()
+      }
+    })
+
+    it('anterior y siguiente respetan el tamano elegido', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubPaged(100)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), '48')
+      expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+      expect(await screen.findByText('Página 2 de 3')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=2&pageSize=48')
+
+      await user.click(screen.getByRole('button', { name: 'Anterior' }))
+      expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=1&pageSize=48')
+    })
+
+    it('con otro tamano las tarjetas conservan pujas, tiempo restante y compra inmediata', async () => {
+      const user = userEvent.setup()
+      useSession.setState({ subject: 'buyer-1' })
+      stubPaged(2)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), '32')
+      await waitFor(() => {
+        expect(selector()).toHaveValue('32')
+      })
+
+      const card = (await screen.findAllByRole('article'))[1]!
+      expect(within(card).getByText('Pujas').nextElementSibling).toHaveTextContent('3')
+      expect(within(card).getByText('Tiempo restante')).toBeInTheDocument()
+      expect(within(card).getByRole('link', { name: 'Comprar ahora' })).toHaveAttribute(
+        'href',
+        '/auction/player-1?buyNow=1',
+      )
     })
   })
 })
