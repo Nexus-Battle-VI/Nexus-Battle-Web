@@ -1,0 +1,1746 @@
+/*
+ * Remaster visual "Jugar Online" (Sprint 3, 2a pasada — correccion de
+ * composicion). Mismo criterio que `features/commerce/commerce.css`: los PNG
+ * de PixelLab son la piel, el HTML/React sigue siendo la unica fuente de
+ * texto, estado y accesibilidad.
+ *
+ * CAMBIO DE ESTRATEGIA respecto a la 1a pasada: `border-image` con `fill`
+ * sobre un marco ornamental COMPLEJO (medallones grandes en las esquinas)
+ * NO escala bien a un panel de tamano arbitrario -- el navegador estira ese
+ * medallon junto con el borde, deformandolo, exactamente el defecto
+ * reportado ("ornamentacion atravesando contenido", "border-image
+ * estirado", roto en Light). Los PANELES (`frame-panel`, `frame-combatant`,
+ * `frame-team-slot`, `frame-result`, `frame-meter`) YA NO usan
+ * `border-image`: son una superficie CSS (color translucido + borde fino +
+ * sombra) con, cuando aporta, un adorno de ESQUINA pequeno y de tamano FIJO
+ * (`decoration-corner-*`, nunca estirado).
+ *
+ * 4a PASADA (refinamiento visual final, secciones 16-17 del brief): CERO
+ * `border-image` queda en botones/chips -- ni `.br-btn-*` ni `.br-selectable`
+ * (chips de modalidad/formato de Crear Sala). Con texto largo ("Crear sala
+ * de batalla", "Volver a Jugar Online") `border-image-repeat: stretch`
+ * deformaba el marco PNG visiblemente; ahora son superficie CSS pura, igual
+ * que los paneles.
+ *
+ * Paleta local: `--br-*` son tokens PROPIOS de este archivo, con valores
+ * fijos (no `oklch`/`color-mix` sobre los tokens globales) para poder
+ * razonar el contraste sin inspeccion visual en vivo. Conviven con
+ * `--color-*` globales -- no los reemplazan, no afectan a otras features.
+ */
+
+:root {
+  --br-ink: #241a0c;
+  --br-muted: #5c503a;
+  --br-accent: #8a5a12;
+  --br-accent-2: #1e4e8c;
+  --br-danger: #7a1f1f;
+  --br-success: #1f6b3a;
+  --br-panel-bg: rgba(250, 246, 235, 0.86);
+  --br-panel-bg-strong: rgba(250, 246, 235, 0.96);
+  --br-panel-border: rgba(120, 82, 20, 0.4);
+  --br-overlay-scrim: rgba(255, 251, 240, 0.22);
+  --br-shadow: 0 10px 26px rgba(40, 28, 8, 0.22);
+  /* 3a pasada: el titulo grande necesita mas contraste que el bronze del
+     eyebrow sobre superficie marfil -- navy/zafiro oscuro en Light. */
+  --br-title: #1b3a63;
+  /* 5a pasada (seccion 21 del brief): el eyebrow del Lobby ("LOBBY DE
+     COMBATE...") en dorado perdia contraste sobre el fondo claro -- SOLO en
+     Light cambia a un teal/aguamarina metalico oxidado; en Dark sigue el
+     mismo dorado de siempre (`--br-accent`, ver el override de abajo). */
+  --br-lobby-eyebrow: #1a5c56;
+  /* 6a pasada (seccion 5 del brief): el COLOR ya esta bien (no se toca) --
+     solo le falta presencia. Mas peso, SOLO en Light; Dark mantiene 600
+     (override abajo). */
+  --br-lobby-eyebrow-weight: 700;
+  /* 5a pasada (secciones 23-29 del brief): sin card detras del HUD de
+     Vida/Poder, la legibilidad la da un halo de texto -- claro en Light
+     (el arte de fondo es predominantemente luminoso), oscuro en Dark. */
+  --br-hud-text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9), 0 0 6px rgba(255, 255, 255, 0.6);
+  /* Acentos de modalidad (PVP/PVE) y de estado de sala: conceptos DISTINTOS,
+     nunca el mismo color. */
+  --br-pvp-accent: #6d3fae;
+  --br-pve-accent: #9c1f2e;
+  --br-status-waiting: #1f7a4d;
+  --br-status-preparing: #b6790f;
+  --br-status-active: #1f9d6b;
+  --br-status-cancelled: #7a7368;
+  /* Scrollbar tematica (4a pasada, secciones 10-11): Light = track ivory/
+     beige, thumb steel-blue (chat) / gold oscuro (salas). */
+  --br-scrollbar-track: #ece2c8;
+  --br-scrollbar-thumb: #6b84a8;
+  --br-scrollbar-thumb-hover: #566d8c;
+  --br-scrollbar-thumb-rooms: #a3781f;
+  --br-scrollbar-thumb-rooms-hover: #8a6419;
+}
+:root[data-theme='dark'] {
+  --br-ink: #f3e9cf;
+  --br-muted: #b8ab8a;
+  --br-accent: #e7bd5a;
+  --br-accent-2: #9b7bea;
+  --br-danger: #ef7a7a;
+  --br-success: #74d494;
+  --br-panel-bg: rgba(20, 16, 14, 0.72);
+  --br-panel-bg-strong: rgba(16, 13, 11, 0.9);
+  --br-panel-border: rgba(224, 179, 77, 0.32);
+  --br-overlay-scrim: rgba(8, 6, 5, 0.32);
+  --br-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  /* En Dark el dorado brillante YA tiene contraste real sobre el escenario
+     oscuro -- el titulo puede seguir usando el mismo acento, sin necesitar
+     un segundo color de "alto contraste" como en Light. */
+  --br-title: var(--br-accent);
+  /* Dark NO cambia (seccion 21-22 del brief): mismo dorado de siempre. */
+  --br-lobby-eyebrow: var(--br-accent);
+  /* Dark NO cambia (6a pasada, seccion 5 del brief): mismo peso de siempre. */
+  --br-lobby-eyebrow-weight: 600;
+  --br-hud-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85), 0 0 6px rgba(0, 0, 0, 0.55);
+  --br-pvp-accent: #a789f0;
+  --br-pve-accent: #ef7a7a;
+  --br-status-waiting: #74d494;
+  --br-status-preparing: #e7bd5a;
+  --br-status-active: #5fe3ad;
+  --br-status-cancelled: #9c9384;
+  /* Scrollbar tematica (4a pasada, secciones 10-11): Dark = track carbon/
+     negro, thumb bronze (salas) / violeta (chat). */
+  --br-scrollbar-track: #1a1512;
+  --br-scrollbar-thumb: #7a63c9;
+  --br-scrollbar-thumb-hover: #9583e0;
+  --br-scrollbar-thumb-rooms: #b6892f;
+  --br-scrollbar-thumb-rooms-hover: #d0a04a;
+}
+
+/* Contenedor de pagina (`AppLayout`, ver `.br-main` en `AppLayout.tsx`):
+   ancho completo, sin el `max-w-6xl`/`px-4 py-8` que encajonaba el escenario. */
+.br-main {
+  max-width: 1680px;
+}
+
+/* ------------------------------------------------------------------
+ * Escenario de fondo. `min-height` es DISTINTO por pantalla: Lobby/sala de
+ * espera son mayormente ambiente (mas alto); la batalla NO fuerza una altura
+ * -- la decide su propio contenido (arena + HUD, ambos con `clamp`) para
+ * caber en 1360x768 sin forzar scroll de pagina.
+ * ------------------------------------------------------------------ */
+.br-scene {
+  position: relative;
+  border-radius: 18px;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--br-ink);
+}
+.br-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  image-rendering: pixelated;
+}
+.br-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--br-overlay-scrim);
+}
+.br-scene-lobby,
+.br-scene-waiting {
+  min-height: clamp(460px, 74vh, 780px);
+}
+.br-scene-lobby::before {
+  background-image: url('/assets/battle-rooms/backgrounds/bg-play-lobby-light.png');
+}
+.br-scene-waiting::before {
+  background-image: url('/assets/battle-rooms/backgrounds/bg-play-waiting-light.png');
+}
+.br-scene-battle::before {
+  background-image: url('/assets/battle-rooms/backgrounds/bg-play-battle-light.png');
+}
+:root[data-theme='dark'] .br-scene-lobby::before {
+  background-image: url('/assets/battle-rooms/backgrounds/bg-play-lobby-dark.png');
+}
+:root[data-theme='dark'] .br-scene-waiting::before {
+  background-image: url('/assets/battle-rooms/backgrounds/bg-play-waiting-dark.png');
+}
+:root[data-theme='dark'] .br-scene-battle::before {
+  background-image: url('/assets/battle-rooms/backgrounds/bg-play-battle-dark.png');
+}
+.br-scene-pad {
+  padding: 14px;
+}
+@media (min-width: 640px) {
+  .br-scene-pad {
+    padding: 20px;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Tipografia tematica. SOLIDA (sin gradiente/`background-clip`): en Light
+ * necesita contraste real sobre superficies claras, no un dorado palido.
+ * ------------------------------------------------------------------ */
+.br-heading-eyebrow {
+  font-family: var(--font-game-display);
+  font-size: 12px;
+  font-weight: var(--br-lobby-eyebrow-weight);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--br-lobby-eyebrow);
+}
+.br-heading-title {
+  font-family: var(--font-game-display);
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--br-title);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.15);
+}
+@media (min-width: 640px) {
+  .br-heading-title {
+    font-size: 34px;
+  }
+}
+.br-section-title {
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--br-accent);
+}
+/* Labels tematicos livianos (seccion 20 del brief): la MISMA familia que
+   subtitulos/filtros ("JcJ"/"JcE", "La batalla comienza cuando...", cupo
+   vacio, etc.), SIN mayusculas forzadas ni tracking grande -- a diferencia
+   de `.br-heading-eyebrow`/`.br-section-title`, prioriza legibilidad sobre
+   impacto visual (texto mas largo, a menudo una frase completa). */
+.br-label-theme {
+  font-family: var(--font-game-display);
+}
+
+/* ------------------------------------------------------------------
+ * Superficie de panel (CSS, sin `border-image`): borde fino + sombra +
+ * esquinas ornamentales pequenas de tamano FIJO (nunca estiradas).
+ * ------------------------------------------------------------------ */
+.br-panel {
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--br-panel-border);
+  border-radius: 14px;
+  background: var(--br-panel-bg);
+  box-shadow: var(--br-shadow);
+  backdrop-filter: blur(3px);
+}
+
+/* Cierre final, Objetivo 3: "Volver a la sala" (`ActiveRoomBanner.tsx`) usa
+   `bg-brand/10` -- 10% de opacidad -- sobre paginas con el fondo de la
+   arena/escenario detras, y en Light eso deja competir demasiado el fondo
+   con el texto/icono/boton (en Dark, mismo 10%, ya se lee bien). Se refuerza
+   la opacidad SOLO en Light, mezclando el mismo tono de marca
+   (`--color-brand`, el MISMO que ya pinta el borde) con el panel solido del
+   remaster (`--br-panel-bg-strong`) en vez de con transparencia -- conserva
+   la identidad visual Light (sigue siendo un tinte de marca, no un bloque
+   oscuro) sin tocar estructura/copy/spacing/color de borde/icono/boton. Dark
+   no se toca: sin regla aqui, sigue exactamente `bg-brand/10` como antes. */
+:root:not([data-theme='dark']) .br-active-room-banner {
+  background-color: color-mix(in oklab, var(--color-brand) 22%, var(--br-panel-bg-strong));
+}
+.br-panel--corners::before,
+.br-panel--corners::after {
+  content: '';
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.br-panel--corners::before {
+  top: -6px;
+  left: -6px;
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-tl-light.png');
+}
+.br-panel--corners::after {
+  top: -6px;
+  right: -6px;
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-tr-light.png');
+}
+:root[data-theme='dark'] .br-panel--corners::before {
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-tl-dark.png');
+}
+:root[data-theme='dark'] .br-panel--corners::after {
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-tr-dark.png');
+}
+
+/* Botones reales (`Button.tsx`, variantes `battle-*`) -- 4a pasada (seccion
+   16-17 del brief): YA NO usan `border-image`. Con texto largo (p.ej. "Crear
+   sala de batalla", "Volver a Jugar Online") `border-image-repeat: stretch`
+   deformaba visiblemente el marco PNG. Ahora son una superficie CSS pura
+   (degradado + borde + resalte interior fijo), igual que `.br-panel`: escala
+   a cualquier ancho sin deformarse. Los tokens `--br-accent`/`--br-danger`/
+   `--br-accent-2` ya cambian solos entre Dark/Light (definidos arriba), asi
+   que UNA sola regla cubre los dos temas -- sin bloque `:root[data-theme]`
+   aparte. */
+.br-btn-primary,
+.br-btn-danger,
+.br-btn-secondary,
+.br-btn-compact {
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--br-panel-border);
+  border-radius: 10px;
+  min-height: 40px;
+  color: var(--br-ink);
+  background: var(--br-panel-bg-strong);
+  box-shadow: var(--br-shadow);
+  transition:
+    filter 120ms ease-out,
+    transform 100ms ease-out,
+    box-shadow 120ms ease-out;
+}
+.br-btn-compact {
+  min-height: 32px;
+  border-radius: 8px;
+}
+.br-btn-primary {
+  border-color: var(--br-accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--br-accent) 24%, var(--br-panel-bg-strong)),
+    color-mix(in oklab, var(--br-accent) 46%, var(--br-panel-bg-strong))
+  );
+}
+.br-btn-danger {
+  border-color: var(--br-danger);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--br-danger) 20%, var(--br-panel-bg-strong)),
+    color-mix(in oklab, var(--br-danger) 40%, var(--br-panel-bg-strong))
+  );
+}
+.br-btn-secondary,
+.br-btn-compact {
+  border-color: var(--br-accent-2);
+}
+/* Resalte interior fijo (nunca un medallon que se estire): un borde de 1px
+   a tamano constante, no un asset. */
+.br-btn-primary::after,
+.br-btn-danger::after,
+.br-btn-secondary::after,
+.br-btn-compact::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in oklab, white 22%, transparent);
+  pointer-events: none;
+}
+.br-btn-primary:hover:not(:disabled),
+.br-btn-danger:hover:not(:disabled),
+.br-btn-secondary:hover:not(:disabled),
+.br-btn-compact:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--br-accent-2) 45%, transparent),
+    var(--br-shadow);
+}
+.br-btn-primary:active:not(:disabled),
+.br-btn-danger:active:not(:disabled),
+.br-btn-secondary:active:not(:disabled),
+.br-btn-compact:active:not(:disabled) {
+  transform: translateY(1px);
+  filter: brightness(0.94);
+}
+.br-btn-primary:disabled,
+.br-btn-danger:disabled,
+.br-btn-secondary:disabled,
+.br-btn-compact:disabled {
+  filter: grayscale(0.35) brightness(0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  .br-btn-primary,
+  .br-btn-danger,
+  .br-btn-secondary,
+  .br-btn-compact {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * PixelLab RESTAURADO SELECTIVAMENTE (5a pasada, secciones 4-6, 92-96 del
+ * brief): `.br-btn-*` (arriba) SIGUE siendo superficie CSS pura -- NO se
+ * generaliza `border-image` a toda la libreria de nuevo. Estas clases son
+ * ADITIVAS: se suman al className normal de un `Button`/`Link` ya existente
+ * (nunca reemplazan el `variant`) y solo en los controles concretos que
+ * Richard senalo. Cada una esta scopeada a su propio selector -- nunca
+ * `.br-btn-*` generico -- para que el resto de botones (Refrescar, Volver a
+ * Jugar Online, Comenzar batalla...) NO se vea afectado.
+ * ------------------------------------------------------------------ */
+.br-btn-secondary.br-pixellab-secondary::after,
+.br-btn-danger.br-pixellab-danger::after,
+.br-btn-primary.br-pixellab-send::after {
+  content: none;
+}
+:root[data-theme='dark'] .br-btn-primary.br-pixellab-primary::after {
+  content: none;
+}
+
+/* Unirse - Equipo A/B, Volver a sala: Dark Y Light (texto corto, el marco
+   secundario original no se deformaba). */
+.br-pixellab-secondary {
+  border-style: solid !important;
+  border-width: 8px 12px !important;
+  border-image-repeat: stretch;
+  border-image-slice: 28% 38% fill;
+  border-image-width: 8px 12px;
+  border-image-source: url('/assets/battle-rooms/buttons/button-secondary-light.png');
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: filter 100ms ease-out;
+}
+:root[data-theme='dark'] .br-pixellab-secondary {
+  border-image-source: url('/assets/battle-rooms/buttons/button-secondary-dark.png');
+}
+
+/* Cancelar sala / Cancelar (card de lista): Dark Y Light. */
+.br-pixellab-danger {
+  border-style: solid !important;
+  border-width: 10px 16px !important;
+  border-image-repeat: stretch;
+  border-image-slice: 30% 40% fill;
+  border-image-width: 10px 16px;
+  border-image-source: url('/assets/battle-rooms/buttons/button-danger-light.png');
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: filter 100ms ease-out;
+}
+:root[data-theme='dark'] .br-pixellab-danger {
+  border-image-source: url('/assets/battle-rooms/buttons/button-danger-dark.png');
+}
+
+/* Enviar (chat): version compacta para caber junto al input (seccion
+   96-97 del brief, ~90-120px), Dark Y Light. */
+.br-pixellab-send {
+  border-style: solid !important;
+  border-width: 6px 10px !important;
+  border-image-repeat: stretch;
+  border-image-slice: 26% 36% fill;
+  border-image-width: 6px 10px;
+  border-image-source: url('/assets/battle-rooms/buttons/button-compact-light.png');
+  background: transparent !important;
+  box-shadow: none !important;
+  min-height: 36px;
+  padding-inline: 10px;
+  transition: filter 100ms ease-out;
+}
+:root[data-theme='dark'] .br-pixellab-send {
+  border-image-source: url('/assets/battle-rooms/buttons/button-compact-dark.png');
+}
+
+/* Crear sala de batalla: SOLO Dark (seccion 6C/94 del brief, excepcion
+   consciente EXPLICITA -- en Light el boton actual, CSS puro, quedo mejor
+   que el PNG viejo estirado; se deja intacto). Sin regla fuera de
+   `[data-theme='dark']`: en Light esta clase no hace nada. */
+:root[data-theme='dark'] .br-pixellab-primary {
+  border-style: solid !important;
+  border-width: 12px 18px !important;
+  border-image-repeat: stretch;
+  border-image-slice: 32% 40% fill;
+  border-image-width: 12px 18px;
+  border-image-source: url('/assets/battle-rooms/buttons/button-primary-dark.png');
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: filter 100ms ease-out;
+}
+
+.br-pixellab-secondary:hover:not(:disabled),
+.br-pixellab-danger:hover:not(:disabled),
+.br-pixellab-send:hover:not(:disabled),
+:root[data-theme='dark'] .br-pixellab-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.br-pixellab-secondary:active:not(:disabled),
+.br-pixellab-danger:active:not(:disabled),
+.br-pixellab-send:active:not(:disabled),
+:root[data-theme='dark'] .br-pixellab-primary:active:not(:disabled) {
+  filter: brightness(0.92);
+}
+.br-pixellab-secondary:disabled,
+.br-pixellab-danger:disabled,
+.br-pixellab-send:disabled,
+:root[data-theme='dark'] .br-pixellab-primary:disabled {
+  filter: grayscale(0.5) brightness(0.85);
+}
+@media (prefers-reduced-motion: reduce) {
+  .br-pixellab-secondary,
+  .br-pixellab-danger,
+  .br-pixellab-send,
+  .br-pixellab-primary {
+    transition: none;
+  }
+}
+
+/* RESTAURADO (5a pasada, secciones 4-6/92-95 del brief): Richard pidio
+   volver exactamente al skin PixelLab/rustico anterior en Modalidad/Formato
+   -- Dark Y Light, el marco original no se deformaba con este texto corto
+   ("JcJ"/"JcE"/"1 vs 1"...). `aria-checked` sigue siendo el estado real; el
+   asset cambia entre toggle-off/toggle-on, nunca se toca el click/teclado. */
+.br-selectable {
+  border-style: solid !important;
+  border-width: 8px 12px !important;
+  border-image-repeat: stretch;
+  border-image-slice: 30% fill;
+  border-image-width: 8px 12px;
+  border-image-source: url('/assets/battle-rooms/buttons/button-toggle-off-light.png');
+  background: transparent;
+  color: var(--br-ink);
+}
+.br-selectable[aria-checked='true'] {
+  border-image-source: url('/assets/battle-rooms/buttons/button-toggle-on-light.png');
+}
+:root[data-theme='dark'] .br-selectable {
+  border-image-source: url('/assets/battle-rooms/buttons/button-toggle-off-dark.png');
+  color: var(--br-ink);
+}
+:root[data-theme='dark'] .br-selectable[aria-checked='true'] {
+  border-image-source: url('/assets/battle-rooms/buttons/button-toggle-on-dark.png');
+}
+
+/* Filtro circular icon-only (modalidad de la lista de salas). */
+.br-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--br-panel-border);
+  background: var(--br-panel-bg);
+  transition:
+    box-shadow 120ms ease-out,
+    transform 120ms ease-out;
+}
+.br-filter-chip:hover {
+  transform: translateY(-1px);
+}
+.br-filter-chip[aria-pressed='true'] {
+  border-color: var(--br-accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--br-accent) 55%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .br-filter-chip {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Medidores (Vida/Poder): SOLO CSS -- sin `border-image` (elimina el ultimo
+ * punto de deformacion). El relleno sigue siendo un `<div>` con `width`
+ * dinamico en linea, sin cambios de logica.
+ * ------------------------------------------------------------------ */
+.br-meter-track {
+  border: 1px solid var(--br-meter-track-border, var(--br-panel-border));
+  border-radius: 999px;
+  background-color: color-mix(in oklab, var(--br-ink) var(--br-meter-track-mix, 10%), transparent);
+  overflow: hidden;
+}
+.br-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+.br-meter-fill--health-high {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-success) 70%, black),
+    var(--color-success)
+  );
+}
+.br-meter-fill--health-medium {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-warning) 70%, black),
+    var(--color-warning)
+  );
+}
+.br-meter-fill--health-low {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-danger) 70%, black),
+    var(--color-danger)
+  );
+}
+.br-meter-fill--power {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-brand) 60%, black),
+    var(--color-brand)
+  );
+}
+
+/* ------------------------------------------------------------------
+ * Arena de batalla: los heroes SIN caja opaca -- solo un nameplate compacto
+ * debajo (nombre + insignias). El "campo" es el `background` del `.br-scene`,
+ * visible entre los heroes.
+ * ------------------------------------------------------------------ */
+.br-arena {
+  min-height: clamp(220px, 42vh, 420px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px 4px;
+}
+.br-combatant {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  /* 10a pasada (CAUSA RAIZ, secciones 3-8, 47-50 del brief): `.br-combatant`
+     es un item de la rejilla (`ul.grid-cols-2/3` en `BattleArena.tsx`) con
+     columnas `minmax(0, 1fr)`. Por defecto, un item de grid tiene un
+     "automatic minimum size" igual al min-content de su contenido -- y ESE
+     minimo si participa en el algoritmo de columnas flexibles (`fr`), asi
+     que cuando el badge "TURNO ACTUAL" aparece dentro de `.br-nameplate`
+     (gap, texto adicional) el min-content de ESE item crecia, la columna de
+     ESE combatiente se ensanchaba mas que las demas, y los demas heroes se
+     recorrian. `min-width: 0` anula ese minimo automatico: las columnas
+     quedan fijas por el `fr` del grid, nunca por el contenido de un
+     combatiente puntual -- "SE MUEVE EL INDICADOR DEL TURNO, NO LA
+     FORMACION". El badge que ya no cabe simplemente se recorta/ajusta
+     DENTRO de su propia celda (`.br-nameplate` ya tiene `max-width: 100%`
+     y el nombre ya usa `truncate`), nunca cambia el ancho de la celda. */
+  min-width: 0;
+}
+.br-nameplate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--br-panel-border);
+  background: var(--br-panel-bg-strong);
+  font-size: 12px;
+  color: var(--br-ink);
+}
+.br-combatant--active .br-nameplate {
+  border-color: var(--br-accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--br-accent) 45%, transparent);
+}
+/* Anillo de turno: adorno FIJO detras del heroe, nunca estirado a su ancho
+   real (`background-size: contain` centrado, tamano limitado por `max`). */
+.br-combatant--active .br-combatant-model {
+  position: relative;
+}
+.br-combatant--active .br-combatant-model::before {
+  content: '';
+  position: absolute;
+  inset: -10%;
+  background-image: url('/assets/battle-rooms/decorations/decoration-turn-ring-light.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: -1;
+}
+:root[data-theme='dark'] .br-combatant--active .br-combatant-model::before {
+  background-image: url('/assets/battle-rooms/decorations/decoration-turn-ring-dark.png');
+}
+@media (prefers-reduced-motion: no-preference) {
+  .br-combatant--active .br-combatant-model::before {
+    animation: br-turn-pulse 2.4s ease-in-out infinite;
+  }
+}
+@keyframes br-turn-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Objetivo seleccionable: el area del heroe ES el control (boton real). Sin
+   layout shift -- el "selected" es un anillo/corners superpuestos, nunca un
+   cambio de tamano. */
+.br-combatant-target {
+  display: block;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.br-combatant-target:focus-visible {
+  outline: 2px solid var(--br-accent-2);
+  outline-offset: 3px;
+}
+/* 7a pasada (secciones 61-62 del brief): hover/focus SUTIL, solo en un
+   combatiente que YA es un objetivo valido -- el modelo de uno invalido
+   nunca es un `<button>` (ver `BattleArena.tsx`, `isTargetable`), asi que
+   nunca da falsa sensacion de click. */
+.br-combatant-target:hover .br-combatant-model,
+.br-combatant-target:focus-visible .br-combatant-model {
+  filter: brightness(1.08);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .br-combatant-target .br-combatant-model {
+    transition: filter 100ms ease-out;
+  }
+}
+.br-combatant-target[data-selected='true'] .br-combatant-model {
+  position: relative;
+}
+.br-combatant-target[data-selected='true'] .br-combatant-model::after {
+  content: '';
+  position: absolute;
+  inset: -8%;
+  border: 2px solid var(--br-accent-2);
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--br-accent-2) 35%, transparent);
+  pointer-events: none;
+}
+
+.br-vs-divider {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  background-image: url('/assets/battle-rooms/decorations/decoration-vs-divider-light.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  flex-shrink: 0;
+}
+:root[data-theme='dark'] .br-vs-divider {
+  background-image: url('/assets/battle-rooms/decorations/decoration-vs-divider-dark.png');
+}
+@media (min-width: 768px) {
+  .br-vs-divider {
+    width: 72px;
+    height: 72px;
+  }
+}
+/* 6a pasada -- BUG encontrado y corregido: `.br-vs-divider` es COMPARTIDA
+   por Battle y por la Sala de Espera (Waiting Room), pero cada una necesita
+   un offset vertical DISTINTO. En la 5a pasada el offset de Battle (seccion
+   37 de esa pasada, subir el VS) se puso en la clase base -- eso bajaba/
+   subia el VS de la Sala de Espera de rebote, sin que nadie lo pidiera.
+   Ahora cada pantalla usa su propio modificador. */
+.br-vs-divider--battle {
+  /* 8a pasada (secciones 20-25 del brief): SIN transform -- antes este
+     offset "subia" el VS relativo a un `.br-arena-field` alineado abajo
+     (`align-items: flex-end`), lo que en la practica lo dejaba mezclado con
+     personajes/Action Bar segun el formato. Ahora `.br-arena-field` centra
+     verticalmente (ver esa regla), asi que el VS YA cae en el centro
+     geometrico real de la arena sin necesitar ningun ajuste magico -- y
+     por definicion no varia con 1v1/2v2/3v3 (la alineacion es la misma para
+     cualquier cantidad de combatientes). */
+}
+.br-vs-divider--room {
+  /* Sala de Espera (seccion 14 de esta pasada): bajarlo un poco, sin tocar
+     cards/jugadores/escala -- solo este offset pequeño hacia abajo. */
+  transform: translateY(8px);
+}
+
+.br-team-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--br-panel-border);
+  background: var(--br-panel-bg-strong);
+}
+
+.br-section-divider {
+  height: 1px;
+  background: var(--br-panel-border);
+  margin: 4px 0;
+}
+
+/* ------------------------------------------------------------------
+ * Sala de espera: slot de participante -- superficie CSS ligera, sin caja
+ * grande por persona.
+ * ------------------------------------------------------------------ */
+.br-team-slot {
+  border: 1px solid var(--br-panel-border);
+  border-radius: 12px;
+  background: var(--br-panel-bg);
+  box-shadow: var(--br-shadow);
+}
+.br-hero-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 10px;
+}
+.br-hero-slot--empty {
+  border: 1px dashed var(--br-panel-border);
+  opacity: 0.65;
+}
+
+/* ------------------------------------------------------------------
+ * Batalla: HUD inferior (status | acciones) en 2 columnas desde `md`, sin
+ * `order` (el DOM ya viene en el orden logico: status antes de acciones).
+ * ------------------------------------------------------------------ */
+.br-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+@media (min-width: 768px) {
+  .br-hud {
+    display: grid;
+    grid-template-columns: minmax(180px, 26%) minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+}
+.br-hud-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: clamp(160px, 30vh, 320px);
+  overflow-y: auto;
+}
+.br-status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--br-panel-border);
+  background: var(--br-panel-bg);
+}
+.br-status-row--active {
+  border-color: var(--br-accent);
+}
+.br-status-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--br-ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.br-status-meter {
+  height: 6px;
+}
+
+.br-hud-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Franja compacta superior (ronda + conexion + timers), sin la gran barra de
+   1a pasada. */
+.br-top-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--br-muted);
+}
+/* Objetivo seleccionable dentro del panel de ataque/habilidades: corners
+   FIJOS (16px), nunca estirados. */
+.br-target-chip {
+  position: relative;
+}
+.br-target-chip[data-selected='true']::before,
+.br-target-chip[data-selected='true']::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+}
+.br-target-chip[data-selected='true']::before {
+  top: -5px;
+  left: -5px;
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-tl-light.png');
+}
+.br-target-chip[data-selected='true']::after {
+  bottom: -5px;
+  right: -5px;
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-br-light.png');
+}
+:root[data-theme='dark'] .br-target-chip[data-selected='true']::before {
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-tl-dark.png');
+}
+:root[data-theme='dark'] .br-target-chip[data-selected='true']::after {
+  background-image: url('/assets/battle-rooms/decorations/decoration-corner-br-dark.png');
+}
+
+/* Combat log compacto (2-4 lineas, scroll interno solo si excede). */
+.br-combat-log {
+  max-height: 108px;
+  overflow-y: auto;
+  border: 1px solid var(--br-panel-border);
+  border-radius: 8px;
+  background: var(--br-panel-bg);
+  padding: 6px 10px;
+}
+
+/* ------------------------------------------------------------------
+ * Resultado de batalla: overlay de alto impacto, SIN scroll horizontal
+ * nunca, ancho maximo moderado, todo compacto.
+ * ------------------------------------------------------------------ */
+.br-battle-scene {
+  position: relative;
+}
+.br-result-overlay {
+  /* 4a pasada (secciones 60-62 del brief): `fixed` en vez de `absolute` --
+     antes el overlay solo llenaba `.br-battle-stage` (su ancestro
+     posicionado mas cercano), que puede ser mas BAJO que el propio panel de
+     resultado, y entonces se veia "cortado" dentro de una ventanita con
+     scroll rara en vez de un overlay de pantalla completa. `fixed` cubre
+     SIEMPRE el viewport entero, sin importar la altura del contenido de
+     batalla que queda detras. `align-items: flex-start` por defecto evita el
+     recorte clasico de flexbox+scroll+`align-items: center` (el contenido
+     que no cabe se corta por ARRIBA, no aparece con scroll) -- con altura de
+     sobra (`min-height: 600px`) se centra, si no, se ancla arriba y el UNICO
+     scroll vertical (este mismo overlay) revela el resto. */
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: color-mix(in oklab, var(--br-panel-bg-strong) 70%, transparent);
+  backdrop-filter: blur(4px);
+}
+@media (min-height: 600px) {
+  .br-result-overlay {
+    align-items: center;
+  }
+}
+.br-result-card {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--br-panel-border);
+  border-radius: 16px;
+  background: var(--br-panel-bg-strong);
+  box-shadow: var(--br-shadow);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .br-result-overlay {
+    animation: br-fade-in 220ms ease-out;
+  }
+}
+@keyframes br-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.br-reward-aura {
+  position: relative;
+  /* Offset vertical del aro decorativo, SOLO se redefine en Dark (seccion
+     63-65 del brief): en Dark el cofre no queda centrado en el hueco del
+     aro; en Light YA esta bien, no se toca (queda en 0px). Se mueve la
+     DECORACION, nunca el dato/logica del cofre. */
+  --br-reward-aura-offset-y: 0px;
+}
+.br-reward-aura::before {
+  content: '';
+  position: absolute;
+  inset: -16px;
+  background-image: url('/assets/battle-rooms/decorations/decoration-reward-aura-light.png');
+  background-repeat: no-repeat;
+  background-position: center calc(50% + var(--br-reward-aura-offset-y));
+  background-size: contain;
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: -1;
+}
+:root[data-theme='dark'] .br-reward-aura::before {
+  background-image: url('/assets/battle-rooms/decorations/decoration-reward-aura-dark.png');
+}
+:root[data-theme='dark'] .br-reward-aura {
+  --br-reward-aura-offset-y: 26px;
+}
+
+/* ------------------------------------------------------------------
+ * Result overlay -- diferenciacion equipo ganador / equipo eliminado
+ * (remaster visual Sprint 3, 3a pasada, secciones 62-65 del brief). SOLO
+ * afecta al marcador por equipo dentro de `BattleResultView`: NO se toca el
+ * resto de su distribucion/ancho. El color SIEMPRE va acompanado de texto
+ * real ("Ganador"/"Eliminado") e icono -- nunca es el unico medio.
+ * ------------------------------------------------------------------ */
+.br-standing {
+  position: relative;
+  overflow: hidden;
+}
+.br-standing--winner {
+  border-color: var(--br-accent) !important;
+  background: color-mix(in oklab, var(--br-accent) 14%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--br-accent) 45%, transparent);
+}
+.br-standing--eliminated {
+  border-color: var(--br-danger) !important;
+  background: color-mix(in oklab, var(--br-danger) 12%, transparent);
+}
+/* Grieta sutil sobre el equipo eliminado: solo CSS (gradiente diagonal fino),
+   sin imagen nueva ni gore realista. */
+.br-standing--eliminated::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 46%,
+    color-mix(in oklab, var(--br-danger) 55%, transparent) 49%,
+    transparent 52%
+  );
+  opacity: 0.5;
+}
+/* Chispas ligeras sobre el equipo ganador: pseudo-elementos, sin dependencia
+   nueva. Respeta `prefers-reduced-motion` (sin animacion si se pide menos
+   movimiento). */
+.br-standing--winner::before {
+  content: '✦';
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  font-size: 12px;
+  color: var(--br-accent);
+  opacity: 0.85;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .br-standing--winner {
+    animation: br-winner-glow 2.2s ease-in-out infinite;
+  }
+}
+@keyframes br-winner-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--br-accent) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--br-accent) 30%, transparent);
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Chat: mismo `.br-panel`, densidad compacta.
+ * ------------------------------------------------------------------ */
+.br-panel.br-chat-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------------
+ * Chat flotante (remaster visual Sprint 3, 3a pasada, secciones 10-15 del
+ * brief): burbuja compacta esquina inferior derecha del escenario + panel
+ * superpuesto que NUNCA empuja el layout (siempre `position: absolute`,
+ * dentro de un `.br-scene`, que ya es `position: relative`). Reemplaza al
+ * chat grande de pagina completa que obligaba a hacer scroll para llegar a
+ * el. Reutilizable en Lobby y Sala de espera; NO se usa durante Batalla.
+ * ------------------------------------------------------------------ */
+.br-floating-chat {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.br-floating-chat-bubble {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--br-panel-border);
+  background: var(--br-panel-bg-strong);
+  box-shadow: var(--br-shadow);
+  cursor: pointer;
+}
+.br-floating-chat-bubble:focus-visible {
+  outline: 2px solid var(--br-accent-2);
+  outline-offset: 2px;
+}
+.br-floating-chat-panel {
+  position: relative;
+  width: clamp(300px, 28vw, 430px);
+  max-width: calc(100vw - 32px);
+  /* 4a pasada (seccion 8 del brief): ALTURA FIJA (no `max-height` solo) --
+     el panel nunca crece con la cantidad de mensajes, siempre cabe en
+     pantalla. El unico scroll interno vive en `.br-chat-messages`. */
+  height: clamp(300px, 48vh, 520px);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--br-panel-border);
+  border-radius: 14px;
+  background: var(--br-panel-bg-strong);
+  box-shadow: var(--br-shadow);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+}
+.br-floating-chat-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--br-panel-border);
+  background: var(--br-panel-bg);
+  color: var(--br-ink);
+  cursor: pointer;
+}
+.br-floating-chat-close:focus-visible {
+  outline: 2px solid var(--br-accent-2);
+  outline-offset: 2px;
+}
+/* El `ChatPanel` real vive DENTRO del panel flotante: quita su propio marco
+   de `.br-panel` (ya lo aporta `.br-floating-chat-panel`) y ocupa el alto
+   disponible. 4a pasada (secciones 5-7 del brief): CRITICO -- este wrapper ya
+   NO lleva `overflow-y: auto` (asi scrolleaba TODO: header + mensajes +
+   input, el bug reportado). Es un contenedor flex-column con `min-height: 0`
+   para poder ENCOGER dentro de la altura fija del panel; el UNICO scroll real
+   vive en `.br-chat-messages` (la lista de mensajes), ver `ChatPanel.tsx`. */
+.br-floating-chat-inner {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-radius: 0 !important;
+  padding: 14px !important;
+  padding-top: 34px !important;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* CAUSA RAIZ del historial demasiado bajo (cierre final, Objetivo 1-2 del
+   brief): `Card` (`@/components/ui/Card.tsx`) SIEMPRE envuelve sus
+   `children` en un `<div>` propio -- sin `title`/`description` (el caso de
+   `ChatPanel`, que pinta su propio encabezado) ese div queda con
+   `className=""`, sin ninguna clase de flex. Ese div anonimo, no esta
+   pantalla, es el hijo DIRECTO de `.br-floating-chat-inner` (la `<section>`
+   de `Card`, flex-column); el verdadero header y el verdadero contenido
+   (`flex min-h-0 flex-1 flex-col gap-3` en `ChatPanel.tsx`) quedan como
+   NIETOS, no como hijos -- por eso su `flex-1` nunca tenia un padre flex
+   real del que tomar altura, y el historial se quedaba con su tamano de
+   contenido (poco) dejando espacio vacio debajo. `display: contents` quita
+   la CAJA de ese div (sin tocar `Card.tsx`, componente compartido fuera de
+   alcance): sus hijos pasan a comportarse como hijos directos de
+   `.br-floating-chat-inner` para efectos de layout, sin cambiar el DOM ni
+   la accesibilidad. */
+.br-floating-chat-inner > div {
+  display: contents;
+}
+.br-floating-chat-inner > * {
+  min-height: 0;
+}
+/* Zona de mensajes: UNICO scroll interno del chat (seccion 6-7 del brief).
+   `min-height: 0` es el truco imprescindible para que un hijo flex pueda
+   encogerse por debajo de su contenido y de paso mostrar su propio scroll,
+   en vez de forzar a crecer al panel entero. */
+.br-chat-messages {
+  flex: 1 1 auto;
+  min-height: 16rem;
+  overflow-y: auto;
+}
+/* 5a pasada (secciones 10-13 del brief): CRITICO -- dentro del panel
+   flotante (altura FIJA, `clamp(300px, 48vh, 520px)`) el `min-height: 16rem`
+   de la regla base empujaba el composer (input + Enviar) fuera de la vista:
+   con esa altura minima, el historial por si solo ya ocupaba mas espacio
+   del que el panel tenia disponible. Aqui SI se permite encoger hasta 0 --
+   el header y el composer (`flex: 0 0 auto`, ver `ChatPanel.tsx`) siempre
+   se quedan con su tamano natural primero, y el historial se lleva
+   exactamente el resto con su propio scroll. En el `ChatPanelDevPreview`
+   standalone (sin esta altura fija) sigue aplicando el `min-height: 16rem`
+   de la regla base, para no colapsar a un historial minusculo. */
+.br-floating-chat-inner .br-chat-messages {
+  flex-basis: 0;
+  min-height: 0;
+}
+/* Scrollbar tematica Nexus (seccion 10-11 del brief): sustituye la barra gris
+   generica del navegador en las zonas de scroll interno del modulo (chat,
+   listado de salas). `scrollbar-width`/`scrollbar-color` cubren Firefox;
+   `::-webkit-scrollbar*` cubre Chromium. Los tokens cambian solos entre
+   Dark/Light (definidos en :root arriba). */
+.br-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--br-scrollbar-thumb) var(--br-scrollbar-track);
+}
+.br-scrollbar::-webkit-scrollbar {
+  width: 9px;
+}
+.br-scrollbar::-webkit-scrollbar-track {
+  background: var(--br-scrollbar-track);
+  border-radius: 999px;
+}
+.br-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--br-scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.br-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--br-scrollbar-thumb-hover);
+}
+/* Salas disponibles: mismo lenguaje, acento distinto (seccion 11 del brief:
+   "no el mismo color si no conviene, pero si el mismo lenguaje"). */
+.br-scrollbar--rooms {
+  scrollbar-color: var(--br-scrollbar-thumb-rooms) var(--br-scrollbar-track);
+}
+.br-scrollbar--rooms::-webkit-scrollbar-thumb {
+  background-color: var(--br-scrollbar-thumb-rooms);
+}
+.br-scrollbar--rooms::-webkit-scrollbar-thumb:hover {
+  background-color: var(--br-scrollbar-thumb-rooms-hover);
+}
+@media (max-width: 640px) {
+  .br-floating-chat {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    align-items: stretch;
+  }
+  .br-floating-chat-panel {
+    width: 100%;
+    max-width: none;
+    max-height: 70vh;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Sala disponible: entrada COMPACTA y horizontal (remaster 3a pasada,
+ * secciones 19-24 del brief). Acento por MODALIDAD (linea izquierda) y color
+ * de ESTADO en el badge -- dos lenguajes de color distintos, nunca mezclados.
+ * ------------------------------------------------------------------ */
+/* Altura de "Salas disponibles" atada al VIEWPORT, no al ancho disponible
+   (4a pasada, secciones 12-13, 93 del brief): antes usaba `vh` puro sin
+   techo, asi que un zoom-out (mas alto en px CSS) la hacia crecer sin limite
+   frente a Crear Sala. `clamp()` la ata a una franja razonable siempre. */
+/* 7a pasada (secciones 3-8 del brief): terminaba demasiado pronto, dejando
+   una franja vacia grande antes de llegar al launcher del chat -- el `dvh`
+   puro de la 4a pasada tenia un techo muy conservador. Mismo patron
+   estructural que `.br-battle-stage` (`calc(100dvh - Xpx)`, no un pixel
+   magico atado a 1536x864): X es lo que YA ocupa el resto del Lobby
+   (header + eyebrow/titulo + `ActiveRoomBanner` + padding de escena) mas un
+   margen de seguridad para el launcher del chat (burbuja flotante,
+   `position: absolute` dentro de la MISMA escena -- crece con ella, nunca
+   se solapa: seccion 97). El scroll interno se CONSERVA (seccion 6): esto
+   solo sube el techo antes de que haga falta. */
+.br-rooms-scroll {
+  max-height: clamp(360px, calc(100dvh - 260px), 760px);
+  overflow-y: auto;
+}
+@media (min-width: 1024px) {
+  .br-rooms-scroll {
+    max-height: clamp(360px, calc(100dvh - 220px), 720px);
+  }
+}
+
+.br-room-card {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px 10px 16px;
+  border: 1px solid var(--br-panel-border);
+  border-radius: 10px;
+  background: var(--br-panel-bg);
+  border-left: 4px solid var(--br-pvp-accent);
+}
+.br-room-card--pve {
+  border-left-color: var(--br-pve-accent);
+}
+.br-room-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.br-room-status-dot--waiting {
+  background: var(--br-status-waiting);
+}
+.br-room-status-dot--preparing {
+  background: var(--br-status-preparing);
+}
+.br-room-status-dot--active {
+  background: var(--br-status-active);
+}
+.br-room-status-dot--cancelled {
+  background: var(--br-status-cancelled);
+}
+.br-room-status-text--waiting {
+  color: var(--br-status-waiting);
+}
+.br-room-status-text--preparing {
+  color: var(--br-status-preparing);
+}
+.br-room-status-text--active {
+  color: var(--br-status-active);
+}
+.br-room-status-text--cancelled {
+  color: var(--br-status-cancelled);
+}
+
+.br-pixel-icon {
+  display: inline-block;
+}
+
+/* ------------------------------------------------------------------
+ * Batalla — composicion tipo videojuego (remaster 3a pasada, secciones
+ * 32-54 del brief): arena dominante de borde a borde, HUD como esquinas
+ * flotantes (no franjas), combat log superpuesto abajo-izquierda, barra de
+ * acciones abajo. Mismo `.br-scene-battle` como escenario (ya
+ * `position: relative`).
+ * ------------------------------------------------------------------ */
+.br-battle-stage {
+  position: relative;
+  /* 7a pasada (secciones 22-25, 56 del brief): la action bar YA NO es un
+     bloque aparte debajo de este stage -- vive DENTRO (`.br-bottom-actions`,
+     absolute) junto al combat log. El `calc()` ya no necesita reservar esos
+     ~150-200px de espacio en flujo normal; ese ahorro es precisamente lo
+     que libera el scroll de pagina en 1536x864/100%. */
+  min-height: clamp(360px, calc(100dvh - 110px), 760px);
+  display: flex;
+  flex-direction: column;
+}
+.br-hud-corner {
+  position: absolute;
+  top: 8px;
+  z-index: 5;
+  /* 5a pasada (secciones 23-29 del brief): CERO card -- sin fondo, sin
+     borde, sin sombra tipo dashboard, sin `backdrop-filter`. Referencia
+     Pokemon literal: Vida/Poder flotan DIRECTAMENTE sobre la arena. Con el
+     fondo fuera, la legibilidad la da `--br-hud-text-shadow` en cada texto
+     (nombre, "Vida"/"Poder", valores) -- nunca un rectangulo invisible
+     detras a modo de "card fantasma".
+     6a pasada (secciones 16-24, 68 del brief): `max-width` en vez de un
+     ancho fijo -- ahora el contenido es una FILA de unidades (ver
+     `.br-hud-row`), no una sola columna; el limite evita que 3v3 invada
+     "Nexus · Arena" o se salga del escenario (seccion 68). */
+  max-width: min(430px, 38vw);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 6px;
+}
+.br-hud-corner,
+.br-hud-corner * {
+  text-shadow: var(--br-hud-text-shadow);
+}
+.br-hud-corner--left {
+  left: 10px;
+}
+.br-hud-corner--right {
+  right: 10px;
+  text-align: right;
+}
+.br-hud-corner-sub {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--br-muted);
+}
+/* Fila de combatientes (6a pasada, secciones 17-23 del brief): Ana/Diego
+   (o Bruno/Carla) YA NO son asimetricos -- son unidades iguales en fila
+   horizontal. `flex-wrap` es lo que resuelve 3v3 solo: si las tres unidades
+   no caben en una fila, la 3a envuelve a una 2a linea (2+1), sin volver a
+   una columna alta que tape la arena. */
+.br-hud-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.br-hud-corner--right .br-hud-row {
+  justify-content: flex-end;
+}
+/* Unidad de UN combatiente: mismo ancho compacto para todos (seccion 17:
+   "NO Ana 300px y Diego 150px") -- en 1v1 NO se expande solo porque no hay
+   companeros (seccion 24). Nombre -> Vida -> Poder, siempre en ese orden
+   (seccion 19-20/22: nunca Poder antes que Vida). */
+.br-hud-unit {
+  width: clamp(150px, 19vw, 192px);
+  flex: 0 0 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* 7a pasada (secciones 11-17 del brief): comportamiento INTENCIONAL por
+   cantidad real de combatientes -- nunca nombres hardcodeados, el
+   modificador (`br-hud-row--1/2/3`) sale de `1 + companeros.length` en
+   `BattleScreen.tsx`. 1v1/2v2 no cambian (mismo ancho ~150-192px, seccion
+   24: 1v1 NO se ensancha por estar solo). 3v3 SI se encoge un poco para
+   intentar la fila unica de 3 en desktop (seccion 14/16); si el viewport no
+   alcanza, `.br-hud-row` (flex-wrap, ya definido arriba) hace el fallback
+   2+1 solo, sin logica JS aparte (seccion 17). */
+.br-hud-row--3 .br-hud-unit {
+  width: clamp(108px, 15vw, 138px);
+}
+.br-hud-row--3 {
+  gap: 6px;
+}
+.br-hud-unit-name {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--br-ink);
+}
+/* 6a pasada (secciones 26-29 del brief): en Light, sin card detras, el
+   track de las barras (el fondo, no el relleno) se perdia sobre el arte de
+   fondo -- mas contraste SOLO en Light (Dark "se lee bien", no se toca).
+   Scopeado a `.br-hud-corner`: `--br-meter-track-mix`/`-border` (leidas por
+   `.br-meter-track`) no afectan a Vida/Poder en ningun otro contexto. */
+.br-hud-corner {
+  --br-meter-track-mix: 26%;
+  --br-meter-track-border: rgba(36, 26, 12, 0.5);
+}
+:root[data-theme='dark'] .br-hud-corner {
+  --br-meter-track-mix: 10%;
+  --br-meter-track-border: var(--br-panel-border);
+}
+
+.br-arena-center-badge {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 16px;
+  border: 1px solid var(--br-panel-border);
+  border-radius: 10px;
+  background: var(--br-panel-bg);
+  box-shadow: var(--br-shadow);
+  backdrop-filter: blur(3px);
+  text-align: center;
+}
+.br-arena-center-eyebrow {
+  font-family: var(--font-game-display);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--br-accent);
+}
+.br-arena-center-turn {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--br-ink);
+}
+/* Marcador de tiempo tipo "scoreboard" (4a/5a pasada, secciones 38-41/32-36
+   del brief): dos chips compactos ("TURNO"/"BATALLA", nunca un nombre ni el
+   texto largo "Tiempo de batalla...") con el icono entre medio. El estado
+   "Esperando a Combat..." ya NO vive dentro de la fila de chips (asi no
+   reserva un hueco fantasma cuando no aparece, y no ensancha el panel
+   cuando si aparece) -- es una linea propia, centrada, debajo. */
+.br-timers-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.br-timers-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.br-timer-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 46px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: var(--br-panel-bg-strong);
+  border: 1px solid var(--br-panel-border);
+}
+.br-timer-chip-label {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--br-muted);
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.br-timer-chip-value {
+  font-size: 12px;
+  font-weight: 700;
+}
+.br-timer-waiting {
+  font-size: 10px;
+  text-align: center;
+}
+
+.br-arena-field {
+  flex: 1;
+  display: flex;
+  /* 8a pasada (secciones 10-17, 30 del brief): CAUSA REAL del overlap --
+     `flex-end` pegaba a los personajes contra el borde inferior del campo,
+     justo donde ahora vive `.br-bottom-actions`/`.br-floating-log`
+     (absolutos, `bottom: 10px`, dentro del MISMO `.br-battle-stage`). A
+     partir de esta pasada los personajes se CENTRAN verticalmente --
+     espacio real reservado arriba (HUD/Nexus Arena) y abajo (Combat Log/
+     Action Bar) via `padding`, nunca `z-index` tapando el problema (seccion
+     30). El VS (ver `.br-vs-divider--battle`) cae solo en el centro real
+     porque comparte esta misma alineacion. */
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 6vw, 64px);
+  padding: 72px 16px 88px;
+  min-height: 0;
+}
+.br-arena-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 2vw, 18px);
+  flex: 1;
+  min-width: 0;
+}
+.br-arena-side--mine {
+  justify-content: flex-end;
+}
+.br-arena-side--enemy {
+  justify-content: flex-start;
+}
+/* Formacion escalonada para 1v1/2v2/3v3 (9a pasada, secciones 9-20 del
+   brief, siguiendo `GuiaUbicacionHeroes.png`): NUNCA una fila plana ni una
+   sola recesion uniforme. El 1er combatiente de cada lado baja un poco (deja
+   de estar pegado al borde del tapete, seccion 9-11); el 2o BAJA aun mas
+   -- pasa a quedar al FRENTE del tapete (seccion 13-14, "el segundo
+   ligeramente mas abajo": la 8a pasada lo subia, que era la direccion
+   contraria) --; el 3o (solo 3v3) se queda ligeramente RETRASADO y mas
+   chico -- la guia muestra a Fer bajando desde un punto casi pegado al HUD
+   hasta dentro del tapete, con menos desplazamiento que antes (-6px, no
+   -14px) para que su aro de turno nunca compita con el HUD del combatiente
+   vecino (seccion 16, 58-60). Solo desde `sm` -- en movil se apilan sin
+   offset. Nunca coordenadas fijas de 1536x864 (seccion 25): clamp()/px
+   pequenos que escalan con el mismo gap que ya usa `.br-arena-side`. */
+@media (min-width: 640px) {
+  .br-arena-side ul > li:nth-child(1) {
+    transform: translateY(clamp(4px, 1vh, 8px));
+  }
+  .br-arena-side ul > li:nth-child(2) {
+    transform: translateY(clamp(10px, 2vh, 16px));
+  }
+  .br-arena-side ul > li:nth-child(3) {
+    transform: translateY(clamp(-8px, -1.2vh, -4px)) scale(0.96);
+    transform-origin: bottom center;
+  }
+  /* Ajuste final de formacion 3v3 (secciones 2-3, 6-11 de esta pasada de
+     cierre): la pasada anterior unifico los tres asientos en un solo
+     `translateY` (28-40px), pero Richard revisa el resultado y pide
+     aproximadamente EL DOBLE de descenso -- el trio seguia sintiendose
+     cerca del HUD. Se duplica el offset (56-80px) SIN tocar separacion
+     horizontal, orden, ancho del grupo ni escala del tercer asiento
+     (secciones 6, 7): solo cambia el eje Y. Sigue siendo UN solo valor
+     compartido por los seis asientos (ambos equipos, sin caso mine/enemy,
+     sin por-heroe/por-clase -- seccion 8-9); el VS y el HUD no forman
+     parte de este selector y no se mueven (seccion 5). */
+  .br-arena-side ul[data-side-size='3'] > li:nth-child(1),
+  .br-arena-side ul[data-side-size='3'] > li:nth-child(2) {
+    transform: translateY(clamp(56px, 9vh, 80px));
+  }
+  .br-arena-side ul[data-side-size='3'] > li:nth-child(3) {
+    transform: translateY(clamp(56px, 9vh, 80px)) scale(0.96);
+    transform-origin: bottom center;
+  }
+}
+/* El heroe se ve SOLO sobre la arena (seccion 51 del brief): el wrapper
+   interno de `Hero3D` (componente COMPARTIDO con otras pantallas, no se
+   toca) trae su propio fondo de card -- aqui, dentro de la arena de
+   batalla, se anula solo el color de fondo via el hook de accesibilidad
+   estable `[role="img"]`. */
+.br-combatant-model [role='img'] {
+  background: transparent;
+}
+
+/* Combat log flotante inferior-izquierda, superpuesto al escenario (nunca un
+   bloque separado debajo de la arena). 9a pasada (secciones 39, 46-47 del
+   brief): TRANSITORIO -- React deja de montarlo pasados ~3s
+   (`COMBAT_FEEDBACK_VISIBLE_MS`, `BattleScreen.tsx`); aqui solo la entrada
+   discreta (opacity + translateY pequeno), nunca animacion pesada, y
+   respetando `prefers-reduced-motion`. */
+.br-floating-log {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 5;
+  width: clamp(220px, 30vw, 340px);
+  max-height: 108px;
+  overflow-y: auto;
+  padding: 8px 12px;
+  border-left: 3px solid var(--br-accent-2);
+  border-radius: 8px;
+  background: var(--br-panel-bg);
+  box-shadow: var(--br-shadow);
+  backdrop-filter: blur(3px);
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .br-floating-log {
+    animation: br-floating-log-in 180ms ease-out;
+  }
+}
+@keyframes br-floating-log-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.br-floating-log-line {
+  padding: 1px 0;
+}
+.br-floating-log-line--damage {
+  color: var(--br-danger);
+}
+.br-floating-log-line--heal {
+  color: var(--br-success);
+}
+.br-floating-log-line--defense {
+  color: var(--br-accent-2);
+}
+.br-floating-log-line--info {
+  color: var(--br-muted);
+}
+
+/* HUD inferior derecho: acciones reales (7a pasada, secciones 25/30/57-58
+   del brief) -- EL MISMO patron que el combat log de arriba (`absolute`
+   dentro de `.br-battle-stage`, que ya es `position: relative`), pero a la
+   derecha. Semi-panel transparente, nunca un overlay ciego sobre el piso
+   (seccion 58): solo tan ancho como necesitan los slots reales. */
+.br-bottom-actions {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 5;
+  max-width: min(72vw, 620px);
+}
+@media (min-width: 640px) {
+  .br-bottom-actions {
+    max-width: min(60vw, 560px);
+  }
+}
+
+/* Barra de acciones inferior: horizontal, botones reales (Combat.contrato).
+   `flex` (no `grid`): el boton de ataque es un item de ancho fijo y las
+   habilidades (`SkillList`, un `<section>` con su propia fila interna de
+   `<li>`) ocupan el resto como UN solo item `flex-1` -- asi sus tarjetas se
+   reparten en el espacio real de la barra en vez de quedar encajonadas en
+   una sola columna de una rejilla exterior. */
+.br-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+  padding: 2px;
+}
+/* Slot de accion (seccion 44 del brief): icono arriba, nombre abajo, costo
+   pequeno -- columna, no fila, y mas angosto/compacto que antes para que
+   quepan Ataque + hasta 3 habilidades sin overflow-x. */
+.br-action-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  min-height: 48px;
+  min-width: 76px;
+  padding: 6px 10px;
+}
+.br-action-slot-cost {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+/* Popover de objetivo aliado (pasada final, secciones 23, 32-38, 63-64 del
+   brief): overlay AISLADO de `.br-action-bar` -- `position: fixed` sobre
+   TODA la pantalla, nunca dentro del flujo de la barra de acciones, para
+   que abrir/cerrar el selector de companero jamas cambie la altura de
+   Ataque basico ni de las demas habilidades (la causa real del bug de la
+   barra con 4 acciones). El panel real usa `.br-panel` (mismo lenguaje
+   visual que el resto de la app) centrado sobre un fondo semitransparente. */
+.br-ally-target-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: color-mix(in oklab, black 55%, transparent);
+}
+.br-ally-target-overlay .br-panel {
+  width: min(320px, 100%);
+  max-height: min(70vh, 420px);
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .br-battle-stage {
+    min-height: clamp(420px, calc(100dvh - 180px), 760px);
+  }
+  .br-hud-corner {
+    position: static;
+    max-width: 100%;
+  }
+  .br-hud-corner--right .br-hud-row {
+    justify-content: flex-start;
+  }
+  .br-hud-corner--right {
+    text-align: left;
+  }
+  .br-arena-center-badge {
+    position: static;
+    translate: none;
+    width: 100%;
+  }
+  .br-arena-field {
+    padding: 12px 8px 96px;
+  }
+  .br-floating-log {
+    width: calc(100% - 20px);
+  }
+}

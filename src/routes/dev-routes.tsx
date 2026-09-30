@@ -29,11 +29,13 @@ if (import.meta.env.DEV) {
     { ProductsDevPreviewLazy },
     { accountPreviewChildren },
     { FIXED_ROOM_ID },
+    { FIXED_ROOM_ID: FIXED_ROOM_ID_REMASTER },
   ] = await Promise.all([
     import('./HeroesDevPreviewLazy'),
     import('./ProductsDevPreviewLazy'),
     import('@/features/account/dev/previewRoutes'),
     import('@/features/battle-rooms/dev/BattleRoomLobbyDevPreview'),
+    import('@/features/battle-rooms/dev/RoomRemasterPreview'),
   ])
   const AccountDevPreviewLazy = lazy(() =>
     import('@/features/account/dev/AccountDevPreview').then((module) => ({
@@ -126,6 +128,26 @@ if (import.meta.env.DEV) {
       default: module.MarketplacePreviewPage,
     })),
   )
+  // Remaster visual "Jugar Online" Sprint 3: los tres previews consolidados
+  // que exige el informe de auditoria (lobby, sala de espera, batalla),
+  // cada uno montando los componentes de produccion reales con `fetch`
+  // interceptado y un selector de tema Light/Dark propio. Publicos, como
+  // `/ecommerce`: no dependen de una sesion real.
+  const LobbyRemasterPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/LobbyRemasterPreview').then((module) => ({
+      default: module.LobbyRemasterPreview,
+    })),
+  )
+  const RoomRemasterPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/RoomRemasterPreview').then((module) => ({
+      default: module.RoomRemasterPreview,
+    })),
+  )
+  const BattleRemasterPreviewLazy = lazy(() =>
+    import('@/features/battle-rooms/dev/BattleRemasterPreview').then((module) => ({
+      default: module.BattleRemasterPreview,
+    })),
+  )
   // Perezoso a proposito: `AppLayout` importa `@/routes/routes`, y `routes.tsx`
   // espera este modulo con `await` de nivel superior. Una importacion estatica
   // cierra el ciclo y el navegador deja la aplicacion en blanco con `npm run dev`
@@ -161,6 +183,51 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <MarketplacePreviewLazy />
+        </Suspense>
+      ),
+    },
+    // Remaster visual "Jugar Online" Sprint 3 (ver comentario junto a
+    // `LobbyRemasterPreviewLazy` arriba).
+    {
+      path: '__dev/battle-rooms/lobby-remaster-preview',
+      element: (
+        <Suspense fallback={null}>
+          <LobbyRemasterPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // `BattleRoomLobbyPage` (montada por `RoomRemasterPreview`) lee
+    // `useParams<{ roomId }>()`: la ruta DEV le da un `:roomId` real desde el
+    // Router principal (no se monta un segundo Router aqui, ver el bug
+    // corregido en `RoomRemasterPreview.tsx`). La URL simple redirige al id
+    // fijo por defecto, mismo criterio que `__dev/hu15/lobby`.
+    //
+    // 3a pasada -- bug real reportado: `to` SIN barra inicial es una ruta
+    // RELATIVA a la ubicacion actual, y React Router la concatenaba sobre
+    // `/__dev/battle-rooms/room-remaster-preview` en vez de sustituirla,
+    // produciendo la URL duplicada. `to` ABSOLUTO (con `/` inicial) lo evita.
+    {
+      path: '__dev/battle-rooms/room-remaster-preview',
+      element: (
+        <Navigate
+          to={`/__dev/battle-rooms/room-remaster-preview/${FIXED_ROOM_ID_REMASTER}`}
+          replace
+        />
+      ),
+    },
+    {
+      path: '__dev/battle-rooms/room-remaster-preview/:roomId',
+      element: (
+        <Suspense fallback={null}>
+          <RoomRemasterPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/battle-rooms/battle-remaster-preview',
+      element: (
+        <Suspense fallback={null}>
+          <BattleRemasterPreviewLazy />
         </Suspense>
       ),
     },
@@ -300,7 +367,10 @@ if (import.meta.env.DEV) {
     // preview simula.
     {
       path: '__dev/hu15/lobby',
-      element: <Navigate to={`__dev/hu15/lobby/${FIXED_ROOM_ID}`} replace />,
+      // Ruta ABSOLUTA (con `/` inicial): mismo bug preventivamente corregido
+      // aqui que el reportado en `room-remaster-preview` (una `to` relativa
+      // se concatena sobre la ubicacion actual en vez de sustituirla).
+      element: <Navigate to={`/__dev/hu15/lobby/${FIXED_ROOM_ID}`} replace />,
     },
     {
       path: '__dev/hu15/lobby/:roomId',

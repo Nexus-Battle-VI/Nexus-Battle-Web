@@ -183,7 +183,9 @@ describe('BattlePage — HU-17: la batalla solo se pinta cuando Combat la public
     deliver(socket, snapshot(3, 'IN_BATTLE', battle(2)), ready(3))
 
     expect(await screen.findByText('Turno de Bruno')).toBeInTheDocument()
-    expect(screen.getByText('Ronda 2')).toBeInTheDocument()
+    // 4a pasada (seccion 35 del brief): "Ronda N" ya no se ve en "Nexus ·
+    // Arena" -- sigue siendo dato accesible en el anuncio sr-only.
+    expect(screen.getByRole('status', { name: '' })).toHaveTextContent('Ronda 2')
     expect(startCalls(fetchImpl)).toHaveLength(0)
   })
 

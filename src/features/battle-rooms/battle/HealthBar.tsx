@@ -1,6 +1,8 @@
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import '../battle-rooms.css'
+import { BattlePixelIcon } from '../BattlePixelIcon'
 import { healthFraction, healthTone, type HealthTone } from './presentation'
 import type { HealthView } from './types'
 
@@ -37,7 +39,10 @@ export const HealthBar = ({ name, health }: HealthBarProps): React.JSX.Element =
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="font-medium text-muted">{t('battle:health.label')}</span>
+        <span className="flex items-center gap-1 font-medium text-muted">
+          <BattlePixelIcon icon="health" size="sm" />
+          {t('battle:health.label')}
+        </span>
         <span className="font-semibold tabular-nums text-ink">
           {health.current} / {health.max}
         </span>
@@ -52,7 +57,7 @@ export const HealthBar = ({ name, health }: HealthBarProps): React.JSX.Element =
           current: String(health.current),
           max: String(health.max),
         })}
-        className="h-2.5 w-full overflow-hidden rounded-full border border-muted bg-surface"
+        className="br-meter-track h-2.5 w-full rounded-full"
       >
         <div
           className={clsx(

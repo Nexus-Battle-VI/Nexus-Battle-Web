@@ -190,7 +190,7 @@ describe('BattleRoomCard', () => {
   it('quien ya es participante ve un enlace a la sala en vez de los botones de union', () => {
     renderCard(room(), { isParticipant: true })
 
-    expect(screen.getByRole('link', { name: 'Ver sala' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Volver a sala' })).toHaveAttribute(
       'href',
       `/play/rooms/${room().id}`,
     )

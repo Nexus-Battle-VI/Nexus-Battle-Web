@@ -7,8 +7,9 @@ import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
-import { Coins } from '@/components/ui/icons'
-import { ChatPanel } from './ChatPanel'
+import './battle-rooms.css'
+import { BattlePixelIcon } from './BattlePixelIcon'
+import { FloatingChatPanel } from './FloatingChatPanel'
 import { avatarPathForSubject } from '@/shared/avatar'
 import { queryKeys } from '@/shared/query-keys'
 import { useRefreshWalletOn } from '@/shared/wallet'
@@ -61,15 +62,17 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-1 flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+    <div className="br-team-slot flex flex-1 flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">{t('battle:team', { team: letter })}</h3>
+        <span className="br-team-banner">
+          <h3 className="br-section-title text-sm">{t('battle:team', { team: letter })}</h3>
+        </span>
         <span className="text-xs text-muted">
           {participants.length}/{capacity}
         </span>
       </div>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {participants.map((participant, index) => {
           const label = participantLabel(participant)
           const isRoomOwner =
@@ -78,7 +81,7 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
           return (
             // Combat no expone un id estable por participante en la
             // respuesta de la sala: la posicion es la unica clave disponible.
-            <li key={`${participant.kind}-${String(index)}`} className="flex items-center gap-2">
+            <li key={`${participant.kind}-${String(index)}`} className="br-hero-slot">
               <Avatar
                 avatarUrl={
                   participant.kind === 'HUMAN' ? avatarPathForSubject(participant.playerId) : null
@@ -87,9 +90,9 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
                 initials={initialsOfDisplayName(label)}
                 size="sm"
               />
-              <span className="truncate text-sm text-ink">{label}</span>
+              <span className="max-w-full truncate text-xs font-medium text-ink">{label}</span>
               {isRoomOwner && (
-                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
+                <span className="rounded-full bg-brand/10 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-brand">
                   {t('battle:room.owner')}
                 </span>
               )}
@@ -97,12 +100,17 @@ const TeamColumn = ({ letter, team, ownerPlayerId }: TeamColumnProps): React.JSX
           )
         })}
         {Array.from({ length: emptySlots }, (_, index) => (
-          <li key={`empty-${String(index)}`} className="flex items-center gap-2 opacity-60">
+          <li key={`empty-${String(index)}`} className="br-hero-slot br-hero-slot--empty">
             <span
               aria-hidden="true"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-border"
             />
-            <span className="text-sm text-muted">{t('battle:room.waitingSlot')}</span>
+            <span
+              className="br-label-theme text-center text-xs"
+              style={{ color: 'var(--br-muted)' }}
+            >
+              {t('battle:room.waitingSlot')}
+            </span>
           </li>
         ))}
       </ul>
@@ -299,15 +307,31 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
   }
 
   return (
-    <section aria-label={t('battle:room.label')} className="flex flex-col gap-6">
-      <Card
-        title={t('battle:room.label')}
-        description={room.status === 'PREPARING' ? t('battle:room.full') : t('battle:room.waiting')}
-      >
+    <section
+      aria-label={t('battle:room.label')}
+      className="br-scene br-scene-waiting br-scene-pad flex flex-col gap-6"
+    >
+      <Card className="br-panel br-panel--corners">
+        <div className="mb-4">
+          <h2 className="br-heading-title text-xl">{t('battle:room.label')}</h2>
+          {/* 4a pasada (seccion 19 del brief): en WAITING la insignia de
+              abajo (`StatusBadge`) ya dice "Esperando jugadores" -- repetirlo
+              aqui era el texto duplicado reportado. En PREPARING SI aporta
+              informacion nueva ("se lleno, preparando batalla"), se conserva. */}
+          {room.status === 'PREPARING' && (
+            <p className="br-label-theme text-sm text-muted">{t('battle:room.full')}</p>
+          )}
+        </div>
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={room.status} />
-            <span className="text-sm font-medium text-ink">{modeLabel(room.mode)}</span>
+            {/* Seccion 20 del brief ("Jugador vs Jugador (JcJ)" / "Jugador vs
+                Maquina (JcE)"): misma familia tematica que subtitulos y
+                filtros, sin tocar `StatusBadge` (componente COMPARTIDO con
+                otras pantallas, incluida E-commerce). */}
+            <span className="br-label-theme text-sm font-medium text-ink">
+              {modeLabel(room.mode)}
+            </span>
             <span aria-hidden="true" className="text-muted">
               ·
             </span>
@@ -318,7 +342,7 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
               ·
             </span>
             <span className="flex items-center gap-1 text-sm text-muted">
-              <Coins aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
+              <BattlePixelIcon icon="credits" size="sm" />
               {formatInteger(room.reward.amount)}
             </span>
             {realtime.connection === 'reconnecting' && (
@@ -328,12 +352,18 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-[1fr_auto_1fr]">
             <TeamColumn letter="A" team={teamByLetter(room, 'A')} ownerPlayerId={room.createdBy} />
+            <p
+              aria-hidden="true"
+              className="br-vs-divider br-vs-divider--room text-lg font-black text-muted"
+            >
+              VS
+            </p>
             <TeamColumn letter="B" team={teamByLetter(room, 'B')} ownerPlayerId={room.createdBy} />
           </div>
 
-          <p className="text-xs text-muted">{t('battle:room.startNote')}</p>
+          <p className="br-label-theme text-xs text-muted">{t('battle:room.startNote')}</p>
 
           {/*
            * Seccion 12 del prompt maestro de estabilizacion: revisar la propia
@@ -371,13 +401,25 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
           )}
 
           {isParticipant && room.status === 'WAITING_FOR_PLAYERS' && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               {isOwner ? (
-                <Button variant="danger" loading={cancelRoom.isPending} onClick={handleCancel}>
+                // 5a pasada (seccion 19 del brief): "Cancelar sala" recupera
+                // el marco PixelLab (Dark y Light) -- nunca boton web rojo
+                // generico. El handler/loading/disabled reales no cambian.
+                <Button
+                  variant="battle-danger"
+                  className="br-pixellab-danger"
+                  loading={cancelRoom.isPending}
+                  onClick={handleCancel}
+                >
                   {t('battle:room.cancel')}
                 </Button>
               ) : (
-                <Button variant="secondary" loading={leaveRoom.isPending} onClick={handleLeave}>
+                <Button
+                  variant="battle-secondary"
+                  loading={leaveRoom.isPending}
+                  onClick={handleLeave}
+                >
                   {t('battle:room.leave')}
                 </Button>
               )}
@@ -391,17 +433,31 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
            * `leave` en PREPARING; solo `cancel` queda restringido a WAITING).
            */}
           {isParticipant && room.status === 'PREPARING' && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               {isOwner ? (
-                <Button loading={startRoom.isPending} onClick={handleStart}>
+                // Seccion 22 del brief: unico control del propietario en este
+                // estado -- se ubica a la derecha del panel, como pediria el
+                // par "Cancelar sala (izquierda) / Comenzar batalla (derecha)"
+                // si ambos coexistieran (Combat no admite cancelar en
+                // PREPARING, asi que aqui solo hay uno).
+                <Button
+                  variant="battle-primary"
+                  loading={startRoom.isPending}
+                  className="ml-auto"
+                  onClick={handleStart}
+                >
                   {t('battle:room.start')}
                 </Button>
               ) : (
                 <>
-                  <p role="status" className="text-sm text-muted">
+                  <p role="status" className="br-label-theme text-sm text-muted">
                     {t('battle:room.waitingOwner')}
                   </p>
-                  <Button variant="secondary" loading={leaveRoom.isPending} onClick={handleLeave}>
+                  <Button
+                    variant="battle-secondary"
+                    loading={leaveRoom.isPending}
+                    onClick={handleLeave}
+                  >
                     {t('battle:room.leave')}
                   </Button>
                 </>
@@ -410,13 +466,16 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
           )}
 
           {!isParticipant && (
-            <p className="text-xs text-muted">{t('battle:room.notParticipant')}</p>
+            <p className="br-label-theme text-xs text-muted">{t('battle:room.notParticipant')}</p>
           )}
         </div>
       </Card>
 
+      {/* Remaster visual Sprint 3 (3a pasada, seccion 31 del brief): mismo
+          patron de chat flotante del lobby, canal de ESTA sala (nunca se
+          mezcla con el chat general). */}
       {isParticipant && (
-        <ChatPanel
+        <FloatingChatPanel
           channel={{ kind: 'room', roomId: room.id }}
           title={t('battle:room.chat')}
           description={t('battle:room.chatDescription')}

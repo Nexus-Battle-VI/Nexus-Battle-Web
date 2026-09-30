@@ -317,13 +317,39 @@ describe('BattleScreen — HU-19: habilidades en el panel de acciones', () => {
     expect(combat.onUseSkill).not.toHaveBeenCalled()
   })
 
-  it('la epica NO tiene boton: se dice en texto que no hay ninguna disponible (HU-31)', () => {
+  // 9a pasada (secciones 33-36 del brief): con un ataque pendiente,
+  // "Esperando el resultado de tu accion..." aparecia a la vez debajo de
+  // Ataque basico Y debajo de Golpe con escudo -- exactamente el "repetido
+  // debajo de varias tarjetas" que senalo Richard. El pending REAL sigue
+  // bloqueando ambos botones (ya cubierto arriba); aqui se verifica que el
+  // texto deja de ser visible en NINGUNA de las dos tarjetas.
+  it('con un ataque pendiente, "Esperando el resultado..." no se ve repetido bajo Ataque basico NI bajo la habilidad', () => {
+    const combat = controles({
+      attack: {
+        intent: { commandId: 'cmd-1', target: { teamLabel: 'B', seat: 0 } },
+        unconfirmed: false,
+        rejection: null,
+      },
+    })
+
+    pintar({ combat })
+
+    const avisos = screen.getAllByText('Esperando el resultado de tu acción…')
+    expect(avisos.length).toBeGreaterThan(1)
+    for (const aviso of avisos) {
+      expect(aviso).toHaveClass('sr-only')
+    }
+  })
+
+  it('la epica NO tiene boton (HU-31); el texto tecnico de por que ya no se ve', () => {
     pintar()
 
     expect(screen.queryByRole('button', { name: /épica/iu })).not.toBeInTheDocument()
+    // 8a pasada (secciones 36-40 del brief): esa nota tecnica se quita de la
+    // vista -- sin contraparte real y sin ningun control que la describa.
     expect(
-      screen.getByText(/La habilidad épica llegará cuando el juego defina/u),
-    ).toBeInTheDocument()
+      screen.queryByText(/La habilidad épica llegará cuando el juego defina/u),
+    ).not.toBeInTheDocument()
   })
 })
 

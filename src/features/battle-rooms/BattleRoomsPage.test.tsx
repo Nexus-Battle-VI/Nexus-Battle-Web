@@ -66,10 +66,18 @@ afterEach(() => {
 })
 
 describe('BattleRoomsPage — chat del lobby (HU-13)', () => {
-  it('incluye el chat del lobby: un canal global, no el de una sala', () => {
+  // Remaster visual Sprint 3 (3a pasada): el chat vive detras de la burbuja
+  // flotante (`FloatingChatPanel`) -- cerrado por defecto, para no empujar
+  // el layout ni obligar a scroll de pagina. Abrirlo es interaccion real de
+  // la persona (clic en la burbuja), no un estado inicial visible.
+  it('incluye el chat del lobby (burbuja flotante): un canal global, no el de una sala', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(200, [])))
 
     renderWithProviders(<BattleRoomsPage />)
+
+    expect(screen.queryByTestId('chat-panel')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Chat del lobby' }))
 
     const chat = screen.getByTestId('chat-panel')
 

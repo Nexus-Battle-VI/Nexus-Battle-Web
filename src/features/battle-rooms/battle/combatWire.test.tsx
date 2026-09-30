@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import { Route, Routes } from 'react-router'
 
 import { renderWithProviders } from '@/test/render'
@@ -373,11 +373,10 @@ describe('mensajes REALES de Combat — la pantalla de batalla los pinta', () =>
 
     const boton = screen.getByRole('button', { name: 'Ataque básico' })
 
-    // Con el unico rival (A) con Vida ya elegido y la conexion lista, el boton esta habilitado.
+    // Con el unico rival (A) con Vida ya elegido (clic directo sobre el
+    // heroe en la arena, 7a pasada -- ya no hay radios visibles) y la
+    // conexion lista, el boton esta habilitado.
     expect(boton).toHaveAttribute('aria-disabled', 'false')
-    expect(
-      within(screen.getByRole('group', { name: 'Objetivo del ataque' })).getAllByRole('radio'),
-    ).toHaveLength(1)
   })
 
   it('a mitad del recorrido (tras el critico) la pantalla ya muestra el resultado y la Vida 38 / 44', async () => {
