@@ -193,13 +193,13 @@ describe('AuctionMarketplace', () => {
     renderWithProviders(<AuctionMarketplace />)
 
     await screen.findByText('P\u00e1gina 1 de 2')
-    expect(fetch.mock.calls.map(([input]) => urlOf(input as RequestInfo | URL))).toContainEqual(
+    expect(fetch.mock.calls.map(([input]) => urlOf(input))).toContainEqual(
       expect.stringContaining('page=1&pageSize=16'),
     )
 
     await user.click(screen.getByRole('button', { name: 'Siguiente' }))
     expect(await screen.findByText('P\u00e1gina 2 de 2')).toBeInTheDocument()
-    expect(fetch.mock.calls.map(([input]) => urlOf(input as RequestInfo | URL))).toContainEqual(
+    expect(fetch.mock.calls.map(([input]) => urlOf(input))).toContainEqual(
       expect.stringContaining('page=2&pageSize=16'),
     )
 
