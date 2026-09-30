@@ -89,6 +89,8 @@ export interface ActiveAuctionPage {
   readonly total: number
 }
 
+export const AUCTION_PAGE_SIZE = 16
+
 interface AuctionErrorBody {
   readonly code?: unknown
 }
@@ -160,4 +162,7 @@ export const listActiveAuctions = (
   page: number,
   signal?: AbortSignal,
 ): Promise<ActiveAuctionPage> =>
-  httpClient.get<ActiveAuctionPage>(`/v1/auctions?page=${String(page)}&pageSize=12`, signal)
+  httpClient.get<ActiveAuctionPage>(
+    `/v1/auctions?page=${String(page)}&pageSize=${String(AUCTION_PAGE_SIZE)}`,
+    signal,
+  )
