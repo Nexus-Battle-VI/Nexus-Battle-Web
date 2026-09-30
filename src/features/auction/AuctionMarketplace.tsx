@@ -6,11 +6,17 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
+import { SelectField } from '@/components/ui/form/SelectField'
 import { formatMoney } from '@/lib/format'
 import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
-import { AUCTION_PAGE_SIZE, listActiveAuctions, type ActiveAuction } from './api'
+import {
+  AUCTION_PAGE_SIZE,
+  AUCTION_PAGE_SIZE_OPTIONS,
+  listActiveAuctions,
+  type ActiveAuction,
+} from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
 import { AuctionCountdown } from './AuctionCountdown'
@@ -133,13 +139,14 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
 
 export const AuctionMarketplace = (): React.JSX.Element => {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(AUCTION_PAGE_SIZE)
   const roles = useSession((state) => state.roles)
   const { t } = useTranslation()
   const query = useQuery({
-    queryKey: queryKeys.auctions.activePage(page),
-    queryFn: ({ signal }) => listActiveAuctions(page, signal),
+    queryKey: queryKeys.auctions.activePage(page, pageSize),
+    queryFn: ({ signal }) => listActiveAuctions(page, pageSize, signal),
   })
-  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / AUCTION_PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / pageSize))
 
   return (
     <section aria-labelledby="active-auctions-title" className="mt-8 space-y-4">
@@ -178,6 +185,21 @@ export const AuctionMarketplace = (): React.JSX.Element => {
           )}
         </nav>
       </header>
+      <div className="w-44">
+        <SelectField
+          label={t('auction:market.itemsPerPage')}
+          value={String(pageSize)}
+          options={AUCTION_PAGE_SIZE_OPTIONS.map((size) => ({
+            value: String(size),
+            label: String(size),
+          }))}
+          onChange={(event) => {
+            // Otro tamano cambia cuantas paginas hay: se vuelve a la primera.
+            setPageSize(Number(event.target.value))
+            setPage(1)
+          }}
+        />
+      </div>
       <QueryState
         isLoading={query.isLoading}
         error={query.error}
@@ -189,7 +211,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
             <AuctionCard key={auction.id} auction={auction} />
           ))}
         </div>
-        {query.data !== undefined && query.data.total > AUCTION_PAGE_SIZE && (
+        {query.data !== undefined && query.data.total > pageSize && (
           <nav aria-label={t('auction:market.pagination')} className="mt-4 flex items-center gap-3">
             <Button
               variant="secondary"

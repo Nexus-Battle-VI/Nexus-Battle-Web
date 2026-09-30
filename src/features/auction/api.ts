@@ -91,7 +91,11 @@ export interface ActiveAuctionPage {
   readonly total: number
 }
 
+/** Tamano de pagina por defecto del marketplace. */
 export const AUCTION_PAGE_SIZE = 16
+
+/** Tamanos que ofrece el selector; todos dentro del maximo de Auction (100). */
+export const AUCTION_PAGE_SIZE_OPTIONS = [16, 32, 48] as const
 
 interface AuctionErrorBody {
   readonly code?: unknown
@@ -162,9 +166,10 @@ export const publishOfficialAuction = (
 
 export const listActiveAuctions = (
   page: number,
+  pageSize: number = AUCTION_PAGE_SIZE,
   signal?: AbortSignal,
 ): Promise<ActiveAuctionPage> =>
   httpClient.get<ActiveAuctionPage>(
-    `/v1/auctions?page=${String(page)}&pageSize=${String(AUCTION_PAGE_SIZE)}`,
+    `/v1/auctions?page=${String(page)}&pageSize=${String(pageSize)}`,
     signal,
   )

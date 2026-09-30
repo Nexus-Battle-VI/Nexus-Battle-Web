@@ -219,6 +219,6 @@ export const queryKeys = {
   },
   auctions: {
     active: ['auctions', 'active'] as const,
-    activePage: (page: number) => ['auctions', 'active', page] as const,
+    activePage: (page: number, pageSize: number) => ['auctions', 'active', page, pageSize] as const,
   },
 } as const

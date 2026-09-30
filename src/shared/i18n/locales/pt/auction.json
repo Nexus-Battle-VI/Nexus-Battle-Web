@@ -46,6 +46,7 @@
     "empty": "Não há leilões ativos no momento.",
     "pagination": "Paginação de leilões",
     "pageOf": "Página {{page}} de {{pages}}",
+    "itemsPerPage": "Itens por página",
     "officialLabel": "Publicação oficial: {{mark}}",
     "minimumPrice": "Preço mínimo",
     "closes": "Encerra",
