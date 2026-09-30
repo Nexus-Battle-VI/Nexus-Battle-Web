@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
@@ -49,6 +49,9 @@ const MAX_AUTOMATIC_RETRIES = 3
  */
 export const AuctionDetailPage = (): React.JSX.Element => {
   const { auctionId = '' } = useParams()
+  // `?buyNow=1` llega desde "Comprar ahora" del marketplace: abre el paso de confirmacion.
+  const [searchParams] = useSearchParams()
+  const buyNowIntent = searchParams.get('buyNow') === '1'
   const navigate = useNavigate()
   const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
@@ -219,6 +222,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                           summary: product.description,
                         }}
                         stage={purchaseStage}
+                        focusConfirmation={buyNowIntent}
                         {...(buyNowCredits !== null ? { priceCredits: buyNowCredits } : {})}
                         {...(availableCredits !== undefined ? { availableCredits } : {})}
                         {...(transaction !== null

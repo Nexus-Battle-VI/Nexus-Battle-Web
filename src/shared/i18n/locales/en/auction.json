@@ -50,7 +50,10 @@
     "closes": "Closes",
     "viewDetail": "View details",
     "bids": "Bids",
-    "timeRemaining": "Time left"
+    "timeRemaining": "Time left",
+    "buyNow": "Buy now price",
+    "buyNowNone": "Not available",
+    "buyNowAction": "Buy now"
   },
   "validation": {
     "productRequired": "Select a product from your inventory.",

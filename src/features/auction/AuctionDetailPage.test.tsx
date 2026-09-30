@@ -61,12 +61,12 @@ const confirmacion = (patch: Partial<BuyNowConfirmation> = {}): BuyNowConfirmati
   ...patch,
 })
 
-const montar = (): void => {
+const montar = (search = ''): void => {
   renderWithProviders(
     <Routes>
       <Route path="/auction/:auctionId" element={<AuctionDetailPage />} />
     </Routes>,
-    { route: `/auction/${AUCTION_ID}` },
+    { route: `/auction/${AUCTION_ID}${search}` },
   )
 }
 
@@ -391,6 +391,107 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
       await screen.findByText('Tiempo restante')
       expect(timeLeft()).toBe('Finalizada')
+    })
+  })
+
+  describe('llegada desde "Comprar ahora" del marketplace (?buyNow=1)', () => {
+    const confirmacionCasilla = (): Promise<HTMLElement> =>
+      screen.findByRole('checkbox', { name: 'Confirmo la compra inmediata' })
+
+    beforeEach(() => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+      vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    })
+
+    it('abre directamente la confirmacion existente, enfocada, sin comprar todavia', async () => {
+      const ejecutar = vi.spyOn(detailApi, 'executeBuyNow')
+
+      montar('?buyNow=1')
+
+      const casilla = await confirmacionCasilla()
+      expect(casilla).toHaveFocus()
+      expect(casilla).not.toBeChecked()
+      expect(ejecutar).not.toHaveBeenCalled()
+    })
+
+    it('sin la intencion (Ver detalle) el detalle se abre normal, sin enfocar la compra', async () => {
+      montar()
+
+      expect(await confirmacionCasilla()).not.toHaveFocus()
+    })
+
+    it('no compra hasta confirmar: sin la casilla pide confirmacion y no llama a /buy-now', async () => {
+      const ejecutar = vi.spyOn(detailApi, 'executeBuyNow')
+
+      montar('?buyNow=1')
+
+      await confirmacionCasilla()
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(screen.getByText('Confirmación requerida')).toBeInTheDocument()
+      expect(ejecutar).not.toHaveBeenCalled()
+    })
+
+    it('mientras procesa no permite una segunda compra', async () => {
+      const ejecutar = vi
+        .spyOn(detailApi, 'executeBuyNow')
+        .mockReturnValue(new Promise<BuyNowConfirmation>(() => undefined))
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await confirmacionCasilla())
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(await screen.findByText('Procesando tu compra...')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+      expect(ejecutar).toHaveBeenCalledTimes(1)
+    })
+
+    it('al confirmar usa la compra existente una sola vez: exito y resincronizacion', async () => {
+      const ejecutar = vi
+        .spyOn(detailApi, 'executeBuyNow')
+        .mockResolvedValue(confirmacion({ debitedCredits: 2500, remainingCredits: 2500 }))
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await confirmacionCasilla())
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(await screen.findByText('¡Compra completada!')).toBeInTheDocument()
+      expect(ejecutar).toHaveBeenCalledTimes(1)
+      expect(ejecutar).toHaveBeenCalledWith(AUCTION_ID, expect.any(String))
+      await waitFor(() => {
+        expect(detailApi.fetchAuctionDetail).toHaveBeenCalledTimes(2)
+      })
+    })
+
+    it('un rechazo usa el manejo de errores existente', async () => {
+      const ejecutar = vi.spyOn(detailApi, 'executeBuyNow').mockRejectedValue(
+        new HttpError(409, 'La subasta ya se cerro', {
+          statusCode: 409,
+          code: 'BUY_NOW_CONFLICT',
+        }),
+      )
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await confirmacionCasilla())
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(
+        await screen.findByText('Otro comprador se adelantó: la subasta ya se cerró.'),
+      ).toBeInTheDocument()
+      expect(ejecutar).toHaveBeenCalledTimes(1)
+    })
+
+    it('el vendedor que llega con la intencion no ve la compra', async () => {
+      useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+
+      montar('?buyNow=1')
+
+      expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
     })
   })
 })

@@ -51,7 +51,10 @@
     "closes": "Clôture",
     "viewDetail": "Voir le détail",
     "bids": "Enchères",
-    "timeRemaining": "Temps restant"
+    "timeRemaining": "Temps restant",
+    "buyNow": "Achat immédiat",
+    "buyNowNone": "Non disponible",
+    "buyNowAction": "Acheter maintenant"
   },
   "validation": {
     "productRequired": "Sélectionnez un produit de votre inventaire.",

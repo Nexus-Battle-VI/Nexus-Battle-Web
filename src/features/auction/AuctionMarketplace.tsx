@@ -21,9 +21,31 @@ const priceOf = (auction: ActiveAuction): string =>
     ? formatMoney(auction.minimumBidAmountMinor, auction.currency)
     : countLabel(i18n.t, 'common:count.credits', auction.minimumBidCredits)
 
+/** Precio de compra inmediata, o `null` si el publicador no lo configuro. */
+const buyNowPriceOf = (auction: ActiveAuction): string | null =>
+  auction.priceKind === 'REAL_MONEY'
+    ? auction.buyNowAmountMinor === null
+      ? null
+      : formatMoney(auction.buyNowAmountMinor, auction.currency)
+    : auction.buyNowCredits === null
+      ? null
+      : countLabel(i18n.t, 'common:count.credits', auction.buyNowCredits)
+
+const linkClass =
+  'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
+
 const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JSX.Element => {
   const { t } = useTranslation()
+  const subject = useSession((state) => state.subject)
   const official = auction.publisherType === 'GAME_MASTER'
+  const buyNowPrice = buyNowPriceOf(auction)
+  /*
+   * "Comprar ahora" abre el detalle con `?buyNow=1`, que enfoca directamente la
+   * confirmacion de `ImmediatePurchaseCard`: alli se valida el saldo y se
+   * ejecuta la compra con su Idempotency-Key. No se repite ese flujo aqui.
+   * El vendedor no puede comprar su propia subasta.
+   */
+  const canBuyNow = !official && buyNowPrice !== null && subject !== auction.sellerId
   const mark = t(
     auction.officialMark === 'PREMIUM' ? 'auction:marks.PREMIUM' : 'auction:marks.OFFICIAL',
   )
@@ -50,6 +72,12 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
               <Coins aria-hidden="true" className="size-4 text-brand" />
             )}
             {priceOf(auction)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted">{t('auction:market.buyNow')}</dt>
+          <dd className="font-semibold text-ink">
+            {buyNowPrice ?? t('auction:market.buyNowNone')}
           </dd>
         </div>
         <div>
@@ -81,12 +109,22 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
          * implementa (ver el propio issue de la historia).
          */
         !official && (
-          <Link
-            to={`/auction/${auction.id}`}
-            className="mt-3 inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            {t('auction:market.viewDetail')}
-          </Link>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {canBuyNow && (
+              <Link
+                to={`/auction/${auction.id}?buyNow=1`}
+                className={`${linkClass} bg-brand text-brand-ink hover:opacity-90`}
+              >
+                {t('auction:market.buyNowAction')}
+              </Link>
+            )}
+            <Link
+              to={`/auction/${auction.id}`}
+              className={`${linkClass} border border-border text-ink hover:bg-surface-raised`}
+            >
+              {t('auction:market.viewDetail')}
+            </Link>
+          </div>
         )
       }
     </article>
