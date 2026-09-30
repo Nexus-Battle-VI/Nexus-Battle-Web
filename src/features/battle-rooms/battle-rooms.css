@@ -228,6 +228,20 @@
   box-shadow: var(--br-shadow);
   backdrop-filter: blur(3px);
 }
+
+/* Cierre final, Objetivo 3: "Volver a la sala" (`ActiveRoomBanner.tsx`) usa
+   `bg-brand/10` -- 10% de opacidad -- sobre paginas con el fondo de la
+   arena/escenario detras, y en Light eso deja competir demasiado el fondo
+   con el texto/icono/boton (en Dark, mismo 10%, ya se lee bien). Se refuerza
+   la opacidad SOLO en Light, mezclando el mismo tono de marca
+   (`--color-brand`, el MISMO que ya pinta el borde) con el panel solido del
+   remaster (`--br-panel-bg-strong`) en vez de con transparencia -- conserva
+   la identidad visual Light (sigue siendo un tinte de marca, no un bloque
+   oscuro) sin tocar estructura/copy/spacing/color de borde/icono/boton. Dark
+   no se toca: sin regla aqui, sigue exactamente `bg-brand/10` como antes. */
+:root:not([data-theme='dark']) .br-active-room-banner {
+  background-color: color-mix(in oklab, var(--color-brand) 22%, var(--br-panel-bg-strong));
+}
 .br-panel--corners::before,
 .br-panel--corners::after {
   content: '';
@@ -1125,6 +1139,24 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+/* CAUSA RAIZ del historial demasiado bajo (cierre final, Objetivo 1-2 del
+   brief): `Card` (`@/components/ui/Card.tsx`) SIEMPRE envuelve sus
+   `children` en un `<div>` propio -- sin `title`/`description` (el caso de
+   `ChatPanel`, que pinta su propio encabezado) ese div queda con
+   `className=""`, sin ninguna clase de flex. Ese div anonimo, no esta
+   pantalla, es el hijo DIRECTO de `.br-floating-chat-inner` (la `<section>`
+   de `Card`, flex-column); el verdadero header y el verdadero contenido
+   (`flex min-h-0 flex-1 flex-col gap-3` en `ChatPanel.tsx`) quedan como
+   NIETOS, no como hijos -- por eso su `flex-1` nunca tenia un padre flex
+   real del que tomar altura, y el historial se quedaba con su tamano de
+   contenido (poco) dejando espacio vacio debajo. `display: contents` quita
+   la CAJA de ese div (sin tocar `Card.tsx`, componente compartido fuera de
+   alcance): sus hijos pasan a comportarse como hijos directos de
+   `.br-floating-chat-inner` para efectos de layout, sin cambiar el DOM ni
+   la accesibilidad. */
+.br-floating-chat-inner > div {
+  display: contents;
 }
 .br-floating-chat-inner > * {
   min-height: 0;

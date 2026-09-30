@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useSession } from '@/shared/session'
 
+import './battle-rooms.css'
 import { BattlePixelIcon } from './BattlePixelIcon'
 
 import { useMyActiveRooms } from './hooks'
@@ -106,7 +107,7 @@ export const ActiveRoomBanner = (): React.JSX.Element | null => {
   return (
     <section
       aria-label={active.length === 1 ? t('battle:active.labelOne') : t('battle:active.labelMany')}
-      className="flex gap-3 rounded-lg border border-brand bg-brand/10 p-4"
+      className="br-active-room-banner flex gap-3 rounded-lg border border-brand bg-brand/10 p-4"
     >
       <BattlePixelIcon icon="createJoin" size="lg" className="hidden shrink-0 sm:inline-block" />
       <ul className="flex min-w-0 flex-1 flex-col gap-4">

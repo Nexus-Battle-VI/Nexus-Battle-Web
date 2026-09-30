@@ -83,6 +83,16 @@ describe('ActiveRoomBanner — volver a mi sala', () => {
     expect(screen.getByText('Jugador vs Jugador (JcJ) · 2 vs 2 · Tu equipo: A')).toBeInTheDocument()
   })
 
+  it('cierre final (Objetivo 3): conserva border-brand/bg-brand y suma br-active-room-banner (refuerzo de contraste SOLO en Light, ver battle-rooms.css)', async () => {
+    pintarCon(jsonResponse(200, [room()]))
+
+    const banner = await screen.findByRole('region', { name: 'Partida en curso' })
+
+    expect(banner).toHaveClass('br-active-room-banner')
+    expect(banner).toHaveClass('border-brand')
+    expect(banner).toHaveClass('bg-brand/10')
+  })
+
   it('PREPARING: "Tu sala está lista para comenzar" y vuelve al lobby', async () => {
     pintarCon(jsonResponse(200, [room({ status: 'PREPARING' })]))
 
