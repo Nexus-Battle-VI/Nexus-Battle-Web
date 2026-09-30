@@ -1,6 +1,8 @@
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import './battle-rooms.css'
+import { BattlePixelIcon } from './BattlePixelIcon'
 import { describePower, type HeroPower } from './power'
 
 export interface PowerMeterProps {
@@ -51,7 +53,10 @@ export const PowerMeter = ({ power, heroName, className }: PowerMeterProps): Rea
   return (
     <div data-testid="power-meter" className={clsx('flex flex-col gap-1', className)}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="text-muted">{t('battle:power.label')}</span>
+        <span className="flex items-center gap-1 text-muted">
+          <BattlePixelIcon icon="power" size="sm" />
+          {t('battle:power.label')}
+        </span>
         <span aria-hidden="true" className="tabular-nums text-ink">
           {display.text}
         </span>
@@ -63,7 +68,7 @@ export const PowerMeter = ({ power, heroName, className }: PowerMeterProps): Rea
         aria-valuemax={display.max}
         aria-valuenow={display.current}
         aria-valuetext={display.spoken}
-        className="h-2 w-full overflow-hidden rounded-full bg-border"
+        className="br-meter-track h-2 w-full rounded-full"
       >
         <div
           className="h-full rounded-full bg-brand motion-safe:transition-[width] motion-safe:duration-150"

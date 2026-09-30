@@ -77,7 +77,7 @@
   "card": {
     "players": "{{filled}}/{{total}} jogadores",
     "activeStakes": "Apostas ativas: {{amount}}",
-    "viewRoom": "Ver sala",
+    "viewRoom": "Voltar à sala",
     "confirmJoin": "Confirmar e entrar na equipe {{team}}",
     "stakeLabel": "Apostar créditos (opcional)",
     "join": "Entrar — Equipe {{team}} ({{filled}}/{{capacity}})"
@@ -114,6 +114,7 @@
     "chatDescription": "Só os participantes desta sala o veem."
   },
   "chat": {
+    "close": "Fechar chat",
     "signIn": "Entre para usar o chat.",
     "connecting": "Conectando ao chat…",
     "reconnecting": "Reconectando ao chat…",
@@ -181,12 +182,16 @@
     "rival": "Rival",
     "yourTeam": "Sua equipe",
     "yourHero": "Seu herói",
+    "arenaEyebrow": "Nexus · Arena",
+    "enemyLabel": "Inimigo",
+    "companions": "Companheiros",
     "vs": "VS",
     "lastAction": "Resultado da última ação",
     "actions": "Ações de combate",
     "actionsUnavailable": "As ações de combate não estão disponíveis nesta visualização.",
     "timedOut": "{{name}} perdeu o turno por tempo.",
     "combatantLabel": "{{name}}{{you}}, equipe {{team}}{{current}}",
+    "combatants": "Combatentes",
     "currentSuffix": ", turno atual",
     "currentTurn": "Turno atual",
     "turns": "Turnos",
@@ -205,6 +210,8 @@
     "turnValue": "{{label}}: {{time}}",
     "battle": "Tempo de batalha",
     "battleValue": "Tempo de batalha: {{time}}",
+    "turnShortLabel": "Turno",
+    "battleShortLabel": "Batalha",
     "waitingCombat": "Esperando o Combat…",
     "turn10Yours": "Restam 10 segundos do seu turno",
     "turn10": "Restam 10 segundos do turno",
@@ -275,6 +282,8 @@
       "chooseTarget": "Escolha um alvo."
     },
     "target": "Alvo do ataque",
+    "selectTarget": "Selecionar {{name}} como alvo",
+    "chooseInArena": "Selecione um alvo na arena",
     "attacking": "Atacando…",
     "basic": "Ataque básico",
     "epicSoon": "A habilidade épica chegará quando o jogo definir como é equipada; hoje não há nenhuma disponível.",
@@ -352,6 +361,7 @@
     },
     "scoreboard": "Placar final por equipe",
     "eliminated": "Eliminado",
+    "winnerTeam": "Vencedor",
     "byParticipant": "Resultado por participante",
     "participantLine": "Equipe {{team}} · {{result}}"
   },

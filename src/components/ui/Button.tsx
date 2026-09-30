@@ -1,7 +1,15 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import clsx from 'clsx'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'marketplace'
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'danger'
+  | 'marketplace'
+  | 'battle-primary'
+  | 'battle-secondary'
+  | 'battle-danger'
+  | 'battle-compact'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant
@@ -23,6 +31,16 @@ const VARIANTS: Readonly<Record<ButtonVariant, string>> = {
    * porque el sprite ya trae su propio fondo, no el de `--color-brand`.
    */
   marketplace: 'mk-btn-primary text-ink',
+  /*
+   * Remaster visual "Jugar Online" (Sprint 3), mismo criterio que
+   * `marketplace` arriba: el aspecto real vive en
+   * `features/battle-rooms/battle-rooms.css` (`br-btn-*`), aqui solo el
+   * gancho de clase. `text-ink` porque el sprite ya trae su propio fondo.
+   */
+  'battle-primary': 'br-btn-primary text-ink',
+  'battle-secondary': 'br-btn-secondary text-ink',
+  'battle-danger': 'br-btn-danger text-ink',
+  'battle-compact': 'br-btn-compact text-ink text-xs',
 }
 
 export const Button = ({

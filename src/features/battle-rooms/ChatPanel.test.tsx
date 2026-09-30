@@ -499,4 +499,51 @@ describe('ChatPanel', () => {
     )
     expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
   })
+
+  // 6a pasada (secciones 7-9, 89-A, 124 del brief): Richard pregunto expresamente si, con
+  // muchos mensajes, el composer (input + Enviar) sigue existiendo en el DOM y el UNICO
+  // scroll vive en el historial -- no basta leer el CSS, hay que demostrarlo con datos
+  // reales pasando por el socket/`useChat` real. jsdom no calcula layout real (no puede
+  // probar que el popup "no crece" en pixeles: eso es visual, ver el informe), pero SI
+  // puede demostrar la estructura: 30+ mensajes reales entran, el composer sigue montado y
+  // fuera del contenedor de scroll, y ese contenedor sigue siendo el mismo unico elemento.
+  describe('con muchos mensajes (seccion 7-9 del brief)', () => {
+    it('30 mensajes reales entran, el composer (input + Enviar) sigue en el DOM, y viven FUERA de `.br-chat-messages`', async () => {
+      const { sockets } = await setup()
+      const many = Array.from({ length: 30 }, (_, index) => wire(index + 1))
+
+      connect(sockets[0], many)
+
+      const messageList = screen.getByRole('log')
+      expect(messageList).toHaveClass('br-chat-messages')
+      // Los 30 mensajes reales SI llegaron al historial real (useChat -> state.messages).
+      for (const index of [1, 15, 30]) {
+        expect(within(messageList).getByText(`mensaje ${String(index)}`)).toBeInTheDocument()
+      }
+
+      const input = screen.getByRole('textbox', { name: 'Mensaje' })
+      const sendButton = screen.getByRole('button', { name: 'Enviar' })
+      expect(input).toBeInTheDocument()
+      expect(sendButton).toBeInTheDocument()
+      // El composer NUNCA esta dentro del contenedor que scrollea -- si lo
+      // estuviera, `.br-chat-messages { overflow-y: auto }` tambien lo
+      // arrastraria fuera de vista con muchos mensajes (el bug reportado).
+      expect(messageList).not.toContainElement(input)
+      expect(messageList).not.toContainElement(sendButton)
+    })
+
+    it('se puede escribir y enviar un mensaje nuevo con el historial ya lleno (el composer sigue funcional, no solo visible)', async () => {
+      const { sockets } = await setup()
+      const many = Array.from({ length: 25 }, (_, index) => wire(index + 1))
+      const socket = connect(sockets[0], many)
+      const user = userEvent.setup()
+
+      await user.type(screen.getByRole('textbox', { name: 'Mensaje' }), 'hola despues de 25')
+      await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+      await waitFor(() => {
+        expect(socket.frames().at(-1)).toMatchObject({ text: 'hola despues de 25' })
+      })
+    })
+  })
 })

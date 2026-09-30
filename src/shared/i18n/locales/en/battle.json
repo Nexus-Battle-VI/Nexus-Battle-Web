@@ -77,7 +77,7 @@
   "card": {
     "players": "{{filled}}/{{total}} players",
     "activeStakes": "Active stakes: {{amount}}",
-    "viewRoom": "View room",
+    "viewRoom": "Back to room",
     "confirmJoin": "Confirm and join team {{team}}",
     "stakeLabel": "Stake credits (optional)",
     "join": "Join — Team {{team}} ({{filled}}/{{capacity}})"
@@ -114,6 +114,7 @@
     "chatDescription": "Only the participants of this room can see it."
   },
   "chat": {
+    "close": "Close chat",
     "signIn": "Sign in to use the chat.",
     "connecting": "Connecting to the chat…",
     "reconnecting": "Reconnecting to the chat…",
@@ -181,12 +182,16 @@
     "rival": "Rival",
     "yourTeam": "Your team",
     "yourHero": "Your hero",
+    "arenaEyebrow": "Nexus · Arena",
+    "enemyLabel": "Enemy",
+    "companions": "Companions",
     "vs": "VS",
     "lastAction": "Result of the last action",
     "actions": "Combat actions",
     "actionsUnavailable": "Combat actions are not available in this view.",
     "timedOut": "{{name}} lost their turn due to time.",
     "combatantLabel": "{{name}}{{you}}, team {{team}}{{current}}",
+    "combatants": "Combatants",
     "currentSuffix": ", current turn",
     "currentTurn": "Current turn",
     "turns": "Turns",
@@ -205,6 +210,8 @@
     "turnValue": "{{label}}: {{time}}",
     "battle": "Battle time",
     "battleValue": "Battle time: {{time}}",
+    "turnShortLabel": "Turn",
+    "battleShortLabel": "Battle",
     "waitingCombat": "Waiting for Combat…",
     "turn10Yours": "10 seconds left in your turn",
     "turn10": "10 seconds left in the turn",
@@ -275,6 +282,8 @@
       "chooseTarget": "Choose a target."
     },
     "target": "Attack target",
+    "selectTarget": "Select {{name}} as target",
+    "chooseInArena": "Select a target in the arena",
     "attacking": "Attacking…",
     "basic": "Basic attack",
     "epicSoon": "The epic ability will arrive once the game defines how it is equipped; none is available today.",
@@ -351,6 +360,7 @@
     },
     "scoreboard": "Final score by team",
     "eliminated": "Eliminated",
+    "winnerTeam": "Winner",
     "byParticipant": "Result by participant",
     "participantLine": "Team {{team}} · {{result}}"
   },

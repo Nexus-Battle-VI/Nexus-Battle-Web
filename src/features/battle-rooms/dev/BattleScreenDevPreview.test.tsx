@@ -13,7 +13,12 @@ describe('BattleScreenDevPreview', () => {
     render(<BattleScreenDevPreview />)
 
     expect(screen.getByText('Turno de Bruno')).toBeInTheDocument()
-    expect(screen.getByText('Inicia Bruno la batalla · Ronda 1')).toBeInTheDocument()
+    // 4a pasada (seccion 35 del brief): la linea de apertura ya no se ve en
+    // "Nexus · Arena" -- sigue siendo dato accesible en el mismo anuncio
+    // `role="status"` sr-only de la pantalla de batalla.
+    expect(screen.getByRole('status', { name: '' })).toHaveTextContent(
+      'Inicia Bruno la batalla · Ronda 1',
+    )
   })
 
   it('"Simular turnAdvanced" pasa por el reductor real y alterna el turno', async () => {
@@ -24,7 +29,7 @@ describe('BattleScreenDevPreview', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Simular turnAdvanced' }))
     expect(screen.getByText('Turno de Bruno')).toBeInTheDocument()
-    expect(screen.getByText('Ronda 2')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: '' })).toHaveTextContent('Ronda 2')
   })
 
   it('cambiar de perspectiva, de formato y de conexion se refleja en la pantalla', async () => {
@@ -34,9 +39,15 @@ describe('BattleScreenDevPreview', () => {
     expect(screen.getByText('Tu turno')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: '2v2' }))
+    // 4a pasada (seccion 36 del brief): la cola de turnos ya no se muestra --
+    // se verifica el formato 2v2 por las tarjetas reales de cada lado de la
+    // arena (2 + 2).
     expect(
-      within(screen.getByRole('list', { name: 'Orden de turnos' })).getAllByRole('listitem'),
-    ).toHaveLength(4)
+      within(screen.getByRole('region', { name: 'Tu equipo' })).getAllByRole('listitem'),
+    ).toHaveLength(2)
+    expect(
+      within(screen.getByRole('region', { name: 'Rival' })).getAllByRole('listitem'),
+    ).toHaveLength(2)
 
     await userEvent.click(screen.getByRole('button', { name: '1 vs IA' }))
     expect(screen.getByText('Turno de Oponente IA')).toBeInTheDocument()
@@ -55,7 +66,9 @@ describe('BattleScreenDevPreview', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reiniciar' }))
 
     expect(screen.getByText('Turno de Bruno')).toBeInTheDocument()
-    expect(screen.getByText('Inicia Bruno la batalla · Ronda 1')).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: '' })).toHaveTextContent(
+      'Inicia Bruno la batalla · Ronda 1',
+    )
   })
 })
 
@@ -137,16 +150,20 @@ describe('BattleScreenDevPreview — HU-18: monta los componentes y reductores r
     expect(screen.getByText('No hay rivales con Vida a los que atacar.')).toBeInTheDocument()
   })
 
-  it('en 2v2 hay que elegir un rival: los radios ofrecen a Bruno y a Carla, no a los aliados', async () => {
+  // 7a pasada (secciones 37-41 del brief): el selector de radios se quito de
+  // la UI -- el objetivo se elige haciendo clic sobre el heroe en la arena.
+  // Solo los rivales (Bruno, Carla) tienen ese boton; los aliados (Diego,
+  // Ana) nunca lo tienen -- mismo criterio real de `attackableTargets`.
+  it('en 2v2 hay que elegir un rival: solo Bruno y Carla son clicables en la arena, no los aliados', async () => {
     await enTurnoDeAna()
     await userEvent.click(screen.getByRole('button', { name: '2v2' }))
     await userEvent.click(screen.getByRole('button', { name: 'Simular turnAdvanced' }))
 
-    const grupo = screen.getByRole('group', { name: 'Objetivo del ataque' })
-
-    expect(within(grupo).getAllByRole('radio')).toHaveLength(2)
-    expect(within(grupo).getByRole('radio', { name: /Carla/u })).toBeInTheDocument()
-    expect(within(grupo).queryByRole('radio', { name: /Diego|Ana/u })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Elegir a Bruno como objetivo' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Elegir a Carla como objetivo' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /Elegir a (Diego|Ana) como objetivo/u }),
+    ).not.toBeInTheDocument()
   })
 })
 
@@ -165,7 +182,7 @@ describe('BattleScreenDevPreview — arena: controles de desarrollo separados de
     ).not.toBeInTheDocument()
   })
 
-  it('3v3: la misma pantalla muestra tres por lado, seis en la franja de turnos y un medidor por cada uno', async () => {
+  it('3v3: la misma pantalla muestra tres por lado y un medidor por cada uno', async () => {
     render(<BattleScreenDevPreview />)
 
     await userEvent.click(screen.getByRole('button', { name: '3v3' }))
@@ -179,8 +196,5 @@ describe('BattleScreenDevPreview — arena: controles de desarrollo separados de
     expect(
       within(batalla.getByRole('region', { name: 'Tu equipo' })).getAllByRole('listitem'),
     ).toHaveLength(3)
-    expect(
-      within(batalla.getByRole('list', { name: 'Orden de turnos' })).getAllByRole('listitem'),
-    ).toHaveLength(6)
   })
 })

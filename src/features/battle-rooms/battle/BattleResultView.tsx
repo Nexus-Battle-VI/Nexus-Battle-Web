@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 
 import { localizedMessages } from '@/shared/i18n/messages'
 
+import '../battle-rooms.css'
+import { BattlePixelIcon } from '../BattlePixelIcon'
 import {
   describeResult,
   participantOutcomeName,
@@ -57,10 +59,19 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
     <section
       aria-labelledby="battle-result-headline"
       className={clsx(
-        'flex flex-col gap-4 rounded-xl border-2 border-muted bg-surface p-5 shadow-lg',
+        // 5a pasada (secciones 60-64 del brief): densidad vertical reducida
+        // (padding/gaps mas chicos) para caber a 1366x768/100% sin scroll --
+        // el ANCHO no se toca (seccion 64), solo el alto.
+        'br-result-card flex flex-col gap-2 p-3.5 sm:p-4',
         'motion-safe:transition-shadow motion-safe:duration-500',
       )}
     >
+      {presentation.tone === 'won' && (
+        <BattlePixelIcon icon="victory" size="md" className="mx-auto" />
+      )}
+      {presentation.tone === 'lost' && (
+        <BattlePixelIcon icon="defeat" size="md" className="mx-auto" />
+      )}
       <p role="status" className="sr-only">
         {presentation.headline}
       </p>
@@ -68,34 +79,53 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
         id="battle-result-headline"
         ref={headlineRef}
         tabIndex={-1}
-        className={clsx('text-center text-3xl font-black', TONE_CLASS[presentation.tone])}
+        style={{ fontFamily: 'var(--font-game-display)' }}
+        className={clsx('text-center text-2xl font-black', TONE_CLASS[presentation.tone])}
       >
         {presentation.headline}
       </h2>
-      <div className="flex flex-col gap-1 text-center">
+      <div className="flex flex-col gap-0.5 text-center">
         <p className="text-sm text-ink">{presentation.cause}</p>
         {winners !== null && <p className="text-sm font-semibold text-ink">{winners}</p>}
         {presentation.detail !== null && (
           <p className="text-xs text-muted">{presentation.detail}</p>
         )}
       </div>
-      <ul className="grid grid-cols-2 gap-3" aria-label={t('battle:result.scoreboard')}>
-        {presentation.standings.map((standing) => (
-          <li
-            key={standing.teamLabel}
-            className="flex flex-col items-center rounded-lg border border-muted p-3"
-          >
-            <span className="text-sm font-bold text-ink">
-              {t('battle:team', { team: standing.teamLabel })}
-            </span>
-            <span className="text-xs tabular-nums text-muted">{standing.text}</span>
-            {standing.eliminated && (
-              <span className="text-xs font-semibold text-danger">
-                {t('battle:result.eliminated')}
+      <ul className="grid grid-cols-2 gap-2" aria-label={t('battle:result.scoreboard')}>
+        {presentation.standings.map((standing) => {
+          // Ganador segun EXACTAMENTE lo que publico Combat (`winnerTeamLabel`,
+          // sin comparar vidas ni recalcular nada aqui): seccion 62 del brief,
+          // diferenciar mas claramente equipo ganador de equipo eliminado.
+          const isWinner = result.winnerTeamLabel === standing.teamLabel
+
+          return (
+            <li
+              key={standing.teamLabel}
+              className={clsx(
+                'br-standing flex flex-col items-center gap-0.5 rounded-lg border border-muted p-2',
+                isWinner && 'br-standing--winner',
+                standing.eliminated && 'br-standing--eliminated',
+              )}
+            >
+              {isWinner && <BattlePixelIcon icon="victory" size="sm" />}
+              {standing.eliminated && <BattlePixelIcon icon="defeat" size="sm" />}
+              <span className="text-sm font-bold text-ink">
+                {t('battle:team', { team: standing.teamLabel })}
               </span>
-            )}
-          </li>
-        ))}
+              <span className="text-xs tabular-nums text-muted">{standing.text}</span>
+              {isWinner && (
+                <span className="text-xs font-semibold" style={{ color: 'var(--br-accent)' }}>
+                  {t('battle:result.winnerTeam')}
+                </span>
+              )}
+              {standing.eliminated && (
+                <span className="text-xs font-semibold text-danger">
+                  {t('battle:result.eliminated')}
+                </span>
+              )}
+            </li>
+          )
+        })}
       </ul>
       <ul className="flex flex-col gap-1" aria-label={t('battle:result.byParticipant')}>
         {result.participants.map((participant) => (
@@ -116,7 +146,7 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
       <div className="flex justify-center">
         <Link
           to="/play"
-          className="rounded-lg border border-brand px-4 py-2 text-sm font-semibold text-brand"
+          className="br-btn-primary inline-flex items-center justify-center text-sm font-semibold text-ink"
         >
           {t('battle:backToPlay')}
         </Link>

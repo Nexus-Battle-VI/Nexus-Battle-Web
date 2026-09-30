@@ -77,7 +77,7 @@
   "card": {
     "players": "{{filled}}/{{total}} jugadores",
     "activeStakes": "Apuestas activas: {{amount}}",
-    "viewRoom": "Ver sala",
+    "viewRoom": "Volver a sala",
     "confirmJoin": "Confirmar y unirse al equipo {{team}}",
     "stakeLabel": "Apostar créditos (opcional)",
     "join": "Unirse — Equipo {{team}} ({{filled}}/{{capacity}})"
@@ -114,6 +114,7 @@
     "chatDescription": "Solo lo ven los participantes de esta sala."
   },
   "chat": {
+    "close": "Cerrar chat",
     "signIn": "Inicia sesión para usar el chat.",
     "connecting": "Conectando al chat…",
     "reconnecting": "Reconectando al chat…",
@@ -181,12 +182,16 @@
     "rival": "Rival",
     "yourTeam": "Tu equipo",
     "yourHero": "Tu héroe",
+    "arenaEyebrow": "Nexus · Arena",
+    "enemyLabel": "Enemigo",
+    "companions": "Compañeros",
     "vs": "VS",
     "lastAction": "Resultado de la última acción",
     "actions": "Acciones de combate",
     "actionsUnavailable": "Las acciones de combate no están disponibles en esta vista.",
     "timedOut": "{{name}} perdió su turno por tiempo.",
     "combatantLabel": "{{name}}{{you}}, equipo {{team}}{{current}}",
+    "combatants": "Combatientes",
     "currentSuffix": ", turno actual",
     "currentTurn": "Turno actual",
     "turns": "Turnos",
@@ -205,6 +210,8 @@
     "turnValue": "{{label}}: {{time}}",
     "battle": "Tiempo de batalla",
     "battleValue": "Tiempo de batalla: {{time}}",
+    "turnShortLabel": "Turno",
+    "battleShortLabel": "Batalla",
     "waitingCombat": "Esperando a Combat…",
     "turn10Yours": "Quedan 10 segundos de tu turno",
     "turn10": "Quedan 10 segundos del turno",
@@ -275,6 +282,8 @@
       "chooseTarget": "Elige un objetivo."
     },
     "target": "Objetivo del ataque",
+    "selectTarget": "Elegir a {{name}} como objetivo",
+    "chooseInArena": "Selecciona un objetivo en la arena",
     "attacking": "Atacando…",
     "basic": "Ataque básico",
     "epicSoon": "La habilidad épica llegará cuando el juego defina cómo se equipa; hoy no hay ninguna disponible.",
@@ -352,6 +361,7 @@
     },
     "scoreboard": "Marcador final por equipo",
     "eliminated": "Eliminado",
+    "winnerTeam": "Ganador",
     "byParticipant": "Resultado por participante",
     "participantLine": "Equipo {{team}} · {{result}}"
   },

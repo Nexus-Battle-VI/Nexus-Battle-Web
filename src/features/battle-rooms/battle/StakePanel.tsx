@@ -2,8 +2,8 @@ import { useId } from 'react'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
-import { Coins } from '@/components/ui/icons'
-
+import '../battle-rooms.css'
+import { BattlePixelIcon } from '../BattlePixelIcon'
 import { useBattleStake } from './useBattleStake'
 import { describeOwnStake } from './stakePresentation'
 import { useRefreshWalletOn, useWallet } from '@/shared/wallet'
@@ -63,7 +63,10 @@ export const StakePanel = ({ roomId, subject }: StakePanelProps): React.JSX.Elem
     <section
       aria-labelledby={headingId}
       className={clsx(
-        'flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3 sm:p-4',
+        // 5a pasada (seccion 61 del brief): densidad reducida, igual que el
+        // resto del stack de Result. No afecta al aura del cofre (esa vive
+        // en `RewardPanel`, congelada aparte).
+        'br-panel flex flex-col gap-2 p-2.5 sm:p-3',
         'motion-safe:transition-shadow motion-safe:duration-500',
       )}
     >
@@ -75,7 +78,7 @@ export const StakePanel = ({ roomId, subject }: StakePanelProps): React.JSX.Elem
         role="status"
         className="flex items-center justify-center gap-2 text-lg font-bold text-ink"
       >
-        <Coins aria-hidden="true" className="h-5 w-5 text-brand" />
+        <BattlePixelIcon icon="wager" size="sm" />
         {line}
       </p>
 

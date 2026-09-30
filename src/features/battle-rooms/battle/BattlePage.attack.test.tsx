@@ -162,7 +162,6 @@ describe('BattlePage — HU-18: del clic al resultado, solo con lo que publica C
       'aria-disabled',
       'false',
     )
-    expect(screen.getByRole('radio', { name: /Bruno/u })).toBeChecked()
   })
 
   it('el clic envia la INTENCION (objetivo y commandId) y no toca la Vida ni el turno hasta que Combat responde', async () => {

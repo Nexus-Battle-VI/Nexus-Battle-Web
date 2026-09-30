@@ -147,7 +147,15 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
     await userEvent.click(usar('Usar Mano de piedra'))
 
     expect(value.onUse).not.toHaveBeenCalled()
-    expect(screen.getAllByText('Esperando el resultado de tu acción…').length).toBeGreaterThan(0)
+    // 9a pasada (secciones 33-36 del brief): antes este texto se repetia
+    // VISIBLE debajo de CADA habilidad a la vez (aqui, dos) -- sigue
+    // existiendo para lectores de pantalla (`aria-describedby`), pero
+    // ninguna instancia queda visible.
+    const avisos = screen.getAllByText('Esperando el resultado de tu acción…')
+    expect(avisos.length).toBeGreaterThan(0)
+    for (const aviso of avisos) {
+      expect(aviso).toHaveClass('sr-only')
+    }
   })
 
   it('el Poder NO deshabilita: con 0 de Poder la habilidad sigue disponible (Combat la degradara a ataque basico)', async () => {
@@ -195,7 +203,14 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
 
     const { container } = render(<SkillList {...props({ battle: skillsOf(hostile) })} />)
 
-    expect(container.querySelector('img')).toBeNull()
+    // Ningun `<img>` real proviene del NOMBRE de la habilidad (el unico `<img>`
+    // legitimo es el icono decorativo de PixelLab del titulo "Habilidades",
+    // ajeno al dato hostil): ninguno tiene el `src` inyectado ni carece de
+    // `alt=""`/`aria-hidden` (marca de decorativo real, no de marcado inyectado).
+    for (const img of container.querySelectorAll('img')) {
+      expect(img.getAttribute('src')).not.toBe('x')
+      expect(img).toHaveAttribute('aria-hidden', 'true')
+    }
     expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument()
   })
 

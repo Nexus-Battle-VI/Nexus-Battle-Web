@@ -137,17 +137,21 @@ describe('el ataque basico no se decide en Web (HU-18)', () => {
   })
 
   it('el ataque basico NO depende del Poder: ni la interfaz ni la disponibilidad lo mencionan', () => {
+    // `BattleScreen.tsx` salio de esta lista en el remaster visual Sprint 3 (3a
+    // pasada, seccion 38 del brief): el HUD de esquina ahora MUESTRA el Poder
+    // del combatiente principal (HU-19, `PowerMeter`/`combatantPower`) -- una
+    // adicion puramente presentacional, sin relacion con la DECISION de si el
+    // ataque basico esta disponible (esa logica sigue viviendo, intacta, en
+    // `attackAvailability` de `presentation.ts`, que SI sigue en esta lista).
+    // `AttackPanel.tsx` sigue aqui: es el unico que decide si el boton de
+    // ataque se habilita, y ese archivo sigue sin mencionar Poder.
     const ui = productionSources().filter((source) =>
-      [
-        'AttackPanel.tsx',
-        'HealthBar.tsx',
-        'attackIntent.ts',
-        'BattleScreen.tsx',
-        'presentation.ts',
-      ].includes(source.file),
+      ['AttackPanel.tsx', 'HealthBar.tsx', 'attackIntent.ts', 'presentation.ts'].includes(
+        source.file,
+      ),
     )
 
-    expect(ui).toHaveLength(5)
+    expect(ui).toHaveLength(4)
 
     for (const { file, code } of ui) {
       expect({ file, found: /\b(power|poder)\b/iu.test(code) }).toEqual({ file, found: false })
@@ -182,7 +186,11 @@ describe('el ataque basico no se decide en Web (HU-18)', () => {
  * desincroniza el foco y los lectores de pantalla del orden visual.
  */
 describe('la arena no reordena ni saca del flujo los bloques (HU-18)', () => {
-  const ARENA = ['BattleScreen.tsx', 'BattleArena.tsx', 'TurnOrderStrip.tsx', 'AttackPanel.tsx']
+  // 4a pasada (secciones 35-36 del brief): `TurnOrderStrip.tsx` se elimino --
+  // la cola de turnos ya no se muestra en el centro de la arena (el orden de
+  // turnos real sigue viniendo intacto de `battle.turnOrder`/`currentTurn`,
+  // sin cambios).
+  const ARENA = ['BattleScreen.tsx', 'BattleArena.tsx', 'AttackPanel.tsx']
 
   it('recorre los archivos de la arena', () => {
     const files = productionSources().map((source) => source.file)
@@ -436,13 +444,30 @@ describe('el resultado no se decide en Web (HU-21)', () => {
     }
   })
 
-  it('los temporizadores nuevos solo estan en BattleTimers.tsx', () => {
+  it('los temporizadores nuevos solo estan en BattleTimers.tsx (y BattleScreen.tsx, solo para ocultar el feedback)', () => {
+    // 9a pasada (secciones 38-43, 91-92 del brief): `BattleScreen.tsx` suma un
+    // `setTimeout` de PRESENTACION (`COMBAT_FEEDBACK_VISIBLE_MS`) que unicamente
+    // oculta el feedback ya calculado por `describeLatestAction` pasados ~3s --
+    // nunca decide turno, dano, Vida ni Poder (eso lo sigue haciendo Combat).
+    // Reportado explicitamente en el informe final de esta pasada (seccion 92).
     const withTimers = productionSources()
       .filter(({ code }) => /setInterval|setTimeout/u.test(code))
       .map(({ file }) => file)
       .sort()
 
-    expect(withTimers).toEqual(['BattleTimers.tsx', 'realtime.ts'])
+    expect(withTimers).toEqual(['BattleScreen.tsx', 'BattleTimers.tsx', 'realtime.ts'])
+  })
+
+  it('el temporizador de `BattleScreen.tsx` es solo de PRESENTACION: no calcula turno, dano, Vida ni Poder', () => {
+    const screen = productionSources().find((source) => source.file === 'BattleScreen.tsx')
+    const start = screen?.code.indexOf('const feedbackSignature') ?? -1
+    const end = screen?.code.indexOf('const showFeedback') ?? -1
+
+    expect(start).toBeGreaterThan(-1)
+    expect(end).toBeGreaterThan(start)
+    expect(screen?.code.slice(start, end)).not.toMatch(
+      /turnsCompleted|currentTurn|health|damage|power|winner/iu,
+    )
   })
 })
 

@@ -2,11 +2,15 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { SyntheticEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import clsx from 'clsx'
+
 import type { SocketFactory, TicketProvider } from './realtime'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formatLocale } from '@/shared/i18n/format'
 
+import './battle-rooms.css'
+import { BattlePixelIcon } from './BattlePixelIcon'
 import type { ChatMessage } from './chatProtocol'
 import type { ChatChannel } from './chatProtocol'
 import { CHAT_MAX_LENGTH_HINT, describeChatFailure, describeClosedReason } from './chatDescriptions'
@@ -16,6 +20,8 @@ export interface ChatPanelProps {
   readonly channel: ChatChannel
   readonly title: string
   readonly description?: string
+  /** Envoltorio opcional (skin del remaster de Jugar Online, ver `battle-rooms.css`). */
+  readonly className?: string
   /**
    * Solo para pruebas y vistas previas (estables entre renders): sustituyen el
    * WebSocket real, el ticket de un solo uso y la comprobacion de que hay sesion.
@@ -71,6 +77,7 @@ export const ChatPanel = ({
   channel,
   title,
   description,
+  className,
   socketFactory,
   ticketProvider,
   hasSession,
@@ -114,8 +121,15 @@ export const ChatPanel = ({
   }
 
   return (
-    <Card title={title} {...(description === undefined ? {} : { description })}>
-      <div className="flex flex-col gap-3">
+    <Card className={clsx('br-panel', className)}>
+      <div className="mb-3 flex shrink-0 items-center gap-2">
+        <BattlePixelIcon icon="chat" size="sm" />
+        <div>
+          <h2 className="br-section-title text-base">{title}</h2>
+          {description !== undefined && <p className="text-xs text-muted">{description}</p>}
+        </div>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         {connection === 'disabled' && (
           <p role="status" className="text-xs text-muted">
             {t('battle:chat.signIn')}
@@ -140,7 +154,7 @@ export const ChatPanel = ({
           aria-label={t('battle:chat.messagesOf', { title: title.toLowerCase() })}
           aria-live="polite"
           aria-relevant="additions"
-          className="flex h-64 flex-col gap-1 overflow-y-auto rounded-md border border-border bg-surface p-2"
+          className="br-chat-messages br-scrollbar flex flex-col gap-1 rounded-md border border-border bg-surface p-2"
         >
           {state.truncated && (
             <li className="px-2 py-1 text-xs text-muted">{t('battle:chat.truncated')}</li>
@@ -171,7 +185,7 @@ export const ChatPanel = ({
                       : describeChatFailure(item.failure)}
                   </span>
                   <Button
-                    variant="secondary"
+                    variant="battle-compact"
                     className="px-2 py-1 text-xs"
                     onClick={() => {
                       chat.retry(item.commandId)
@@ -180,7 +194,7 @@ export const ChatPanel = ({
                     {t('battle:chat.retry')}
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="battle-compact"
                     className="px-2 py-1 text-xs"
                     onClick={() => {
                       chat.dismiss(item.commandId)
@@ -194,7 +208,7 @@ export const ChatPanel = ({
           ))}
         </ol>
 
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+        <form onSubmit={handleSubmit} className="flex shrink-0 items-center gap-2">
           <label htmlFor={inputId} className="sr-only">
             {t('battle:chat.message')}
           </label>
@@ -211,7 +225,15 @@ export const ChatPanel = ({
             }}
             className="min-w-0 flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
           />
-          <Button type="submit" disabled={!canSubmit}>
+          {/* 5a pasada (secciones 6E/96-97 del brief): "Enviar" recupera el
+              marco PixelLab compacto (Dark y Light), pensado para caber
+              junto al input sin verse enorme. */}
+          <Button
+            type="submit"
+            variant="battle-primary"
+            className="br-pixellab-send shrink-0"
+            disabled={!canSubmit}
+          >
             {t('battle:chat.send')}
           </Button>
         </form>

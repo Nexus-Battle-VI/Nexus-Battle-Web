@@ -77,7 +77,7 @@
   "card": {
     "players": "{{filled}}/{{total}} joueurs",
     "activeStakes": "Mises actives : {{amount}}",
-    "viewRoom": "Voir la salle",
+    "viewRoom": "Retour à la salle",
     "confirmJoin": "Confirmer et rejoindre l'équipe {{team}}",
     "stakeLabel": "Miser des crédits (facultatif)",
     "join": "Rejoindre — Équipe {{team}} ({{filled}}/{{capacity}})"
@@ -114,6 +114,7 @@
     "chatDescription": "Seuls les participants de cette salle le voient."
   },
   "chat": {
+    "close": "Fermer le chat",
     "signIn": "Connectez-vous pour utiliser le chat.",
     "connecting": "Connexion au chat…",
     "reconnecting": "Reconnexion au chat…",
@@ -181,12 +182,16 @@
     "rival": "Adversaire",
     "yourTeam": "Votre équipe",
     "yourHero": "Votre héros",
+    "arenaEyebrow": "Nexus · Arena",
+    "enemyLabel": "Ennemi",
+    "companions": "Compagnons",
     "vs": "VS",
     "lastAction": "Résultat de la dernière action",
     "actions": "Actions de combat",
     "actionsUnavailable": "Les actions de combat ne sont pas disponibles dans cette vue.",
     "timedOut": "{{name}} a perdu son tour faute de temps.",
     "combatantLabel": "{{name}}{{you}}, équipe {{team}}{{current}}",
+    "combatants": "Combattants",
     "currentSuffix": ", tour actuel",
     "currentTurn": "Tour actuel",
     "turns": "Tours",
@@ -205,6 +210,8 @@
     "turnValue": "{{label}} : {{time}}",
     "battle": "Temps de bataille",
     "battleValue": "Temps de bataille : {{time}}",
+    "turnShortLabel": "Tour",
+    "battleShortLabel": "Bataille",
     "waitingCombat": "En attente de Combat…",
     "turn10Yours": "Il reste 10 secondes à votre tour",
     "turn10": "Il reste 10 secondes au tour",
@@ -275,6 +282,8 @@
       "chooseTarget": "Choisissez une cible."
     },
     "target": "Cible de l'attaque",
+    "selectTarget": "Choisir {{name}} comme cible",
+    "chooseInArena": "Sélectionnez une cible dans l'arène",
     "attacking": "Attaque…",
     "basic": "Attaque de base",
     "epicSoon": "La compétence épique arrivera quand le jeu définira comment l'équiper ; aucune n'est disponible aujourd'hui.",
@@ -352,6 +361,7 @@
     },
     "scoreboard": "Score final par équipe",
     "eliminated": "Éliminé",
+    "winnerTeam": "Vainqueur",
     "byParticipant": "Résultat par participant",
     "participantLine": "Équipe {{team}} · {{result}}"
   },

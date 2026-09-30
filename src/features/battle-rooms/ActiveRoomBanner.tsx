@@ -1,8 +1,9 @@
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
-import { Swords } from '@/components/ui/icons'
 import { useSession } from '@/shared/session'
+
+import { BattlePixelIcon } from './BattlePixelIcon'
 
 import { useMyActiveRooms } from './hooks'
 import { modeLabel } from './presentation'
@@ -107,9 +108,7 @@ export const ActiveRoomBanner = (): React.JSX.Element | null => {
       aria-label={active.length === 1 ? t('battle:active.labelOne') : t('battle:active.labelMany')}
       className="flex gap-3 rounded-lg border border-brand bg-brand/10 p-4"
     >
-      <span aria-hidden="true" className="hidden shrink-0 text-brand sm:block">
-        <Swords className="h-6 w-6" />
-      </span>
+      <BattlePixelIcon icon="createJoin" size="lg" className="hidden shrink-0 sm:inline-block" />
       <ul className="flex min-w-0 flex-1 flex-col gap-4">
         {active.map((room) => (
           <ActiveRoomItem key={room.id} room={room} subject={subject} />

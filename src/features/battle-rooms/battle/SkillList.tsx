@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import type { RealtimeConnectionState } from '../realtime'
 
+import '../battle-rooms.css'
+import { BattlePixelIcon } from '../BattlePixelIcon'
 import { combatantHealth, combatantName, findSelf, healableAllies } from './presentation'
 import type { SkillIntentState } from './skillIntent'
 import {
@@ -89,12 +91,20 @@ export const SkillList = ({
   }
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h3 id={headingId} className="text-xs font-semibold uppercase tracking-widest text-muted">
+    <section aria-labelledby={headingId} className="flex min-w-0 flex-1 flex-col gap-2">
+      {/* Remaster visual Sprint 3 (3a pasada): el titulo visible desaparece --
+          las habilidades ahora se leen como parte de la MISMA barra de
+          acciones que "Ataque básico" (ver `AttackPanel`), no como una
+          seccion propia con su encabezado. Sigue existiendo para lectores de
+          pantalla. */}
+      <h3 id={headingId} className="sr-only">
         {t('battle:skills.title')}
       </h3>
 
-      <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+      {/* 4a pasada (seccion 53, 112 del brief): SIEMPRE `flex-wrap`, nunca
+          `overflow-x-auto` -- un scroll horizontal en la barra de acciones
+          esta prohibido; con muchas habilidades, la fila envuelve. */}
+      <ul className="flex min-w-0 flex-row flex-wrap gap-2">
         {skills.map((entry) => {
           const isHeal = entry.targetAudience === 'ALLY'
           const effectiveTarget = isHeal ? selectedAlly : target
@@ -115,6 +125,7 @@ export const SkillList = ({
                 skill: entry,
               })}
               busy={using?.abilityId === entry.abilityId}
+              pending={pending}
               noteId={noteId}
               onUse={() => {
                 if (effectiveTarget !== null) {
@@ -129,7 +140,12 @@ export const SkillList = ({
         })}
       </ul>
 
-      <p id={noteId} className="text-xs text-muted">
+      {/* 8a pasada (secciones 36-40 del brief): el texto "el costo de Poder y
+          la recarga los aplica Combat..." se quita de la vista -- sigue
+          existiendo para lectores de pantalla porque un boton SIN otra pista
+          (`availability.hint === null`) lo usa como `aria-describedby`
+          (ver `noteId` en `SkillRow`). */}
+      <p id={noteId} className="sr-only">
         {t('battle:skills.note')}
       </p>
 
@@ -137,7 +153,7 @@ export const SkillList = ({
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
           <p>{t('battle:skills.unconfirmed')}</p>
           <Button
-            variant="secondary"
+            variant="battle-secondary"
             aria-disabled={!ready}
             className="min-h-11 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
             onClick={() => {
@@ -154,7 +170,7 @@ export const SkillList = ({
       {skill.rejection !== null && (
         <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
           <p>{describeSkillRejection(skill.rejection)}</p>
-          <Button variant="secondary" className="min-h-11" onClick={onDismissRejection}>
+          <Button variant="battle-secondary" className="min-h-11" onClick={onDismissRejection}>
             {t('battle:understood')}
           </Button>
         </div>
@@ -173,6 +189,8 @@ interface SkillRowProps {
   readonly availability: { readonly enabled: boolean; readonly hint: string | null }
   /** Esta es la habilidad enviada que espera resultado. */
   readonly busy: boolean
+  /** Hay una intencion (de ataque o de habilidad) enviada sin resultado. */
+  readonly pending: boolean
   readonly noteId: string
   readonly onUse: () => void
 }
@@ -185,6 +203,7 @@ const SkillRow = ({
   onChooseAlly,
   availability,
   busy,
+  pending,
   noteId,
   onUse,
 }: SkillRowProps): React.JSX.Element => {
@@ -197,17 +216,41 @@ const SkillRow = ({
   return (
     <li
       className={clsx(
-        'flex min-w-0 flex-col gap-2 rounded-lg border p-3',
-        skill.status === 'READY' ? 'border-border' : 'border-border/60 bg-surface/50',
+        'flex shrink-0 flex-col items-center gap-1',
+        skill.status !== 'READY' && 'opacity-70',
       )}
     >
-      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2">
-        <span className="min-w-0 truncate text-sm font-semibold text-ink">{skill.name}</span>
-        <span className="text-xs tabular-nums text-muted">
-          {describePowerCost(skill.powerCost)}
-        </span>
-      </div>
-      <p id={stateId} className="text-xs text-muted">
+      {/* 7a pasada (secciones 31-33 del brief): el slot entero ES el boton
+          (mismo lenguaje que "Ataque básico" en `.br-action-slot`) -- ya no
+          hay una tarjeta grande + un boton "Usar X" adentro. El estado
+          ("En recarga: 2 turnos"...) ya NO se repite aqui SIEMPRE: solo
+          aparece cuando de verdad importa, via `availability.hint`
+          (identico criterio al de Ataque básico). */}
+      <Button
+        variant="battle-primary"
+        aria-disabled={!availability.enabled}
+        aria-busy={busy}
+        aria-label={busy ? t('battle:skills.using') : t('battle:skills.use', { skill: skill.name })}
+        aria-describedby={`${stateId} ${availability.hint === null ? noteId : hintId}`}
+        className="br-action-slot text-xs font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50"
+        onClick={() => {
+          if (availability.enabled) {
+            onUse()
+          }
+        }}
+      >
+        <BattlePixelIcon icon="skill" size="sm" className="h-4 w-auto shrink-0" />
+        <span className="w-full min-w-0 truncate">{skill.name}</span>
+        <span className="br-action-slot-cost">{describePowerCost(skill.powerCost)}</span>
+      </Button>
+      {/* Texto completo del estado: sr-only cuando la habilidad SI esta lista
+          (info util pero no urgente), visible y pequeño cuando no lo esta
+          (misma info que antes, solo deja de ocupar espacio siempre). */}
+      <p
+        id={stateId}
+        className={clsx('text-center text-[10px]', skill.status === 'READY' && 'sr-only')}
+        style={{ color: 'var(--br-muted)' }}
+      >
         {describeSkillStatus(skill)} · {describeRecharge(skill.chargeTurns)}
       </p>
 
@@ -224,8 +267,9 @@ const SkillRow = ({
               return (
                 <label
                   key={key}
+                  data-selected={key === selectedAllyKey}
                   className={clsx(
-                    'flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2',
+                    'br-target-chip flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2',
                     'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand',
                     key === selectedAllyKey ? 'border-brand bg-brand/10' : 'border-border',
                   )}
@@ -258,21 +302,15 @@ const SkillRow = ({
         </fieldset>
       )}
 
-      <Button
-        aria-disabled={!availability.enabled}
-        aria-busy={busy}
-        aria-describedby={`${stateId} ${availability.hint === null ? noteId : hintId}`}
-        className="min-h-11 w-full text-sm font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:opacity-50"
-        onClick={() => {
-          if (availability.enabled) {
-            onUse()
-          }
-        }}
-      >
-        {busy ? t('battle:skills.using') : t('battle:skills.use', { skill: skill.name })}
-      </Button>
+      {/* 9a pasada (secciones 33-36 del brief): mientras `pending` es cierto
+          este hint es SIEMPRE "Esperando el resultado de tu accion..."
+          (`attack.hints.pending`, mismo texto que `AttackPanel`) -- se
+          repetia debajo de CADA habilidad a la vez. El boton sigue
+          bloqueado de verdad (`aria-disabled` arriba, sin tocar); solo el
+          texto se oculta visualmente, y sigue accesible via
+          `aria-describedby`. */}
       {availability.hint !== null && (
-        <p id={hintId} className="text-xs text-muted">
+        <p id={hintId} className={pending ? 'sr-only' : 'text-xs text-muted'}>
           {availability.hint}
         </p>
       )}

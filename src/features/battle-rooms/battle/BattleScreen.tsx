@@ -1,17 +1,22 @@
+import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
 import type { RealtimeConnectionState } from '../realtime'
 
+import '../battle-rooms.css'
+import { PowerMeter } from '../PowerMeter'
 import { AttackPanel, type CombatControls } from './AttackPanel'
 import { ArenaSide } from './BattleArena'
 import { BattleResultView } from './BattleResultView'
+import { HealthBar } from './HealthBar'
 import { RewardPanel } from './RewardPanel'
 import { StakePanel } from './StakePanel'
 import { BattleTimers } from './BattleTimers'
 import type { ServerClock } from './battleClock'
 import type { LastAttack, LastHealSkill, LastSkill, LastTurnTimeout } from './battleReducer'
 import {
+  attackableTargets,
   combatantHealth,
   combatantName,
   describeTurn,
@@ -20,10 +25,8 @@ import {
   hasCombatState,
   type ActionFeedback,
 } from './presentation'
-import { describeLatestAction } from './skillPresentation'
-import { TurnOrderStrip } from './TurnOrderStrip'
-import type { BattleResult, BattleView, HealthView, TurnOrderEntry } from './types'
-import { i18n } from '@/shared/i18n/i18n'
+import { combatantPower, describeLatestAction } from './skillPresentation'
+import type { BattleResult, BattleView, HealthView, TargetRef, TurnOrderEntry } from './types'
 
 export interface BattleScreenProps {
   readonly battle: BattleView
@@ -54,29 +57,30 @@ export interface BattleScreenProps {
   readonly serverClock?: ServerClock | null
 }
 
-/** Estado de la conexion en TEXTO (el punto de color solo lo refuerza). */
-const connectionLabel = (connection: RealtimeConnectionState, reconnecting: boolean): string =>
-  reconnecting
-    ? i18n.t('battle:battle.reconnecting')
-    : connection === 'open'
-      ? i18n.t('battle:battle.connected')
-      : connection === 'connecting'
-        ? i18n.t('battle:battle.connectingShort')
-        : i18n.t('battle:battle.offline')
+const keyOf = (ref: TargetRef): string => `${ref.teamLabel}#${String(ref.seat)}`
 
 /**
- * Pantalla de batalla (HU-17, HU-18) como una ARENA: los heroes enfrentados y su Vida son lo
- * principal; despues el turno, la accion, el resultado del ultimo golpe y, como informacion
- * secundaria, el orden de turnos. Solo LEE lo que publica Combat: no calcula turnos, no decide
- * resultados ni dano y no genera aleatoriedad.
+ * 9a pasada (secciones 38-43 del brief): el feedback del ultimo ataque/
+ * habilidad/curacion es TRANSITORIO -- aparece, se lee, desaparece solo.
+ * Richard pidio "aproximadamente 2.5 a 3.5 segundos"; 3000ms es el punto
+ * medio razonable.
+ */
+const COMBAT_FEEDBACK_VISIBLE_MS = 3000
+
+/**
+ * Pantalla de batalla (HU-17, HU-18) como una ARENA de videojuego (remaster visual Sprint 3,
+ * 3a pasada, secciones 32-54 del brief): mi equipo SIEMPRE a la izquierda y el enemigo SIEMPRE a
+ * la derecha (presentacion relativa al `subject`, vía `groupCombatants` -- `teamLabel` real
+ * jamas se altera), con el campo de batalla como fondo dominante, HUD en las esquinas
+ * superiores, el ultimo evento como registro flotante abajo-izquierda y las acciones reales en
+ * una barra inferior. Solo LEE lo que publica Combat: no calcula turnos, no decide resultados ni
+ * dano y no genera aleatoriedad.
  *
- * UN SOLO ARBOL DE DOM, con el orden logico de lectura: estado -> arena -> resultado ->
- * acciones -> turnos. En pantallas medianas y amplias (`md`/`lg`, segun cuantos haya por lado) la arena pasa a tres columnas (rival · VS ·
- * mi lado) y en moviles se apila; nunca se reordena con CSS (`order`), asi el orden del teclado
- * y de los lectores de pantalla coincide con el del DOM.
- *
- * Todo lo importante es TEXTO (no solo color): "Tu turno" / "Turno de <nombre>", "Turno actual",
- * "Tú", `32 / 44` de Vida, "Sin efecto"/"Golpe crítico"...
+ * UN SOLO ARBOL DE DOM, con el orden logico de lectura: turno (anuncio) -> mi HUD -> Nexus Arena
+ * (turno/ronda/orden/temporizadores) -> HUD del enemigo -> arena (mi equipo, VS, enemigo) ->
+ * resultado -> ultima accion -> acciones. La posicion VISUAL de cada bloque (esquinas, flotante)
+ * es CSS puro (`position: absolute` dentro de `.br-battle-stage`, que es `position: relative`),
+ * nunca `order`: el foco de teclado y los lectores de pantalla siguen ese mismo orden del DOM.
  */
 export const BattleScreen = ({
   battle,
@@ -110,6 +114,42 @@ export const BattleScreen = ({
   const withHealth = hasCombatState(battle)
   const healthOf = (entry: TurnOrderEntry): HealthView | null | undefined =>
     withHealth ? combatantHealth(battle, entry) : undefined
+
+  // Objetivo de ataque: estado UNICO, compartido entre el heroe rival (clic directo sobre la
+  // arena) y el chip del `AttackPanel` -- seleccionar en cualquiera de los dos actualiza el
+  // mismo estado, sin duplicar la regla de "quien es atacable" (`attackableTargets`, ya existente).
+  const targets = attackableTargets(battle, subject)
+  const [chosenKey, setChosenKey] = useState<string | null>(null)
+  const [only] = targets
+  const selectedKey =
+    targets.length === 1 && only !== undefined
+      ? keyOf(only)
+      : targets.some((entry) => keyOf(entry) === chosenKey)
+        ? chosenKey
+        : null
+  const selectedTarget = targets.find((entry) => keyOf(entry) === selectedKey) ?? null
+  // Sin `combat` la pantalla es de solo lectura (HU-18): NINGUN boton se ofrece, tampoco el
+  // clic sobre el heroe rival -- mismo criterio que el resto de la pantalla.
+  const isTargetableEntry = (entry: TurnOrderEntry): boolean =>
+    combat !== undefined && targets.some((candidate) => candidate.position === entry.position)
+  const isTargetSelectedEntry = (entry: TurnOrderEntry): boolean =>
+    selectedTarget !== null && entry.position === selectedTarget.position
+  const onSelectTarget = (entry: TurnOrderEntry): void => {
+    setChosenKey(keyOf({ teamLabel: entry.teamLabel, seat: entry.seat }))
+  }
+
+  // HUD de esquina (seccion 38-40 del brief): mi combatiente principal (yo, o el primero de mi
+  // lado si no hay perfil propio -- p. ej. viendolo como espectador) y el foco del enemigo (el
+  // objetivo elegido; si ninguno, quien tiene el turno; si ninguno, el primero). El resto de cada
+  // lado se lista debajo, compacto -- MISMOS datos que la arena, solo agrupados para el HUD.
+  const [myPrimary] = self !== null ? [self] : allies
+  const myCompanions = allies.filter((entry) => entry.position !== myPrimary?.position)
+  const enemyFocus =
+    selectedTarget ??
+    opponents.find((entry) => entry.position === battle.currentTurn.position) ??
+    opponents[0]
+  const enemyCompanions = opponents.filter((entry) => entry.position !== enemyFocus?.position)
+
   const timeoutAfterActions =
     lastTurnTimeout !== null &&
     lastTurnTimeout.seq > (lastAttack?.seq ?? 0) &&
@@ -132,174 +172,272 @@ export const BattleScreen = ({
         detail: '',
       }
     : describeLatestAction(lastAttack, lastSkill, battle, lastHealSkill)
-  // Con 1 o 2 participantes por lado la arena ya cabe en horizontal desde `md` (tablet); con 3
-  // hace falta `lg`. Depende solo de cuantos son, no de nombres ni de la modalidad.
-  const horizontalFrom =
-    opponents.length <= 2 && allies.length <= 2
-      ? 'md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-4'
-      : 'lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-4'
+
+  // 9a pasada (secciones 38-44 del brief): estado de PRESENTACION (no de
+  // dominio, no reducer, no store) que solo decide cuanto tiempo se ve el
+  // feedback ya calculado arriba. Se identifica por su CONTENIDO (no por
+  // referencia: `feedback` es un objeto nuevo en cada render) para saber si
+  // es de verdad una accion NUEVA -- si llega otra antes de que termine el
+  // temporizador, el efecto se reinicia solo (limpieza de `useEffect`), sin
+  // cola ni historial nuevo.
+  const feedbackSignature = feedback === null ? null : JSON.stringify(feedback)
+  // Se ve mientras su firma no este en `hiddenSignature` (arranca visible: el
+  // efecto de abajo SOLO agenda cuando ocultarla, nunca decide sincronamente
+  // que se muestre -- eso ya lo decide el render con la firma actual).
+  const [hiddenSignature, setHiddenSignature] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (feedbackSignature === null) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setHiddenSignature(feedbackSignature)
+    }, COMBAT_FEEDBACK_VISIBLE_MS)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [feedbackSignature])
+
+  const showFeedback = feedback !== null && feedbackSignature !== hiddenSignature
 
   return (
-    <section aria-label={t('battle:battle.label')} className="flex flex-col gap-3 lg:gap-4">
-      {/* HUD compacto: turno y ronda a la izquierda, conexion a la derecha. */}
-      <div
-        className={clsx(
-          'flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl border px-4 py-2.5',
-          'motion-safe:transition-colors motion-safe:duration-300',
-          turn.isMyTurn ? 'border-brand bg-brand/10' : 'border-border bg-surface-raised',
-        )}
-      >
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5"
-        >
-          <p className="text-xl font-bold text-ink">{turn.headline}</p>
-          <p className="text-sm text-muted">{turn.detail}</p>
-        </div>
-        <p className="flex items-center gap-2 text-xs font-medium text-muted">
-          <span
-            aria-hidden="true"
-            className={clsx(
-              'size-2 rounded-full',
-              connection === 'failed'
-                ? 'bg-danger'
-                : reconnecting || connection === 'connecting'
-                  ? 'bg-warning'
-                  : 'bg-success',
-            )}
-          />
-          {connectionLabel(connection, reconnecting)}
-        </p>
-      </div>
-
-      {!finished && battle.deadlines !== undefined && serverClock !== null && (
-        <BattleTimers
-          battle={battle}
-          serverClock={serverClock}
-          isMyTurn={turn.isMyTurn}
-          synced={synced}
-        />
-      )}
+    <section
+      aria-label={t('battle:battle.label')}
+      className="br-scene br-scene-battle br-scene-pad br-battle-scene flex flex-col gap-3"
+    >
+      {/* Anuncio de turno para lectores de pantalla: siempre presente, sin franja visual grande
+          (el turno se refuerza en "Nexus · Arena" y en la insignia junto al heroe activo). */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {turn.headline}. {turn.detail}
+      </p>
 
       {reconnecting && (
-        <p role="status" className="text-center text-xs text-muted">
+        <p role="status" className="text-center text-xs" style={{ color: 'var(--br-muted)' }}>
           {t('battle:battle.reconnectingLong')}
         </p>
       )}
       {connection === 'failed' && (
-        <p role="alert" className="text-center text-xs text-danger">
+        <p role="alert" className="text-center text-xs" style={{ color: 'var(--br-danger)' }}>
           {t('battle:battle.authFailed')}
         </p>
       )}
 
-      {/* Arena: rival · VS · mi lado. Un solo DOM; la rejilla horizontal solo aplica desde `lg`. */}
-      <div
-        className={clsx(
-          'grid grid-cols-1 items-stretch gap-3 rounded-2xl border border-border p-3 sm:p-4',
-          'bg-surface-raised bg-[radial-gradient(ellipse_at_50%_0%,color-mix(in_oklab,var(--color-brand)_14%,transparent),transparent_70%)]',
-          horizontalFrom,
-        )}
-      >
-        <ArenaSide
-          battle={battle}
-          title={t('battle:battle.rival')}
-          entries={opponents}
-          isSelf={isSelf}
-          isCurrent={isCurrent}
-          healthOf={healthOf}
-        />
+      <div className="br-battle-stage">
+        {/* HUD superior izquierdo (6a pasada, secciones 16-24 del brief): mi
+            combatiente principal y sus companeros ya NO son asimetricos
+            (antes el principal se pintaba a todo el ancho del HUD y los
+            companeros en una fila mas chica debajo -- eso era exactamente
+            el "Ana grande, Diego chico" que senalo Richard). Ahora los DOS
+            son unidades iguales (`.br-hud-unit`), mismo ancho compacto,
+            en una fila horizontal (`.br-hud-row`), cada una Nombre -> Vida
+            -> Poder de arriba a abajo (nunca al reves). En 3v3, si no cabe
+            una sola fila de 3, `.br-hud-row` (flex-wrap) la parte sola en
+            2+1 -- sin volver a una columna alta. */}
+        {myPrimary !== undefined && (
+          <div className="br-hud-corner br-hud-corner--left">
+            <ul
+              className={clsx('br-hud-row', `br-hud-row--${String(1 + myCompanions.length)}`)}
+              aria-label={t('battle:battle.yourTeam')}
+            >
+              {[myPrimary, ...myCompanions].map((entry) => {
+                const health = healthOf(entry)
+                const power = combatantPower(battle, entry)
 
-        <p
-          aria-hidden="true"
-          className="flex items-center justify-center text-2xl font-black tracking-widest text-muted md:px-2 md:text-3xl"
-        >
-          VS
-        </p>
-
-        <ArenaSide
-          battle={battle}
-          title={allies.length > 1 ? t('battle:battle.yourTeam') : t('battle:battle.yourHero')}
-          entries={allies}
-          isSelf={isSelf}
-          isCurrent={isCurrent}
-          healthOf={healthOf}
-        />
-      </div>
-
-      {/* HU-21: la vista de resultado va ENTRE la arena y el resto; el orden del DOM es
-          el orden de lectura (sin `order` ni posiciones absolutas). HU-22: el panel de
-          recompensa es ADITIVO, justo despues -- BattleResultView nunca muestra creditos (D4). */}
-      {finished && <BattleResultView result={result} subject={subject} />}
-      {finished && <RewardPanel battleId={battle.battleId} subject={subject} />}
-      {/* HU-23: la apuesta propia, solo si la hubo (el panel no se renderiza
-          cuando no hay nada que contar). */}
-      {finished && <StakePanel roomId={battle.battleId} subject={subject} />}
-
-      {/* La region viva existe siempre (los lectores de pantalla anuncian los cambios de una
-          region que ya estaba en la pagina) y, vacia, no ocupa ni reserva altura. */}
-      <div
-        role="status"
-        aria-live="polite"
-        aria-label={t('battle:battle.lastAction')}
-        className={clsx(
-          feedback === null
-            ? '-mt-3 lg:-mt-4'
-            : 'rounded-xl border border-border bg-surface-raised px-4 py-2 text-center',
-        )}
-      >
-        {feedback !== null && (
-          <div className="flex flex-col items-center gap-0.5">
-            {feedback.notice !== undefined && (
-              <p className="text-sm font-medium text-warning">{feedback.notice}</p>
-            )}
-            <p className="text-sm font-semibold text-ink sm:text-base">{feedback.headline}</p>
-            {(feedback.impact !== null || feedback.life !== null) && (
-              <p className="flex flex-wrap items-baseline justify-center gap-x-3">
-                {feedback.impact !== null && (
-                  <span
-                    className={clsx(
-                      'text-lg font-bold tabular-nums',
-                      feedback.tone === 'damage'
-                        ? 'text-danger'
-                        : feedback.tone === 'heal'
-                          ? 'text-success'
-                          : 'text-ink',
+                return (
+                  <li key={entry.position} className="br-hud-unit">
+                    <p className="br-hud-unit-name">
+                      <span className="truncate">
+                        {combatantName(entry)}
+                        {isSelf(entry) ? ` ${t('battle:youBadge')}` : ''}
+                      </span>
+                    </p>
+                    {health !== undefined && (
+                      <HealthBar name={combatantName(entry)} health={health} />
                     )}
-                  >
-                    {feedback.impact}
-                  </span>
-                )}
-                {feedback.life !== null && (
-                  <span className="text-sm tabular-nums text-ink">{feedback.life}</span>
-                )}
+                    {power !== null && <PowerMeter power={power} heroName={combatantName(entry)} />}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* Centro superior: "Nexus · Arena" + turno actual, SIN mas (4a pasada, secciones
+            35-37 del brief): ni la linea de apertura ("Inicia X la batalla · Ronda N"), ni
+            la cola de turnos, ni "Conectado" permanente se muestran aqui -- todo eso sigue
+            existiendo como DATO/anuncio accesible (el `<p role="status" className="sr-only">`
+            de arriba ya dice titular + detalle; los avisos reales de reconexion/fallo viven
+            justo encima de `.br-battle-stage`), solo se retiro la REPETICION visual. La
+            seleccion de objetivo y el orden de turnos siguen funcionando igual. */}
+        <div className="br-arena-center-badge">
+          <p className="br-arena-center-eyebrow">{t('battle:battle.arenaEyebrow')}</p>
+          <p className="br-arena-center-turn">{turn.headline}</p>
+          {!finished && battle.deadlines !== undefined && serverClock !== null && (
+            <div className="br-arena-center-timers">
+              <BattleTimers
+                battle={battle}
+                serverClock={serverClock}
+                isMyTurn={turn.isMyTurn}
+                synced={synced}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* HUD superior derecho: mismo lenguaje que el HUD izquierdo (seccion
+            21 del brief). El foco (objetivo elegido, o quien tiene el
+            turno) va primero, sus companeros despues -- misma unidad, mismo
+            ancho. */}
+        {enemyFocus !== undefined && (
+          <div className="br-hud-corner br-hud-corner--right">
+            <p className="br-hud-corner-sub">{t('battle:battle.enemyLabel')}</p>
+            <ul
+              className={clsx('br-hud-row', `br-hud-row--${String(1 + enemyCompanions.length)}`)}
+              aria-label={t('battle:battle.rival')}
+            >
+              {[enemyFocus, ...enemyCompanions].map((entry) => {
+                const health = healthOf(entry)
+                const power = combatantPower(battle, entry)
+
+                return (
+                  <li key={entry.position} className="br-hud-unit">
+                    <p className="br-hud-unit-name">
+                      <span className="truncate">{combatantName(entry)}</span>
+                    </p>
+                    {health !== undefined && (
+                      <HealthBar name={combatantName(entry)} health={health} />
+                    )}
+                    {power !== null && <PowerMeter power={power} heroName={combatantName(entry)} />}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* Arena: mi equipo SIEMPRE a la izquierda, el enemigo SIEMPRE a la derecha (seccion 33
+            del brief) -- sobre el campo de batalla del `.br-scene`, sin otro fondo encima. */}
+        <div className="br-arena-field">
+          <div className="br-arena-side br-arena-side--mine">
+            <ArenaSide
+              title={allies.length > 1 ? t('battle:battle.yourTeam') : t('battle:battle.yourHero')}
+              entries={allies}
+              isSelf={isSelf}
+              isCurrent={isCurrent}
+            />
+          </div>
+
+          <p
+            aria-hidden="true"
+            className="br-vs-divider br-vs-divider--battle text-xl font-black tracking-widest md:text-2xl"
+            style={{ color: 'var(--br-ink)' }}
+          >
+            VS
+          </p>
+
+          <div className="br-arena-side br-arena-side--enemy">
+            <ArenaSide
+              title={t('battle:battle.rival')}
+              entries={opponents}
+              isSelf={isSelf}
+              isCurrent={isCurrent}
+              isTargetable={isTargetableEntry}
+              isTargetSelected={isTargetSelectedEntry}
+              onSelectTarget={onSelectTarget}
+            />
+          </div>
+        </div>
+
+        {/* HU-21: la vista de resultado sigue en el ORDEN DEL DOM justo despues de la arena (sin
+            `order` ni reordenar por CSS). `br-result-overlay` la ELEVA visualmente por encima de
+            la arena (`position: absolute` dentro de `.br-battle-scene`, que es
+            `position: relative`) sin destruir lo que hay detras. HU-22: el panel de recompensa es
+            ADITIVO -- BattleResultView nunca muestra creditos (D4). */}
+        {finished && (
+          <div className="br-result-overlay">
+            {/* 5a pasada (secciones 61/64 del brief): gap reducido (mas
+                densidad vertical); el ANCHO (`max-w-[820px]`) no se toca. */}
+            <div className="flex w-full max-w-[820px] flex-col items-stretch gap-2">
+              <BattleResultView result={result} subject={subject} />
+              <RewardPanel battleId={battle.battleId} subject={subject} />
+              {/* HU-23: la apuesta propia, solo si la hubo (el panel no se renderiza
+                  cuando no hay nada que contar). */}
+              <StakePanel roomId={battle.battleId} subject={subject} />
+            </div>
+          </div>
+        )}
+
+        {/* Ultima accion: registro FLOTANTE abajo-izquierda (seccion 44-45 del brief), TRANSITORIO
+            -- aparece, se lee, desaparece solo (`showFeedback`, arriba) -- superpuesto al
+            escenario, nunca un bloque separado debajo de la arena. La region viva existe SIEMPRE
+            (los lectores de pantalla anuncian los cambios de una region que ya estaba en la
+            pagina); vacia, no ocupa espacio visual (seccion 89-90: nunca una caja grande vacia, ni
+            un overlay que empuje el layout). */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={t('battle:battle.lastAction')}
+          className={clsx(showFeedback && 'br-floating-log')}
+        >
+          {showFeedback && (
+            <>
+              {feedback.notice !== undefined && (
+                <p className="br-floating-log-line br-floating-log-line--info">{feedback.notice}</p>
+              )}
+              <p className="br-floating-log-line br-floating-log-line--info">{feedback.headline}</p>
+              {feedback.impact !== null && (
+                <p
+                  className={clsx(
+                    'br-floating-log-line',
+                    feedback.tone === 'damage' && 'br-floating-log-line--damage',
+                    feedback.tone === 'heal' && 'br-floating-log-line--heal',
+                    feedback.tone === 'neutral' && 'br-floating-log-line--info',
+                  )}
+                >
+                  {feedback.impact}
+                </p>
+              )}
+              {feedback.life !== null && (
+                <p className="br-floating-log-line br-floating-log-line--info">{feedback.life}</p>
+              )}
+              {feedback.detail !== '' && (
+                <p className="br-floating-log-line br-floating-log-line--info">{feedback.detail}</p>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* 7a pasada (secciones 22-33, 57-58 del brief): la barra de acciones se MUEVE de un
+            bloque separado debajo de `.br-battle-stage` a vivir DENTRO de el, abajo-DERECHA
+            (`.br-bottom-actions`, `position: absolute` -- mismo patron que el combat log de
+            arriba, abajo-izquierda) -- juntos forman un HUD inferior de una sola fila, sin
+            "segunda pagina" ni scroll para atacar. HU-21: tras el final las acciones NO existen
+            (no se muestran deshabilitadas). */}
+        {!finished && (
+          <div className="br-bottom-actions">
+            {combat === undefined ? (
+              <p
+                aria-label={t('battle:battle.actions')}
+                className="br-panel rounded-xl p-3 text-center text-xs"
+                style={{ color: 'var(--br-muted)' }}
+              >
+                {t('battle:battle.actionsUnavailable')}
               </p>
+            ) : (
+              <AttackPanel
+                battle={battle}
+                subject={subject}
+                connection={connection}
+                synced={synced}
+                combat={combat}
+                selectedTarget={selectedTarget}
+              />
             )}
-            {feedback.detail !== '' && <p className="text-xs text-muted">{feedback.detail}</p>}
           </div>
         )}
       </div>
-
-      {/* HU-21: tras el final las acciones NO existen (no se muestran deshabilitadas). */}
-      {!finished &&
-        (combat === undefined ? (
-          <p
-            aria-label={t('battle:battle.actions')}
-            className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted"
-          >
-            {t('battle:battle.actionsUnavailable')}
-          </p>
-        ) : (
-          <AttackPanel
-            battle={battle}
-            subject={subject}
-            connection={connection}
-            synced={synced}
-            combat={combat}
-          />
-        ))}
-
-      <TurnOrderStrip battle={battle} isSelf={isSelf} isCurrent={isCurrent} />
     </section>
   )
 }

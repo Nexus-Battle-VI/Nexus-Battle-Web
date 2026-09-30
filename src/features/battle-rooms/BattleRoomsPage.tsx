@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 
-import { Swords } from '@/components/ui/icons'
-import { ChatPanel } from './ChatPanel'
+import './battle-rooms.css'
+import { BattlePixelIcon } from './BattlePixelIcon'
+import { FloatingChatPanel } from './FloatingChatPanel'
 import { LOBBY_CHANNEL } from './chatProtocol'
 
 import { ActiveRoomBanner } from './ActiveRoomBanner'
@@ -27,17 +28,15 @@ export const BattleRoomsPage = (): React.JSX.Element => {
   const { t } = useTranslation()
 
   return (
-    <section aria-label={t('battle:page.title')} className="flex flex-col gap-6">
+    <section
+      aria-label={t('battle:page.title')}
+      className="br-scene br-scene-lobby br-scene-pad flex flex-col gap-6"
+    >
       <header className="flex items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="hidden shrink-0 items-center justify-center rounded-lg bg-brand/10 p-2 text-brand sm:flex"
-        >
-          <Swords className="h-6 w-6" />
-        </span>
+        <BattlePixelIcon icon="lobby" size="xl" className="hidden sm:inline-block" />
         <div>
-          <h1 className="text-2xl font-semibold text-ink">{t('battle:page.title')}</h1>
-          <p className="text-sm text-muted">{t('battle:page.subtitle')}</p>
+          <p className="br-heading-eyebrow">{t('battle:page.subtitle')}</p>
+          <h1 className="br-heading-title">{t('battle:page.title')}</h1>
         </div>
       </header>
 
@@ -48,7 +47,11 @@ export const BattleRoomsPage = (): React.JSX.Element => {
         <AvailableBattleRoomsPanel />
       </div>
 
-      <ChatPanel
+      {/* Remaster visual Sprint 3 (3a pasada, secciones 10-11 del brief): el
+          chat del lobby ya NO es un bloque grande al final de la pagina --
+          es una burbuja flotante que se superpone sin empujar el layout ni
+          obligar a scroll de pagina. Misma funcionalidad, mismo canal. */}
+      <FloatingChatPanel
         channel={LOBBY_CHANNEL}
         title={t('battle:page.lobbyChat')}
         description={t('battle:page.lobbyChatDescription')}
