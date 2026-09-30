@@ -56,6 +56,8 @@ interface ActiveAuctionBase {
   readonly publishedAt: string
   readonly closesAt: string
   readonly currentBidAmount: number | null
+  /** Total de pujas persistidas en Auction; 0 si nadie ha pujado. */
+  readonly bidCount: number
 }
 
 export interface PlayerActiveAuction extends ActiveAuctionBase {

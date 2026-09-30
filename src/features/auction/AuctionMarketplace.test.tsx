@@ -42,6 +42,7 @@ const auctions = [
     officialMark: 'PREMIUM',
     status: 'ACTIVE',
     currentBidAmount: null,
+    bidCount: 0,
     publishedAt: '2026-09-24T12:00:00.000Z',
     closesAt: '2026-09-26T12:00:00.000Z',
   },
@@ -58,7 +59,8 @@ const auctions = [
     buyNowAmountMinor: null,
     officialMark: null,
     status: 'ACTIVE',
-    currentBidAmount: null,
+    currentBidAmount: 40,
+    bidCount: 3,
     publishedAt: '2026-09-24T12:00:00.000Z',
     closesAt: '2026-09-25T12:00:00.000Z',
   },
@@ -205,5 +207,27 @@ describe('AuctionMarketplace', () => {
 
     await user.click(screen.getByRole('button', { name: 'Anterior' }))
     expect(await screen.findByText('P\u00e1gina 1 de 2')).toBeInTheDocument()
+  })
+
+  it('muestra el total de pujas de cada tarjeta, incluido 0', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+      }),
+    )
+    renderWithProviders(<AuctionMarketplace />)
+
+    await screen.findByText('Espada del Nexo')
+    const cards = screen.getAllByRole('article')
+    const bidsOf = (card: HTMLElement): string | null =>
+      within(card).getByText('Pujas').nextElementSibling?.textContent ?? null
+    expect(bidsOf(cards[0]!)).toBe('0')
+    expect(bidsOf(cards[1]!)).toBe('3')
   })
 })

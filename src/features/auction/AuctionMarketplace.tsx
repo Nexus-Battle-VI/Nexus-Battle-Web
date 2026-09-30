@@ -12,7 +12,7 @@ import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { AUCTION_PAGE_SIZE, listActiveAuctions, type ActiveAuction } from './api'
 import { i18n } from '@/shared/i18n/i18n'
-import { countLabel, formatLocale } from '@/shared/i18n/format'
+import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
 import { AuctionProductSummary } from './AuctionProductSummary'
 
 const priceOf = (auction: ActiveAuction): string =>
@@ -59,6 +59,10 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
               timeStyle: 'short',
             }).format(new Date(auction.closesAt))}
           </dd>
+        </div>
+        <div>
+          <dt className="text-muted">{t('auction:market.bids')}</dt>
+          <dd className="font-medium text-ink">{formatInteger(auction.bidCount)}</dd>
         </div>
       </dl>
       {

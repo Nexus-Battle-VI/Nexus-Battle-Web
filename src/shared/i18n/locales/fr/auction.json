@@ -49,7 +49,8 @@
     "officialLabel": "Publication officielle : {{mark}}",
     "minimumPrice": "Prix minimum",
     "closes": "Clôture",
-    "viewDetail": "Voir le détail"
+    "viewDetail": "Voir le détail",
+    "bids": "Enchères"
   },
   "validation": {
     "productRequired": "Sélectionnez un produit de votre inventaire.",
@@ -90,7 +91,8 @@
     "notActive": "Cette enchère n'est plus active",
     "currentStatus": "Statut actuel : {{status}}.",
     "ownTitle": "C'est votre propre enchère",
-    "ownDescription": "Vous ne pouvez pas acheter immédiatement un produit que vous avez vous-même publié."
+    "ownDescription": "Vous ne pouvez pas acheter immédiatement un produit que vous avez vous-même publié.",
+    "bids": "Nombre d’enchères"
   },
   "publish": {
     "remainingEnding": "Se termine",

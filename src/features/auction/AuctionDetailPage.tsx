@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
+import { formatInteger } from '@/shared/i18n/format'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { describeFollowError } from './api'
@@ -145,6 +146,11 @@ export const AuctionDetailPage = (): React.JSX.Element => {
         <QueryState isLoading={auctionQuery.isPending} error={auctionQuery.error}>
           {auction !== undefined && (
             <>
+              {/* Visible para cualquier rol, vendedor incluido: no depende del panel de puja. */}
+              <dl className="flex items-baseline gap-2 text-sm">
+                <dt className="text-muted">{t('auction:detail.bids')}</dt>
+                <dd className="font-semibold text-ink">{formatInteger(auction.bidCount)}</dd>
+              </dl>
               {auction.status === 'ACTIVE' && !isSeller && (
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
