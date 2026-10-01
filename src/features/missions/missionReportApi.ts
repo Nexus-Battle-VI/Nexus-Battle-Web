@@ -165,7 +165,7 @@ export interface MissionReport {
     readonly status: RewardStatus
     /** Quién escribió la línea: créditos/XP de finalización (HU-10), épica (HU-73), experiencia por derrota (HU-09) o botín (HU-72). */
     readonly source: 'HU-10' | 'HU-73' | 'HU-09' | 'HU-72'
-    /** HU-10, Task HU-10.5: ver `MissionRewardProgression` en `api.ts`. */
+    /** HU-10.6, sobre la liquidación de HU-10.5: ver `MissionRewardProgression` en `api.ts`. */
     readonly progression?: MissionRewardProgression
   }[]
   readonly generatedAt: string

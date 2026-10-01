@@ -334,6 +334,8 @@
     "noDeliveries": "There are no rewards to deliver.",
     "completionXpCredited": "+{{amount}} XP",
     "completionXpUnresolved": "{{amount}} XP",
+    "completionCreditsAmount_one": "{{count}} credit",
+    "completionCreditsAmount_other": "{{count}} credits",
     "completionLevel": "Level {{level}}",
     "completionLevelMax": "{{level}} · max",
     "completionCurrentXp": "{{amount}} accumulated XP",

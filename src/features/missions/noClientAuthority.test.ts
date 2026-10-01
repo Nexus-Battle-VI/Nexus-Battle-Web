@@ -118,7 +118,7 @@ describe('la experiencia no se calcula en Web (HU-09.5)', () => {
 })
 
 /**
- * HU-10 (Task HU-10.5): la liquidacion de finalizacion (XP, creditos, producto)
+ * HU-10.6 (sobre la salida de HU-10.5): la liquidacion de finalizacion (XP, creditos, producto)
  * la decide y la acredita Missions -- que a su vez llama a Player/Inventory y a
  * Wallet por sus rutas INTERNAS. Web solo PINTA lo que el reporte publica.
  */

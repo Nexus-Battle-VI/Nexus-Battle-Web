@@ -10,8 +10,8 @@ const POLL_MS = 1_500
 
 /**
  * Informe de una misión terminada (HU-74) con su experiencia (HU-09, Task
- * HU-09.5) y su liquidación de finalización (HU-10, Task HU-10.5), para el
- * jugador autenticado.
+ * HU-09.5) y su liquidación de finalización (HU-10.6, sobre la salida de
+ * HU-10.5), para el jugador autenticado.
  *
  * SONDA CORTA MIENTRAS ALGO PUEDA CAMBIAR. El informe nace con el cierre, pero
  * la experiencia de cada derrota (HU-09) y las entregas de finalización (HU-10:

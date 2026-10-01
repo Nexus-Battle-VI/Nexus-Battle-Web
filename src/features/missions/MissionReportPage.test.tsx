@@ -42,7 +42,7 @@ const report: MissionReport = {
     {
       kind: 'CREDITS',
       reference: null,
-      name: '50 créditos',
+      name: 'Créditos de finalización',
       rarity: null,
       quantity: 50,
       status: 'PENDING',
@@ -79,9 +79,11 @@ describe('reporte de misión', () => {
     expect(await screen.findByRole('heading', { name: 'Reporte: El templo' })).toBeInTheDocument()
     expect(screen.getByText('Sin dato')).toBeInTheDocument()
     expect(
-      screen.getByText(/Créditos: 50 créditos\s*·\s*Pendiente de entrega/u),
+      screen.getByText(/Créditos de finalización: 50 créditos\s*·\s*Pendiente de entrega/u),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/50 créditos\s*·\s*Entregada/u)).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/Créditos de finalización: 50 créditos\s*·\s*Entregada/u),
+    ).not.toBeInTheDocument()
     // P-J10: la cantidad de un crédito o una experiencia no se escribe como «× N».
     expect(screen.queryByText(/× 50/u)).not.toBeInTheDocument()
   })
@@ -210,7 +212,7 @@ describe('el reporte incluye la experiencia de sus derrotas (HU-09.5)', () => {
 })
 
 /**
- * Recompensas de finalización de misión (HU-10, Task HU-10.5). `source: 'HU-10'`
+ * Recompensas de finalización de misión (HU-10.6, sobre la salida de HU-10.5). `source: 'HU-10'`
  * conviven en el MISMO reporte que HU-09 (derrotas), HU-72 (botín) y HU-73
  * (épica); ninguna reemplaza a la otra.
  */
@@ -301,7 +303,7 @@ describe('recompensas de finalización de misión (HU-10.5)', () => {
     renderPage()
 
     expect(
-      await screen.findByText(/Créditos: Créditos de finalización\s*·\s*Entregada/u),
+      await screen.findByText(/Créditos de finalización: 50 créditos\s*·\s*Entregada/u),
     ).toBeInTheDocument()
   })
 
@@ -323,7 +325,7 @@ describe('recompensas de finalización de misión (HU-10.5)', () => {
     renderPage()
 
     expect(
-      await screen.findByText(/Créditos: Créditos de finalización\s*·\s*Pendiente de entrega/u),
+      await screen.findByText(/Créditos de finalización: 50 créditos\s*·\s*Pendiente de entrega/u),
     ).toBeInTheDocument()
   })
 
@@ -345,7 +347,7 @@ describe('recompensas de finalización de misión (HU-10.5)', () => {
     renderPage()
 
     expect(
-      await screen.findByText(/Créditos: Créditos de finalización\s*·\s*Entrega fallida/u),
+      await screen.findByText(/Créditos de finalización: 50 créditos\s*·\s*Entrega fallida/u),
     ).toBeInTheDocument()
   })
 
@@ -441,14 +443,24 @@ describe('recompensas de finalización de misión (HU-10.5)', () => {
           levelsGained: 0,
           leveledUp: false,
         },
-        rewards: [lineOf({ kind: 'CREDITS', source: 'HU-10', status: 'CREDITED', quantity: 50 })],
+        rewards: [
+          lineOf({
+            kind: 'CREDITS',
+            source: 'HU-10',
+            status: 'CREDITED',
+            quantity: 50,
+            name: 'Créditos de finalización',
+          }),
+        ],
       }),
     )
 
     renderPage()
 
     expect(await screen.findByText('+20 XP')).toBeInTheDocument()
-    expect(await screen.findByText(/Créditos: .*·\s*Entregada/u)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/Créditos de finalización: 50 créditos\s*·\s*Entregada/u),
+    ).toBeInTheDocument()
   })
 
   it('12. el botín de HU-72 sigue visible junto a las recompensas de HU-10', async () => {
@@ -606,6 +618,7 @@ describe('recompensas de finalización de misión (HU-10.5)', () => {
               source: 'HU-10',
               status: 'CREDITED',
               quantity: 50,
+              name: 'Créditos de finalización',
               progression: PROGRESSION,
             }),
           ],
@@ -614,7 +627,9 @@ describe('recompensas de finalización de misión (HU-10.5)', () => {
 
       renderPage()
 
-      expect(await screen.findByText(/Créditos: .*·\s*Entregada/u)).toBeInTheDocument()
+      expect(
+        await screen.findByText(/Créditos de finalización: 50 créditos\s*·\s*Entregada/u),
+      ).toBeInTheDocument()
       expect(screen.queryByText('Nivel 3')).not.toBeInTheDocument()
     })
   })

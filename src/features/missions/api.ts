@@ -86,7 +86,7 @@ export interface MissionReportRewardLine {
   readonly quantity: number
   readonly status: string
   readonly source: string
-  /** HU-10, Task HU-10.5: ver `MissionRewardProgression`. Ausente salvo esa línea exacta. */
+  /** HU-10.6, sobre la liquidación de HU-10.5: ver `MissionRewardProgression`. Ausente salvo esa línea exacta. */
   readonly progression?: MissionRewardProgression
 }
 

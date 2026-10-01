@@ -162,7 +162,7 @@ describe('useMissionReport — el sondeo se detiene cuando ya nada cambia (HU-09
 })
 
 /**
- * HU-10 (Task HU-10.5, contrato §13): el sondeo se EXTIENDE, no se reemplaza.
+ * HU-10.6 (contrato §13 de HU-10.5): el sondeo se EXTIENDE, no se reemplaza.
  * `HU09 pending OR HU10 pending -> sondea; sin ninguna de las dos -> se detiene`.
  */
 describe('useMissionReport — el sondeo tambien cubre HU-10 (HU-10.5, contrato §13)', () => {

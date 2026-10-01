@@ -2,14 +2,14 @@ import type { MissionRewardProgression } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 
 /**
- * Textos de la recompensa de finalización de misión (HU-10, Task HU-10.5), tal
- * como la publica el informe de HU-74.
+ * Textos de la recompensa de finalización de misión (HU-10.6, sobre la
+ * liquidación de HU-10.5), tal como la publica el informe de HU-74.
  *
  * NO CALCULA NADA: el importe, el estado y la progresión del héroe llegan
- * resueltos de Missions (que a su vez los recibe de Player/Inventory); aquí
- * solo se eligen las palabras. Sigue el mismo estilo que
+ * resueltos de Missions (que a su vez los recibe de Player/Inventory y de
+ * Wallet); aquí solo se eligen las palabras. Sigue el mismo estilo que
  * `experiencePresentation.ts` (HU-09), pero sobre la forma, más pequeña, que
- * publica una línea `source: 'HU-10', kind: 'EXPERIENCE'`.
+ * publica una línea `source: 'HU-10'`.
  */
 
 /** «+120 XP» si ya se entregó; «120 XP» mientras sigue pendiente o si falló. */
@@ -20,6 +20,10 @@ export const completionXpAmountText = (reward: {
   reward.status === 'CREDITED'
     ? i18n.t('missions:report.completionXpCredited', { amount: String(reward.quantity) })
     : i18n.t('missions:report.completionXpUnresolved', { amount: String(reward.quantity) })
+
+/** «50 créditos» / «1 crédito», tal como lo publica Wallet a través de Missions. */
+export const completionCreditsAmountText = (reward: { readonly quantity: number }): string =>
+  i18n.t('missions:report.completionCreditsAmount', { count: reward.quantity })
 
 /** «Nivel 3», o «Nivel 3 · máximo» cuando el héroe ya alcanzó el tope. */
 export const completionLevelText = (progression: MissionRewardProgression): string => {

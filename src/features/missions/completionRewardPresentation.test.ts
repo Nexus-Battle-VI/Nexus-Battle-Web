@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  completionCreditsAmountText,
   completionCurrentXpText,
   completionLevelText,
   completionLevelsGainedText,
@@ -9,9 +10,9 @@ import {
 import type { MissionRewardProgression } from './api'
 
 /**
- * Textos de la recompensa de finalización (HU-10, Task HU-10.5). Módulo PURO:
- * nada aquí calcula un importe, un nivel o un progreso -- solo elige palabras
- * sobre lo que Missions ya resolvió.
+ * Textos de la recompensa de finalización (HU-10.6, sobre la liquidación de
+ * HU-10.5). Módulo PURO: nada aquí calcula un importe, un nivel o un progreso
+ * -- solo elige palabras sobre lo que Missions ya resolvió.
  */
 const PROGRESSION: MissionRewardProgression = {
   level: 3,
@@ -31,6 +32,16 @@ describe('completionXpAmountText — el signo solo aparece cuando ya se entregó
 
   it('FAILED: "{amount} XP", sin signo (no se finge una entrega)', () => {
     expect(completionXpAmountText({ quantity: 120, status: 'FAILED' })).toBe('120 XP')
+  })
+})
+
+describe('completionCreditsAmountText — el monto siempre sale de reward.quantity', () => {
+  it('plural: "{amount} créditos"', () => {
+    expect(completionCreditsAmountText({ quantity: 50 })).toBe('50 créditos')
+  })
+
+  it('singular: "1 crédito"', () => {
+    expect(completionCreditsAmountText({ quantity: 1 })).toBe('1 crédito')
   })
 })
 

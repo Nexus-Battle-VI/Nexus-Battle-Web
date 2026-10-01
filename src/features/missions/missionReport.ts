@@ -99,8 +99,9 @@ const OUTCOME_LABELS: Readonly<Record<string, string>> = localizedMessages({
 })
 
 /**
- * Si el informe trae al menos una línea de finalización (HU-10, Task HU-10.5)
- * todavía `PENDING`. `CREDITED` y `FAILED` son terminales: no se cuentan.
+ * Si el informe trae al menos una línea de finalización (HU-10.6, sobre la
+ * liquidación de HU-10.5) todavía `PENDING`. `CREDITED` y `FAILED` son
+ * terminales: no se cuentan.
  */
 export const hasPendingCompletionReward = (report: MissionReport): boolean =>
   report.rewards.some((line) => line.source === 'HU-10' && line.status === 'PENDING')

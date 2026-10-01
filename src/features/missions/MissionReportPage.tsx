@@ -22,6 +22,7 @@ import {
 } from './missionPresentation'
 import type { MissionReport as ExperienceReport } from './api'
 import {
+  completionCreditsAmountText,
   completionCurrentXpText,
   completionLevelText,
   completionLevelsGainedText,
@@ -271,6 +272,11 @@ const ReportContent = ({
                         </ul>
                       )}
                     </>
+                  ) : reward.kind === 'CREDITS' ? (
+                    <p>
+                      {reward.name}: {completionCreditsAmountText(reward)} ·{' '}
+                      {rewardStatusLabel[reward.status]}
+                    </p>
                   ) : (
                     <p>
                       {rewardKindLabel(reward.kind)}: {reward.name}
