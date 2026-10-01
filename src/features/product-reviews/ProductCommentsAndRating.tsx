@@ -286,7 +286,14 @@ export const ProductCommentsAndRating = ({
         ) : (
           <div>
             <span className="block text-sm font-medium text-ink">{t('reviews:form.rating')}</span>
-            <div className="mt-1.5">
+            {/*
+              `commerce-rating` (7a pasada): solo escopea el COLOR de la
+              estrella seleccionada por tema -Dark=oro medieval,
+              Light=azul diamante, ver `commerce.css`- sin tocar la logica
+              de seleccion/teclado de `StarRatingInput` (componente
+              compartido, usado unicamente aqui hoy).
+            */}
+            <div className="commerce-rating mt-1.5">
               <StarRatingInput value={rating} disabled={mutation.isPending} onChange={setRating} />
             </div>
           </div>

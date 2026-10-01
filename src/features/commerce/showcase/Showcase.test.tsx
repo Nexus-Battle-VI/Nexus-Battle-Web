@@ -140,6 +140,12 @@ describe('Vitrina canonica', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Anterior' }))
     await screen.findByText(/pagina 1 de 3/u)
     expect(visibleNames()).toEqual(catalogProducts.slice(0, 12).map((item) => item.name))
+    // 7a pasada: "Anterior"/"Siguiente" deben ser los botones estables de
+    // E-commerce (`mk-btn-secondary`, marco real sin `transform` en ningun
+    // estado) -nunca el sprite que cambiaba de tamaño en hover-; el indicador
+    // "pagina X de Y" sigue intacto (no se toca la logica de paginacion).
+    expect(screen.getByRole('button', { name: 'Anterior' })).toHaveClass('mk-btn-secondary')
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toHaveClass('mk-btn-secondary')
     const requestedPages = fetcher.mock.calls
       .filter(([input]) => input.includes('/v1/catalog/products?'))
       .map(([input]) => new URL(input, globalThis.location.origin).searchParams.get('page'))
@@ -223,6 +229,12 @@ describe('Vitrina canonica', () => {
     const detail = within(within(modal).getByRole('region', { name: 'Detalle del producto' }))
     expect(await detail.findByText(product.description)).toBeInTheDocument()
     expect(detail.getByText('Daño')).toBeInTheDocument()
+    // 7a pasada: el modal de detalle ensancha (`commerce-dialog-wide`) y la
+    // imagen + info principal se acomodan lado a lado (`commerce-detail-head`)
+    // en vez de apilarse siempre verticalmente; se fija aqui para no perder
+    // el rediseño por una regresion silenciosa de clases.
+    expect(modal).toHaveClass('commerce-dialog-wide')
+    expect(detail.getByText(product.description).closest('.commerce-detail-main')).not.toBeNull()
     expect(
       fetcher.mock.calls.some(
         ([url]) => url.endsWith(product.productId) && url.includes('/catalog/'),

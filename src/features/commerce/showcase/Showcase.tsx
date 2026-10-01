@@ -165,6 +165,7 @@ export const Showcase = ({
       {selected !== null && (
         <CommerceDialog
           title={t('commerce:showcase.detailDialog')}
+          wide
           onClose={() => {
             setSelected(null)
           }}

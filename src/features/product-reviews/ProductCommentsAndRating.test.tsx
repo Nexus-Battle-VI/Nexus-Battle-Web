@@ -42,6 +42,13 @@ describe('ProductCommentsAndRating', () => {
     expect(screen.getAllByRole('radio')).toHaveLength(5)
     expect(screen.getByRole('button', { name: 'Agregar imagen' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Publicar' })).toBeInTheDocument()
+    // 7a pasada: el color de la estrella seleccionada por tema (Dark=oro
+    // medieval, Light=azul diamante, ver `commerce.css`) se escopea con esta
+    // clase alrededor de `StarRatingInput`, sin tocar su logica de
+    // seleccion/teclado.
+    expect(
+      screen.getByRole('radiogroup', { name: 'Calificación' }).closest('.commerce-rating'),
+    ).not.toBeNull()
   })
 
   it('rechaza un envio sin comentario antes de llamar a la API', async () => {

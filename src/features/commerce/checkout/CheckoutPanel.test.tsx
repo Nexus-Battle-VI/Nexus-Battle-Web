@@ -202,6 +202,24 @@ describe('Formulario de pago simulado', () => {
     expect(onCancel).toHaveBeenCalledOnce()
   })
 
+  /*
+   * 7a pasada (polish visual final): "Volver al carrito" y "Confirmar pago"
+   * deben ser los botones ESTABLES de E-commerce (`mk-btn-secondary`/
+   * `mk-btn-primary`, marco real via `border-image`, sin `transform` en
+   * ningun estado) -nunca un sprite que cambie de tamaño/posicion en hover.
+   * Este test fija esa clase para no perderla en un refactor futuro; no
+   * verifica estilos computados de hover (jsdom no renderiza `border-image`),
+   * solo que el gancho de clase estable sigue presente.
+   */
+  it('usa los botones estables de E-commerce (sin layout shift en hover)', () => {
+    renderPanel()
+
+    expect(screen.getByRole('button', { name: 'Volver al carrito' })).toHaveClass(
+      'mk-btn-secondary',
+    )
+    expect(screen.getByRole('button', { name: 'Confirmar pago' })).toHaveClass('mk-btn-primary')
+  })
+
   it('bloquea las acciones mientras se procesa el pago', () => {
     renderPanel({ isPaying: true })
 

@@ -16,6 +16,98 @@
 @import '@fontsource/cinzel/latin-800.css';
 @import '@fontsource/cinzel/latin-ext-800.css';
 
+/*
+ * ============================================================
+ * 7a pasada (polish visual final) — tokens propios de E-commerce:
+ * scrollbar Dark/Light y color de estrella de calificacion Dark/Light.
+ * Verificado antes de añadir esto: el proyecto NO tiene todavia un sistema
+ * global de scrollbar/tokens (no hay `scrollbar-color`/`::-webkit-scrollbar`
+ * en `src/index.css`); Battle Rooms define los suyos PROPIOS y scoped en su
+ * propio `battle-rooms.css` (`--br-scrollbar-*`), mismo patron que se sigue
+ * aqui con prefijo `--commerce-` -sin duplicar una regla global ni tocar
+ * ningun otro modulo-. Este archivo lo importa unicamente `CommercePage`
+ * (ver comentario de cabecera arriba), asi que los tokens y las reglas que
+ * los consumen (`.commerce-scroll`, `.commerce-page`, `.commerce-dialog`,
+ * `.commerce-rating`) quedan automaticamente exclusivos de E-commerce.
+ */
+:root {
+  /* Light: thumb dorado/metal real sobre track marfil claro. */
+  --commerce-scrollbar-track: #efe6cf;
+  --commerce-scrollbar-thumb: #b6892f;
+  --commerce-scrollbar-thumb-hover: #9c7526;
+  /* Light: estrella seleccionada = azul diamante/zafiro. */
+  --commerce-star-selected: #2f6fd6;
+}
+:root[data-theme='dark'] {
+  /* Dark: thumb cian/azul magico sobre track oscuro, visual medieval/rocoso. */
+  --commerce-scrollbar-track: #171310;
+  --commerce-scrollbar-thumb: #5aa9c9;
+  --commerce-scrollbar-thumb-hover: #7cc3de;
+  /* Dark: estrella seleccionada = oro medieval. */
+  --commerce-star-selected: #d9a53c;
+}
+/*
+ * `scrollbar-width`/`scrollbar-color` cubren Firefox; `::-webkit-scrollbar*`
+ * cubre Chromium/Safari. Se aplica a las superficies reales de E-commerce
+ * que SI hacen scroll propio: la pagina (`.commerce-page`), cualquier
+ * dialogo (`.commerce-dialog`, detalle/carrito/checkout/login) y el panel
+ * generico (`.mk-panel`, el carrito guardado ya trae su propio scroll
+ * interno). Tamaño moderado (10px) para seguir siendo usable sin dominar la
+ * superficie.
+ */
+.commerce-page,
+.commerce-dialog,
+.mk-panel,
+.commerce-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--commerce-scrollbar-thumb) var(--commerce-scrollbar-track);
+}
+.commerce-page::-webkit-scrollbar,
+.commerce-dialog::-webkit-scrollbar,
+.mk-panel::-webkit-scrollbar,
+.commerce-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.commerce-page::-webkit-scrollbar-track,
+.commerce-dialog::-webkit-scrollbar-track,
+.mk-panel::-webkit-scrollbar-track,
+.commerce-scroll::-webkit-scrollbar-track {
+  background: var(--commerce-scrollbar-track);
+  border-radius: 999px;
+}
+.commerce-page::-webkit-scrollbar-thumb,
+.commerce-dialog::-webkit-scrollbar-thumb,
+.mk-panel::-webkit-scrollbar-thumb,
+.commerce-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--commerce-scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.commerce-page:hover::-webkit-scrollbar-thumb,
+.commerce-dialog:hover::-webkit-scrollbar-thumb,
+.mk-panel:hover::-webkit-scrollbar-thumb,
+.commerce-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: var(--commerce-scrollbar-thumb-hover);
+}
+/*
+ * Color de la estrella seleccionada por tema. `StarRatingInput` (compartido,
+ * `src/features/product-reviews/`) usa `fill-brand text-brand` en su estado
+ * seleccionado; envuelto en `.commerce-rating` (unico lugar donde se usa
+ * hoy, ver `ProductCommentsAndRating.tsx`) esas clases de Tailwind se
+ * sobre-escriben SOLO aqui -el resto de usos futuros de `StarRatingInput`
+ * fuera de E-commerce seguirian con `--color-brand` sin cambios-. El estado
+ * sin seleccionar sigue en `text-muted`/`fill-none` (sin tocar), que ya
+ * cumple contraste accesible en los dos temas.
+ */
+.commerce-rating .fill-brand {
+  fill: var(--commerce-star-selected);
+}
+.commerce-rating .text-brand {
+  color: var(--commerce-star-selected);
+}
+
 /* El alto acotado se aplica solo a E-commerce y a escritorios capaces de alojar 4 × 3 tarjetas
    (12 productos por página, requisito real confirmado en la 6a pasada). Ventanas menores y
    zoom conservan el flujo natural: ninguna acción queda recortada. */
@@ -826,6 +918,77 @@
  * propio con menos frecuencia (ver `.commerce-cart-lines` para la zona que
  * SI debe crecer/hacer scroll con muchos productos).
  */
+/*
+ * Detalle del producto (7a pasada) — modal mas ancho en escritorio, SOLO
+ * ensancha el tope del `min()` existente (sigue respetando `92vw`, nunca
+ * desborda el viewport ni en pantallas angostas). `max-height`/`overflow-y`
+ * del `.commerce-dialog` base ya dan scroll externo cuando hace falta; esto
+ * solo cambia el ANCHO para poder usarlo en vez de seguir apilando
+ * verticalmente.
+ */
+.commerce-dialog-wide {
+  width: min(92vw, 1180px);
+}
+/*
+ * Fila superior: imagen compacta + info principal lado a lado (reduce la
+ * altura total del modal en vez de apilar todo). `.commerce-detail-image`
+ * ya NO depende del `max-h-80 w-full` que traia el JSX antes -ahora fija su
+ * propio alto aqui, bastante mas pequeño (220px) que el `max-h-80` previo
+ * (320px), y nunca "domina" el modal-. `aspect-ratio` + `object-fit:
+ * contain` evitan deformar la imagen real (nunca se estira un eje mas que
+ * el otro). En pantallas angostas (`max-width: 760px`) vuelve a una sola
+ * columna, imagen arriba, info abajo -nunca oculta el boton de cerrar ni
+ * corta contenido-.
+ */
+.commerce-detail-head {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+}
+.commerce-detail-image {
+  width: 100%;
+  height: 220px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+.commerce-detail-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+@media (max-width: 760px) {
+  .commerce-detail-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .commerce-detail-image {
+    height: 180px;
+  }
+}
+/*
+ * Atributos del producto: dos columnas cuando hay ancho de sobra (el panel
+ * del modal ya crecio con `.commerce-dialog-wide`), una sola columna si no
+ * -nunca fuerza el grid en el panel angosto de abajo (760px), que es donde
+ * tambien colapsa el resto del modal-. Cada `.commerce-attr-row`/
+ * `.commerce-attr-group` ocupa UNA celda del grid; un grupo anidado (objeto
+ * dentro de un arreglo, via `AttributeGroupCard`) sigue en una sola columna
+ * interna (ver `nested` en `ProductAttributes.tsx`), asi que nunca se anidan
+ * grids dentro de grids.
+ */
+@media (min-width: 761px) {
+  .commerce-attrs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+    row-gap: 2px;
+    align-content: start;
+  }
+  .commerce-attr-group {
+    grid-column: 1 / -1;
+  }
+}
+
 .commerce-dialog-cart {
   inset: auto 16px 78px auto;
   margin: 0;

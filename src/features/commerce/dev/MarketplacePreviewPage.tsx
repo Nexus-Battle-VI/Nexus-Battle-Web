@@ -210,6 +210,7 @@ export const MarketplacePreviewPage = (): React.JSX.Element => {
       {selected !== null && (
         <CommerceDialog
           title="Detalle del producto (vista previa)"
+          wide
           onClose={() => {
             setSelected(null)
           }}
