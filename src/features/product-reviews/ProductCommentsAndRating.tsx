@@ -161,8 +161,13 @@ export const ProductCommentsAndRating = ({
   const outcome = mutation.data
 
   return (
-    <section className="space-y-4" aria-labelledby="product-reviews-title">
-      <h3 id="product-reviews-title" className="text-sm font-semibold text-ink">
+    // 9a pasada: `commerce-reviews-form` escopea, SOLO aqui, la identidad
+    // tipografica secundaria ya aprobada (ver `.commerce-reviews-form label`
+    // en `commerce.css`) a la etiqueta real de `TextareaField` ("Comentario")
+    // sin tocar el componente compartido `FieldShell` -usado por el resto de
+    // la app- ni su label en ningun otro formulario.
+    <section className="commerce-reviews-form space-y-4" aria-labelledby="product-reviews-title">
+      <h3 id="product-reviews-title" className="commerce-label-font text-sm font-semibold text-ink">
         {t('reviews:form.title')}
       </h3>
 
@@ -240,7 +245,9 @@ export const ProductCommentsAndRating = ({
         />
 
         <div>
-          <span className="block text-sm font-medium text-ink">{t('reviews:form.images')}</span>
+          <span className="commerce-label-font block text-sm font-medium text-ink">
+            {t('reviews:form.images')}
+          </span>
           <div className="mt-1.5 space-y-2">
             {images.map((image, index) => (
               <div key={index} className="flex items-end gap-2">
@@ -269,9 +276,16 @@ export const ProductCommentsAndRating = ({
               </div>
             ))}
             {images.length < MAX_IMAGES && (
+              // 9a pasada: "Agregar imagen" se veia generico; pasa a la
+              // misma familia visual ya aprobada de la paginacion
+              // (`ec-btn-page ec-btn-pill`: pastilla dorada en Light,
+              // rectangulo oscuro con borde purpura en Dark via
+              // `commerce.css`), sin flechas y sin copiar su texto -- solo
+              // el marco. La subida/seleccion real de imagen no cambia.
               <Button
                 type="button"
                 variant="secondary"
+                className="ec-btn-page ec-btn-pill"
                 disabled={mutation.isPending}
                 onClick={addImageField}
               >
@@ -285,8 +299,17 @@ export const ProductCommentsAndRating = ({
           <p className="text-sm text-muted">{t('reviews:form.alreadyRated')}</p>
         ) : (
           <div>
-            <span className="block text-sm font-medium text-ink">{t('reviews:form.rating')}</span>
-            <div className="mt-1.5">
+            <span className="commerce-label-font block text-sm font-medium text-ink">
+              {t('reviews:form.rating')}
+            </span>
+            {/*
+              `commerce-rating` (7a pasada): solo escopea el COLOR de la
+              estrella seleccionada por tema -Dark=oro medieval,
+              Light=azul diamante, ver `commerce.css`- sin tocar la logica
+              de seleccion/teclado de `StarRatingInput` (componente
+              compartido, usado unicamente aqui hoy).
+            */}
+            <div className="commerce-rating mt-1.5">
               <StarRatingInput value={rating} disabled={mutation.isPending} onChange={setRating} />
             </div>
           </div>
