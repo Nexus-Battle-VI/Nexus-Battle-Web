@@ -92,7 +92,7 @@ export const ProductDetail = ({
       ref={region}
       tabIndex={-1}
       aria-label={t('commerce:detail.title')}
-      className="mk-panel flex flex-col gap-4 p-5"
+      className="mk-panel flex flex-col gap-3 p-5"
     >
       {/*
         6a pasada: se retira el boton "Cerrar detalle" -era una segunda
@@ -155,13 +155,20 @@ export const ProductDetail = ({
                 </p>
               </div>
             </div>
-            <div className="commerce-scroll rounded-lg border border-border bg-surface p-4">
-              <h4 className="font-game-display mb-3 text-sm font-semibold tracking-wide text-ink uppercase">
+            {/*
+              9a pasada (STEP 8): con el fixture rico ya se puede juzgar el
+              panel con contenido real -antes estaba vacio-; se ajusta el
+              espaciado vertical (`p-4`->`p-3`, `mb-3`->`mb-2`,
+              `space-y-6`->`space-y-4` abajo) para quitar aire sobrante SIN
+              recortar ningun dato ni cambiar la estructura de 2 columnas.
+            */}
+            <div className="commerce-scroll rounded-lg border border-border bg-surface p-3">
+              <h4 className="font-game-display mb-2 text-sm font-semibold tracking-wide text-ink uppercase">
                 {t('commerce:detail.attributes')}
               </h4>
               <ProductAttributes values={displayedValues ?? query.data.attributes.values} />
             </div>
-            <div className="commerce-scroll space-y-6 rounded-lg border border-border bg-surface p-4">
+            <div className="commerce-scroll space-y-4 rounded-lg border border-border bg-surface p-4">
               <ProductCommentsList
                 productId={query.data.productId}
                 {...(listComments === undefined ? {} : { listComments })}

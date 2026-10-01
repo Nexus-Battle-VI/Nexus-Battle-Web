@@ -48,6 +48,15 @@ import { MARKETPLACE_PREVIEW_PRODUCTS } from './marketplacePreviewFixtures'
  * (ver ese archivo): Vite elimina esta ruta y este componente por completo
  * del bundle de producción, igual que el resto de harnesses `*DevPreview`.
  */
+/**
+ * Producto con la ficha de atributos rica (9a pasada, STEP 7): se busca por
+ * `sku` en vez de asumir una posicion fija en el arreglo, para no romper si
+ * `marketplacePreviewFixtures.ts` cambia de orden mas adelante.
+ */
+const RICH_ATTRS_PRODUCT = MARKETPLACE_PREVIEW_PRODUCTS.find(
+  (product) => product.sku === 'preview-armadura-rica',
+)
+
 const CART_LINE_FIXTURES: readonly CartLine[] = MARKETPLACE_PREVIEW_PRODUCTS.slice(0, 6).map(
   (product, index) => ({
     productId: product.productId,
@@ -120,6 +129,24 @@ export const MarketplacePreviewPage = (): React.JSX.Element => {
         */}
         <span className="text-xs font-semibold text-muted">Tema (solo DEV):</span>
         <ThemeToggle />
+        {/*
+          9a pasada (STEP 7): Richard tenia que buscar entre las tarjetas o
+          hacer scroll para encontrar el producto con atributos ricos ("Coraza
+          del Centinela Dorado", fixture de la pasada anterior). Este boton
+          abre el MISMO `ProductDetail` real con esa MISMA referencia -no hay
+          un `ProductDetail` falso ni un atajo de produccion-, exactamente lo
+          que hace `onOpenDetail` al hacer clic en la tarjeta real.
+        */}
+        {RICH_ATTRS_PRODUCT !== undefined && (
+          <Button
+            variant="marketplace"
+            onClick={() => {
+              setSelected(RICH_ATTRS_PRODUCT.productId)
+            }}
+          >
+            Abrir detalle con atributos
+          </Button>
+        )}
         <span className="text-xs font-semibold text-muted">Carrito de prueba (solo DEV):</span>
         {CART_PREVIEW_COUNTS.map((count) => (
           <Button

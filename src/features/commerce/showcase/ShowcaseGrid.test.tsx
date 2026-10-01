@@ -161,6 +161,9 @@ describe('Un heroe ya adquirido no se puede volver a comprar', () => {
     const button = screen.getByRole('button', { name: 'Anadir Guerrero Tanque al carrito' })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Ya lo tienes')
+    // 9a pasada: deshabilitado usa la MISMA familia estable (`mk-btn-primary`),
+    // nunca un sprite/clase distinta por razon de deshabilitado.
+    expect(button).toHaveClass('mk-btn-primary')
   })
 
   /**
@@ -216,6 +219,7 @@ describe('Agotado y suspendido son informativos: se muestran deshabilitados, no 
     })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Agotado')
+    expect(button).toHaveClass('mk-btn-primary')
   })
 
   it('muestra "Suspendido" deshabilitado cuando lifecycleStatus no es ACTIVE', () => {
@@ -227,6 +231,7 @@ describe('Agotado y suspendido son informativos: se muestran deshabilitados, no 
     const button = within(card).getByRole('button', { name: 'Anadir Arma suspendida al carrito' })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Suspendido')
+    expect(button).toHaveClass('mk-btn-primary')
   })
 
   it('un producto comercializable, disponible y activo se muestra habilitado', () => {

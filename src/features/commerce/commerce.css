@@ -63,37 +63,42 @@
   scrollbar-color: var(--commerce-scrollbar-thumb) var(--commerce-scrollbar-track);
 }
 /*
- * 8a pasada — dueño REAL del scroll de pagina, verificado (no asumido):
- * `.commerce-page` solo tiene `height:100%`/`overflow` propio dentro del
- * `@media (min-width:1200px) and (min-height:768px)` de mas abajo (escritorio
- * grande, ventana >=1200x768). Fuera de ese rango -laptop tipico, ventana mas
- * baja, zoom- `.commerce-page` NO tiene alto fijo: crece con el contenido y
- * quien hace scroll de verdad es `<body>`/`<html>` (el documento completo),
- * donde la regla de arriba NUNCA aplicaba -por eso Richard seguia viendo la
- * barra generica del navegador en ese caso-. `body:has(.commerce-page)`
- * tematiza ese scroll SOLO mientras la pagina de E-commerce esta montada
- * (sin tocar ningun otro modulo ni dejar la regla activa de forma global);
- * `:has()` tiene soporte en todos los navegadores evergreen actuales, mismo
- * nivel que `oklch`/`color-mix` que ya usa esta hoja de estilos.
+ * 9a pasada (QA visual final) — el `body:has(.commerce-page)` de la pasada
+ * anterior seguia sin verse: la causa real (no la que yo habia diagnosticado
+ * antes) es que `<body>` NO es el elemento que pinta la barra raiz del
+ * navegador en modo estandar (el que usa este proyecto: no hay DOCTYPE
+ * quirks). `document.scrollingElement` en Chromium/Firefox resuelve a
+ * `<html>` -no a `<body>`- en cuanto el documento entero hace scroll (que es
+ * justo el caso fuera del breakpoint de escritorio grande, documentado
+ * arriba): Chromium pinta el scrollbar RAIZ leyendo los estilos de `<html>`,
+ * nunca los de `<body>`, asi que `body::-webkit-scrollbar` sencillamente no
+ * tiene efecto ahi aunque la regla este bien escrita. `:root:has(...)`
+ * (`:root` ES `<html>`, el `document.documentElement` real) es el fix
+ * correcto: mismo `:has()` escopeado -solo mientras `.commerce-page` esta
+ * montado en algun punto del documento, sin togglear ninguna clase a mano ni
+ * necesitar un efecto de montaje/desmontaje (no hay ningun patron existente
+ * de `documentElement.classList` en el proyecto para imitar; `theme.ts` solo
+ * fija un *atributo* `data-theme`, no una clase de ciclo de vida)-, pero
+ * aplicado al elemento que SI controla la barra raiz real.
  */
-body:has(.commerce-page) {
+:root:has(.commerce-page) {
   scrollbar-width: thin;
   scrollbar-color: var(--commerce-scrollbar-thumb) var(--commerce-scrollbar-track);
 }
-body:has(.commerce-page)::-webkit-scrollbar {
+:root:has(.commerce-page)::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-body:has(.commerce-page)::-webkit-scrollbar-track {
+:root:has(.commerce-page)::-webkit-scrollbar-track {
   background: var(--commerce-scrollbar-track);
 }
-body:has(.commerce-page)::-webkit-scrollbar-thumb {
+:root:has(.commerce-page)::-webkit-scrollbar-thumb {
   background-color: var(--commerce-scrollbar-thumb);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
+:root:has(.commerce-page):hover::-webkit-scrollbar-thumb {
   background-color: var(--commerce-scrollbar-thumb-hover);
 }
 .commerce-page::-webkit-scrollbar,
@@ -126,6 +131,41 @@ body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
   background-color: var(--commerce-scrollbar-thumb-hover);
 }
 /*
+ * 9a pasada (STEP 14): el carrito flotante tiene DOS zonas con scroll
+ * interno PROPIO ademas del dialogo que las envuelve -`.commerce-cart-lines`
+ * (lineas de producto, `max-h-[32dvh]` en `CartPanel.tsx`) y la lista del
+ * carrito guardado (`max-height:100px`, ver mas abajo en este archivo)-.
+ * Sin tematizarlas aparte, cualquiera de las dos que realmente desborde
+ * mostraba el scrollbar generico del navegador DETRAS del tematizado del
+ * dialogo exterior -el "scrollbar generico duplicado" que reporto Richard-.
+ * No se toca el Carrito en si (contenido/diseño aprobados).
+ */
+.commerce-cart-lines,
+.commerce-dialog-cart [aria-label='Carrito guardado'] ul {
+  scrollbar-width: thin;
+  scrollbar-color: var(--commerce-scrollbar-thumb) var(--commerce-scrollbar-track);
+}
+.commerce-cart-lines::-webkit-scrollbar,
+.commerce-dialog-cart [aria-label='Carrito guardado'] ul::-webkit-scrollbar {
+  width: 8px;
+}
+.commerce-cart-lines::-webkit-scrollbar-track,
+.commerce-dialog-cart [aria-label='Carrito guardado'] ul::-webkit-scrollbar-track {
+  background: var(--commerce-scrollbar-track);
+  border-radius: 999px;
+}
+.commerce-cart-lines::-webkit-scrollbar-thumb,
+.commerce-dialog-cart [aria-label='Carrito guardado'] ul::-webkit-scrollbar-thumb {
+  background-color: var(--commerce-scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.commerce-cart-lines:hover::-webkit-scrollbar-thumb,
+.commerce-dialog-cart [aria-label='Carrito guardado'] ul:hover::-webkit-scrollbar-thumb {
+  background-color: var(--commerce-scrollbar-thumb-hover);
+}
+/*
  * Color de la estrella seleccionada por tema. `StarRatingInput` (compartido,
  * `src/features/product-reviews/`) usa `fill-brand text-brand` en su estado
  * seleccionado; envuelto en `.commerce-rating` (unico lugar donde se usa
@@ -140,6 +180,22 @@ body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
 }
 .commerce-rating .text-brand {
   color: var(--commerce-star-selected);
+}
+/*
+ * 9a pasada: la etiqueta REAL de `TextareaField` ("Comentario") la dibuja
+ * `FieldShell` (componente compartido de formularios, usado por decenas de
+ * pantallas fuera de E-commerce) con su propia clase interna, sin forma de
+ * inyectarle una clase desde fuera. `.commerce-reviews-form label` la
+ * tematiza por selector de ETIQUETA, escopeado al contenedor que SOLO envuelve
+ * el formulario de comentarios/calificacion de `ProductCommentsAndRating.tsx`
+ * -ningun otro `<label>` de la app (login, checkout, admin...) esta dentro de
+ * ese contenedor, asi que ninguno cambia-. El contenido del `<textarea>` y lo
+ * que la persona escribe no se tocan (no son `<label>`).
+ */
+.commerce-reviews-form label {
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 /* El alto acotado se aplica solo a E-commerce y a escritorios capaces de alojar 4 × 3 tarjetas
@@ -329,38 +385,42 @@ body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
   transition: filter 100ms ease-out;
 }
 /*
- * 8a pasada — "Añadir al carrito": Richard reporto una animacion de
- * hundimiento/desplazamiento en el hover de Dark. La causa real: el hover
- * ANTES cambiaba `border-image-source` a un PNG distinto
- * (`primary-*-hover.png`); aunque el `border-width` declarado es identico,
- * el navegador tiene que decodificar/recortar una imagen nueva con sus
- * propios margenes internos de pixel art, y en Dark ese segundo PNG se leia
- * ligeramente mas grande, dando la sensacion de "crecer/hundirse" al pasar el
- * mouse. Ahora el hover NUNCA cambia de imagen -se queda en el PNG default,
- * mismo pixel a pixel que el estado reposo- y el "tono azul" que pedia
- * Richard se consigue con `filter: brightness()` + un glow real
- * (`box-shadow`), nunca con una imagen distinta. Cero posibilidad de
- * desplazamiento, en Light y en Dark.
+ * 9a pasada (QA visual final) — Richard SEGUIA viendo el efecto de
+ * hundimiento en "Añadir al carrito"/"Ya lo tienes"/"Agotado"/"Suspendido"/
+ * "Proceder al pago" pese al fix de `:hover` de la pasada anterior: la causa
+ * real completa (verificada ahora de nuevo leyendo la regla, no supuesta) es
+ * que `:active` Y `:disabled` SEGUIAN cambiando `border-image-source` a un
+ * PNG distinto (`primary-*-active.png`/`primary-*-disabled.png`) -el mismo
+ * mecanismo de "frame swap" que ya se habia corregido solo en `:hover`-.
+ * Richard pulsa el boton (dispara `:active`) o lo ve en cualquiera de sus
+ * razones deshabilitadas (dispara `:disabled`, sea cual sea la razon real:
+ * agotado/suspendido/propio/otra moneda -la condicion funcional vive en
+ * `ShowcaseGrid.tsx`, aqui el CSS no distingue POR QUE esta deshabilitado,
+ * solo que lo esta) y seguia viendo el "salto" de un PNG a otro.
+ *
+ * Ahora NINGUN estado (`default`/`hover`/`active`/`disabled`) cambia de
+ * imagen: el boton se queda SIEMPRE en el PNG default (el mismo que ya
+ * aprobo Richard), y cada estado se comunica solo con `filter`/`box-shadow`
+ * -propiedades que nunca mueven ni redimensionan la caja-. `:disabled` usa
+ * UN unico estado visual fijo (`grayscale`+`brightness`+opacidad reducida),
+ * igual para las 4+ razones funcionales distintas que puede tener.
  */
 .mk-btn-primary:hover:not(:disabled) {
   filter: brightness(1.12);
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-brand) 55%, transparent);
 }
 .mk-btn-primary:active:not(:disabled) {
-  border-image-source: url('/assets/ecommerce/buttons/primary-light-active.png');
-  filter: brightness(0.95);
+  filter: brightness(0.88);
+  box-shadow: inset 0 2px 6px color-mix(in oklab, black 35%, transparent);
 }
 .mk-btn-primary:disabled {
-  border-image-source: url('/assets/ecommerce/buttons/primary-light-disabled.png');
+  filter: grayscale(0.45) brightness(0.88);
+  opacity: 0.85;
 }
+/* Imagen DEFAULT propia de Dark (unico cambio de imagen que queda: el salto
+   real entre temas al cargar la pagina, no una animacion de interaccion). */
 :root[data-theme='dark'] .mk-btn-primary {
   border-image-source: url('/assets/ecommerce/buttons/primary-dark-default.png');
-}
-:root[data-theme='dark'] .mk-btn-primary:active:not(:disabled) {
-  border-image-source: url('/assets/ecommerce/buttons/primary-dark-active.png');
-}
-:root[data-theme='dark'] .mk-btn-primary:disabled {
-  border-image-source: url('/assets/ecommerce/buttons/primary-dark-disabled.png');
 }
 @media (prefers-reduced-motion: reduce) {
   .mk-btn-primary {
@@ -503,8 +563,20 @@ body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
   min-height: 36px;
   padding: 6px 12px;
 }
+/*
+ * 9a pasada (QA visual final): "Ver detalle" Dark se leia casi negro puro
+ * (`color-mix(black 55%, ...)` empujaba `--color-surface-raised` -ya oscuro
+ * de por si, `oklch(0.24 ...)`- hacia el negro). Richard pidio gris
+ * gunmetal/piedra medieval, claramente mas claro que negro y distinto del
+ * fondo de la card -no marron, no dorado brillante, no gris claro-. En vez
+ * de inventar un hex nuevo, se parte del MISMO token ya usado para este
+ * exact proposito en toda la app (`--color-surface-raised`, que ya es un
+ * gris pizarra oscuro, no negro) y se le añade solo un tinte MUY sutil de
+ * `--color-accent-gold` (6%) para el matiz "bronce envejecido" que pidio
+ * Richard -sin dejar de leerse como gris-.
+ */
 :root[data-theme='dark'] .ec-btn-compact {
-  background-color: color-mix(in oklab, black 55%, var(--color-surface-raised));
+  background-color: color-mix(in oklab, var(--color-accent-gold) 6%, var(--color-surface-raised));
   border-color: var(--color-brand);
   box-shadow:
     0 0 0 1px color-mix(in oklab, var(--color-brand) 55%, transparent),
@@ -541,14 +613,22 @@ body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
  * Paginacion (8a pasada): "Anterior"/"Siguiente" dejan de compartir
  * `.mk-btn-secondary` (sprite). Light usa la familia "Crear sala"
  * (`.ec-btn-pill`); Dark usa la familia "Refrescar" (`.ec-btn-compact`,
- * via el override de arriba) -- exactamente la asignacion que pidio
+ * via el override de abajo) -- exactamente la asignacion que pidio
  * Richard. La logica/indicador "X / Y" no se toca.
+ *
+ * 9a pasada: el override de Dark dejo de exigir el ancestro
+ * `.commerce-pagination` -- `.ec-btn-page` ya es una clase suficientemente
+ * especifica por si sola (unico otro consumidor: "Agregar imagen" del
+ * formulario de reseñas, que pidio exactamente esta misma familia por
+ * tema). El resultado visual de Anterior/Siguiente NO cambia -el selector
+ * sigue aplicando por clase, solo se quito una condicion de ancestro que no
+ * aportaba nada nuevo-.
  */
 .ec-btn-page {
   min-height: 36px;
   padding: 6px 14px;
 }
-:root[data-theme='dark'] .commerce-pagination .ec-btn-page {
+:root[data-theme='dark'] .ec-btn-page {
   border-width: 1.5px;
   border-radius: 10px;
   border-color: var(--color-brand);
@@ -557,7 +637,7 @@ body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
     0 0 0 1px color-mix(in oklab, var(--color-brand) 55%, transparent),
     0 8px 18px color-mix(in oklab, black 40%, transparent);
 }
-:root[data-theme='dark'] .commerce-pagination .ec-btn-page:hover:not(:disabled) {
+:root[data-theme='dark'] .ec-btn-page:hover:not(:disabled) {
   box-shadow:
     0 0 0 2px color-mix(in oklab, var(--color-brand) 85%, transparent),
     0 0 16px color-mix(in oklab, var(--color-brand) 55%, transparent),
