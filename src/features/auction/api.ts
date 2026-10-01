@@ -97,6 +97,21 @@ export const AUCTION_PAGE_SIZE = 16
 /** Tamanos que ofrece el selector; todos dentro del maximo de Auction (100). */
 export const AUCTION_PAGE_SIZE_OPTIONS = [16, 32, 48] as const
 
+export type AuctionPublisherType = 'PLAYER' | 'GAME_MASTER'
+export type AuctionPriceKind = 'CREDITS' | 'REAL_MONEY'
+/** Ordenes de `GET /v1/auctions`; priceAsc/priceDesc exigen `priceKind=CREDITS`. */
+export type ActiveAuctionSort = 'closingSoon' | 'newest' | 'priceAsc' | 'priceDesc' | 'mostBids'
+
+/** Criterios del marketplace; un campo ausente significa "sin filtro". */
+export interface ActiveAuctionQuery {
+  readonly page: number
+  readonly pageSize: number
+  readonly publisherType?: AuctionPublisherType
+  readonly priceKind?: AuctionPriceKind
+  readonly hasBuyNow?: boolean
+  readonly sort?: ActiveAuctionSort
+}
+
 interface AuctionErrorBody {
   readonly code?: unknown
 }
@@ -164,12 +179,32 @@ export const publishOfficialAuction = (
     'Idempotency-Key': operationId,
   })
 
+/**
+ * `GET /v1/auctions`. Siempre envia `page` y `pageSize`, y el resto solo si
+ * esta definido, en orden fijo: sin filtros la URL sigue siendo exactamente
+ * `?page=N&pageSize=M`. El filtrado y el orden los resuelve Auction.
+ */
 export const listActiveAuctions = (
-  page: number,
-  pageSize: number = AUCTION_PAGE_SIZE,
+  query: ActiveAuctionQuery,
   signal?: AbortSignal,
-): Promise<ActiveAuctionPage> =>
-  httpClient.get<ActiveAuctionPage>(
-    `/v1/auctions?page=${String(page)}&pageSize=${String(pageSize)}`,
-    signal,
-  )
+): Promise<ActiveAuctionPage> => {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    pageSize: String(query.pageSize),
+  })
+
+  if (query.publisherType !== undefined) {
+    params.set('publisherType', query.publisherType)
+  }
+  if (query.priceKind !== undefined) {
+    params.set('priceKind', query.priceKind)
+  }
+  if (query.hasBuyNow !== undefined) {
+    params.set('hasBuyNow', String(query.hasBuyNow))
+  }
+  if (query.sort !== undefined) {
+    params.set('sort', query.sort)
+  }
+
+  return httpClient.get<ActiveAuctionPage>(`/v1/auctions?${params.toString()}`, signal)
+}

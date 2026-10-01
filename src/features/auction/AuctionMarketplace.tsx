@@ -16,6 +16,10 @@ import {
   AUCTION_PAGE_SIZE_OPTIONS,
   listActiveAuctions,
   type ActiveAuction,
+  type ActiveAuctionQuery,
+  type ActiveAuctionSort,
+  type AuctionPriceKind,
+  type AuctionPublisherType,
 } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
@@ -137,15 +141,92 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
   )
 }
 
+/** Estado visual de los filtros: `''` es "sin filtro" (mismo patron que AdminUsersSection). */
+interface MarketplaceFilters {
+  readonly publisherType: '' | AuctionPublisherType
+  readonly priceKind: '' | AuctionPriceKind
+  readonly hasBuyNow: '' | 'true' | 'false'
+  readonly sort: '' | ActiveAuctionSort
+}
+
+const DEFAULT_FILTERS: MarketplaceFilters = {
+  publisherType: '',
+  priceKind: '',
+  hasBuyNow: '',
+  sort: '',
+}
+
+const SORT_OPTIONS: readonly { readonly value: ActiveAuctionSort; readonly labelKey: string }[] = [
+  { value: 'closingSoon', labelKey: 'auction:market.sortClosingSoon' },
+  { value: 'newest', labelKey: 'auction:market.sortNewest' },
+  { value: 'mostBids', labelKey: 'auction:market.sortMostBids' },
+  { value: 'priceAsc', labelKey: 'auction:market.sortPriceAsc' },
+  { value: 'priceDesc', labelKey: 'auction:market.sortPriceDesc' },
+]
+
+const sortsByPrice = (sort: MarketplaceFilters['sort']): boolean =>
+  sort === 'priceAsc' || sort === 'priceDesc'
+
+/**
+ * Unico lugar de la regla de Auction: ordenar por precio exige
+ * `priceKind=CREDITS`. Elegir un orden por precio fija CREDITS; salir de
+ * CREDITS con ese orden activo vuelve al orden por defecto. Asi la UI nunca
+ * pide `PRICE_SORT_REQUIRES_CREDITS`. Si un mismo cambio trae un orden por
+ * precio y otro tipo de precio, gana el orden (lo ultimo que pidio el usuario).
+ */
+const normalizeFilters = (
+  current: MarketplaceFilters,
+  patch: Partial<MarketplaceFilters>,
+): MarketplaceFilters => {
+  const next = { ...current, ...patch }
+  if (!sortsByPrice(next.sort) || next.priceKind === 'CREDITS') {
+    return next
+  }
+  return patch.sort !== undefined && sortsByPrice(patch.sort)
+    ? { ...next, priceKind: 'CREDITS' }
+    : { ...next, sort: '' }
+}
+
+/** Traduce el estado visual al contrato: `''` no viaja; el filtrado lo hace Auction. */
+const toActiveAuctionQuery = (
+  page: number,
+  pageSize: number,
+  filters: MarketplaceFilters,
+): ActiveAuctionQuery => ({
+  page,
+  pageSize,
+  ...(filters.publisherType === '' ? {} : { publisherType: filters.publisherType }),
+  ...(filters.priceKind === '' ? {} : { priceKind: filters.priceKind }),
+  ...(filters.hasBuyNow === '' ? {} : { hasBuyNow: filters.hasBuyNow === 'true' }),
+  ...(filters.sort === '' ? {} : { sort: filters.sort }),
+})
+
 export const AuctionMarketplace = (): React.JSX.Element => {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(AUCTION_PAGE_SIZE)
+  const [filters, setFilters] = useState<MarketplaceFilters>(DEFAULT_FILTERS)
   const roles = useSession((state) => state.roles)
   const { t } = useTranslation()
+  const request = toActiveAuctionQuery(page, pageSize, filters)
+  // La clave sale de la misma consulta que se envia: no pueden divergir.
   const query = useQuery({
-    queryKey: queryKeys.auctions.activePage(page, pageSize),
-    queryFn: ({ signal }) => listActiveAuctions(page, pageSize, signal),
+    queryKey: queryKeys.auctions.activePage({
+      page: request.page,
+      pageSize: request.pageSize,
+      publisherType: request.publisherType ?? null,
+      priceKind: request.priceKind ?? null,
+      hasBuyNow: request.hasBuyNow ?? null,
+      sort: request.sort ?? null,
+    }),
+    queryFn: ({ signal }) => listActiveAuctions(request, signal),
   })
+  const hasActiveFilters = Object.values(filters).some((value) => value !== '')
+
+  // Otro filtro u orden cambia el conjunto de resultados: se vuelve a la primera pagina.
+  const changeFilters = (patch: Partial<MarketplaceFilters>): void => {
+    setFilters((current) => normalizeFilters(current, patch))
+    setPage(1)
+  }
   const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / pageSize))
 
   return (
@@ -185,26 +266,93 @@ export const AuctionMarketplace = (): React.JSX.Element => {
           )}
         </nav>
       </header>
-      <div className="w-44">
-        <SelectField
-          label={t('auction:market.itemsPerPage')}
-          value={String(pageSize)}
-          options={AUCTION_PAGE_SIZE_OPTIONS.map((size) => ({
-            value: String(size),
-            label: String(size),
-          }))}
-          onChange={(event) => {
-            // Otro tamano cambia cuantas paginas hay: se vuelve a la primera.
-            setPageSize(Number(event.target.value))
-            setPage(1)
-          }}
-        />
+      <div
+        role="group"
+        aria-label={t('auction:market.filters')}
+        className="space-y-3 rounded-lg border border-border bg-surface-raised p-4"
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <SelectField
+            label={t('auction:market.publisherFilter')}
+            value={filters.publisherType}
+            placeholder={t('auction:market.publisherAll')}
+            options={[
+              { value: 'PLAYER', label: t('auction:market.publisherPlayer') },
+              { value: 'GAME_MASTER', label: t('auction:market.publisherOfficial') },
+            ]}
+            onChange={(event) => {
+              changeFilters({
+                publisherType: event.target.value as MarketplaceFilters['publisherType'],
+              })
+            }}
+          />
+          <SelectField
+            label={t('auction:market.priceKindFilter')}
+            value={filters.priceKind}
+            placeholder={t('auction:market.priceKindAll')}
+            options={[
+              { value: 'CREDITS', label: t('auction:market.priceKindCredits') },
+              { value: 'REAL_MONEY', label: t('auction:market.priceKindRealMoney') },
+            ]}
+            onChange={(event) => {
+              changeFilters({ priceKind: event.target.value as MarketplaceFilters['priceKind'] })
+            }}
+          />
+          <SelectField
+            label={t('auction:market.buyNowFilter')}
+            value={filters.hasBuyNow}
+            placeholder={t('auction:market.buyNowAll')}
+            options={[
+              { value: 'true', label: t('auction:market.buyNowWith') },
+              { value: 'false', label: t('auction:market.buyNowWithout') },
+            ]}
+            onChange={(event) => {
+              changeFilters({ hasBuyNow: event.target.value as MarketplaceFilters['hasBuyNow'] })
+            }}
+          />
+          <SelectField
+            label={t('auction:market.sortLabel')}
+            hint={t('auction:market.sortPriceHint')}
+            value={filters.sort}
+            placeholder={t('auction:market.sortDefault')}
+            options={SORT_OPTIONS.map((option) => ({
+              value: option.value,
+              label: t(option.labelKey),
+            }))}
+            onChange={(event) => {
+              changeFilters({ sort: event.target.value as MarketplaceFilters['sort'] })
+            }}
+          />
+          <SelectField
+            label={t('auction:market.itemsPerPage')}
+            value={String(pageSize)}
+            options={AUCTION_PAGE_SIZE_OPTIONS.map((size) => ({
+              value: String(size),
+              label: String(size),
+            }))}
+            onChange={(event) => {
+              // Otro tamano cambia cuantas paginas hay: se vuelve a la primera.
+              setPageSize(Number(event.target.value))
+              setPage(1)
+            }}
+          />
+        </div>
+        {hasActiveFilters && (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              changeFilters(DEFAULT_FILTERS)
+            }}
+          >
+            {t('auction:market.clearFilters')}
+          </Button>
+        )}
       </div>
       <QueryState
         isLoading={query.isLoading}
         error={query.error}
         isEmpty={query.data?.items.length === 0}
-        emptyMessage={t('auction:market.empty')}
+        emptyMessage={t(hasActiveFilters ? 'auction:market.emptyFiltered' : 'auction:market.empty')}
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {(query.data?.items ?? []).map((auction) => (
