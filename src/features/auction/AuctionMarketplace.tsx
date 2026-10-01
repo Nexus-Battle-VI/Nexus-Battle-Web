@@ -6,31 +6,59 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
+import { SelectField } from '@/components/ui/form/SelectField'
 import { formatMoney } from '@/lib/format'
 import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
-import { listActiveAuctions, type ActiveAuction } from './api'
+import {
+  AUCTION_PAGE_SIZE,
+  AUCTION_PAGE_SIZE_OPTIONS,
+  listActiveAuctions,
+  type ActiveAuction,
+} from './api'
 import { i18n } from '@/shared/i18n/i18n'
-import { countLabel, formatLocale } from '@/shared/i18n/format'
+import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
+import { AuctionCountdown } from './AuctionCountdown'
+import { AuctionProductSummary } from './AuctionProductSummary'
 
 const priceOf = (auction: ActiveAuction): string =>
   auction.priceKind === 'REAL_MONEY'
     ? formatMoney(auction.minimumBidAmountMinor, auction.currency)
     : countLabel(i18n.t, 'common:count.credits', auction.minimumBidCredits)
 
+/** Precio de compra inmediata, o `null` si el publicador no lo configuro. */
+const buyNowPriceOf = (auction: ActiveAuction): string | null =>
+  auction.priceKind === 'REAL_MONEY'
+    ? auction.buyNowAmountMinor === null
+      ? null
+      : formatMoney(auction.buyNowAmountMinor, auction.currency)
+    : auction.buyNowCredits === null
+      ? null
+      : countLabel(i18n.t, 'common:count.credits', auction.buyNowCredits)
+
+const linkClass =
+  'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
+
 const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JSX.Element => {
   const { t } = useTranslation()
+  const subject = useSession((state) => state.subject)
   const official = auction.publisherType === 'GAME_MASTER'
+  const buyNowPrice = buyNowPriceOf(auction)
+  /*
+   * "Comprar ahora" abre el detalle con `?buyNow=1`, que enfoca directamente la
+   * confirmacion de `ImmediatePurchaseCard`: alli se valida el saldo y se
+   * ejecuta la compra con su Idempotency-Key. No se repite ese flujo aqui.
+   * El vendedor no puede comprar su propia subasta.
+   */
+  const canBuyNow = !official && buyNowPrice !== null && subject !== auction.sellerId
   const mark = t(
     auction.officialMark === 'PREMIUM' ? 'auction:marks.PREMIUM' : 'auction:marks.OFFICIAL',
   )
   return (
     <article className="rounded-xl border border-border bg-surface-raised p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-semibold text-ink">
-          {t('auction:product', { id: auction.productId })}
-        </h3>
+        <AuctionProductSummary productId={auction.productId} />
         {official && (
           <span
             aria-label={t('auction:market.officialLabel', { mark })}
@@ -53,6 +81,12 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
           </dd>
         </div>
         <div>
+          <dt className="text-muted">{t('auction:market.buyNow')}</dt>
+          <dd className="font-semibold text-ink">
+            {buyNowPrice ?? t('auction:market.buyNowNone')}
+          </dd>
+        </div>
+        <div>
           <dt className="text-muted">{t('auction:market.closes')}</dt>
           <dd className="font-medium text-ink">
             {new Intl.DateTimeFormat(formatLocale(), {
@@ -60,6 +94,16 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
               timeStyle: 'short',
             }).format(new Date(auction.closesAt))}
           </dd>
+        </div>
+        <div>
+          <dt className="text-muted">{t('auction:market.timeRemaining')}</dt>
+          <dd className="font-medium text-ink">
+            <AuctionCountdown closesAt={auction.closesAt} />
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted">{t('auction:market.bids')}</dt>
+          <dd className="font-medium text-ink">{formatInteger(auction.bidCount)}</dd>
         </div>
       </dl>
       {
@@ -71,12 +115,22 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
          * implementa (ver el propio issue de la historia).
          */
         !official && (
-          <Link
-            to={`/auction/${auction.id}`}
-            className="mt-3 inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            {t('auction:market.viewDetail')}
-          </Link>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {canBuyNow && (
+              <Link
+                to={`/auction/${auction.id}?buyNow=1`}
+                className={`${linkClass} bg-brand text-brand-ink hover:opacity-90`}
+              >
+                {t('auction:market.buyNowAction')}
+              </Link>
+            )}
+            <Link
+              to={`/auction/${auction.id}`}
+              className={`${linkClass} border border-border text-ink hover:bg-surface-raised`}
+            >
+              {t('auction:market.viewDetail')}
+            </Link>
+          </div>
         )
       }
     </article>
@@ -85,13 +139,14 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
 
 export const AuctionMarketplace = (): React.JSX.Element => {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(AUCTION_PAGE_SIZE)
   const roles = useSession((state) => state.roles)
   const { t } = useTranslation()
   const query = useQuery({
-    queryKey: queryKeys.auctions.activePage(page),
-    queryFn: ({ signal }) => listActiveAuctions(page, signal),
+    queryKey: queryKeys.auctions.activePage(page, pageSize),
+    queryFn: ({ signal }) => listActiveAuctions(page, pageSize, signal),
   })
-  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / 12))
+  const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / pageSize))
 
   return (
     <section aria-labelledby="active-auctions-title" className="mt-8 space-y-4">
@@ -130,6 +185,21 @@ export const AuctionMarketplace = (): React.JSX.Element => {
           )}
         </nav>
       </header>
+      <div className="w-44">
+        <SelectField
+          label={t('auction:market.itemsPerPage')}
+          value={String(pageSize)}
+          options={AUCTION_PAGE_SIZE_OPTIONS.map((size) => ({
+            value: String(size),
+            label: String(size),
+          }))}
+          onChange={(event) => {
+            // Otro tamano cambia cuantas paginas hay: se vuelve a la primera.
+            setPageSize(Number(event.target.value))
+            setPage(1)
+          }}
+        />
+      </div>
       <QueryState
         isLoading={query.isLoading}
         error={query.error}
@@ -141,7 +211,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
             <AuctionCard key={auction.id} auction={auction} />
           ))}
         </div>
-        {query.data !== undefined && query.data.total > 12 && (
+        {query.data !== undefined && query.data.total > pageSize && (
           <nav aria-label={t('auction:market.pagination')} className="mt-4 flex items-center gap-3">
             <Button
               variant="secondary"

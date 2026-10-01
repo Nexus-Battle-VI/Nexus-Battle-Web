@@ -36,6 +36,8 @@ export const queryKeys = {
      */
     mine: (params: { readonly page: number; readonly q: string; readonly type: string | null }) =>
       ['inventory', 'me', 'items', params] as const,
+    /** Inventario completo elegible para publicar una subasta. */
+    auctionPublishable: ['inventory', 'me', 'auction-publishable'] as const,
     /** Ficha de un producto poseido (`GET /api/inventories/me/items/:reference`). */
     mineItem: (reference: string) => ['inventory', 'me', 'item', reference] as const,
     /**
@@ -217,6 +219,6 @@ export const queryKeys = {
   },
   auctions: {
     active: ['auctions', 'active'] as const,
-    activePage: (page: number) => ['auctions', 'active', page] as const,
+    activePage: (page: number, pageSize: number) => ['auctions', 'active', page, pageSize] as const,
   },
 } as const

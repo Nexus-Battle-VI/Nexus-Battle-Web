@@ -47,7 +47,6 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
     pintar()
 
     expect(boton()).toHaveAttribute('aria-disabled', 'false')
-    expect(screen.getByRole('radio', { name: /Bruno/u })).toBeChecked()
   })
 
   it('al pulsar envia UNA intencion con el objetivo (teamLabel, seat) y nada mas', async () => {
@@ -90,7 +89,11 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
     await userEvent.click(boton())
 
     expect(combat.onAttack).not.toHaveBeenCalled()
-    expect(screen.getByText('Esperando el resultado de tu acción…')).toBeInTheDocument()
+    // 9a pasada (secciones 33-36 del brief): el texto sigue en el DOM (sigue
+    // describiendo el boton via `aria-describedby`, para lectores de
+    // pantalla), pero deja de ser VISIBLE -- ya no se repite bajo cada
+    // tarjeta de accion.
+    expect(screen.getByText('Esperando el resultado de tu acción…')).toHaveClass('sr-only')
   })
 
   it('el boton pendiente conserva el foco (aria-disabled, no disabled)', () => {
@@ -147,7 +150,14 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
     )
   })
 
-  describe('2 contra 2: un solo objetivo', () => {
+  // 7a pasada (secciones 37-41 del brief): el selector de radios ("○ Bea...",
+  // "○ Beto...") se quito de la UI -- el objetivo ahora se elige EXCLUSIVAMENTE
+  // haciendo clic sobre el heroe en la arena (`BattleArena.tsx`), que le pasa el
+  // MISMO `TargetRef` a `BattleScreen`, que lo entrega aqui como el prop
+  // `selectedTarget` YA CONTROLADO (exactamente lo que hacia antes el radio,
+  // ahora disparado desde afuera en vez de un input interno). Estos tests
+  // simulan esa misma entrada controlada, sin inventar una UI propia aqui.
+  describe('2 contra 2: varios objetivos posibles (el target llega CONTROLADO, elegido en la arena)', () => {
     const vista = (health: readonly (readonly [number, number])[]) =>
       withCombatants(battle(1, DOS_CONTRA_DOS), health)
 
@@ -158,54 +168,47 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
       [44, 44],
     ] as const
 
-    it('ofrece SOLO a los rivales como opciones (no a mi ni a mi aliado)', () => {
-      pintar({ battle: vista(todos) })
+    it('attackableTargets ofrece SOLO a los rivales (no a mi ni a mi aliado) -- verificado via la intencion enviada', async () => {
+      const combat = pintar({
+        battle: vista(todos),
+        selectedTarget: { teamLabel: 'B', seat: 1 },
+      })
 
-      const grupo = screen.getByRole('group', { name: 'Objetivo del ataque' })
-      const opciones = within(grupo).getAllByRole('radio')
+      await userEvent.click(boton())
 
-      expect(opciones).toHaveLength(2)
-      expect(within(grupo).getByRole('radio', { name: /Bea/u })).toBeInTheDocument()
-      expect(within(grupo).getByRole('radio', { name: /Beto/u })).toBeInTheDocument()
-      expect(within(grupo).queryByRole('radio', { name: /Alan|Ana/u })).not.toBeInTheDocument()
+      // Si `attackableTargets` incluyera a un aliado/a mi, esto no cambia nada
+      // aqui -- la regla real vive en `presentation.ts` (sin tocar); esto solo
+      // confirma que UN rival valido llega intacto hasta `onAttack`.
+      expect(combat.onAttack).toHaveBeenCalledWith({ teamLabel: 'B', seat: 1 })
     })
 
-    it('sin elegir objetivo el boton esta deshabilitado y pide elegir', async () => {
-      const combat = pintar({ battle: vista(todos) })
+    it('sin `selectedTarget` el boton esta deshabilitado y pide elegir (en la arena, no en un radio)', async () => {
+      const combat = pintar({ battle: vista(todos), selectedTarget: null })
 
       expect(boton()).toHaveAttribute('aria-disabled', 'true')
       expect(screen.getByText('Elige un objetivo.')).toBeInTheDocument()
+      expect(screen.getByText('Selecciona un objetivo en la arena')).toBeInTheDocument()
 
       await userEvent.click(boton())
 
       expect(combat.onAttack).not.toHaveBeenCalled()
     })
 
-    it('elegir un rival habilita el boton y ataca a ESE rival (teamLabel, seat)', async () => {
-      const combat = pintar({ battle: vista(todos) })
+    it('con `selectedTarget` (elegido en la arena) el boton ataca a ESE rival (teamLabel, seat)', async () => {
+      const combat = pintar({
+        battle: vista(todos),
+        selectedTarget: { teamLabel: 'B', seat: 1 },
+      })
 
-      await userEvent.click(screen.getByRole('radio', { name: /Beto/u }))
+      expect(boton()).toHaveAttribute('aria-disabled', 'false')
+
       await userEvent.click(boton())
 
       expect(combat.onAttack).toHaveBeenCalledTimes(1)
       expect(combat.onAttack).toHaveBeenCalledWith({ teamLabel: 'B', seat: 1 })
     })
 
-    it('se elige con el teclado (flechas) como cualquier grupo de opciones nativo', async () => {
-      const combat = pintar({ battle: vista(todos) })
-
-      await userEvent.tab()
-      await userEvent.keyboard('{ArrowDown}')
-      await userEvent.keyboard('{Enter}')
-
-      expect(screen.getByRole('radio', { name: /Beto/u })).toBeChecked()
-
-      await userEvent.click(boton())
-
-      expect(combat.onAttack).toHaveBeenCalledWith({ teamLabel: 'B', seat: 1 })
-    })
-
-    it('un rival sin Vida NO es una opcion; el otro pasa a ser el unico objetivo', () => {
+    it('un rival sin Vida NO es un objetivo valido: seleccionarlo NO habilita el ataque', () => {
       pintar({
         battle: vista([
           [0, 44],
@@ -213,24 +216,12 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
           [30, 44],
           [44, 44],
         ]),
+        // Bea (B/0) ya no tiene Vida -- `attackAvailability` la rechaza aunque
+        // llegue como `selectedTarget` (la regla real, sin tocar, decide esto).
+        selectedTarget: { teamLabel: 'B', seat: 0 },
       })
 
-      expect(screen.queryByRole('radio', { name: /Bea/u })).not.toBeInTheDocument()
-      expect(screen.getByRole('radio', { name: /Beto/u })).toBeChecked()
-    })
-
-    it('cada opcion muestra la Vida del rival en texto', () => {
-      pintar({
-        battle: vista([
-          [12, 44],
-          [44, 44],
-          [30, 44],
-          [44, 44],
-        ]),
-      })
-
-      expect(screen.getByRole('radio', { name: /Bea.*Vida 12 \/ 44/u })).toBeInTheDocument()
-      expect(screen.getByRole('radio', { name: /Beto.*Vida 30 \/ 44/u })).toBeInTheDocument()
+      expect(boton()).toHaveAttribute('aria-disabled', 'true')
     })
   })
 
@@ -326,8 +317,12 @@ describe('AttackPanel — «Ataque básico» (HU-18)', () => {
     pintar()
 
     expect(screen.queryByRole('button', { name: /habilidad|épica/iu })).not.toBeInTheDocument()
+    // 8a pasada (secciones 36-40 del brief): el texto "la habilidad épica
+    // llegará..." se quita de la vista -- es una nota tecnica sin
+    // contraparte real y sin ningun control que la describa
+    // (`aria-describedby`), asi que ya no hace falta en ninguna forma.
     expect(
-      screen.getByText(/La habilidad épica llegará cuando el juego defina/u),
-    ).toBeInTheDocument()
+      screen.queryByText(/La habilidad épica llegará cuando el juego defina/u),
+    ).not.toBeInTheDocument()
   })
 })

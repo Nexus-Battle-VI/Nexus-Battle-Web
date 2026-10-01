@@ -46,10 +46,16 @@
     "empty": "Il n'y a aucune enchère active pour le moment.",
     "pagination": "Pagination des enchères",
     "pageOf": "Page {{page}} sur {{pages}}",
+    "itemsPerPage": "Éléments par page",
     "officialLabel": "Publication officielle : {{mark}}",
     "minimumPrice": "Prix minimum",
     "closes": "Clôture",
-    "viewDetail": "Voir le détail"
+    "viewDetail": "Voir le détail",
+    "bids": "Enchères",
+    "timeRemaining": "Temps restant",
+    "buyNow": "Achat immédiat",
+    "buyNowNone": "Non disponible",
+    "buyNowAction": "Acheter maintenant"
   },
   "validation": {
     "productRequired": "Sélectionnez un produit de votre inventaire.",
@@ -90,7 +96,16 @@
     "notActive": "Cette enchère n'est plus active",
     "currentStatus": "Statut actuel : {{status}}.",
     "ownTitle": "C'est votre propre enchère",
-    "ownDescription": "Vous ne pouvez pas acheter immédiatement un produit que vous avez vous-même publié."
+    "ownDescription": "Vous ne pouvez pas acheter immédiatement un produit que vous avez vous-même publié.",
+    "bids": "Nombre d’enchères",
+    "timeRemaining": "Temps restant"
+  },
+  "countdown": {
+    "days": "{{days}}j {{hours}}h {{minutes}}m {{seconds}}s",
+    "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+    "minutes": "{{minutes}}m {{seconds}}s",
+    "seconds": "{{seconds}}s",
+    "ended": "Terminée"
   },
   "publish": {
     "remainingEnding": "Se termine",

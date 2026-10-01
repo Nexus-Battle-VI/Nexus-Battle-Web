@@ -1,44 +1,31 @@
-import { useParams } from 'react-router'
-import { useTranslation } from 'react-i18next'
-
+import './battle-rooms.css'
 import { BattlePage, type BattlePageProps } from './battle/BattlePage'
-
-import { ChatPanel, type ChatPanelProps } from './ChatPanel'
+import type { ChatPanelProps } from './ChatPanel'
 
 export interface BattleWithChatProps {
   /** Inyectables de la pantalla de batalla, solo para pruebas. */
   readonly battle?: BattlePageProps
-  /** Inyectables del chat, solo para pruebas. */
+  /**
+   * Se conserva en la firma SOLO por compatibilidad con quien todavia pase
+   * `chat={...}` -- ya no se usa (ver docstring). Eliminar el prop rompería
+   * a cualquier llamador existente sin necesidad.
+   */
   readonly chat?: Pick<ChatPanelProps, 'socketFactory' | 'ticketProvider' | 'hasSession'>
 }
 
 /**
- * La pantalla de batalla de una sala (HU-17) con el chat de esa sala debajo (HU-13).
+ * La pantalla de batalla de una sala (HU-17).
  *
- * Existe porque el lobby de la sala redirige a la batalla en cuanto la sala se llena
- * (`PREPARING`), y Combat mantiene el chat de la sala abierto en `PREPARING` e
- * `IN_BATTLE`: sin esto el chat desapareceria justo cuando los jugadores se
- * coordinan. Se compone AQUI, a nivel de ruta, y no dentro de `BattlePage`, para no
- * tocar esa pantalla (que es de HU-17) ni sus pruebas.
- *
- * El chat lo abre cada persona con su propia conexion: Combat decide quien es
- * participante y el panel explica el resto (sala cancelada, no participante...).
+ * Remaster visual Sprint 3 (3a pasada, seccion 55 del brief): el chat de la
+ * sala YA NO se muestra aqui. Combat sigue exponiendo el canal de chat de la
+ * sala durante `PREPARING`/`IN_BATTLE` (el protocolo no cambia en absoluto),
+ * pero el requisito funcional real es que la persona pueda coordinarse ANTES
+ * de que la batalla empiece (Lobby/Sala de espera, donde el chat flotante SI
+ * vive -- ver `FloatingChatPanel`); mientras la batalla esta activa, el
+ * producto no exige tenerlo a la vista, y visualmente competia con el HUD de
+ * combate. Nada del protocolo de chat se elimino: solo se dejo de montar el
+ * componente EN ESTA pantalla.
  */
-export const BattleWithChat = ({ battle, chat }: BattleWithChatProps): React.JSX.Element => {
-  const { roomId = null } = useParams<{ roomId: string }>()
-  const { t } = useTranslation()
-
-  return (
-    <div className="flex flex-col gap-6">
-      <BattlePage {...battle} />
-      {roomId !== null && (
-        <ChatPanel
-          channel={{ kind: 'room', roomId }}
-          title={t('battle:room.chat')}
-          description={t('battle:room.chatDescription')}
-          {...chat}
-        />
-      )}
-    </div>
-  )
-}
+export const BattleWithChat = ({ battle }: BattleWithChatProps): React.JSX.Element => (
+  <BattlePage {...battle} />
+)

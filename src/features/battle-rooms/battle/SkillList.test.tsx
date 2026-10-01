@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -5,6 +8,8 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   ALL_IN,
   combatBattle,
+  entry,
+  REANIMATE,
   recharging,
   SHIELD_STRIKE,
   skillBattle,
@@ -147,7 +152,15 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
     await userEvent.click(usar('Usar Mano de piedra'))
 
     expect(value.onUse).not.toHaveBeenCalled()
-    expect(screen.getAllByText('Esperando el resultado de tu acción…').length).toBeGreaterThan(0)
+    // 9a pasada (secciones 33-36 del brief): antes este texto se repetia
+    // VISIBLE debajo de CADA habilidad a la vez (aqui, dos) -- sigue
+    // existiendo para lectores de pantalla (`aria-describedby`), pero
+    // ninguna instancia queda visible.
+    const avisos = screen.getAllByText('Esperando el resultado de tu acción…')
+    expect(avisos.length).toBeGreaterThan(0)
+    for (const aviso of avisos) {
+      expect(aviso).toHaveClass('sr-only')
+    }
   })
 
   it('el Poder NO deshabilita: con 0 de Poder la habilidad sigue disponible (Combat la degradara a ataque basico)', async () => {
@@ -195,7 +208,14 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
 
     const { container } = render(<SkillList {...props({ battle: skillsOf(hostile) })} />)
 
-    expect(container.querySelector('img')).toBeNull()
+    // Ningun `<img>` real proviene del NOMBRE de la habilidad (el unico `<img>`
+    // legitimo es el icono decorativo de PixelLab del titulo "Habilidades",
+    // ajeno al dato hostil): ninguno tiene el `src` inyectado ni carece de
+    // `alt=""`/`aria-hidden` (marca de decorativo real, no de marcado inyectado).
+    for (const img of container.querySelectorAll('img')) {
+      expect(img.getAttribute('src')).not.toBe('x')
+      expect(img).toHaveAttribute('aria-hidden', 'true')
+    }
     expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument()
   })
 
@@ -285,5 +305,191 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
+  })
+})
+
+/**
+ * Pasada final (secciones 23, 32-38, 53, 63-64 del brief): con MAS DE UN
+ * companero elegible, pulsar una habilidad ally-target (`targetAudience:
+ * 'ALLY'`, excepcion de curacion de HU-12) ya NO envia nada de inmediato --
+ * abre un popover fuera de la barra de acciones; elegir ahi envia la
+ * intencion real y lo cierra; Cancelar lo cierra sin enviar nada. Antes de
+ * esta pasada NO habia ninguna prueba que cubriera este flujo con mas de un
+ * companero (el bug del radiogroup permanente, que desestabilizaba la barra
+ * con 4 acciones, no tenia ningun test que lo hubiera detectado).
+ */
+describe('SkillList -- popover de companero para habilidades ally-target (HU-12, pasada final)', () => {
+  const MEDICO = 'sujeto-medico'
+
+  const alliesOrder = [
+    entry(0, {
+      teamLabel: 'A',
+      seat: 0,
+      playerId: MEDICO,
+      displayName: 'Medico',
+      heroSubtype: 'MEDICO',
+    }),
+    entry(1, {
+      teamLabel: 'A',
+      seat: 1,
+      playerId: 'sujeto-diego',
+      displayName: 'Diego',
+      heroSubtype: 'GUERRERO_ARMAS',
+    }),
+    entry(2, {
+      teamLabel: 'A',
+      seat: 2,
+      playerId: 'sujeto-fer',
+      displayName: 'Fer',
+      heroSubtype: 'CHAMAN',
+    }),
+    entry(3, {
+      teamLabel: 'B',
+      seat: 0,
+      playerId: 'sujeto-bruno',
+      displayName: 'Bruno',
+      heroSubtype: 'GUERRERO_TANQUE',
+    }),
+  ]
+
+  const healBattle = () =>
+    withSkills(
+      combatBattle(
+        0,
+        [
+          [10, 10],
+          [10, 10],
+          [10, 10],
+          [10, 10],
+        ],
+        alliesOrder,
+      ),
+      [
+        { power: [10, 10], skills: [REANIMATE] },
+        { power: [10, 10], skills: [] },
+        { power: [10, 10], skills: [] },
+        { power: [10, 10], skills: [] },
+      ],
+    )
+
+  const pintarConAliados = (overrides: Partial<SkillListProps> = {}) =>
+    pintar({ battle: healBattle(), subject: MEDICO, target: null, ...overrides })
+
+  it('con mas de un companero: el boton esta habilitado pero pulsarlo NO envia nada de inmediato -- abre el popover', async () => {
+    const value = pintarConAliados()
+
+    const boton = usar('Usar Reanimación')
+    expect(boton).toHaveAttribute('aria-disabled', 'false')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await userEvent.click(boton)
+
+    expect(value.onUse).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Diego/u })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Fer/u })).toBeInTheDocument()
+    // El propio Medico (quien usa la habilidad) nunca es una opcion.
+    expect(screen.queryByRole('button', { name: /^Medico/u })).not.toBeInTheDocument()
+  })
+
+  it('el popover vive FUERA de la lista de habilidades (nunca dentro del <ul> que estira la barra de acciones)', async () => {
+    const { container } = render(
+      <SkillList
+        {...props({
+          battle: healBattle(),
+          subject: MEDICO,
+          target: null,
+        })}
+      />,
+    )
+
+    await userEvent.click(usar('Usar Reanimación'))
+
+    const dialog = screen.getByRole('dialog')
+    const list = container.querySelector('ul')
+
+    expect(list).not.toBeNull()
+    expect(list?.contains(dialog)).toBe(false)
+  })
+
+  it('elegir un companero en el popover envia la intencion real y lo cierra', async () => {
+    const value = pintarConAliados()
+
+    await userEvent.click(usar('Usar Reanimación'))
+    await userEvent.click(screen.getByRole('button', { name: /^Diego/u }))
+
+    expect(value.onUse).toHaveBeenCalledTimes(1)
+    expect(value.onUse).toHaveBeenCalledWith('hab-reanimacion', { teamLabel: 'A', seat: 1 })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('Cancelar cierra el popover SIN enviar ninguna intencion', async () => {
+    const value = pintarConAliados()
+
+    await userEvent.click(usar('Usar Reanimación'))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(value.onUse).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('con UN solo companero (o ninguno) no hay popover: se comporta como el objetivo del ataque basico', async () => {
+    const soloUnAliado = [
+      entry(0, {
+        teamLabel: 'A',
+        seat: 0,
+        playerId: MEDICO,
+        displayName: 'Medico',
+        heroSubtype: 'MEDICO',
+      }),
+      entry(1, {
+        teamLabel: 'A',
+        seat: 1,
+        playerId: 'sujeto-diego',
+        displayName: 'Diego',
+        heroSubtype: 'GUERRERO_ARMAS',
+      }),
+      entry(2, {
+        teamLabel: 'B',
+        seat: 0,
+        playerId: 'sujeto-bruno',
+        displayName: 'Bruno',
+        heroSubtype: 'GUERRERO_TANQUE',
+      }),
+    ]
+    const value = pintarConAliados({
+      battle: withSkills(
+        combatBattle(
+          0,
+          [
+            [10, 10],
+            [10, 10],
+            [10, 10],
+          ],
+          soloUnAliado,
+        ),
+        [
+          { power: [10, 10], skills: [REANIMATE] },
+          { power: [10, 10], skills: [] },
+          { power: [10, 10], skills: [] },
+        ],
+      ),
+    })
+
+    await userEvent.click(usar('Usar Reanimación'))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(value.onUse).toHaveBeenCalledWith('hab-reanimacion', { teamLabel: 'A', seat: 1 })
+  })
+})
+
+describe('battle-rooms.css -- el popover de companero nunca puede estirar la barra de acciones', () => {
+  it('.br-ally-target-overlay usa position: fixed (fuera del flujo, jamas participa del alto de .br-action-bar)', () => {
+    const css = readFileSync(path.join(__dirname, '..', 'battle-rooms.css'), 'utf-8')
+    const start = css.indexOf('.br-ally-target-overlay {')
+    const end = css.indexOf('}', start)
+
+    expect(start).toBeGreaterThan(-1)
+    expect(css.slice(start, end)).toContain('position: fixed')
   })
 })

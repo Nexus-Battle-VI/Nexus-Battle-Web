@@ -45,10 +45,16 @@
     "empty": "There are no active auctions right now.",
     "pagination": "Auctions pagination",
     "pageOf": "Page {{page}} of {{pages}}",
+    "itemsPerPage": "Items per page",
     "officialLabel": "Official listing: {{mark}}",
     "minimumPrice": "Minimum price",
     "closes": "Closes",
-    "viewDetail": "View details"
+    "viewDetail": "View details",
+    "bids": "Bids",
+    "timeRemaining": "Time left",
+    "buyNow": "Buy now price",
+    "buyNowNone": "Not available",
+    "buyNowAction": "Buy now"
   },
   "validation": {
     "productRequired": "Select a product from your inventory.",
@@ -89,7 +95,16 @@
     "notActive": "This auction is no longer active",
     "currentStatus": "Current status: {{status}}.",
     "ownTitle": "This is your own auction",
-    "ownDescription": "You can't buy now a product you published yourself."
+    "ownDescription": "You can't buy now a product you published yourself.",
+    "bids": "Number of bids",
+    "timeRemaining": "Time left"
+  },
+  "countdown": {
+    "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",
+    "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+    "minutes": "{{minutes}}m {{seconds}}s",
+    "seconds": "{{seconds}}s",
+    "ended": "Ended"
   },
   "publish": {
     "remainingEnding": "Ending",

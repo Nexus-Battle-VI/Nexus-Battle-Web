@@ -33,9 +33,17 @@ describe('devRoutes', () => {
     // selector de dificultad (HU-75.3), que espera la matricula de HU-70.3, y
     // la vista previa de mercado (remaster visual E-commerce Sprint 3, 4a
     // pasada) con productos ficticios, porque el catalogo local no siempre
-    // tiene productos publicados para inspeccionar la Product Card real.
+    // tiene productos publicados para inspeccionar la Product Card real, y
+    // los tres previews consolidados del remaster visual de "Jugar Online"
+    // (lobby/sala de espera/batalla, Sprint 3), por la misma razon: el
+    // catalogo local no siempre tiene salas/heroes suficientes para
+    // inspeccionar cada estado.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
       '__dev/ecommerce/marketplace-preview',
+      '__dev/battle-rooms/lobby-remaster-preview',
+      '__dev/battle-rooms/room-remaster-preview',
+      '__dev/battle-rooms/room-remaster-preview/:roomId',
+      '__dev/battle-rooms/battle-remaster-preview',
       '__dev/hu68/watchlist',
       '__dev/auction/immediate-purchase',
       '__dev/auction/bidding',

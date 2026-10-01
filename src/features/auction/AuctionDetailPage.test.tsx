@@ -1,7 +1,7 @@
-import { screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { renderWithProviders } from '@/test/render'
 import * as catalogApi from '@/features/catalog/api'
@@ -26,6 +26,7 @@ const auction = (patch: Partial<detailApi.AuctionDetail> = {}): detailApi.Auctio
   publishedAt: '2026-09-20T12:00:00.000Z',
   closesAt: '2026-09-22T12:00:00.000Z',
   currentBid: null,
+  bidCount: 0,
   ...patch,
 })
 
@@ -60,16 +61,20 @@ const confirmacion = (patch: Partial<BuyNowConfirmation> = {}): BuyNowConfirmati
   ...patch,
 })
 
-const montar = (): void => {
+const montar = (search = ''): void => {
   renderWithProviders(
     <Routes>
       <Route path="/auction/:auctionId" element={<AuctionDetailPage />} />
     </Routes>,
-    { route: `/auction/${AUCTION_ID}` },
+    { route: `/auction/${AUCTION_ID}${search}` },
   )
 }
 
 describe('AuctionDetailPage (HU-64.1)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     vi.restoreAllMocks()
     useSession.setState({ subject: 'buyer-1', accessToken: 'token', expiresAt: null })
@@ -141,6 +146,23 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
     expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar puja' })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Configurar puja automática' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+  })
+
+  it('un comprador conserva los controles de puja y compra', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+
+    montar()
+
+    expect(await screen.findByRole('button', { name: 'Comprar ahora' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Registrar puja' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Configurar puja automática' })).toBeInTheDocument()
   })
 
   it('CA-04: comprar sin marcar la confirmacion pide confirmar y no llega a ejecutar la compra', async () => {
@@ -275,5 +297,201 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
     await screen.findByText('Es tu propia subasta')
     expect(screen.queryByRole('button', { name: 'Seguir esta subasta' })).not.toBeInTheDocument()
+  })
+
+  it('muestra el numero total de pujas persistidas', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+      auction({
+        bidCount: 7,
+        currentBid: {
+          id: 'bid-1',
+          auctionId: AUCTION_ID,
+          bidderId: 'other',
+          amountCredits: 90,
+          placedAt: '2026-09-21T12:00:00.000Z',
+        },
+      }),
+    )
+
+    montar()
+
+    const label = await screen.findByText('Número de pujas')
+    expect(label.nextElementSibling).toHaveTextContent(/^7$/)
+  })
+
+  it('muestra 0 pujas cuando nadie ha pujado', async () => {
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+
+    montar()
+
+    const label = await screen.findByText('Número de pujas')
+    expect(label.nextElementSibling).toHaveTextContent(/^0$/)
+  })
+
+  it('el propio vendedor tambien ve el numero de pujas', async () => {
+    useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction({ bidCount: 4 }))
+
+    montar()
+
+    expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
+    expect(screen.getByText('Número de pujas').nextElementSibling).toHaveTextContent(/^4$/)
+  })
+
+  describe('tiempo restante', () => {
+    const timeLeft = (): string | null =>
+      screen.getByText('Tiempo restante').nextElementSibling?.textContent ?? null
+
+    beforeEach(() => {
+      // Solo el reloj: `setTimeout` sigue real para React Query y los `findBy*`.
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+      vi.setSystemTime(Date.parse('2026-09-22T11:59:58.000Z'))
+    })
+
+    it('decrementa cada segundo y al llegar a 0 muestra Finalizada sin valores negativos', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+
+      montar()
+
+      await screen.findByText('Tiempo restante')
+      expect(timeLeft()).toBe('02s')
+
+      act(() => {
+        vi.advanceTimersByTime(1_000)
+      })
+      expect(timeLeft()).toBe('01s')
+
+      act(() => {
+        vi.advanceTimersByTime(3_000)
+      })
+      expect(timeLeft()).toBe('Finalizada')
+      expect(timeLeft()).not.toMatch(/-/u)
+      expect(detailApi.fetchAuctionDetail).toHaveBeenCalledTimes(1)
+    })
+
+    it('el vendedor tambien ve la cuenta regresiva, sin controles de puja', async () => {
+      useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ closesAt: '2026-09-24T16:15:09.000Z' }),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
+      expect(timeLeft()).toBe('2d 04h 15m 11s')
+      expect(screen.queryByRole('button', { name: 'Registrar puja' })).not.toBeInTheDocument()
+    })
+
+    it('una subasta que ya no esta activa muestra Finalizada aunque su cierre sea futuro', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ status: 'SOLD', closesAt: '2026-09-23T12:00:00.000Z' }),
+      )
+
+      montar()
+
+      await screen.findByText('Tiempo restante')
+      expect(timeLeft()).toBe('Finalizada')
+    })
+  })
+
+  describe('llegada desde "Comprar ahora" del marketplace (?buyNow=1)', () => {
+    const confirmacionCasilla = (): Promise<HTMLElement> =>
+      screen.findByRole('checkbox', { name: 'Confirmo la compra inmediata' })
+
+    beforeEach(() => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+      vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    })
+
+    it('abre directamente la confirmacion existente, enfocada, sin comprar todavia', async () => {
+      const ejecutar = vi.spyOn(detailApi, 'executeBuyNow')
+
+      montar('?buyNow=1')
+
+      const casilla = await confirmacionCasilla()
+      expect(casilla).toHaveFocus()
+      expect(casilla).not.toBeChecked()
+      expect(ejecutar).not.toHaveBeenCalled()
+    })
+
+    it('sin la intencion (Ver detalle) el detalle se abre normal, sin enfocar la compra', async () => {
+      montar()
+
+      expect(await confirmacionCasilla()).not.toHaveFocus()
+    })
+
+    it('no compra hasta confirmar: sin la casilla pide confirmacion y no llama a /buy-now', async () => {
+      const ejecutar = vi.spyOn(detailApi, 'executeBuyNow')
+
+      montar('?buyNow=1')
+
+      await confirmacionCasilla()
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(screen.getByText('Confirmación requerida')).toBeInTheDocument()
+      expect(ejecutar).not.toHaveBeenCalled()
+    })
+
+    it('mientras procesa no permite una segunda compra', async () => {
+      const ejecutar = vi
+        .spyOn(detailApi, 'executeBuyNow')
+        .mockReturnValue(new Promise<BuyNowConfirmation>(() => undefined))
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await confirmacionCasilla())
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(await screen.findByText('Procesando tu compra...')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+      expect(ejecutar).toHaveBeenCalledTimes(1)
+    })
+
+    it('al confirmar usa la compra existente una sola vez: exito y resincronizacion', async () => {
+      const ejecutar = vi
+        .spyOn(detailApi, 'executeBuyNow')
+        .mockResolvedValue(confirmacion({ debitedCredits: 2500, remainingCredits: 2500 }))
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await confirmacionCasilla())
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(await screen.findByText('¡Compra completada!')).toBeInTheDocument()
+      expect(ejecutar).toHaveBeenCalledTimes(1)
+      expect(ejecutar).toHaveBeenCalledWith(AUCTION_ID, expect.any(String))
+      await waitFor(() => {
+        expect(detailApi.fetchAuctionDetail).toHaveBeenCalledTimes(2)
+      })
+    })
+
+    it('un rechazo usa el manejo de errores existente', async () => {
+      const ejecutar = vi.spyOn(detailApi, 'executeBuyNow').mockRejectedValue(
+        new HttpError(409, 'La subasta ya se cerro', {
+          statusCode: 409,
+          code: 'BUY_NOW_CONFLICT',
+        }),
+      )
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await confirmacionCasilla())
+      await userEvent.click(screen.getByRole('button', { name: 'Comprar ahora' }))
+
+      expect(
+        await screen.findByText('Otro comprador se adelantó: la subasta ya se cerró.'),
+      ).toBeInTheDocument()
+      expect(ejecutar).toHaveBeenCalledTimes(1)
+    })
+
+    it('el vendedor que llega con la intencion no ve la compra', async () => {
+      useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+
+      montar('?buyNow=1')
+
+      expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    })
   })
 })

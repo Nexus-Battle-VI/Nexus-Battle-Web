@@ -585,8 +585,12 @@ describe('Proteccion visual de rutas (HU-02)', () => {
       renderRoute('/play/rooms/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/battle')
 
       expect(await screen.findByLabelText('Batalla')).toHaveTextContent('Tu sesión expiró')
-      // HU-13: la ruta compone la batalla con el chat de su sala (`BattleWithChat`).
-      expect(screen.getByRole('heading', { name: 'Chat de la sala' })).toBeInTheDocument()
+      // Remaster visual Sprint 3 (3a pasada, seccion 55 del brief): la ruta de
+      // batalla (`BattleWithChat`) YA NO monta el chat de la sala -- coordinarse
+      // por chat es cosa de ANTES de pelear (lobby/sala de espera, chat
+      // flotante), no durante. El protocolo de chat no cambio, solo se dejo de
+      // montar aqui.
+      expect(screen.queryByRole('heading', { name: 'Chat de la sala' })).not.toBeInTheDocument()
       expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
     } finally {
       vi.unstubAllGlobals()

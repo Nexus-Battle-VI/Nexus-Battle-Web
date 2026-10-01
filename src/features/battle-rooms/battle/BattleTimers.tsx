@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import { BattlePixelIcon } from '../BattlePixelIcon'
 import {
   formatRemaining,
   monotonicNow as readMonotonicNow,
@@ -108,37 +109,52 @@ export const BattleTimers = ({
   const battleTone = timeWarning(battleRemaining)
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-      <p
-        role="timer"
-        aria-live="off"
-        aria-label={
-          isMyTurn
-            ? t('battle:timers.turnYours')
-            : t('battle:timers.turnOf', { name: nameOf(battle) })
-        }
-        className={clsx('font-semibold tabular-nums', WARNING_CLASS[turnTone])}
-      >
-        <span aria-hidden="true">
-          {t('battle:timers.turnValue', {
-            label: isMyTurn
-              ? t('battle:turn.yours')
-              : t('battle:turn.of', { name: nameOf(battle) }),
-            time: formatRemaining(turnRemaining),
-          })}
-        </span>
-      </p>
-      <p
-        role="timer"
-        aria-live="off"
-        aria-label={t('battle:timers.battle')}
-        className={clsx('tabular-nums', WARNING_CLASS[battleTone])}
-      >
-        <span aria-hidden="true">
-          {t('battle:timers.battleValue', { time: formatRemaining(battleRemaining) })}
-        </span>
-      </p>
-      {turnRemaining === 0 && <p className="text-muted">{t('battle:timers.waitingCombat')}</p>}
+    // 5a pasada (secciones 32-36 del brief): el chip izquierdo dice SIEMPRE
+    // "TURNO" (nunca el nombre -- "Turno de Bruno" ya esta arriba, en
+    // "Nexus · Arena", evita repetir el nombre dos veces). El derecho dice
+    // "BATALLA" (corto, para no truncar "Tiempo de batalla..."). Ambos
+    // `aria-label` (accesibles, no visibles) SI siguen diciendo de quien es
+    // el turno -- ese dato no se pierde, solo deja de repetirse visualmente.
+    <div className="br-timers-block">
+      <div className="br-timers-strip">
+        <p
+          role="timer"
+          aria-live="off"
+          aria-label={
+            isMyTurn
+              ? t('battle:timers.turnYours')
+              : t('battle:timers.turnOf', { name: nameOf(battle) })
+          }
+          className={clsx('br-timer-chip br-timer-chip--turn', WARNING_CLASS[turnTone])}
+        >
+          <span aria-hidden="true" className="br-timer-chip-label">
+            {t('battle:timers.turnShortLabel')}
+          </span>
+          <span aria-hidden="true" className="br-timer-chip-value tabular-nums">
+            {formatRemaining(turnRemaining)}
+          </span>
+        </p>
+        <BattlePixelIcon icon="timer" size="sm" className="br-timer-icon" />
+        <p
+          role="timer"
+          aria-live="off"
+          aria-label={t('battle:timers.battle')}
+          className={clsx('br-timer-chip br-timer-chip--battle', WARNING_CLASS[battleTone])}
+        >
+          <span aria-hidden="true" className="br-timer-chip-label">
+            {t('battle:timers.battleShortLabel')}
+          </span>
+          <span aria-hidden="true" className="br-timer-chip-value tabular-nums">
+            {formatRemaining(battleRemaining)}
+          </span>
+        </p>
+      </div>
+      {/* Linea propia, centrada, SOLO cuando el estado realmente lo pide --
+          nunca un hueco fantasma reservado dentro de la fila de chips
+          (seccion 35-36 del brief). */}
+      {turnRemaining === 0 && (
+        <p className="br-timer-waiting text-muted">{t('battle:timers.waitingCombat')}</p>
+      )}
       <p role="status" aria-live="polite" className="sr-only">
         {announcement}
       </p>

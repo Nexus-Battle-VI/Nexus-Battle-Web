@@ -2,8 +2,8 @@ import { useId } from 'react'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
-import { Coins, Trophy } from '@/components/ui/icons'
-
+import '../battle-rooms.css'
+import { BattlePixelIcon } from '../BattlePixelIcon'
 import { useBattleReward } from './useBattleReward'
 import {
   chestProgressFraction,
@@ -73,7 +73,7 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
     <section
       aria-labelledby={headingId}
       className={clsx(
-        'flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-3 sm:p-4',
+        'br-panel br-reward-aura flex flex-col gap-3 p-3 sm:p-4',
         'motion-safe:transition-shadow motion-safe:duration-500',
       )}
     >
@@ -85,7 +85,7 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
         role="status"
         className="flex items-center justify-center gap-2 text-lg font-bold text-ink"
       >
-        <Coins aria-hidden="true" className="h-5 w-5 text-brand" />
+        <BattlePixelIcon icon="credits" size="sm" />
         {countLabel(t, 'battle:reward.earned', reward.creditsEarned)}
       </p>
 
@@ -150,13 +150,7 @@ export const RewardPanel = ({ battleId, subject }: RewardPanelProps): React.JSX.
         >
           {/* El color solo refuerza (nunca es la unica fuente): el titular y el
               detalle ya dicen "no se pudo" en texto. */}
-          <Trophy
-            aria-hidden="true"
-            className={clsx(
-              'h-6 w-6',
-              reward.rewardDelivery === 'FAILED' ? 'text-danger' : 'text-brand',
-            )}
-          />
+          <BattlePixelIcon icon="chest" size="lg" />
           <p className="font-bold text-ink">{delivery.headline}</p>
           {delivery.detail !== null && <p className="text-sm text-muted">{delivery.detail}</p>}
         </div>

@@ -1,11 +1,14 @@
 import { useId, useState } from 'react'
+import clsx from 'clsx'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Button } from '@/components/ui/Button'
-import { Coins } from '@/components/ui/icons'
 import { formatInteger } from '@/shared/i18n/format'
+
+import './battle-rooms.css'
+import { BattlePixelIcon } from './BattlePixelIcon'
 
 import { modeLabel, occupancyOf, teamByLetter } from './presentation'
 import type { JoinBattleRoomFailure } from './presentation'
@@ -136,8 +139,11 @@ export const BattleRoomCard = ({
     const otherTeamPending = joiningTeam !== null && joiningTeam !== letter
 
     return (
+      // 5a pasada (seccion 6A del brief): recupera el marco PixelLab
+      // (`.br-pixellab-secondary`, Dark y Light) para "Unirse".
       <Button
-        variant="secondary"
+        variant="battle-secondary"
+        className="br-pixellab-secondary"
         loading={thisTeamPending}
         disabled={!canJoin || full || otherTeamPending}
         onClick={() => {
@@ -156,45 +162,59 @@ export const BattleRoomCard = ({
   return (
     <li
       data-testid={`battle-room-${room.id}`}
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 transition-colors motion-safe:duration-150 hover:border-brand/40 hover:bg-surface-raised sm:flex-row sm:items-center sm:justify-between"
+      className={clsx(
+        'br-room-card motion-safe:transition-shadow motion-safe:duration-150',
+        room.mode === 'PVE' && 'br-room-card--pve',
+      )}
     >
-      <div className="min-w-0 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={room.status} />
-          <span className="text-sm font-medium text-ink">{modeLabel(room.mode)}</span>
-        </div>
-        <p className="flex items-center gap-1.5 text-sm text-muted">
-          <span>{t('battle:card.players', { filled: String(filled), total: String(total) })}</span>
-          <span aria-hidden="true">·</span>
-          <Coins aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-brand" />
-          <span>{formatInteger(room.reward.amount)}</span>
-        </p>
-        {hasStakes && (
-          <p className="text-xs font-medium text-brand">
-            {t('battle:card.activeStakes', {
-              amount: creditAmountText(room.stakePool?.total ?? 0),
-            })}
-          </p>
-        )}
-        {joinError !== null && (
-          <p
-            role="alert"
-            className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-danger"
-          >
-            <span>{joinError.message}</span>
-            {joinError.action !== null && (
-              <Link to={joinError.action.to} className="font-medium underline hover:no-underline">
-                {joinError.action.label}
-              </Link>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <BattlePixelIcon icon={room.mode === 'PVP' ? 'pvp' : 'pve'} size="md" />
+        <div className="min-w-0 space-y-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="br-section-title text-sm">{modeLabel(room.mode)}</span>
+            <StatusBadge status={room.status} />
+          </div>
+          <p className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--br-muted)' }}>
+            <span>
+              {t('battle:card.players', { filled: String(filled), total: String(total) })}
+            </span>
+            <span aria-hidden="true">·</span>
+            <BattlePixelIcon icon="credits" size="sm" className="h-3.5 w-auto" />
+            <span>{formatInteger(room.reward.amount)}</span>
+            {hasStakes && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="font-medium" style={{ color: 'var(--br-accent-2)' }}>
+                  {t('battle:card.activeStakes', {
+                    amount: creditAmountText(room.stakePool?.total ?? 0),
+                  })}
+                </span>
+              </>
             )}
           </p>
-        )}
+          {joinError !== null && (
+            <p
+              role="alert"
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-danger"
+            >
+              <span>{joinError.message}</span>
+              {joinError.action !== null && (
+                <Link to={joinError.action.to} className="font-medium underline hover:no-underline">
+                  {joinError.action.label}
+                </Link>
+              )}
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
         {isOwn && (
+          // 5a pasada (secciones 6A/19 del brief): recupera el marco
+          // PixelLab (`.br-pixellab-danger`, Dark y Light).
           <Button
-            variant="danger"
+            variant="battle-danger"
+            className="br-pixellab-danger"
             loading={cancelling}
             onClick={() => {
               onCancel(room.id)
@@ -206,33 +226,41 @@ export const BattleRoomCard = ({
         {isParticipant ? (
           <Link
             to={`/play/rooms/${room.id}`}
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className="br-btn-secondary br-pixellab-secondary inline-flex shrink-0 items-center justify-center whitespace-nowrap text-sm font-medium text-ink"
           >
             {t('battle:card.viewRoom')}
           </Link>
         ) : pendingJoin !== null ? (
-          <div className="flex flex-col items-stretch gap-2 rounded-lg border border-brand/40 p-2 sm:items-end">
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-brand/40 p-2">
             <p role="status" className="text-xs text-ink">
               {describeStakeReservation(pendingJoin.amount)}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
-                variant="secondary"
+                variant="battle-secondary"
                 onClick={() => {
                   setPendingJoin(null)
                 }}
               >
                 {t('battle:cancel')}
               </Button>
-              <Button loading={joiningTeam === pendingJoin.team} onClick={confirmJoin}>
+              <Button
+                variant="battle-primary"
+                loading={joiningTeam === pendingJoin.team}
+                onClick={confirmJoin}
+              >
                 {t('battle:card.confirmJoin', { team: pendingJoin.team })}
               </Button>
             </div>
           </div>
         ) : (
           <>
-            <div className="flex flex-col items-stretch gap-1 sm:items-end">
-              <label htmlFor={stakeFieldId} className="text-xs text-muted">
+            <div className="flex items-center gap-1">
+              <label
+                htmlFor={stakeFieldId}
+                className="text-xs"
+                style={{ color: 'var(--br-muted)' }}
+              >
                 {t('battle:card.stakeLabel')}
               </label>
               <input
@@ -246,7 +274,7 @@ export const BattleRoomCard = ({
                 onChange={(event) => {
                   setStakeInput(event.target.value)
                 }}
-                className="w-full rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink sm:w-28"
+                className="w-20 rounded-md border border-border bg-surface px-2 py-1 text-sm text-ink"
               />
               {stakeError !== null && (
                 <p role="alert" className="text-xs text-danger">

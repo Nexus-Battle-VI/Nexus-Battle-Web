@@ -1,190 +1,488 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
+import { formatMoney } from '@/lib/format'
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
 import { AuctionMarketplace } from './AuctionMarketplace'
 
 const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  })
+  new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' }, status })
 
-describe('AuctionMarketplace HU-66.6', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    useSession.setState({ roles: [] })
-  })
+const urlOf = (input: RequestInfo | URL): string =>
+  typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
 
-  it('presenta el orden del backend, etiquetas textuales y dinero localizado', async () => {
+const product = (productId: string, name: string, type: string, imageUrl = '') => ({
+  productId,
+  sku: productId,
+  name,
+  type,
+  imageUrl,
+  description: '',
+  lifecycleStatus: 'ACTIVE',
+  creditsPrice: 10,
+  premium: false,
+  realMoneyPrice: null,
+  averageRating: null,
+  reviewCount: 0,
+})
+
+const auctions = [
+  {
+    id: 'official-1',
+    sellerId: 'upb-company',
+    publisherType: 'GAME_MASTER',
+    productId: 'exclusive-1',
+    priceKind: 'REAL_MONEY',
+    minimumBidCredits: null,
+    buyNowCredits: null,
+    currency: 'COP',
+    minimumBidAmountMinor: 90_000,
+    buyNowAmountMinor: 120_000,
+    officialMark: 'PREMIUM',
+    status: 'ACTIVE',
+    currentBidAmount: null,
+    bidCount: 0,
+    publishedAt: '2026-09-24T12:00:00.000Z',
+    closesAt: '2026-09-26T12:00:00.000Z',
+  },
+  {
+    id: 'player-1',
+    sellerId: 'player-1',
+    publisherType: 'PLAYER',
+    productId: 'owned-1',
+    priceKind: 'CREDITS',
+    minimumBidCredits: 10,
+    buyNowCredits: 20,
+    currency: null,
+    minimumBidAmountMinor: null,
+    buyNowAmountMinor: null,
+    officialMark: null,
+    status: 'ACTIVE',
+    currentBidAmount: 40,
+    bidCount: 3,
+    publishedAt: '2026-09-24T12:00:00.000Z',
+    closesAt: '2026-09-25T12:00:00.000Z',
+  },
+]
+
+const activeAuctionPage = (total: number, page = 1) => ({
+  page,
+  pageSize: 16,
+  total,
+  items: auctions,
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+  useSession.setState({ roles: [], subject: null })
+})
+
+describe('AuctionMarketplace', () => {
+  it('muestra nombre, tipo e imagen de Catalog sin usar el UUID como titulo', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve(
-          jsonResponse({
-            page: 1,
-            pageSize: 12,
-            total: 2,
-            items: [
-              {
-                id: 'official-1',
-                sellerId: 'upb-company',
-                publisherType: 'GAME_MASTER',
-                productId: 'exclusive-1',
-                priceKind: 'REAL_MONEY',
-                minimumBidCredits: null,
-                buyNowCredits: null,
-                currency: 'COP',
-                minimumBidAmountMinor: 90_000,
-                buyNowAmountMinor: 120_000,
-                officialMark: 'PREMIUM',
-                status: 'ACTIVE',
-                currentBidAmount: null,
-                publishedAt: '2026-09-24T12:00:00.000Z',
-                closesAt: '2026-09-26T12:00:00.000Z',
-              },
-              {
-                id: 'player-1',
-                sellerId: 'player-1',
-                publisherType: 'PLAYER',
-                productId: 'owned-1',
-                priceKind: 'CREDITS',
-                minimumBidCredits: 10,
-                buyNowCredits: 20,
-                currency: null,
-                minimumBidAmountMinor: null,
-                buyNowAmountMinor: null,
-                officialMark: null,
-                status: 'ACTIVE',
-                currentBidAmount: null,
-                publishedAt: '2026-09-24T12:00:00.000Z',
-                closesAt: '2026-09-25T12:00:00.000Z',
-              },
-            ],
-          }),
-        ),
-      ),
+      vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(
+            jsonResponse(
+              product(
+                'exclusive-1',
+                'Corona del Nexo',
+                'EPICA',
+                'https://assets.example.test/corona.webp',
+              ),
+            ),
+          )
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+      }),
     )
     renderWithProviders(<AuctionMarketplace />)
 
-    const cards = await screen.findAllByRole('article')
-    expect(within(cards[0]!).getByText('Producto exclusive-1')).toBeInTheDocument()
+    await screen.findByText('Corona del Nexo')
+    const cards = screen.getAllByRole('article')
+    expect(within(cards[0]!).getByText('Corona del Nexo')).toBeInTheDocument()
+    expect(within(cards[0]!).getByText('EPICA')).toBeInTheDocument()
+    expect(within(cards[0]!).getByAltText('Corona del Nexo')).toBeInTheDocument()
+    expect(within(cards[0]!).queryByText('Producto exclusive-1')).not.toBeInTheDocument()
     expect(within(cards[0]!).getByLabelText('Publicación oficial: Premium')).toHaveTextContent(
       'Premium',
     )
-    expect(within(cards[0]!).getByText(/900/u)).toBeInTheDocument()
-    expect(within(cards[1]!).getByText('10 créditos')).toBeInTheDocument()
-    expect(screen.getByText(/publicaciones oficiales aparecen primero/u)).toBeInTheDocument()
+    expect(within(cards[1]!).getByText('Espada del Nexo')).toBeInTheDocument()
     expect(within(cards[1]!).getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
       'href',
       '/auction/player-1',
     )
   })
 
-  /**
-   * `GET /v1/auctions/:id` solo resuelve subastas de jugador (`findById`,
-   * no `findOfficialById`): un enlace a "Ver detalle" en una tarjeta oficial
-   * llevaria a un 404. Se oculta en vez de ofrecer un enlace roto.
-   */
-  it('no ofrece "Ver detalle" en una tarjeta oficial', async () => {
+  it('mantiene las otras tarjetas si Catalog falla para una', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve(
-          jsonResponse({
-            page: 1,
-            pageSize: 12,
-            total: 1,
-            items: [
-              {
-                id: 'official-1',
-                sellerId: 'upb-company',
-                publisherType: 'GAME_MASTER',
-                productId: 'exclusive-1',
-                priceKind: 'REAL_MONEY',
-                minimumBidCredits: null,
-                buyNowCredits: null,
-                currency: 'COP',
-                minimumBidAmountMinor: 90_000,
-                buyNowAmountMinor: 120_000,
-                officialMark: 'OFFICIAL',
-                status: 'ACTIVE',
-                currentBidAmount: null,
-                publishedAt: '2026-09-24T12:00:00.000Z',
-                closesAt: '2026-09-26T12:00:00.000Z',
-              },
-            ],
-          }),
-        ),
-      ),
+      vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse({ message: 'not found' }, 404))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+      }),
     )
     renderWithProviders(<AuctionMarketplace />)
 
-    const card = (await screen.findAllByRole('article'))[0]!
-    expect(within(card).queryByRole('link', { name: 'Ver detalle' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Espada del Nexo')).toBeInTheDocument()
+    expect(screen.getAllByText('Producto')).toHaveLength(1)
   })
 
-  /**
-   * HU-66.6: el listado es el punto de entrada real; desde aqui hay que
-   * poder llegar a seguir subastas (HU-68) y a publicar la propia (HU-62.5)
-   * sin escribir ninguna URL a mano.
-   */
-  it('ofrece navegar a seguimiento y a publicar', async () => {
+  it('no ofrece detalle para una subasta oficial', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(jsonResponse({ items: [], page: 1, pageSize: 12, total: 0 }))),
+      vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona', 'EPICA')))
+        return Promise.resolve(jsonResponse({ ...activeAuctionPage(1), items: [auctions[0]] }))
+      }),
     )
     renderWithProviders(<AuctionMarketplace />)
 
-    expect(await screen.findByRole('link', { name: 'Mis subastas seguidas' })).toHaveAttribute(
-      'href',
-      '/auction/watchlist',
-    )
-    expect(screen.getByRole('link', { name: 'Publicar mi subasta' })).toHaveAttribute(
-      'href',
-      '/auction/publish',
-    )
     expect(
-      screen.queryByRole('link', { name: 'Publicar producto oficial' }),
+      within((await screen.findAllByRole('article'))[0]!).queryByRole('link', {
+        name: 'Ver detalle',
+      }),
     ).not.toBeInTheDocument()
   })
 
-  it('el Maestro de Juego ve ademas el acceso a publicar oficial', async () => {
-    useSession.setState({ roles: ['GAME_MASTER'] })
+  it.each([
+    [16, 1],
+    [17, 2],
+    [32, 2],
+    [33, 3],
+  ])('calcula %i resultados como %i pagina(s) de 16', async (total, pages) => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(jsonResponse({ items: [], page: 1, pageSize: 12, total: 0 }))),
+      vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona', 'EPICA')))
+        return Promise.resolve(jsonResponse(activeAuctionPage(total)))
+      }),
     )
     renderWithProviders(<AuctionMarketplace />)
 
-    expect(await screen.findByRole('link', { name: 'Publicar producto oficial' })).toHaveAttribute(
-      'href',
-      '/auction/publish-official',
-    )
+    await screen.findByText('Corona')
+    if (pages === 1) {
+      expect(
+        screen.queryByRole('navigation', { name: 'Paginaci\u00f3n de subastas' }),
+      ).not.toBeInTheDocument()
+    } else {
+      expect(await screen.findByText(`P\u00e1gina 1 de ${String(pages)}`)).toBeInTheDocument()
+    }
   })
 
-  it('distingue los estados de carga, vacio y error', async () => {
-    let resolveRequest: ((response: Response) => void) | undefined
+  it('solicita 16 resultados y mantiene anterior/siguiente', async () => {
+    const user = userEvent.setup()
+    const fetch = vi.fn((input: RequestInfo | URL) => {
+      const url = urlOf(input)
+      if (url.includes('/v1/catalog/products/'))
+        return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona', 'EPICA')))
+      const page = url.includes('page=2') ? 2 : 1
+      return Promise.resolve(jsonResponse(activeAuctionPage(32, page)))
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderWithProviders(<AuctionMarketplace />)
+
+    await screen.findByText('P\u00e1gina 1 de 2')
+    expect(fetch.mock.calls.map(([input]) => urlOf(input))).toContainEqual(
+      expect.stringContaining('page=1&pageSize=16'),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByText('P\u00e1gina 2 de 2')).toBeInTheDocument()
+    expect(fetch.mock.calls.map(([input]) => urlOf(input))).toContainEqual(
+      expect.stringContaining('page=2&pageSize=16'),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Anterior' }))
+    expect(await screen.findByText('P\u00e1gina 1 de 2')).toBeInTheDocument()
+  })
+
+  it('muestra el total de pujas de cada tarjeta, incluido 0', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveRequest = resolve
-          }),
-      ),
-    )
-    const { unmount } = renderWithProviders(<AuctionMarketplace />)
-    expect(screen.getByRole('status')).toHaveTextContent('Cargando')
-    resolveRequest?.(jsonResponse({ items: [], page: 1, pageSize: 12, total: 0 }))
-    expect(await screen.findByText('No hay subastas activas en este momento.')).toBeInTheDocument()
-    unmount()
-
-    vi.mocked(globalThis.fetch).mockResolvedValue(
-      jsonResponse({ message: 'Auction no disponible.' }, 503),
+      vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+      }),
     )
     renderWithProviders(<AuctionMarketplace />)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Auction no disponible')
+
+    await screen.findByText('Espada del Nexo')
+    const cards = screen.getAllByRole('article')
+    const bidsOf = (card: HTMLElement): string | null =>
+      within(card).getByText('Pujas').nextElementSibling?.textContent ?? null
+    expect(bidsOf(cards[0]!)).toBe('0')
+    expect(bidsOf(cards[1]!)).toBe('3')
+  })
+
+  it('cada tarjeta muestra su propia cuenta regresiva y la actualiza sin volver a pedir la lista', async () => {
+    // Solo el reloj: `setTimeout` sigue real para React Query y los `findBy*`.
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
+    vi.setSystemTime(Date.parse('2026-09-25T11:59:58.000Z'))
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = urlOf(input)
+      if (url.includes('/v1/catalog/products/exclusive-1'))
+        return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+      if (url.includes('/v1/catalog/products/owned-1'))
+        return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+      return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    renderWithProviders(<AuctionMarketplace />)
+
+    await screen.findByText('Espada del Nexo')
+    const cards = screen.getAllByRole('article')
+    const timeOf = (card: HTMLElement): string | null =>
+      within(card).getByText('Tiempo restante').nextElementSibling?.textContent ?? null
+    expect(timeOf(cards[0]!)).toBe('1d 00h 00m 02s')
+    expect(timeOf(cards[1]!)).toBe('02s')
+    const listCalls = (): number =>
+      fetchMock.mock.calls.filter(([input]) => urlOf(input).includes('/v1/auctions')).length
+    const callsBefore = listCalls()
+
+    act(() => {
+      vi.advanceTimersByTime(1_000)
+    })
+    expect(timeOf(cards[0]!)).toBe('1d 00h 00m 01s')
+    expect(timeOf(cards[1]!)).toBe('01s')
+
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+    expect(timeOf(cards[1]!)).toBe('Finalizada')
+    expect(timeOf(cards[0]!)).toBe('23h 59m 56s')
+    expect(timeOf(cards[1]!)).not.toMatch(/-/u)
+    expect(listCalls()).toBe(callsBefore)
+  })
+
+  describe('compra inmediata desde la tarjeta', () => {
+    const stubMarket = (items: readonly unknown[] = auctions) => {
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        return Promise.resolve(jsonResponse({ page: 1, pageSize: 16, total: items.length, items }))
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+    const buyNowOf = (card: HTMLElement): string | null =>
+      within(card).getByText('Compra inmediata').nextElementSibling?.textContent ?? null
+
+    it('Comprar ahora abre el flujo de compra (?buyNow=1) sin comprar desde la tarjeta', async () => {
+      useSession.setState({ subject: 'buyer-1' })
+      const fetchMock = stubMarket()
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const cards = screen.getAllByRole('article')
+      expect(buyNowOf(cards[1]!)).toBe('20 créditos')
+      const buy = within(cards[1]!).getByRole('link', { name: 'Comprar ahora' })
+      expect(buy).toHaveAttribute('href', '/auction/player-1?buyNow=1')
+      // Ver detalle sigue siendo el detalle normal, sin la intencion de compra.
+      expect(within(cards[1]!).getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
+        'href',
+        '/auction/player-1',
+      )
+
+      await userEvent.click(buy)
+      expect(fetchMock.mock.calls.some(([input]) => urlOf(input).includes('/buy-now'))).toBe(false)
+    })
+
+    it('una publicacion oficial muestra su precio en dinero real pero no ofrece comprar', async () => {
+      useSession.setState({ subject: 'buyer-1' })
+      stubMarket()
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const official = screen.getAllByRole('article')[0]!
+      expect(buyNowOf(official)).toBe(formatMoney(120_000, 'COP'))
+      expect(
+        within(official).queryByRole('link', { name: 'Comprar ahora' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('el vendedor ve el precio de su subasta pero no el boton de compra', async () => {
+      useSession.setState({ subject: 'player-1' })
+      stubMarket()
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const own = screen.getAllByRole('article')[1]!
+      expect(buyNowOf(own)).toBe('20 créditos')
+      expect(within(own).queryByRole('link', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+      expect(within(own).getByRole('link', { name: 'Ver detalle' })).toBeInTheDocument()
+    })
+
+    it('sin precio de compra inmediata lo indica y no ofrece comprar', async () => {
+      useSession.setState({ subject: 'buyer-1' })
+      stubMarket([{ ...auctions[1]!, buyNowCredits: null }])
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      const card = screen.getAllByRole('article')[0]!
+      expect(buyNowOf(card)).toBe('No disponible')
+      expect(within(card).queryByRole('link', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('selector de elementos por pagina', () => {
+    const stubPaged = (total: number) => {
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        const params = new URL(url, 'http://localhost').searchParams
+        return Promise.resolve(
+          jsonResponse({
+            page: Number(params.get('page')),
+            pageSize: Number(params.get('pageSize')),
+            total,
+            items: auctions,
+          }),
+        )
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+    const lastListUrl = (fetchMock: ReturnType<typeof stubPaged>): string =>
+      fetchMock.mock.calls
+        .map(([input]) => urlOf(input))
+        .filter((url) => url.includes('/v1/auctions?'))
+        .at(-1) ?? ''
+    const selector = (): HTMLElement =>
+      screen.getByRole('combobox', { name: 'Elementos por página' })
+
+    it('por defecto pide 16 y ofrece 16, 32 y 48', async () => {
+      const fetchMock = stubPaged(2)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      expect(lastListUrl(fetchMock)).toContain('page=1&pageSize=16')
+      expect(selector()).toHaveValue('16')
+      expect(
+        within(selector())
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+      ).toEqual(['16', '32', '48'])
+    })
+
+    it.each([
+      ['32', 'page=1&pageSize=32'],
+      ['48', 'page=1&pageSize=48'],
+    ])('al elegir %s el request usa ese tamano', async (size, expected) => {
+      const user = userEvent.setup()
+      const fetchMock = stubPaged(2)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), size)
+
+      await waitFor(() => {
+        expect(lastListUrl(fetchMock)).toContain(expected)
+      })
+      expect(selector()).toHaveValue(size)
+    })
+
+    it('cambiar el tamano estando en una pagina posterior vuelve a la pagina 1', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubPaged(100)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Página 1 de 7')
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+      await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+      expect(await screen.findByText('Página 3 de 7')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=3&pageSize=16')
+
+      await user.selectOptions(selector(), '32')
+
+      expect(await screen.findByText('Página 1 de 4')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=1&pageSize=32')
+    })
+
+    it.each([
+      [32, '16', 2],
+      [32, '32', 1],
+      [33, '32', 2],
+    ])('total %i con %s por pagina da %i pagina(s)', async (total, size, pages) => {
+      const user = userEvent.setup()
+      stubPaged(total)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), size)
+
+      if (pages === 1) {
+        await waitFor(() => {
+          expect(
+            screen.queryByRole('navigation', { name: 'Paginación de subastas' }),
+          ).not.toBeInTheDocument()
+        })
+      } else {
+        expect(await screen.findByText(`Página 1 de ${String(pages)}`)).toBeInTheDocument()
+      }
+    })
+
+    it('anterior y siguiente respetan el tamano elegido', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubPaged(100)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), '48')
+      expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument()
+
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+      expect(await screen.findByText('Página 2 de 3')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=2&pageSize=48')
+
+      await user.click(screen.getByRole('button', { name: 'Anterior' }))
+      expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument()
+      expect(lastListUrl(fetchMock)).toContain('page=1&pageSize=48')
+    })
+
+    it('con otro tamano las tarjetas conservan pujas, tiempo restante y compra inmediata', async () => {
+      const user = userEvent.setup()
+      useSession.setState({ subject: 'buyer-1' })
+      stubPaged(2)
+      renderWithProviders(<AuctionMarketplace />)
+
+      await screen.findByText('Espada del Nexo')
+      await user.selectOptions(selector(), '32')
+      await waitFor(() => {
+        expect(selector()).toHaveValue('32')
+      })
+
+      const card = (await screen.findAllByRole('article'))[1]!
+      expect(within(card).getByText('Pujas').nextElementSibling).toHaveTextContent('3')
+      expect(within(card).getByText('Tiempo restante')).toBeInTheDocument()
+      expect(within(card).getByRole('link', { name: 'Comprar ahora' })).toHaveAttribute(
+        'href',
+        '/auction/player-1?buyNow=1',
+      )
+    })
   })
 })

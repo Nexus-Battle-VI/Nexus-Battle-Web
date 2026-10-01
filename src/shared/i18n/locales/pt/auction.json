@@ -46,10 +46,16 @@
     "empty": "Não há leilões ativos no momento.",
     "pagination": "Paginação de leilões",
     "pageOf": "Página {{page}} de {{pages}}",
+    "itemsPerPage": "Itens por página",
     "officialLabel": "Publicação oficial: {{mark}}",
     "minimumPrice": "Preço mínimo",
     "closes": "Encerra",
-    "viewDetail": "Ver detalhes"
+    "viewDetail": "Ver detalhes",
+    "bids": "Lances",
+    "timeRemaining": "Tempo restante",
+    "buyNow": "Compra imediata",
+    "buyNowNone": "Não disponível",
+    "buyNowAction": "Comprar agora"
   },
   "validation": {
     "productRequired": "Selecione um produto do seu inventário.",
@@ -90,7 +96,16 @@
     "notActive": "Este leilão não está mais ativo",
     "currentStatus": "Status atual: {{status}}.",
     "ownTitle": "Este é o seu próprio leilão",
-    "ownDescription": "Você não pode fazer a compra imediata de um produto que você mesmo publicou."
+    "ownDescription": "Você não pode fazer a compra imediata de um produto que você mesmo publicou.",
+    "bids": "Número de lances",
+    "timeRemaining": "Tempo restante"
+  },
+  "countdown": {
+    "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",
+    "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+    "minutes": "{{minutes}}m {{seconds}}s",
+    "seconds": "{{seconds}}s",
+    "ended": "Encerrada"
   },
   "publish": {
     "remainingEnding": "Finalizando",

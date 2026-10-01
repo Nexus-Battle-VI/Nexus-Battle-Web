@@ -11,6 +11,12 @@ export const AppLayout = (): React.JSX.Element => {
   // "Mi Inventario" usa el mismo ancho maximo que la cabecera (7xl): su
   // composicion 2×2 necesita el espacio horizontal que el resto no usa.
   const wide = pathname === '/inventory'
+  // "Jugar Online" (remaster visual Sprint 3): mismo criterio que Commerce
+  // arriba -- el escenario Pixel Art (lobby/sala/batalla) necesita ocupar
+  // todo el ancho disponible, sin el `padding`/`max-w-6xl` que lo encajonaba
+  // dentro de un recuadro central. `/play` cubre el lobby y, por prefijo,
+  // toda sala/batalla (`/play/rooms/...`).
+  const play = pathname === '/play' || pathname.startsWith('/play/')
   return (
     <div className={commerce ? 'commerce-layout min-h-dvh' : 'min-h-dvh'}>
       <AppHeader />
@@ -19,9 +25,11 @@ export const AppLayout = (): React.JSX.Element => {
         className={
           commerce
             ? 'commerce-main mx-auto w-full px-4 py-3'
-            : wide
-              ? 'mx-auto max-w-7xl px-4 py-8'
-              : 'mx-auto max-w-6xl px-4 py-8'
+            : play
+              ? 'br-main mx-auto w-full px-3 py-4 sm:px-4'
+              : wide
+                ? 'mx-auto max-w-7xl px-4 py-8'
+                : 'mx-auto max-w-6xl px-4 py-8'
         }
       >
         <Outlet />

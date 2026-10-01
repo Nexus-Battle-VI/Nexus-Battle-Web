@@ -33,6 +33,8 @@ export interface AuctionDetail {
   readonly closesAt: string
   /** `null` si nadie ha pujado todavia. */
   readonly currentBid: AuctionDetailBid | null
+  /** Total de pujas persistidas; no se deriva de `currentBid`. */
+  readonly bidCount: number
 }
 
 /** `GET /api/v1/auctions/:auctionId` (HU-63.6). */

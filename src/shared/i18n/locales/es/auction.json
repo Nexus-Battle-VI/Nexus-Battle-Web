@@ -46,10 +46,16 @@
     "empty": "No hay subastas activas en este momento.",
     "pagination": "Paginación de subastas",
     "pageOf": "Página {{page}} de {{pages}}",
+    "itemsPerPage": "Elementos por página",
     "officialLabel": "Publicación oficial: {{mark}}",
     "minimumPrice": "Precio mínimo",
     "closes": "Cierra",
-    "viewDetail": "Ver detalle"
+    "viewDetail": "Ver detalle",
+    "bids": "Pujas",
+    "timeRemaining": "Tiempo restante",
+    "buyNow": "Compra inmediata",
+    "buyNowNone": "No disponible",
+    "buyNowAction": "Comprar ahora"
   },
   "validation": {
     "productRequired": "Selecciona un producto de tu inventario.",
@@ -90,7 +96,16 @@
     "notActive": "Esta subasta ya no esta activa",
     "currentStatus": "Estado actual: {{status}}.",
     "ownTitle": "Es tu propia subasta",
-    "ownDescription": "No puedes ejecutar la compra inmediata de un producto que tu mismo publicaste."
+    "ownDescription": "No puedes ejecutar la compra inmediata de un producto que tu mismo publicaste.",
+    "bids": "Número de pujas",
+    "timeRemaining": "Tiempo restante"
+  },
+  "countdown": {
+    "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",
+    "hours": "{{hours}}h {{minutes}}m {{seconds}}s",
+    "minutes": "{{minutes}}m {{seconds}}s",
+    "seconds": "{{seconds}}s",
+    "ended": "Finalizada"
   },
   "publish": {
     "remainingEnding": "Finalizando",

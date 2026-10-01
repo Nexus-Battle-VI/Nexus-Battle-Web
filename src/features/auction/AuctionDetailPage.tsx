@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
+import { formatInteger } from '@/shared/i18n/format'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { describeFollowError } from './api'
+import { AuctionCountdown } from './AuctionCountdown'
 import { AuctionBidPanel } from './bidding/AuctionBidPanel'
 import { AutoBidPanel } from './auto-bid/AutoBidPanel'
 import {
@@ -47,6 +49,9 @@ const MAX_AUTOMATIC_RETRIES = 3
  */
 export const AuctionDetailPage = (): React.JSX.Element => {
   const { auctionId = '' } = useParams()
+  // `?buyNow=1` llega desde "Comprar ahora" del marketplace: abre el paso de confirmacion.
+  const [searchParams] = useSearchParams()
+  const buyNowIntent = searchParams.get('buyNow') === '1'
   const navigate = useNavigate()
   const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
@@ -145,6 +150,24 @@ export const AuctionDetailPage = (): React.JSX.Element => {
         <QueryState isLoading={auctionQuery.isPending} error={auctionQuery.error}>
           {auction !== undefined && (
             <>
+              {/* Visible para cualquier rol, vendedor incluido: no depende del panel de puja. */}
+              <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
+                <div className="flex items-baseline gap-2">
+                  <dt className="text-muted">{t('auction:detail.timeRemaining')}</dt>
+                  <dd className="font-semibold text-ink">
+                    {/* El cierre lo decide Auction: fuera de ACTIVE no hay cuenta que mostrar. */}
+                    {auction.status === 'ACTIVE' ? (
+                      <AuctionCountdown closesAt={auction.closesAt} />
+                    ) : (
+                      t('auction:countdown.ended')
+                    )}
+                  </dd>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <dt className="text-muted">{t('auction:detail.bids')}</dt>
+                  <dd className="font-semibold text-ink">{formatInteger(auction.bidCount)}</dd>
+                </div>
+              </dl>
               {auction.status === 'ACTIVE' && !isSeller && (
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
@@ -199,6 +222,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                           summary: product.description,
                         }}
                         stage={purchaseStage}
+                        focusConfirmation={buyNowIntent}
                         {...(buyNowCredits !== null ? { priceCredits: buyNowCredits } : {})}
                         {...(availableCredits !== undefined ? { availableCredits } : {})}
                         {...(transaction !== null
@@ -234,7 +258,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                 </p>
               )}
 
-              {auction.status === 'ACTIVE' && product !== undefined && (
+              {auction.status === 'ACTIVE' && !isSeller && product !== undefined && (
                 <AuctionBidPanel
                   auction={auction}
                   product={{ name: product.name, description: product.description }}
@@ -243,7 +267,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                 />
               )}
 
-              {auction.status === 'ACTIVE' && (
+              {auction.status === 'ACTIVE' && !isSeller && (
                 <AutoBidPanel
                   auction={auction}
                   subject={subject}
