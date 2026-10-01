@@ -80,6 +80,7 @@ const EMPTY_EQUIPMENT = {
   effectiveStats: BASE_STATS,
   deltas: [],
   activeEffects: [],
+  locked: false,
 }
 
 const EQUIPPED = {
@@ -544,5 +545,195 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Catalog no disponible.')
+  })
+})
+
+/**
+ * HU-29.6 (sobre Player-Inventory #26, ya en `develop`): consumir `locked` y
+ * el 409 `reason: 'battle_lock'` del contrato de equipamiento, SIN que Web
+ * decida nada por su cuenta -- ni calcula si hay batalla, ni mira la URL, ni
+ * guarda el estado en `localStorage`. Lo unico que cambia aqui es como se
+ * PRESENTA lo que Player/Inventory ya decidio.
+ */
+describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockReset()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const BATTLE_LOCK_BODY = {
+    reason: 'battle_lock',
+    message:
+      'No se puede modificar el equipamiento porque el heroe participa en una batalla activa.',
+  }
+
+  // W-01
+  it('con locked:false, los controles de equipar funcionan con normalidad', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EMPTY_EQUIPMENT, locked: false })))
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+
+    expect(await screen.findByRole('button', { name: 'Equipar' })).toBeEnabled()
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  // W-02
+  it('con locked:true, avisa de forma visible y deshabilita Equipar', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EMPTY_EQUIPMENT, locked: true })))
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    const notice = await screen.findByRole('status')
+    expect(notice).toHaveTextContent('El equipamiento no se puede modificar')
+    expect(notice).toHaveTextContent('batalla activa')
+    // La ranura esta deshabilitada: `data-testid` esta en el propio boton.
+    expect(await screen.findByTestId('slot-WEAPON_1')).toBeDisabled()
+  })
+
+  // W-03, W-07
+  it('con equipo existente y locked:true, ninguna pieza desaparece de pantalla', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EQUIPPED, locked: true })))
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(
+      await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
+    ).toBeInTheDocument()
+    expect(await screen.findByRole('status')).toBeInTheDocument()
+  })
+
+  // W-04
+  it('si locked:false al leer pero el PUT responde 409 battle_lock, muestra el motivo y no simula el cambio', async () => {
+    const user = userEvent.setup()
+    let getCount = 0
+    fetchMock.mockImplementation(
+      routedFetch((_url, init) => {
+        if (init?.method === 'PUT') {
+          return json(BATTLE_LOCK_BODY, 409)
+        }
+        getCount += 1
+        // Tras el 409 se vuelve a pedir el estado real: la batalla SIGUE activa.
+        return json({ ...EMPTY_EQUIPMENT, locked: getCount > 1 })
+      }),
+    )
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+    await user.click(await screen.findByRole('button', { name: 'Equipar' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('batalla activa')
+    // No se pinta ningun arma equipada: el PUT fallo, nada se escribio en cache.
+    expect(within(screen.getByTestId('slot-WEAPON_1')).queryByText('Espada de Fuego')).toBeNull()
+    // El rechazo invalida la consulta: se repite el GET con el estado real.
+    await waitFor(() => {
+      expect(getCount).toBeGreaterThan(1)
+    })
+    expect(await screen.findByRole('status')).toBeInTheDocument()
+  })
+
+  // W-06: la MISMA invalidacion de W-04, pero la batalla termino justo antes de
+  // que el GET repetido llegara -- el flujo normal vuelve solo, sin un segundo
+  // mecanismo de sondeo propio de HU-29, y sin que el jugador repita nada.
+  it('si para cuando se repite el GET la batalla ya termino, Equipar se vuelve a habilitar solo', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch((_url, init) => {
+        if (init?.method === 'PUT') {
+          return json(BATTLE_LOCK_BODY, 409)
+        }
+        // La lectura inicial decia locked:false (por eso se pudo intentar);
+        // el GET repetido tras el rechazo confirma que ya no hay bloqueo.
+        return json({ ...EMPTY_EQUIPMENT, locked: false })
+      }),
+    )
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+    await user.click(await screen.findByRole('button', { name: 'Equipar' }))
+
+    await screen.findByRole('alert')
+    expect(screen.queryByRole('status')).toBeNull()
+    // Sin re-seleccionar nada: el GET invalidado ya trae locked:false, y
+    // `canEquip` se recalcula con el estado fresco.
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Equipar' })).toBeEnabled()
+    })
+  })
+
+  // W-05 (regresion): un 409 que NO es battle_lock conserva su tratamiento anterior
+  it('un 409 de otra regla de HU-28 no se etiqueta como battle_lock', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch((_url, init) => {
+        if (init?.method === 'PUT') {
+          return json({ message: 'La ranura WEAPON_1 ya esta ocupada.' }, 409)
+        }
+        return json({ ...EMPTY_EQUIPMENT, locked: false })
+      }),
+    )
+
+    renderWithProviders(<Harness productReference="espada-de-fuego" productType="ARMA" />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+    await user.click(await screen.findByRole('button', { name: 'Equipar' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('ya esta ocupada')
+    expect(alert).not.toHaveTextContent('batalla activa')
+  })
+
+  // W-08, W-09: la ranura de armadura y de item tambien quedan cubiertas por
+  // el mismo `disabled` uniforme que ya probo W-02 para WEAPON_1 -- no hay un
+  // guard distinto por categoria en la UI (la autoridad de categoria vive en
+  // Player/Inventory). Se confirma explicitamente para armadura e item.
+  it('con locked:true, las ranuras de armadura y de item tambien quedan deshabilitadas', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EMPTY_EQUIPMENT, locked: true })))
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByTestId('slot-HELMET')).toBeDisabled()
+    expect(screen.getByTestId('slot-ITEM_1')).toBeDisabled()
   })
 })

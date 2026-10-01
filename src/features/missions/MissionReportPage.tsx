@@ -14,12 +14,20 @@ import { difficultyName } from './difficultyPresentation'
 import {
   categoryLabel,
   durationLabel,
+  isHu09ExperienceLine,
   masterStatusLabel,
   rewardKindLabel,
   rewardStatusLabel,
   skipReasonLabel,
 } from './missionPresentation'
 import type { MissionReport as ExperienceReport } from './api'
+import {
+  completionCreditsAmountText,
+  completionCurrentXpText,
+  completionLevelText,
+  completionLevelsGainedText,
+  completionXpAmountText,
+} from './completionRewardPresentation'
 import { MissionExperiencePanel } from './MissionExperiencePanel'
 import { experienceLinesOf, readExperience } from './missionReport'
 import { fetchMissionReport, type MissionReport } from './missionReportApi'
@@ -101,7 +109,9 @@ const ReportContent = ({
   const abilityNames = new Map(
     (report.strategy?.abilities ?? []).map((ability) => [ability.abilityId, ability.name]),
   )
-  const deliveries = report.rewards.filter((reward) => reward.kind !== 'EXPERIENCE')
+  // HU-09 tiene su propio panel (arriba); el resto -- incluida la XP de
+  // finalización de HU-10, que TAMBIÉN es `kind: 'EXPERIENCE'` -- se lista aquí.
+  const deliveries = report.rewards.filter((reward) => !isHu09ExperienceLine(reward))
 
   return (
     <>
@@ -236,18 +246,46 @@ const ReportContent = ({
         </Card>
 
         <Card title={t('missions:report.rewardsTitle')}>
-          {/* La experiencia tiene su propio panel: aquí van las épicas y los objetos. */}
+          {/* La experiencia POR DERROTA (HU-09) tiene su propio panel; aquí van
+              las épicas, los objetos, los créditos y la XP DE FINALIZACIÓN (HU-10). */}
           {deliveries.length === 0 ? (
             <p className="text-sm text-muted">{t('missions:report.noDeliveries')}</p>
           ) : (
             <ul className="flex flex-col gap-2 text-sm text-ink">
               {deliveries.map((reward, index) => (
                 <li key={`${reward.kind}-${reward.reference ?? reward.name}-${String(index)}`}>
-                  {rewardKindLabel(reward.kind)}: {reward.name}
-                  {reward.kind === 'PRODUCT' && reward.quantity > 1
-                    ? ` (${String(reward.quantity)})`
-                    : ''}{' '}
-                  · {rewardStatusLabel[reward.status]}
+                  {reward.kind === 'EXPERIENCE' ? (
+                    <>
+                      <p>
+                        {reward.name}: {completionXpAmountText(reward)} ·{' '}
+                        {rewardStatusLabel[reward.status]}
+                      </p>
+                      {/* Contrato §17: solo CREDITED trae progresión, y es EXACTAMENTE
+                          la que devolvió Player/Inventory -- nada se calcula aquí. */}
+                      {reward.status === 'CREDITED' && reward.progression !== undefined && (
+                        <ul className="mt-1 list-inside list-disc pl-2 text-xs text-muted">
+                          <li>{completionLevelText(reward.progression)}</li>
+                          <li>{completionCurrentXpText(reward.progression)}</li>
+                          {completionLevelsGainedText(reward.progression) !== null && (
+                            <li>{completionLevelsGainedText(reward.progression)}</li>
+                          )}
+                        </ul>
+                      )}
+                    </>
+                  ) : reward.kind === 'CREDITS' ? (
+                    <p>
+                      {reward.name}: {completionCreditsAmountText(reward)} ·{' '}
+                      {rewardStatusLabel[reward.status]}
+                    </p>
+                  ) : (
+                    <p>
+                      {rewardKindLabel(reward.kind)}: {reward.name}
+                      {reward.kind === 'PRODUCT' && reward.quantity > 1
+                        ? ` (${String(reward.quantity)})`
+                        : ''}{' '}
+                      · {rewardStatusLabel[reward.status]}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>

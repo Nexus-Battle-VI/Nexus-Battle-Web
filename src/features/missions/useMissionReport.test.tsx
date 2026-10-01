@@ -6,8 +6,8 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { queryKeys } from '@/shared/query-keys'
 import { createTestQueryClient } from '@/test/render'
 
-import type { MissionReportExperience } from './api'
-import { ENROLLMENT_ID, reportOf } from './fixtures'
+import type { MissionReportExperience, MissionReportRewardLine } from './api'
+import { ENROLLMENT_ID, lineOf, reportOf } from './fixtures'
 import { useMissionReport } from './useMissionReport'
 
 /**
@@ -158,5 +158,157 @@ describe('useMissionReport — el sondeo se detiene cuando ya nada cambia (HU-09
       await vi.advanceTimersByTimeAsync(5_000)
     })
     expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+})
+
+/**
+ * HU-10.6 (contrato §13 de HU-10.5): el sondeo se EXTIENDE, no se reemplaza.
+ * `HU09 pending OR HU10 pending -> sondea; sin ninguna de las dos -> se detiene`.
+ */
+describe('useMissionReport — el sondeo tambien cubre HU-10 (HU-10.5, contrato §13)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const render = (
+    experience: MissionReportExperience | undefined,
+    rewards: readonly MissionReportRewardLine[] = [],
+  ): ReturnType<typeof vi.fn> => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse(reportOf({ ...(experience === undefined ? {} : { experience }), rewards })),
+      )
+    vi.stubGlobal('fetch', fetchImpl)
+
+    renderHook(() => useMissionReport(ENROLLMENT_ID), { wrapper: wrapper(createTestQueryClient()) })
+
+    return fetchImpl
+  }
+
+  const hu10 = (status: 'PENDING' | 'CREDITED' | 'FAILED'): MissionReportRewardLine =>
+    lineOf({ kind: 'CREDITS', source: 'HU-10', status, quantity: 50 })
+
+  it('1. HU-09 PENDING, sin HU-10: sigue sondeando', async () => {
+    const fetchImpl = render(PENDING)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_500)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  })
+
+  it('2. HU-10 PENDING, HU-09 asentada: sigue sondeando', async () => {
+    const fetchImpl = render(SETTLED, [hu10('PENDING')])
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_500)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  })
+
+  it('3. HU-09 Y HU-10 pendientes: sigue sondeando', async () => {
+    const fetchImpl = render(PENDING, [hu10('PENDING')])
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_500)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  })
+
+  it('4. HU-09 asentada + HU-10 CREDITED: se detiene', async () => {
+    const fetchImpl = render(SETTLED, [hu10('CREDITED')])
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('5. HU-09 asentada + HU-10 FAILED: se detiene', async () => {
+    const fetchImpl = render(SETTLED, [hu10('FAILED')])
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('6. sin bloque HU-09 + HU-10 PENDING: sigue sondeando', async () => {
+    const fetchImpl = render(undefined, [hu10('PENDING')])
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_500)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+  })
+
+  it('7. sin bloque HU-09 y sin lineas HU-10: se detiene', async () => {
+    const fetchImpl = render(undefined, [])
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('8. solo un botin HU-72 PENDING: no activa el sondeo de HU-10', async () => {
+    const fetchImpl = render(undefined, [
+      lineOf({ kind: 'PRODUCT', source: 'HU-72', status: 'PENDING', quantity: 1 }),
+    ])
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+  })
+
+  it('9. PENDING y luego CREDITED: pide una vez mas y despues se detiene', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(reportOf({ rewards: [hu10('PENDING')] })))
+      .mockResolvedValue(jsonResponse(reportOf({ rewards: [hu10('CREDITED')] })))
+    vi.stubGlobal('fetch', fetchImpl)
+
+    renderHook(() => useMissionReport(ENROLLMENT_ID), { wrapper: wrapper(createTestQueryClient()) })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_500)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000)
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(2)
   })
 })

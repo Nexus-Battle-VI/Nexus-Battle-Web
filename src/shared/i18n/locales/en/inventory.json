@@ -64,7 +64,10 @@
     "equip": "Equip",
     "equipping": "Equipping…",
     "equipFailed": "The item could not be equipped. Try again.",
-    "pickSlotHint": "Choose a slot to see which items fit."
+    "pickSlotHint": "Choose a slot to see which items fit.",
+    "battleLock": {
+      "message": "Equipment can't be changed: the hero is in an active battle. You'll be able to change it again once it ends."
+    }
   },
   "slots": {
     "WEAPON_1": "Weapon 1",

@@ -53,6 +53,7 @@ const configuracion = (patch: Partial<HeroEquipment> = {}): HeroEquipment => ({
   effectiveStats: { power: 1, health: 44, defense: 11, attack: 10, damage: null, healing: null },
   deltas: [],
   activeEffects: [],
+  locked: false,
   ...patch,
 })
 

@@ -92,6 +92,7 @@ const configuracionDe = (hero: AvailableHero): HeroEquipment => ({
   effectiveStats: hero.baseStats,
   deltas: [],
   activeEffects: [],
+  locked: false,
 })
 
 const seleccionDe = (hero: AvailableHero): HeroSelection => ({

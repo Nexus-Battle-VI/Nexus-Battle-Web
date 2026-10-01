@@ -161,6 +161,9 @@ describe('Un heroe ya adquirido no se puede volver a comprar', () => {
     const button = screen.getByRole('button', { name: 'Anadir Guerrero Tanque al carrito' })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Ya lo tienes')
+    // 9a pasada: deshabilitado usa la MISMA familia estable (`mk-btn-primary`),
+    // nunca un sprite/clase distinta por razon de deshabilitado.
+    expect(button).toHaveClass('mk-btn-primary')
   })
 
   /**
@@ -216,6 +219,7 @@ describe('Agotado y suspendido son informativos: se muestran deshabilitados, no 
     })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Agotado')
+    expect(button).toHaveClass('mk-btn-primary')
   })
 
   it('muestra "Suspendido" deshabilitado cuando lifecycleStatus no es ACTIVE', () => {
@@ -227,6 +231,7 @@ describe('Agotado y suspendido son informativos: se muestran deshabilitados, no 
     const button = within(card).getByRole('button', { name: 'Anadir Arma suspendida al carrito' })
     expect(button).toBeDisabled()
     expect(button).toHaveTextContent('Suspendido')
+    expect(button).toHaveClass('mk-btn-primary')
   })
 
   it('un producto comercializable, disponible y activo se muestra habilitado', () => {
@@ -250,5 +255,32 @@ describe('La vitrina funciona sin lista de deseos', () => {
     expect(screen.queryByTestId('badge-propio-espada-de-hierro')).not.toBeInTheDocument()
     // Y lo que si existia sigue funcionando.
     expect(screen.getByRole('button', { name: 'Anadir Espada de hierro al carrito' })).toBeEnabled()
+  })
+})
+
+/*
+ * 8a pasada: "Ver detalle" dejo el sprite `mk-btn-secondary` por la familia
+ * CSS pura `ec-btn-compact` (misma construccion real que "Refrescar" en
+ * Battle Rooms: superficie de color + borde fino, sin `border-image`). Este
+ * test fija la clase nueva y la ausencia de la vieja para no perder el
+ * cambio en un refactor futuro.
+ */
+describe('"Ver detalle" usa la familia de boton nueva, no el sprite retirado', () => {
+  it('usa ec-btn-compact y no mk-btn-secondary', () => {
+    renderGrid()
+
+    const card = within(screen.getByTestId('product-espada-de-hierro'))
+    const detailButton = card.getByRole('button', { name: 'Ver detalle' })
+    expect(detailButton).toHaveClass('ec-btn-compact')
+    expect(detailButton).not.toHaveClass('mk-btn-secondary')
+  })
+
+  it('conserva el icono de ojo y el texto real "Ver detalle"', () => {
+    renderGrid()
+
+    const card = within(screen.getByTestId('product-espada-de-hierro'))
+    const detailButton = card.getByRole('button', { name: 'Ver detalle' })
+    expect(detailButton).toHaveTextContent('Ver detalle')
+    expect(detailButton.querySelector('img, svg')).not.toBeNull()
   })
 })

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
 import { reportOf, lineOf } from './fixtures'
-import { difficultyLabel, experienceLinesOf, outcomeLabel, readExperience } from './missionReport'
+import {
+  difficultyLabel,
+  experienceLinesOf,
+  hasPendingCompletionReward,
+  missionReportNeedsPolling,
+  outcomeLabel,
+  readExperience,
+} from './missionReport'
 import type { MissionReportExperience } from './api'
 
 /**
@@ -108,6 +115,140 @@ describe('experienceLinesOf — solo las lineas de experiencia (HU-09.5)', () =>
 
   it('un informe sin lineas de experiencia devuelve una lista vacia, no un error', () => {
     expect(experienceLinesOf(reportOf())).toEqual([])
+  })
+})
+
+describe('hasPendingCompletionReward — solo cuenta lineas HU-10 PENDING (HU-10.5)', () => {
+  it('hay una entrega HU-10 PENDING', () => {
+    const report = reportOf({
+      rewards: [lineOf({ kind: 'CREDITS', source: 'HU-10', status: 'PENDING', quantity: 50 })],
+    })
+
+    expect(hasPendingCompletionReward(report)).toBe(true)
+  })
+
+  it('una linea HU-10 CREDITED o FAILED no cuenta: son terminales', () => {
+    const report = reportOf({
+      rewards: [
+        lineOf({ kind: 'CREDITS', source: 'HU-10', status: 'CREDITED', quantity: 50 }),
+        lineOf({ kind: 'EXPERIENCE', source: 'HU-10', status: 'FAILED', quantity: 120 }),
+      ],
+    })
+
+    expect(hasPendingCompletionReward(report)).toBe(false)
+  })
+
+  it('una linea PENDING de OTRO origen (HU-72/HU-73) no cuenta', () => {
+    const report = reportOf({
+      rewards: [lineOf({ kind: 'PRODUCT', source: 'HU-72', status: 'PENDING', quantity: 1 })],
+    })
+
+    expect(hasPendingCompletionReward(report)).toBe(false)
+  })
+
+  it('sin lineas HU-10, no hay nada pendiente', () => {
+    expect(hasPendingCompletionReward(reportOf())).toBe(false)
+  })
+})
+
+describe('missionReportNeedsPolling — HU09 pending OR HU10 pending (HU-10.5, contrato §13)', () => {
+  it('HU-09 pendiente, sin HU-10: sigue sondeando', () => {
+    const report = reportOf({
+      experience: {
+        defeats: 1,
+        totalXp: 0,
+        credited: 0,
+        pending: 1,
+        failed: 0,
+        level: null,
+        currentXp: null,
+        maxLevel: null,
+        levelsGained: 0,
+        leveledUp: false,
+      },
+    })
+
+    expect(missionReportNeedsPolling(report)).toBe(true)
+  })
+
+  it('HU-10 pendiente, sin bloque HU-09: sigue sondeando', () => {
+    const report = reportOf({
+      rewards: [lineOf({ kind: 'CREDITS', source: 'HU-10', status: 'PENDING', quantity: 50 })],
+    })
+
+    expect(missionReportNeedsPolling(report)).toBe(true)
+  })
+
+  it('las dos pendientes: sigue sondeando', () => {
+    const report = reportOf({
+      experience: {
+        defeats: 1,
+        totalXp: 0,
+        credited: 0,
+        pending: 1,
+        failed: 0,
+        level: null,
+        currentXp: null,
+        maxLevel: null,
+        levelsGained: 0,
+        leveledUp: false,
+      },
+      rewards: [lineOf({ kind: 'CREDITS', source: 'HU-10', status: 'PENDING', quantity: 50 })],
+    })
+
+    expect(missionReportNeedsPolling(report)).toBe(true)
+  })
+
+  it('HU-09 asentada y HU-10 CREDITED: se detiene', () => {
+    const report = reportOf({
+      experience: {
+        defeats: 1,
+        totalXp: 10,
+        credited: 1,
+        pending: 0,
+        failed: 0,
+        level: 1,
+        currentXp: 10,
+        maxLevel: 8,
+        levelsGained: 0,
+        leveledUp: false,
+      },
+      rewards: [lineOf({ kind: 'CREDITS', source: 'HU-10', status: 'CREDITED', quantity: 50 })],
+    })
+
+    expect(missionReportNeedsPolling(report)).toBe(false)
+  })
+
+  it('HU-09 asentada y HU-10 FAILED: se detiene (FAILED es terminal)', () => {
+    const report = reportOf({
+      experience: {
+        defeats: 1,
+        totalXp: 10,
+        credited: 1,
+        pending: 0,
+        failed: 0,
+        level: 1,
+        currentXp: 10,
+        maxLevel: 8,
+        levelsGained: 0,
+        leveledUp: false,
+      },
+      rewards: [lineOf({ kind: 'EXPERIENCE', source: 'HU-10', status: 'FAILED', quantity: 120 })],
+    })
+
+    expect(missionReportNeedsPolling(report)).toBe(false)
+  })
+
+  it('sin bloque HU-09 y sin lineas HU-10: se detiene', () => {
+    expect(missionReportNeedsPolling(reportOf())).toBe(false)
+  })
+
+  it('sin bloque HU-09, solo HU-72 PENDING: no activa el sondeo', () => {
+    const report = reportOf({
+      rewards: [lineOf({ kind: 'PRODUCT', source: 'HU-72', status: 'PENDING', quantity: 1 })],
+    })
+
+    expect(missionReportNeedsPolling(report)).toBe(false)
   })
 })
 

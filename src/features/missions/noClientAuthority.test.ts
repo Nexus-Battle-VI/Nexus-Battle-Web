@@ -116,3 +116,78 @@ describe('la experiencia no se calcula en Web (HU-09.5)', () => {
     expect(api?.code).toMatch(/\/v1\/missions\/me\/reports\//u)
   })
 })
+
+/**
+ * HU-10.6 (sobre la salida de HU-10.5): la liquidacion de finalizacion (XP, creditos, producto)
+ * la decide y la acredita Missions -- que a su vez llama a Player/Inventory y a
+ * Wallet por sus rutas INTERNAS. Web solo PINTA lo que el reporte publica.
+ */
+describe('la liquidacion de finalizacion no se calcula ni se acredita en Web (HU-10.5)', () => {
+  it.each([
+    ['la ruta interna entre servicios', /\/api\/internal\//u],
+    ['el credito de mision de Wallet', /wallet\/credits\/mission-reward/u],
+    [
+      'la acreditacion de experiencia de Player\\/Inventory',
+      /heroes\/.*\/experience|players\/.*\/experience/u,
+    ],
+    ['la entrega de productos de Player\\/Inventory', /inventory\/grants/u],
+    ['la construccion de un operationId', /\boperationId\b/u],
+    ['el espacio de nombres UUID de una entrega', /NAMESPACE|uuidV5/u],
+  ])('no hay %s', (_name, pattern) => {
+    for (const { file, code } of productionSources()) {
+      expect({ file, found: pattern.test(code) }).toEqual({ file, found: false })
+    }
+  })
+
+  it('no se suma la XP de HU-09 con la de HU-10: cada una es su propia recompensa', () => {
+    // Si alguien sumara los dos totales apareceria una variable o expresion con
+    // los dos nombres juntos; aqui solo se comprueba que ninguna combina
+    // `totalXp` (HU-09) con una cantidad de una linea HU-10 en una misma cuenta.
+    const page = productionSources().find((source) => source.file === 'MissionReportPage.tsx')
+
+    expect(page?.code).not.toMatch(/totalMissionXp|totalXp\s*\+|\+\s*totalXp/u)
+  })
+
+  it('la progresion de HU-10 solo se LEE: ningun archivo NUEVO construye un objeto con sus 4 campos', () => {
+    // `api.ts` declara la forma del contrato (`MissionRewardProgression`);
+    // `missionReportApi.ts` la REFERENCIA por tipo (no la redeclara), igual que
+    // esta misma suite exige para `defeats|totalXp|levelsGained` mas arriba.
+    // `missionReport.ts` ya declaraba esos mismos cuatro nombres de campo para
+    // el agregado de HU-09 (`MissionExperience`), asi que tambien aparece aqui
+    // por coincidencia de nombres, no por HU-10. Ningun OTRO archivo deberia
+    // ensamblar un objeto literal con los cuatro juntos: seria un calculo
+    // propio en vez de una lectura.
+    const declarers = productionSources()
+      .filter(
+        ({ code }) =>
+          /\blevel\s*:/u.test(code) &&
+          /\bcurrentXp\s*:/u.test(code) &&
+          /\bmaxLevel\s*:/u.test(code) &&
+          /\blevelsGained\s*:/u.test(code),
+      )
+      .map(({ file }) => file)
+      .sort()
+
+    expect(declarers).toEqual(['api.ts', 'missionReport.ts'])
+  })
+
+  it('la entrega de finalizacion se distingue por `source`, no solo por `kind`', () => {
+    const page = productionSources().find((source) => source.file === 'MissionReportPage.tsx')
+
+    // El filtro que separa el panel de HU-09 del resto de la lista debe mirar
+    // tambien el origen: `kind !== 'EXPERIENCE'` por si solo ocultaria tambien
+    // la XP de finalizacion de HU-10.
+    expect(page?.code).not.toMatch(/reward\.kind\s*!==\s*'EXPERIENCE'/u)
+    expect(page?.code).toMatch(/isHu09ExperienceLine/u)
+  })
+
+  it('el sondeo de HU-10 tiene una unica fuente de decision, no duplicada en el hook y la pagina', () => {
+    const hook = productionSources().find((source) => source.file === 'useMissionReport.ts')
+    const report = productionSources().find((source) => source.file === 'missionReport.ts')
+
+    expect(report?.code).toMatch(/missionReportNeedsPolling/u)
+    expect(hook?.code).toMatch(/missionReportNeedsPolling/u)
+    // El hook no vuelve a mirar el estado de las lineas por su cuenta.
+    expect(hook?.code).not.toMatch(/status\s*===\s*'PENDING'/u)
+  })
+})

@@ -143,7 +143,6 @@ export const SkillList = ({
                 skill: entry,
               })}
               busy={using?.abilityId === entry.abilityId}
-              pending={pending}
               noteId={noteId}
               onUse={() => {
                 if (needsPicker) {
@@ -216,8 +215,6 @@ interface SkillRowProps {
   readonly availability: { readonly enabled: boolean; readonly hint: string | null }
   /** Esta es la habilidad enviada que espera resultado. */
   readonly busy: boolean
-  /** Hay una intencion (de ataque o de habilidad) enviada sin resultado. */
-  readonly pending: boolean
   readonly noteId: string
   /**
    * Pasada final (secciones 23-28, 32-33 del brief): para una habilidad de
@@ -233,7 +230,6 @@ const SkillRow = ({
   skill,
   availability,
   busy,
-  pending,
   noteId,
   onUse,
 }: SkillRowProps): React.JSX.Element => {
@@ -271,26 +267,29 @@ const SkillRow = ({
         <span className="w-full min-w-0 truncate">{skill.name}</span>
         <span className="br-action-slot-cost">{describePowerCost(skill.powerCost)}</span>
       </Button>
-      {/* Texto completo del estado: sr-only cuando la habilidad SI esta lista
-          (info util pero no urgente), visible y pequeño cuando no lo esta
-          (misma info que antes, solo deja de ocupar espacio siempre). */}
-      <p
-        id={stateId}
-        className={clsx('text-center text-[10px]', skill.status === 'READY' && 'sr-only')}
-        style={{ color: 'var(--br-muted)' }}
-      >
+      {/* Hotfix post-despliegue: este parrafo ("Disponible en 1 turno · 1
+          turno de recarga"...) era la CAUSA RAIZ del layout shift de la
+          Action Bar reportado jugando en real. Antes solo se ocultaba
+          (`sr-only`) cuando la habilidad SI estaba lista -- para
+          RECHARGING/UNSUPPORTED quedaba VISIBLE, dentro del MISMO `<li>`
+          que es un flex-item de `.br-action-bar` (`align-items: stretch`):
+          una habilidad con este texto visible se volvia mas alta, y por
+          `stretch` TODAS las demas cards (Ataque basico incluido) se
+          estiraban para igualarla. Ahora es SIEMPRE sr-only: el estado
+          funcional (disabled real, `aria-disabled`/cooldown/Poder) no
+          cambia en absoluto -- solo deja de pintarse como texto visible.
+          Sigue anunciandose a lectores de pantalla via `aria-describedby`. */}
+      <p id={stateId} className="sr-only">
         {describeSkillStatus(skill)} · {describeRecharge(skill.chargeTurns)}
       </p>
 
-      {/* 9a pasada (secciones 33-36 del brief): mientras `pending` es cierto
-          este hint es SIEMPRE "Esperando el resultado de tu accion..."
-          (`attack.hints.pending`, mismo texto que `AttackPanel`) -- se
-          repetia debajo de CADA habilidad a la vez. El boton sigue
-          bloqueado de verdad (`aria-disabled` arriba, sin tocar); solo el
-          texto se oculta visualmente, y sigue accesible via
-          `aria-describedby`. */}
+      {/* Mismo hotfix: este hint (cooldown/Poder/conexion/"Elige un
+          objetivo"...) tambien vivia VISIBLE dentro del flex-item cuando
+          `pending` era falso -- segunda fuente del mismo layout shift (a
+          veces duplicando el texto de arriba). Siempre sr-only ahora; el
+          bloqueo real (`aria-disabled`) sigue intacto. */}
       {availability.hint !== null && (
-        <p id={hintId} className={pending ? 'sr-only' : 'text-xs text-muted'}>
+        <p id={hintId} className="sr-only">
           {availability.hint}
         </p>
       )}

@@ -9,6 +9,7 @@ import { HERO_IDS, type HeroId } from '@/shared/visual-library/heroes'
 import { describeSelectionFailure } from '../heroSelectionApi'
 import { useAvailableHeroes, useHeroSelection, useSelectHero } from '../useHeroSelection'
 import type { EquipmentSlotId } from './api'
+import { battleLockMessage, isBattleLockError } from './battleLockPresentation'
 import { EquipmentManagerPanel } from './EquipmentManagerPanel'
 import { HeroManagerPanel } from './HeroManagerPanel'
 import { heroIdFromReference } from './heroSubtype'
@@ -95,17 +96,23 @@ export const HeroConfigurator = ({
   }
 
   const slotMeta = selectedSlot === null ? null : (SLOT_META_BY_ID.get(selectedSlot) ?? null)
+  // HU-29: `locked` manda sobre la compatibilidad de ranura/producto. El
+  // backend sigue siendo quien rechaza de verdad (ver `useEquipItem`); esto
+  // solo evita ofrecer un boton que ya se sabe que va a fallar.
   const canEquip =
     heroRef !== null &&
     slotMeta !== null &&
     selectedProductReference !== null &&
     selectedProductType === slotMeta.productType &&
+    equipment?.locked !== true &&
     !equipMutation.isPending
 
   const equipError = equipMutation.error
   const equipErrorMessage =
     equipError instanceof HttpError
-      ? describeFailure(equipError, t, language)
+      ? isBattleLockError(equipError)
+        ? battleLockMessage()
+        : describeFailure(equipError, t, language)
       : equipError != null
         ? t('inventory:equipment.equipFailed')
         : null
@@ -153,6 +160,7 @@ export const HeroConfigurator = ({
         canEquip={canEquip}
         equipping={equipMutation.isPending}
         equipError={equipErrorMessage}
+        locked={equipment?.locked ?? false}
         onEquip={() => {
           if (canEquip) {
             equipMutation.mutate({
