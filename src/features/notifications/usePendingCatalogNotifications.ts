@@ -69,6 +69,21 @@ export const usePendingCatalogNotifications = () => {
     if (sentBatchRef.current === batchKey) return
     sentBatchRef.current = batchKey
 
+    // HU-30: un drop de Versus ya se liquido del lado del servidor para que
+    // esta notificacion exista. "Mi Inventario"/equipamiento pueden seguir
+    // mostrando la lectura de antes de la batalla mientras la cache no supere
+    // `staleTime` (30s): se invalida para que la proxima vista sea
+    // autoritativa en vez de esperar a que expire sola. Nunca se asume el
+    // ownership aqui -ninguna mutacion optimista-, solo se fuerza una relectura.
+    if (
+      items.some(
+        (item) =>
+          item.changeType === 'BATTLE_DROP_GAINED' || item.changeType === 'BATTLE_DROP_LOST',
+      )
+    ) {
+      void queryClient.invalidateQueries({ queryKey: ['inventory', 'me'] })
+    }
+
     markRead.mutate(flatIds)
     // Deliberado: solo depende de `items`. Incluir `markRead` (una mutation
     // nueva en cada render) reintroduciria el efecto en cada revalidacion.

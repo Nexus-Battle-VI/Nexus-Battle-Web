@@ -34,6 +34,8 @@ const LABELS: Readonly<Record<string, string>> = localizedMessages({
   AUCTION_SETTLED_WINNER: 'notifications:changeTypes.AUCTION_SETTLED_WINNER',
   AUCTION_SETTLED_LOSER: 'notifications:changeTypes.AUCTION_SETTLED_LOSER',
   AUCTION_SETTLED_WITHOUT_BIDS: 'notifications:changeTypes.AUCTION_SETTLED_WITHOUT_BIDS',
+  BATTLE_DROP_GAINED: 'notifications:changeTypes.BATTLE_DROP_GAINED',
+  BATTLE_DROP_LOST: 'notifications:changeTypes.BATTLE_DROP_LOST',
 })
 
 const TONE: Readonly<Record<string, string>> = {
@@ -51,6 +53,8 @@ const TONE: Readonly<Record<string, string>> = {
   AUCTION_SETTLED_WINNER: 'bg-success/15 text-success',
   AUCTION_SETTLED_LOSER: 'bg-border text-muted',
   AUCTION_SETTLED_WITHOUT_BIDS: 'bg-border text-muted',
+  BATTLE_DROP_GAINED: 'bg-success/15 text-success',
+  BATTLE_DROP_LOST: 'bg-border text-muted',
 }
 
 export interface CatalogNotificationBadgeProps {

@@ -17,6 +17,8 @@ export type CatalogNotificationChangeType =
   | 'AUCTION_SETTLED_WINNER'
   | 'AUCTION_SETTLED_LOSER'
   | 'AUCTION_SETTLED_WITHOUT_BIDS'
+  | 'BATTLE_DROP_GAINED'
+  | 'BATTLE_DROP_LOST'
 
 /**
  * Ya consolidada por el backend: `notificationIds` puede representar varias
