@@ -62,6 +62,21 @@ export const fetchMissionDifficulties = (
  * único que cambia con el tiempo es el estado de cada recompensa.
  */
 
+/**
+ * La progresión del héroe tras UNA línea de experiencia de finalización (HU-10,
+ * Task HU-10.5). Son EXACTAMENTE los campos que Missions reenvía de
+ * Player/Inventory: Web no calcula ninguno.
+ *
+ * Solo aparece en una línea `source: 'HU-10'`, `kind: 'EXPERIENCE'`,
+ * `status: 'CREDITED'`; en cualquier otro caso no viene, y no se inventa.
+ */
+export interface MissionRewardProgression {
+  readonly level: number
+  readonly currentXp: number
+  readonly maxLevel: number
+  readonly levelsGained: number
+}
+
 /** Una línea de recompensa. Solo se LEE: su estado lo decide Missions. */
 export interface MissionReportRewardLine {
   readonly kind: string
@@ -71,6 +86,8 @@ export interface MissionReportRewardLine {
   readonly quantity: number
   readonly status: string
   readonly source: string
+  /** HU-10.6, sobre la liquidación de HU-10.5: ver `MissionRewardProgression`. Ausente salvo esa línea exacta. */
+  readonly progression?: MissionRewardProgression
 }
 
 /**

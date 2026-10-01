@@ -76,6 +76,20 @@ const REWARD_KINDS: Readonly<Record<string, string>> = localizedMessages({
 
 export const rewardKindLabel = (kind: string): string => REWARD_KINDS[kind] ?? kind
 
+/**
+ * Si una línea de recompensa es la experiencia por derrota de HU-09 (Task
+ * HU-09.5) -- la única que tiene su propio panel (`MissionExperiencePanel`) y
+ * por eso se excluye de la lista genérica de recompensas.
+ *
+ * NO es un filtro por `kind` solo: una línea `source: 'HU-10', kind:
+ * 'EXPERIENCE'` (la XP de finalización, HU-10.5) es una recompensa distinta y
+ * debe seguir visible ahí.
+ */
+export const isHu09ExperienceLine = (reward: {
+  readonly source: string
+  readonly kind: string
+}): boolean => reward.source === 'HU-09' && reward.kind === 'EXPERIENCE'
+
 const SKIP_REASONS: Readonly<Record<string, string>> = localizedMessages({
   UNSUPPORTED_EFFECT: 'missions:skipReason.UNSUPPORTED_EFFECT',
   ON_COOLDOWN: 'missions:skipReason.ON_COOLDOWN',

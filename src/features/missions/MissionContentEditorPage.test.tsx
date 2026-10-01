@@ -441,6 +441,76 @@ describe('editor de misiones del administrador', () => {
     expect(screen.getByLabelText(/^Nombre/u)).toHaveValue('Templo desde JSON')
   })
 
+  /**
+   * HU-10.4 añadió `rewards.completion`, un bloque que el editor todavía no
+   * conoce ni presenta. HU-10.6 no construye esa UI (P-HU10-2/3/4 siguen
+   * abiertas): solo hay que probar que ni el guardado normal ni la pestaña JSON
+   * lo pierden, porque es un campo que `prepareForSave` SI reconstruye en parte
+   * (`rewards.potential`).
+   */
+  it('guardar otro cambio conserva rewards.completion que el editor no conoce (HU-10.4)', async () => {
+    const completion = {
+      schemaVersion: 1,
+      entries: [
+        {
+          key: 'credits-base',
+          group: 'GUARANTEED',
+          grantOn: ['COMPLETED'],
+          reward: { kind: 'CREDITS', amountByDifficulty: { NORMAL: 5 } },
+        },
+      ],
+    }
+    const missionWithCompletion: MissionContent = {
+      ...missionContentFixture(),
+      rewards: { ...missionContentFixture().rewards, completion },
+    }
+    const user = userEvent.setup()
+    const calls = stubApi(undefined, [missionWithCompletion])
+    renderWithProviders(<MissionContentEditorPage />)
+    await openTemple(user)
+
+    await user.clear(screen.getByLabelText(/^Nombre/u))
+    await user.type(screen.getByLabelText(/^Nombre/u), 'El templo olvidado (editado)')
+    await save(user)
+
+    expect(savedBody(calls).rewards.completion).toEqual(completion)
+  })
+
+  it('la pestaña JSON conserva rewards.completion en la vista previa y al aplicar', async () => {
+    const completion = {
+      schemaVersion: 1,
+      entries: [
+        {
+          key: 'credits-base',
+          group: 'GUARANTEED',
+          grantOn: ['COMPLETED'],
+          reward: { kind: 'CREDITS', amountByDifficulty: { NORMAL: 5 } },
+        },
+      ],
+    }
+    const missionWithCompletion: MissionContent = {
+      ...missionContentFixture(),
+      rewards: { ...missionContentFixture().rewards, completion },
+    }
+    const user = userEvent.setup()
+    stubApi(undefined, [missionWithCompletion])
+    renderWithProviders(<MissionContentEditorPage />)
+    await openTemple(user)
+    await goTo(user, 'JSON')
+
+    expect(screen.getByLabelText('Vista previa del JSON')).toHaveTextContent('"completion"')
+
+    await user.click(screen.getByRole('button', { name: 'Editar como JSON' }))
+    const editor = screen.getByLabelText('Definición JSON')
+    await user.clear(editor)
+    await user.click(editor)
+    await user.paste(JSON.stringify({ ...missionWithCompletion, name: 'Templo desde JSON' }))
+    await user.click(screen.getByRole('button', { name: 'Aplicar JSON' }))
+
+    await goTo(user, 'JSON')
+    expect(screen.getByLabelText('Vista previa del JSON')).toHaveTextContent('"completion"')
+  })
+
   it('las flechas del teclado recorren las pestañas', async () => {
     const user = userEvent.setup()
     stubApi()

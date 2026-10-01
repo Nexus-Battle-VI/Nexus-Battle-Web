@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { missionContentFixture } from '@/test/mission-content-fixture'
+import { missionContentFixture, RELIC_PRODUCT } from '@/test/mission-content-fixture'
 
 import {
   appearancesOf,
@@ -165,6 +165,38 @@ describe('prepareForSave: lo que el formulario calcula antes de enviar', () => {
 
     expect(prepareForSave(content).version).toBe(7)
   })
+
+  /**
+   * HU-10.4 añadió `rewards.completion`, un bloque opcional que SOLO Missions
+   * decide (montos reales y `grantOn` siguen pendientes, P-HU10-2/3). El editor
+   * no lo conoce todavia -- no hay UI para el -- pero `rewards` es justo el
+   * campo que `prepareForSave` SI reconstruye (para fijar `potential` con el
+   * botin del jefe), asi que es el punto de mayor riesgo de perderlo por
+   * accidente.
+   */
+  it('preserva rewards.completion EXACTAMENTE: prepareForSave no lo conoce ni lo toca', () => {
+    const completion = {
+      schemaVersion: 1,
+      experience: { amountByDifficulty: { NORMAL: 11 } },
+      entries: [
+        {
+          key: 'credits-base',
+          group: 'GUARANTEED',
+          grantOn: ['COMPLETED'],
+          reward: { kind: 'CREDITS', amountByDifficulty: { NORMAL: 5 } },
+        },
+      ],
+    }
+    const content: MissionContent = {
+      ...missionContentFixture(),
+      rewards: { ...missionContentFixture().rewards, completion },
+    }
+
+    // Editar OTRO campo del todo ajeno a `rewards` no debe afectar a `completion`.
+    const edited = { ...content, name: 'El templo olvidado (editado)' }
+
+    expect(prepareForSave(edited).rewards.completion).toEqual(completion)
+  })
 })
 
 describe('probabilidad de que aparezca un Máster en una partida', () => {
@@ -229,5 +261,32 @@ describe('identificadores y plantillas', () => {
     })
     expect(copy.enemies).toEqual(source.enemies)
     expect(copy.enemies).not.toBe(source.enemies)
+  })
+
+  it('duplicar conserva rewards.completion estructuralmente (HU-10.4)', () => {
+    const completion = {
+      schemaVersion: 1,
+      entries: [
+        {
+          key: 'sello-x',
+          group: 'GUARANTEED',
+          grantOn: ['COMPLETED'],
+          reward: {
+            kind: 'PRODUCT',
+            productId: RELIC_PRODUCT.productId,
+            quantityByDifficulty: { NORMAL: 1 },
+          },
+        },
+      ],
+    }
+    const source: MissionContent = {
+      ...missionContentFixture(),
+      rewards: { ...missionContentFixture().rewards, completion },
+    }
+
+    const copy = duplicateMission(source, new Set([source.missionId]))
+
+    expect(copy.rewards.completion).toEqual(completion)
+    expect(copy.rewards.completion).not.toBe(source.rewards.completion)
   })
 })
