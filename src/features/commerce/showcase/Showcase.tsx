@@ -134,9 +134,19 @@ export const Showcase = ({
             aria-label={t('commerce:showcase.pagination')}
             className="commerce-pagination mk-panel"
           >
+            {/*
+              8a pasada: "Anterior"/"Siguiente" dejan el sprite
+              `.mk-btn-secondary` y pasan a `ec-btn-page ec-btn-pill`
+              (familia "Crear sala de batalla" en Light: pastilla beige con
+              borde dorado; en Dark `commerce.css` reescribe esa misma clase
+              a la familia "Refrescar": rectangulo redondeado oscuro con
+              borde purpura -ver reglas `:root[data-theme='dark']
+              .commerce-pagination .ec-btn-page`-). El indicador "X / Y" y
+              la logica de paginacion no cambian.
+            */}
             <Button
               variant="secondary"
-              className="mk-btn-secondary"
+              className="ec-btn-page ec-btn-pill"
               disabled={query.isLoading || currentPage <= 1}
               onClick={() => {
                 setPage(currentPage - 1)
@@ -150,7 +160,7 @@ export const Showcase = ({
             </span>
             <Button
               variant="secondary"
-              className="mk-btn-secondary"
+              className="ec-btn-page ec-btn-pill"
               disabled={query.isLoading || currentPage >= pageCount}
               onClick={() => {
                 setPage(currentPage + 1)
@@ -165,6 +175,7 @@ export const Showcase = ({
       {selected !== null && (
         <CommerceDialog
           title={t('commerce:showcase.detailDialog')}
+          wide
           onClose={() => {
             setSelected(null)
           }}

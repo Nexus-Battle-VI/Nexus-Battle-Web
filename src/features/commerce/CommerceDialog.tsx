@@ -11,12 +11,22 @@ export const CommerceDialog = ({
   children,
   floating = false,
   locked = false,
+  wide = false,
 }: {
   readonly title: string
   readonly onClose: () => void
   readonly children: ReactNode
   readonly floating?: boolean
   readonly locked?: boolean
+  /**
+   * Detalle del producto (7a pasada): el modal por defecto (`min(92vw,
+   * 960px)`) seguia sintiendose angosto para el layout de dos columnas que
+   * necesita `ProductDetail` -imagen + info principal lado a lado, luego
+   * atributos en columnas-. `wide` SOLO ensancha el tope de ese `min()`
+   * (`commerce-dialog-wide`, ver `commerce.css`); el resto de dialogos
+   * (carrito, checkout, login) no pasan esta prop y no cambian.
+   */
+  readonly wide?: boolean
 }): React.JSX.Element => {
   const dialog = useRef<HTMLDialogElement>(null)
   const { t } = useTranslation()
@@ -31,7 +41,7 @@ export const CommerceDialog = ({
     <dialog
       ref={dialog}
       aria-label={title}
-      className={`commerce-dialog${floating ? ' commerce-dialog-cart' : ''}`}
+      className={`commerce-dialog${floating ? ' commerce-dialog-cart' : ''}${wide ? ' commerce-dialog-wide' : ''}`}
       onCancel={(event) => {
         event.preventDefault()
         if (!locked) onClose()

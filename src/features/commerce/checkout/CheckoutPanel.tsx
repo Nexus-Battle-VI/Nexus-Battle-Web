@@ -375,12 +375,19 @@ export const CheckoutPanel = ({
           >
             {t('commerce:checkout.confirm')}
           </Button>
+          {/*
+            8a pasada: "Volver al carrito" deja el sprite `.mk-btn-secondary`
+            por la misma familia real "Refrescar" (`.ec-btn-compact`,
+            superficie CSS pura) que ahora usa "Ver detalle" -- consistencia
+            de familia entre los dos controles que Richard senalo. Sin
+            cambios de funcion/validacion.
+          */}
           <Button
             type="button"
             variant="secondary"
             onClick={onCancel}
             disabled={isPaying}
-            className="mk-btn-secondary w-full"
+            className="ec-btn-compact w-full"
           >
             {t('commerce:checkout.backToCart')}
           </Button>

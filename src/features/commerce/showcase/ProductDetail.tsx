@@ -92,7 +92,7 @@ export const ProductDetail = ({
       ref={region}
       tabIndex={-1}
       aria-label={t('commerce:detail.title')}
-      className="mk-panel flex flex-col gap-4 p-5"
+      className="mk-panel flex flex-col gap-3 p-5"
     >
       {/*
         6a pasada: se retira el boton "Cerrar detalle" -era una segunda
@@ -108,36 +108,67 @@ export const ProductDetail = ({
       <QueryState isLoading={query.isLoading} error={query.error}>
         {query.data !== undefined && (
           <>
-            {(() => {
-              const heroId = heroIdOf(query.data.type, query.data.sku, query.data.attributes.values)
-              return heroId === null ? (
-                <ProductImage
-                  source={query.data.imageUrl}
-                  name={query.data.name}
-                  className="commerce-detail-image max-h-80 w-full rounded object-contain"
-                />
-              ) : (
-                // El nombre ya se muestra debajo (`query.data.name`); se
-                // oculta la etiqueta que `Hero3D` repite por defecto.
-                <Hero3D heroId={heroId} className="max-h-80 w-full [&>p]:hidden" />
-              )
-            })()}
-            <h3 className="font-game-display text-xl font-semibold text-ink">{query.data.name}</h3>
-            <p className="text-sm text-muted">{PRODUCT_TYPE_LABELS[query.data.type]}</p>
-            <p className="whitespace-pre-wrap text-sm text-ink">{query.data.description}</p>
-            <ProductPrice product={query.data} />
-            <p className="text-xs text-muted">
-              {query.data.availableUnits === null
-                ? t('commerce:detail.unlimited')
-                : t('commerce:detail.available', { units: String(query.data.availableUnits) })}
-            </p>
-            <div className="rounded-lg border border-border bg-surface p-4">
-              <h4 className="font-game-display mb-3 text-sm font-semibold tracking-wide text-ink uppercase">
+            {/*
+              7a pasada — rediseño principal: el modal era casi todo alto
+              -imagen grande, luego nombre/precio/descripcion, luego
+              atributos en una columna larga, luego comentarios- y exigia
+              mucho scroll incluso en escritorio ancho. Esta fila superior
+              pone la imagen (ahora compacta, `.commerce-detail-image`
+              recorta su alto en vez de los `max-h-80` de antes) y la
+              informacion principal LADO A LADO en pantallas que tienen
+              ancho de sobra (`.commerce-detail-head`, ver `commerce.css`);
+              en movil/tablet angosto colapsa de vuelta a una columna, nunca
+              corta el boton de cerrar ni oculta contenido.
+            */}
+            <div className="commerce-detail-head">
+              {(() => {
+                const heroId = heroIdOf(
+                  query.data.type,
+                  query.data.sku,
+                  query.data.attributes.values,
+                )
+                return heroId === null ? (
+                  <ProductImage
+                    source={query.data.imageUrl}
+                    name={query.data.name}
+                    className="commerce-detail-image rounded object-contain"
+                  />
+                ) : (
+                  // El nombre ya se muestra debajo (`query.data.name`); se
+                  // oculta la etiqueta que `Hero3D` repite por defecto.
+                  <Hero3D heroId={heroId} className="commerce-detail-image [&>p]:hidden" />
+                )
+              })()}
+              <div className="commerce-detail-main">
+                <h3 className="font-game-display text-xl font-semibold text-ink">
+                  {query.data.name}
+                </h3>
+                <p className="text-sm text-muted">{PRODUCT_TYPE_LABELS[query.data.type]}</p>
+                <p className="whitespace-pre-wrap text-sm text-ink">{query.data.description}</p>
+                <ProductPrice product={query.data} />
+                <p className="text-xs text-muted">
+                  {query.data.availableUnits === null
+                    ? t('commerce:detail.unlimited')
+                    : t('commerce:detail.available', {
+                        units: String(query.data.availableUnits),
+                      })}
+                </p>
+              </div>
+            </div>
+            {/*
+              9a pasada (STEP 8): con el fixture rico ya se puede juzgar el
+              panel con contenido real -antes estaba vacio-; se ajusta el
+              espaciado vertical (`p-4`->`p-3`, `mb-3`->`mb-2`,
+              `space-y-6`->`space-y-4` abajo) para quitar aire sobrante SIN
+              recortar ningun dato ni cambiar la estructura de 2 columnas.
+            */}
+            <div className="commerce-scroll rounded-lg border border-border bg-surface p-3">
+              <h4 className="font-game-display mb-2 text-sm font-semibold tracking-wide text-ink uppercase">
                 {t('commerce:detail.attributes')}
               </h4>
               <ProductAttributes values={displayedValues ?? query.data.attributes.values} />
             </div>
-            <div className="space-y-6 rounded-lg border border-border bg-surface p-4">
+            <div className="commerce-scroll space-y-4 rounded-lg border border-border bg-surface p-4">
               <ProductCommentsList
                 productId={query.data.productId}
                 {...(listComments === undefined ? {} : { listComments })}

@@ -66,3 +66,37 @@ describe('El filtro de tipo solo ofrece lo que la vitrina puede vender', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ ...NO_FILTERS, type: 'HEROE' })
   })
 })
+
+/*
+ * 7a pasada (polish visual final): el titulo del panel se leia como
+ * "FILTROS" en mayusculas forzadas (CSS `uppercase` sobre fuente display),
+ * cabia apretado contra "Limpiar" en el rail de 216px y usaba una jerarquia
+ * tipografica reservada a titulos mayores. El texto real pasa a "Filtro"
+ * (F mayuscula, resto minuscula) y el marcado deja de forzar mayusculas o
+ * fuente display: estos tests fijan el contrato de texto/ausencia de
+ * mayusculas forzadas para que no se repita la regresion.
+ */
+describe('El encabezado "Filtro" no se ve como FILTRO en mayusculas', () => {
+  it('muestra el texto "Filtro" (no "FILTROS" ni "FILTRO")', () => {
+    renderBar()
+
+    expect(screen.getByText('Filtro')).toBeInTheDocument()
+    expect(screen.queryByText('FILTRO')).not.toBeInTheDocument()
+    expect(screen.queryByText('FILTROS')).not.toBeInTheDocument()
+  })
+
+  it('no fuerza mayusculas via CSS en el titulo del panel', () => {
+    renderBar()
+
+    const heading = screen.getByText('Filtro').closest('h3')
+    expect(heading).not.toBeNull()
+    expect(heading?.className ?? '').not.toContain('uppercase')
+  })
+
+  it('conserva el icono de filtro junto al titulo', () => {
+    renderBar()
+
+    const heading = screen.getByText('Filtro').closest('h3')
+    expect(heading?.querySelector('img, svg')).not.toBeNull()
+  })
+})
