@@ -62,12 +62,15 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
     expect(items).toHaveLength(2)
     expect(within(items[0]!).getByText('Golpe con escudo')).toBeInTheDocument()
     expect(within(items[0]!).getByText('2 de Poder')).toBeInTheDocument()
-    expect(within(items[0]!).getByText(/Disponible · 1 turno de recarga/u)).toBeInTheDocument()
+    // Hotfix post-despliegue: nombre y costo de Poder SI son visibles (la
+    // card nunca cambia); el estado/recarga sigue existiendo como texto,
+    // pero solo para lectores de pantalla -- nunca anade altura a la card.
+    expect(within(items[0]!).getByText(/Disponible · 1 turno de recarga/u)).toHaveClass('sr-only')
     expect(within(items[1]!).getByText('Mano de piedra')).toBeInTheDocument()
     expect(within(items[1]!).getByText('4 de Poder')).toBeInTheDocument()
-    expect(
-      within(items[1]!).getAllByText(/todavía no está disponible en combate/u).length,
-    ).toBeGreaterThan(0)
+    for (const aviso of within(items[1]!).getAllByText(/todavía no está disponible en combate/u)) {
+      expect(aviso).toHaveClass('sr-only')
+    }
   })
 
   it('un costo de todo el Poder se dice con palabras', () => {
@@ -93,33 +96,50 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
     expect(value.onUse).toHaveBeenCalledWith(SHIELD_STRIKE.abilityId, { teamLabel: 'B', seat: 0 })
   })
 
-  it('en recarga: deshabilitada, con los turnos que faltan como texto, y el clic no envia nada', async () => {
+  it('en recarga: deshabilitada, con los turnos que faltan como texto sr-only (nunca visible), y el clic no envia nada', async () => {
     const value = pintar({ battle: skillsOf(recharging(SHIELD_STRIKE, 2)) })
 
     expect(usar('Usar Golpe con escudo')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getAllByText(/Disponible en 2 turnos/u).length).toBeGreaterThan(0)
+    // Hotfix post-despliegue (causa raiz del layout shift de la Action Bar
+    // en produccion): este texto solia quedar VISIBLE dentro del MISMO
+    // flex-item que `.br-action-bar` estira (`align-items: stretch`) --
+    // una card RECHARGING mas alta forzaba a Ataque basico y a las demas
+    // habilidades a estirarse con ella. Ahora es SIEMPRE sr-only.
+    const avisos = screen.getAllByText(/Disponible en 2 turnos/u)
+    expect(avisos.length).toBeGreaterThan(0)
+    for (const aviso of avisos) {
+      expect(aviso).toHaveClass('sr-only')
+    }
 
     await userEvent.click(usar('Usar Golpe con escudo'))
 
     expect(value.onUse).not.toHaveBeenCalled()
   })
 
-  it('no soportada: deshabilitada, explicada como aun no disponible en combate, y el clic no envia nada', async () => {
+  it('no soportada: deshabilitada, explicada como aun no disponible en combate SOLO para lectores de pantalla, y el clic no envia nada', async () => {
     const value = pintar({ battle: skillsOf(STONE_HAND) })
 
     expect(usar('Usar Mano de piedra')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getAllByText(/todavía no está disponible en combate/u)[0]!).toBeInTheDocument()
+    const avisos = screen.getAllByText(/todavía no está disponible en combate/u)
+    expect(avisos.length).toBeGreaterThan(0)
+    for (const aviso of avisos) {
+      expect(aviso).toHaveClass('sr-only')
+    }
 
     await userEvent.click(usar('Usar Mano de piedra'))
 
     expect(value.onUse).not.toHaveBeenCalled()
   })
 
-  it('sin objetivo: deshabilitada y pide elegir uno', async () => {
+  it('sin objetivo: deshabilitada y pide elegir uno, sin texto visible que cambie la geometria', async () => {
     const value = pintar({ target: null })
 
     expect(usar('Usar Golpe con escudo')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getAllByText('Elige un objetivo.').length).toBeGreaterThan(0)
+    const avisos = screen.getAllByText('Elige un objetivo.')
+    expect(avisos.length).toBeGreaterThan(0)
+    for (const aviso of avisos) {
+      expect(aviso).toHaveClass('sr-only')
+    }
 
     await userEvent.click(usar('Usar Golpe con escudo'))
 
@@ -305,6 +325,114 @@ describe('SkillList — habilidades del heroe (HU-19)', () => {
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
+  })
+})
+
+/**
+ * Hotfix post-despliegue (geometria de la Action Bar): Richard jugo una
+ * batalla real tras el merge de PR #182 y encontro que habilidades no
+ * disponibles ("Disponible en 1 turno", "1 turno de recarga"...) pintaban
+ * texto VISIBLE debajo de su card. Esa card vive dentro de `.br-action-bar`
+ * (`align-items: stretch`): una card mas alta estiraba TODAS las demas
+ * (Ataque basico incluido), descuadrando la barra completa. La causa real
+ * eran dos parrafos en `SkillRow` (`stateId`/`hintId`) que solo se ocultaban
+ * (`sr-only`) en algunos estados, no en todos. Estas pruebas verifican,
+ * para CADA estado real que Combat puede publicar, que: (1) nombre y costo
+ * de Poder SIGUEN visibles -- la card no cambia; (2) NINGUN texto auxiliar
+ * de disponibilidad/cooldown queda visible; (3) el bloqueo funcional real
+ * (`aria-disabled`, el callback) sigue intacto. No miden pixeles (jsdom no
+ * calcula layout) -- la garantia geometrica real es que estos nodos sean
+ * `sr-only` siempre, sin excepcion.
+ */
+describe('SkillList -- Action Bar con geometria estable sin importar el estado de la habilidad (hotfix post-despliegue)', () => {
+  /** Todo <p> de SkillRow que podria llevar texto auxiliar de disponibilidad. */
+  const auxiliaryParagraphsOf = (item: HTMLElement): readonly HTMLElement[] =>
+    within(item)
+      .getAllByText(/./u)
+      .filter((node) => node.tagName === 'P')
+
+  it('AVAILABLE (lista para usarse): nombre y costo visibles, sin texto auxiliar visible', () => {
+    pintar({ battle: skillsOf(SHIELD_STRIKE) })
+
+    const item = screen.getByRole('listitem')
+
+    expect(within(item).getByText('Golpe con escudo')).toBeInTheDocument()
+    expect(within(item).getByText('2 de Poder')).toBeInTheDocument()
+    for (const paragraph of auxiliaryParagraphsOf(item)) {
+      expect(paragraph).toHaveClass('sr-only')
+    }
+  })
+
+  it('COOLDOWN (recarga): misma card, sin texto auxiliar visible, aria-disabled real', () => {
+    pintar({ battle: skillsOf(recharging(SHIELD_STRIKE, 3)) })
+
+    const item = screen.getByRole('listitem')
+
+    expect(within(item).getByText('Golpe con escudo')).toBeInTheDocument()
+    expect(within(item).getByText('2 de Poder')).toBeInTheDocument()
+    expect(usar('Usar Golpe con escudo')).toHaveAttribute('aria-disabled', 'true')
+    for (const paragraph of auxiliaryParagraphsOf(item)) {
+      expect(paragraph).toHaveClass('sr-only')
+    }
+  })
+
+  it('TEMPORARILY UNAVAILABLE (UNSUPPORTED): misma card, sin texto auxiliar visible, aria-disabled real', () => {
+    pintar({ battle: skillsOf(STONE_HAND) })
+
+    const item = screen.getByRole('listitem')
+
+    expect(within(item).getByText('Mano de piedra')).toBeInTheDocument()
+    expect(usar('Usar Mano de piedra')).toHaveAttribute('aria-disabled', 'true')
+    for (const paragraph of auxiliaryParagraphsOf(item)) {
+      expect(paragraph).toHaveClass('sr-only')
+    }
+  })
+
+  it('INVALID TARGET (sin objetivo elegido): misma card, sin texto auxiliar visible, aria-disabled real', () => {
+    pintar({ battle: skillsOf(SHIELD_STRIKE), target: null })
+
+    const item = screen.getByRole('listitem')
+
+    expect(within(item).getByText('Golpe con escudo')).toBeInTheDocument()
+    expect(usar('Usar Golpe con escudo')).toHaveAttribute('aria-disabled', 'true')
+    for (const paragraph of auxiliaryParagraphsOf(item)) {
+      expect(paragraph).toHaveClass('sr-only')
+    }
+  })
+
+  it('vuelve a estar disponible (RECHARGING -> READY): el texto auxiliar sigue sr-only y el callback vuelve a ejecutarse', async () => {
+    const value = pintar({ battle: skillsOf(SHIELD_STRIKE) })
+
+    const item = screen.getByRole('listitem')
+
+    for (const paragraph of auxiliaryParagraphsOf(item)) {
+      expect(paragraph).toHaveClass('sr-only')
+    }
+
+    await userEvent.click(usar('Usar Golpe con escudo'))
+
+    expect(value.onUse).toHaveBeenCalledTimes(1)
+  })
+
+  it('INSUFFICIENT POWER no deshabilita la habilidad (HU-11, Combat degrada a ataque basico): no es un estado "disabled" real', () => {
+    pintar({
+      battle: withSkills(combatBattle(1), [
+        { power: [10, 10], skills: [] },
+        { power: [0, 10], skills: [SHIELD_STRIKE] },
+      ]),
+    })
+
+    expect(usar('Usar Golpe con escudo')).toHaveAttribute('aria-disabled', 'false')
+  })
+
+  it('Action Bar con multiples habilidades en distintos estados: ninguna agrega texto auxiliar visible', () => {
+    pintar({ battle: skillsOf(SHIELD_STRIKE, recharging(STONE_HAND, 1)) })
+
+    for (const item of screen.getAllByRole('listitem')) {
+      for (const paragraph of auxiliaryParagraphsOf(item)) {
+        expect(paragraph).toHaveClass('sr-only')
+      }
+    }
   })
 })
 
