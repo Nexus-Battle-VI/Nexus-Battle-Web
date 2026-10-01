@@ -84,7 +84,12 @@ describe('CartPanel — vista desplegada', () => {
     })
 
     expect(screen.getByText('Espada real')).toBeInTheDocument()
+    // 9a pasada: el nombre del producto adopta la misma identidad
+    // tipografica secundaria ya aprobada en la Product Card
+    // (`commerce-label-font`); el precio de al lado NO la lleva.
+    expect(screen.getByText('Espada real')).toHaveClass('commerce-label-font')
     expect(screen.getByText('$ 150,00 por unidad')).toBeInTheDocument()
+    expect(screen.getByText('$ 150,00 por unidad')).not.toHaveClass('commerce-label-font')
     expect(screen.getByLabelText('Cantidad de Espada real')).toHaveValue(2)
     expect(screen.getByTestId('subtotal-espada-de-hierro')).toHaveTextContent('300,00')
     expect(screen.getByRole('img', { name: 'Espada real' })).toHaveAttribute(
@@ -98,6 +103,23 @@ describe('CartPanel — vista desplegada', () => {
 
     expect(screen.getByTestId('cart-total')).toHaveTextContent('320,00')
     expect(screen.getByRole('button', { name: 'Proceder al pago' })).toBeEnabled()
+  })
+
+  /*
+   * 9a pasada (QA visual final): "Proceder al pago" sigue en la familia
+   * estable `mk-btn-primary` (sin sprite distinto en hover/active/disabled,
+   * ver `primaryButtonStability.guard.test.ts`) y sigue abriendo el checkout
+   * via `onCheckout` -ningun cambio de contenido/diseño del panel-.
+   */
+  it('"Proceder al pago" usa la familia estable y sigue abriendo el checkout', async () => {
+    const onCheckout = vi.fn()
+    renderPanel({ onCheckout })
+
+    const button = screen.getByRole('button', { name: 'Proceder al pago' })
+    expect(button).toHaveClass('mk-btn-primary')
+
+    await userEvent.click(button)
+    expect(onCheckout).toHaveBeenCalledOnce()
   })
 
   it('muestra el recuento de unidades junto al titulo', () => {

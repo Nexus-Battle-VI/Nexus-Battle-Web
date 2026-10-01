@@ -51,7 +51,16 @@ export const ShowcaseFiltersBar = ({
         el icono se vea completo y pequeño en vez de recortado o gigante.
       */}
       <div className="commerce-filter-header">
-        <h3 className="font-game-display flex min-w-0 items-center gap-2 text-sm font-semibold tracking-wide text-ink uppercase">
+        {/*
+          7a pasada — "FILTRO" en mayusculas via `uppercase` + fuente display
+          no cabia completo en el rail angosto (216px) y leia como un titulo
+          de seccion mayor (reservado a E-COMMERCE/VITRINA/DETALLE DEL
+          PRODUCTO). Esta etiqueta es UI secundaria, no un titulo de modulo:
+          usa la fuente UI normal, sin forzar mayusculas (el texto real ya
+          viene como "Filtro", solo la F mayuscula), y el mismo tamaño
+          compacto que "Limpiar" al lado.
+        */}
+        <h3 className="flex min-w-0 items-center gap-2 text-xs font-semibold text-ink">
           <MarketplacePixelIcon icon="filter" size="sm" className="mk-pixel-icon--header" />
           <span className="truncate">{t('commerce:filters.title')}</span>
         </h3>

@@ -37,8 +37,15 @@ const ScalarRow = ({
   readonly label: string
   readonly value: React.ReactNode
 }): React.JSX.Element => (
-  <div className="flex items-baseline justify-between gap-4 border-b border-border/60 py-1.5 last:border-b-0">
-    <dt className="text-xs font-medium tracking-wide text-muted uppercase">{label}</dt>
+  <div className="commerce-attr-row flex items-baseline justify-between gap-4 border-b border-border/60 py-1.5 last:border-b-0">
+    {/*
+      7a pasada: la etiqueta (ATRIBUTOS/TIPO/COMPATIBILIDAD/...) usa la fuente
+      display -son "titulos" de dato, igual que pide el brief de tipografia-
+      mientras el VALOR real sigue en la fuente UI normal, nunca al reves.
+    */}
+    <dt className="font-game-display text-xs font-medium tracking-wide text-muted uppercase">
+      {label}
+    </dt>
     <dd className="text-right text-sm text-ink">{value}</dd>
   </div>
 )
@@ -64,21 +71,30 @@ const AttributeGroupCard = ({
   readonly values: Readonly<Record<string, unknown>>
 }): React.JSX.Element => (
   <div className="rounded-md border border-border bg-surface p-3">
-    <ProductAttributes values={values} />
+    <ProductAttributes values={values} nested />
   </div>
 )
 
-/** Presentacion del esquema versionado, sin recalcular efectos ni reglas del combate. */
+/**
+ * Presentacion del esquema versionado, sin recalcular efectos ni reglas del
+ * combate. `nested` (7a pasada): el nivel raiz -el que ve `ProductDetail`
+ * directamente- usa dos columnas cuando el ancho del panel alcanza (ver
+ * `.commerce-attrs` en `commerce.css`); un grupo anidado (efecto dentro de
+ * EFECTOS, por ejemplo, via `AttributeGroupCard`) sigue en una sola columna
+ * -su propia tarjeta ya es angosta, un grid ahi solo lo apretaria mas.
+ */
 export const ProductAttributes = ({
   values,
+  nested = false,
 }: {
   readonly values: Readonly<Record<string, unknown>>
+  readonly nested?: boolean
 }): React.JSX.Element => {
   // Se suscribe al idioma: las etiquetas se vuelven a pintar al cambiarlo.
   useTranslation()
 
   return (
-    <dl className="flex flex-col gap-1.5">
+    <dl className={nested ? 'flex flex-col gap-1.5' : 'commerce-attrs flex flex-col gap-1.5'}>
       {Object.entries(values).map(([key, value]) => {
         const label = labelFor(key)
 
@@ -89,8 +105,10 @@ export const ProductAttributes = ({
             return <ScalarRow key={key} label={label} value={<ChipList values={value} />} />
 
           return (
-            <div key={key} className="flex flex-col gap-2 py-1">
-              <dt className="text-xs font-semibold tracking-wide text-ink uppercase">{label}</dt>
+            <div key={key} className="commerce-attr-group flex flex-col gap-2 py-1">
+              <dt className="font-game-display text-xs font-semibold tracking-wide text-ink uppercase">
+                {label}
+              </dt>
               <dd className="flex flex-col gap-2">
                 {value.map((entry, index) =>
                   isPlainObject(entry) ? (
@@ -108,8 +126,10 @@ export const ProductAttributes = ({
 
         if (isPlainObject(value))
           return (
-            <div key={key} className="flex flex-col gap-2 py-1">
-              <dt className="text-xs font-semibold tracking-wide text-ink uppercase">{label}</dt>
+            <div key={key} className="commerce-attr-group flex flex-col gap-2 py-1">
+              <dt className="font-game-display text-xs font-semibold tracking-wide text-ink uppercase">
+                {label}
+              </dt>
               <dd>
                 <AttributeGroupCard values={value} />
               </dd>
