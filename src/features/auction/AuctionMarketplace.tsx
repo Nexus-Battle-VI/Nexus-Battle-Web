@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
 import { SelectField } from '@/components/ui/form/SelectField'
+import { TextField } from '@/components/ui/form/TextField'
 import { formatMoney } from '@/lib/format'
 import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
@@ -143,6 +144,7 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
 
 /** Estado visual de los filtros: `''` es "sin filtro" (mismo patron que AdminUsersSection). */
 interface MarketplaceFilters {
+  readonly search: string
   readonly publisherType: '' | AuctionPublisherType
   readonly priceKind: '' | AuctionPriceKind
   readonly hasBuyNow: '' | 'true' | 'false'
@@ -150,6 +152,7 @@ interface MarketplaceFilters {
 }
 
 const DEFAULT_FILTERS: MarketplaceFilters = {
+  search: '',
   publisherType: '',
   priceKind: '',
   hasBuyNow: '',
@@ -195,6 +198,7 @@ const toActiveAuctionQuery = (
 ): ActiveAuctionQuery => ({
   page,
   pageSize,
+  ...(filters.search === '' ? {} : { search: filters.search }),
   ...(filters.publisherType === '' ? {} : { publisherType: filters.publisherType }),
   ...(filters.priceKind === '' ? {} : { priceKind: filters.priceKind }),
   ...(filters.hasBuyNow === '' ? {} : { hasBuyNow: filters.hasBuyNow === 'true' }),
@@ -205,6 +209,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(AUCTION_PAGE_SIZE)
   const [filters, setFilters] = useState<MarketplaceFilters>(DEFAULT_FILTERS)
+  const [inputValue, setInputValue] = useState('')
   const roles = useSession((state) => state.roles)
   const { t } = useTranslation()
   const request = toActiveAuctionQuery(page, pageSize, filters)
@@ -213,6 +218,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
     queryKey: queryKeys.auctions.activePage({
       page: request.page,
       pageSize: request.pageSize,
+      search: request.search ?? null,
       publisherType: request.publisherType ?? null,
       priceKind: request.priceKind ?? null,
       hasBuyNow: request.hasBuyNow ?? null,
@@ -226,6 +232,13 @@ export const AuctionMarketplace = (): React.JSX.Element => {
   const changeFilters = (patch: Partial<MarketplaceFilters>): void => {
     setFilters((current) => normalizeFilters(current, patch))
     setPage(1)
+  }
+  const applySearch = (): void => {
+    changeFilters({ search: inputValue.trim() })
+  }
+  const clearSearch = (): void => {
+    setInputValue('')
+    changeFilters({ search: '' })
   }
   const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / pageSize))
 
@@ -271,6 +284,30 @@ export const AuctionMarketplace = (): React.JSX.Element => {
         aria-label={t('auction:market.filters')}
         className="space-y-3 rounded-lg border border-border bg-surface-raised p-4"
       >
+        <div className="flex flex-wrap items-end gap-3">
+          <TextField
+            label={t('auction:market.searchLabel')}
+            placeholder={t('auction:market.searchPlaceholder')}
+            type="search"
+            maxLength={80}
+            value={inputValue}
+            onChange={(event) => {
+              setInputValue(event.target.value)
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                applySearch()
+              }
+            }}
+            className="w-full sm:max-w-md"
+          />
+          {filters.search !== '' && (
+            <Button variant="secondary" onClick={clearSearch}>
+              {t('auction:market.clearSearch')}
+            </Button>
+          )}
+        </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <SelectField
             label={t('auction:market.publisherFilter')}
@@ -341,6 +378,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
           <Button
             variant="secondary"
             onClick={() => {
+              setInputValue('')
               changeFilters(DEFAULT_FILTERS)
             }}
           >

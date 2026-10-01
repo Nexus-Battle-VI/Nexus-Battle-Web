@@ -106,6 +106,7 @@ export type ActiveAuctionSort = 'closingSoon' | 'newest' | 'priceAsc' | 'priceDe
 export interface ActiveAuctionQuery {
   readonly page: number
   readonly pageSize: number
+  readonly search?: string
   readonly publisherType?: AuctionPublisherType
   readonly priceKind?: AuctionPriceKind
   readonly hasBuyNow?: boolean
@@ -195,6 +196,9 @@ export const listActiveAuctions = (
 
   if (query.publisherType !== undefined) {
     params.set('publisherType', query.publisherType)
+  }
+  if (query.search !== undefined && query.search !== '') {
+    params.set('search', query.search)
   }
   if (query.priceKind !== undefined) {
     params.set('priceKind', query.priceKind)
