@@ -98,6 +98,28 @@ const OUTCOME_LABELS: Readonly<Record<string, string>> = localizedMessages({
   ABANDONED: 'missions:outcome.ABANDONED',
 })
 
+/**
+ * Si el informe trae al menos una línea de finalización (HU-10, Task HU-10.5)
+ * todavía `PENDING`. `CREDITED` y `FAILED` son terminales: no se cuentan.
+ */
+export const hasPendingCompletionReward = (report: MissionReport): boolean =>
+  report.rewards.some((line) => line.source === 'HU-10' && line.status === 'PENDING')
+
+/**
+ * Si el informe puede cambiar todavía: experiencia de HU-09 por acreditar, o
+ * alguna línea de finalización de HU-10 en `PENDING` (contrato §13 y §14 de
+ * `hu-10-mission-completion-reward-v1`).
+ *
+ * ÚNICA FUENTE de esta decisión -- ni el hook ni la página la repiten --, y SOLO
+ * lee estados ya publicados: no infiere nada de cantidades ni de tiempos.
+ */
+export const missionReportNeedsPolling = (report: MissionReport): boolean => {
+  const experience = readExperience(report)
+  const experiencePending = experience !== null && experience.pending > 0
+
+  return experiencePending || hasPendingCompletionReward(report)
+}
+
 /** La dificultad del informe en texto; un valor nuevo se muestra tal cual. */
 export const difficultyLabel = (difficulty: string): string =>
   DIFFICULTY_LABELS[difficulty] ?? difficulty
