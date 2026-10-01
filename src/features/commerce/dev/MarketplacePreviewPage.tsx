@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { Button } from '@/components/ui/Button'
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { CommerceDialog } from '@/features/commerce/CommerceDialog'
 import { CartPanel } from '@/features/commerce/cart/CartPanel'
 import type { Cart, CartLine } from '@/features/commerce/cart/api'
@@ -107,6 +108,18 @@ export const MarketplacePreviewPage = (): React.JSX.Element => {
         ficticios, ninguna llamada real a Catalog/Commerce/Community. No existe en producción.
       </p>
       <div className="mk-panel m-4 flex flex-wrap items-center gap-3 p-3">
+        {/*
+          8a pasada (STEP 12): `ThemeToggle` es el conmutador global REAL
+          (`@/components/ui/ThemeToggle`, el mismo que usan Login/Registro/el
+          shell autenticado) -- se reutiliza tal cual, sin logica propia
+          duplicada, porque lee/escribe el store compartido `useTheme`. No
+          agrega peso al bundle de producción: el componente YA viaja ahi
+          (Login lo usa), y este archivo entero (`MarketplacePreviewPage`)
+          solo se monta bajo `import.meta.env.DEV` (ver `dev-routes.tsx`), asi
+          que esta importacion nunca llega a build productivo.
+        */}
+        <span className="text-xs font-semibold text-muted">Tema (solo DEV):</span>
+        <ThemeToggle />
         <span className="text-xs font-semibold text-muted">Carrito de prueba (solo DEV):</span>
         {CART_PREVIEW_COUNTS.map((count) => (
           <Button

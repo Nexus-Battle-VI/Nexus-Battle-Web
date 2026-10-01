@@ -62,6 +62,40 @@
   scrollbar-width: thin;
   scrollbar-color: var(--commerce-scrollbar-thumb) var(--commerce-scrollbar-track);
 }
+/*
+ * 8a pasada — dueño REAL del scroll de pagina, verificado (no asumido):
+ * `.commerce-page` solo tiene `height:100%`/`overflow` propio dentro del
+ * `@media (min-width:1200px) and (min-height:768px)` de mas abajo (escritorio
+ * grande, ventana >=1200x768). Fuera de ese rango -laptop tipico, ventana mas
+ * baja, zoom- `.commerce-page` NO tiene alto fijo: crece con el contenido y
+ * quien hace scroll de verdad es `<body>`/`<html>` (el documento completo),
+ * donde la regla de arriba NUNCA aplicaba -por eso Richard seguia viendo la
+ * barra generica del navegador en ese caso-. `body:has(.commerce-page)`
+ * tematiza ese scroll SOLO mientras la pagina de E-commerce esta montada
+ * (sin tocar ningun otro modulo ni dejar la regla activa de forma global);
+ * `:has()` tiene soporte en todos los navegadores evergreen actuales, mismo
+ * nivel que `oklch`/`color-mix` que ya usa esta hoja de estilos.
+ */
+body:has(.commerce-page) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--commerce-scrollbar-thumb) var(--commerce-scrollbar-track);
+}
+body:has(.commerce-page)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+body:has(.commerce-page)::-webkit-scrollbar-track {
+  background: var(--commerce-scrollbar-track);
+}
+body:has(.commerce-page)::-webkit-scrollbar-thumb {
+  background-color: var(--commerce-scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+body:has(.commerce-page):hover::-webkit-scrollbar-thumb {
+  background-color: var(--commerce-scrollbar-thumb-hover);
+}
 .commerce-page::-webkit-scrollbar,
 .commerce-dialog::-webkit-scrollbar,
 .mk-panel::-webkit-scrollbar,
@@ -294,9 +328,23 @@
      ver comentario junto a `.mk-card:hover` arriba. */
   transition: filter 100ms ease-out;
 }
+/*
+ * 8a pasada — "Añadir al carrito": Richard reporto una animacion de
+ * hundimiento/desplazamiento en el hover de Dark. La causa real: el hover
+ * ANTES cambiaba `border-image-source` a un PNG distinto
+ * (`primary-*-hover.png`); aunque el `border-width` declarado es identico,
+ * el navegador tiene que decodificar/recortar una imagen nueva con sus
+ * propios margenes internos de pixel art, y en Dark ese segundo PNG se leia
+ * ligeramente mas grande, dando la sensacion de "crecer/hundirse" al pasar el
+ * mouse. Ahora el hover NUNCA cambia de imagen -se queda en el PNG default,
+ * mismo pixel a pixel que el estado reposo- y el "tono azul" que pedia
+ * Richard se consigue con `filter: brightness()` + un glow real
+ * (`box-shadow`), nunca con una imagen distinta. Cero posibilidad de
+ * desplazamiento, en Light y en Dark.
+ */
 .mk-btn-primary:hover:not(:disabled) {
-  border-image-source: url('/assets/ecommerce/buttons/primary-light-hover.png');
-  filter: brightness(1.08);
+  filter: brightness(1.12);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-brand) 55%, transparent);
 }
 .mk-btn-primary:active:not(:disabled) {
   border-image-source: url('/assets/ecommerce/buttons/primary-light-active.png');
@@ -307,9 +355,6 @@
 }
 :root[data-theme='dark'] .mk-btn-primary {
   border-image-source: url('/assets/ecommerce/buttons/primary-dark-default.png');
-}
-:root[data-theme='dark'] .mk-btn-primary:hover:not(:disabled) {
-  border-image-source: url('/assets/ecommerce/buttons/primary-dark-hover.png');
 }
 :root[data-theme='dark'] .mk-btn-primary:active:not(:disabled) {
   border-image-source: url('/assets/ecommerce/buttons/primary-dark-active.png');
@@ -361,6 +406,162 @@
   .mk-btn-secondary {
     transition: none;
   }
+}
+
+/*
+ * ============================================================
+ * 8a pasada — familia de botones CSS pura, construida leyendo el
+ * componente REAL de Battle Rooms (`src/features/battle-rooms/
+ * battle-rooms.css`, clases `.br-btn-primary`/`.br-btn-compact`, usadas por
+ * "Crear sala de batalla" y "Refrescar" respectivamente) y verificada contra
+ * capturas reales de esos dos botones. Richard dejo claro que "ya era
+ * CSS-estable" no es respuesta aceptable si el control SIGUE viendose como
+ * el sprite PixelLab antiguo: estas clases abandonan `border-image` por
+ * completo para "Ver detalle", la paginacion y "Volver al carrito" -misma
+ * logica visual que Jugar Online (superficie de color + borde fino + anillo
+ * interior fijo + brillo/glow en hover), SIN sprite, SIN rasterizar texto-.
+ *
+ * Dos familias, igual que en Jugar Online:
+ * - `.ec-btn-compact` ("Refrescar"): rectangulo redondeado (10px), icono +
+ *   texto en negrita, fondo solido (crema en Light / casi negro en Dark),
+ *   borde = acento secundario (`--color-brand`: azul en Light, purpura en
+ *   Dark -- EXACTAMENTE el mismo rol que `--br-accent-2` en Battle Rooms).
+ * - `.ec-btn-pill` ("Crear sala de batalla", solo Light para paginacion):
+ *   pastilla muy redondeada (999px), degradado beige/tan, borde fino
+ *   marron/dorado, texto oscuro centrado.
+ *
+ * DIFERENCIA DELIBERADA respecto al original de Battle Rooms: `.br-btn-*`
+ * SI tiene `transform: translateY(1px)` en `:active` (ver `battle-rooms.css`
+ * linea ~349). Aqui se omite a proposito en los 3 estados (`:hover`,
+ * `:active`, `:focus-visible`): esta pasada exige movimiento CERO en
+ * absolutamente ningun estado para los controles de Commerce, mas estricto
+ * que la referencia que se esta imitando.
+ * ============================================================
+ */
+.ec-btn-compact,
+.ec-btn-pill {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-style: solid;
+  font-weight: 700;
+  color: var(--color-ink);
+  background-color: var(--color-surface-raised);
+  box-shadow: 0 8px 18px color-mix(in oklab, black 22%, transparent);
+  /* Nunca `transform`/`width`/`height`/`padding` en la transicion: solo
+     propiedades que no mueven ni redimensionan nada. */
+  transition:
+    filter 120ms ease-out,
+    box-shadow 120ms ease-out,
+    background-color 120ms ease-out;
+}
+/* Anillo interior FIJO (nunca un medallon que se estire, igual que
+   `.br-btn-*::after` en Battle Rooms): un borde de 1px a tamaño constante. */
+.ec-btn-compact::after,
+.ec-btn-pill::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  border: 1px solid color-mix(in oklab, white 16%, transparent);
+  pointer-events: none;
+}
+.ec-btn-compact:hover:not(:disabled),
+.ec-btn-pill:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--color-brand) 50%, transparent),
+    0 8px 18px color-mix(in oklab, black 22%, transparent);
+}
+.ec-btn-compact:disabled,
+.ec-btn-pill:disabled {
+  filter: grayscale(0.35) brightness(0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ec-btn-compact,
+  .ec-btn-pill {
+    transition: none;
+  }
+}
+
+/*
+ * "Refrescar" (`.ec-btn-compact`): Light = crema/marfil + borde
+ * dorado-tostado (acento primario `--color-accent-gold`, como en la
+ * captura real de Richard); Dark = casi negro + borde purpura brillante
+ * (`--color-brand`, que en Dark YA es violeta -mismo rol que
+ * `--br-accent-2` de Battle Rooms-). Usada por "Ver detalle" (Dark y
+ * Light) y "Volver al carrito" (Dark y Light), tal como las referencias
+ * que Richard adjunto.
+ */
+.ec-btn-compact {
+  border-width: 1.5px;
+  border-radius: 10px;
+  border-color: color-mix(in oklab, var(--color-accent-gold) 70%, var(--color-border));
+  min-height: 36px;
+  padding: 6px 12px;
+}
+:root[data-theme='dark'] .ec-btn-compact {
+  background-color: color-mix(in oklab, black 55%, var(--color-surface-raised));
+  border-color: var(--color-brand);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-brand) 55%, transparent),
+    0 8px 18px color-mix(in oklab, black 40%, transparent);
+}
+:root[data-theme='dark'] .ec-btn-compact:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--color-brand) 85%, transparent),
+    0 0 16px color-mix(in oklab, var(--color-brand) 55%, transparent),
+    0 8px 18px color-mix(in oklab, black 40%, transparent);
+}
+
+/*
+ * "Crear sala de batalla" (`.ec-btn-pill`): pastilla beige/tan con
+ * degradado y borde dorado fino -- usada SOLO para la paginacion en Light
+ * (Richard pidio especificamente esta familia ahi, adaptada con flechas
+ * pequeñas; en Dark la paginacion usa `.ec-btn-compact`, familia
+ * "Refrescar", ver mas abajo).
+ */
+.ec-btn-pill {
+  border-width: 1.5px;
+  border-radius: 999px;
+  border-color: color-mix(in oklab, var(--color-accent-gold) 65%, #8a5a12 20%);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-accent-gold) 22%, var(--color-surface-raised)),
+    color-mix(in oklab, var(--color-accent-gold) 10%, var(--color-surface-raised))
+  );
+  min-height: 36px;
+  padding: 6px 16px;
+}
+
+/*
+ * Paginacion (8a pasada): "Anterior"/"Siguiente" dejan de compartir
+ * `.mk-btn-secondary` (sprite). Light usa la familia "Crear sala"
+ * (`.ec-btn-pill`); Dark usa la familia "Refrescar" (`.ec-btn-compact`,
+ * via el override de arriba) -- exactamente la asignacion que pidio
+ * Richard. La logica/indicador "X / Y" no se toca.
+ */
+.ec-btn-page {
+  min-height: 36px;
+  padding: 6px 14px;
+}
+:root[data-theme='dark'] .commerce-pagination .ec-btn-page {
+  border-width: 1.5px;
+  border-radius: 10px;
+  border-color: var(--color-brand);
+  background-color: color-mix(in oklab, black 55%, var(--color-surface-raised));
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-brand) 55%, transparent),
+    0 8px 18px color-mix(in oklab, black 40%, transparent);
+}
+:root[data-theme='dark'] .commerce-pagination .ec-btn-page:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--color-brand) 85%, transparent),
+    0 0 16px color-mix(in oklab, var(--color-brand) 55%, transparent),
+    0 8px 18px color-mix(in oklab, black 40%, transparent);
 }
 
 /*
@@ -546,6 +747,21 @@
   gap: 10px;
 }
 /*
+ * 8a pasada: "Filtro" usa la MISMA identidad tipografica real que "Tipo de
+ * producto"/"Moneda del precio"/"Rango de precio" (`.commerce-filter-row`,
+ * mas abajo) en vez de una suposicion generica de "fuente UI": Cinzel 600,
+ * 12px, `letter-spacing:0.02em`, SIN mayusculas forzadas -el texto real ya
+ * es "Filtro", F mayuscula, resto minuscula-. Mismo tamaño compacto que
+ * "Limpiar" al lado (`.commerce-filter-header button`, sin cambios).
+ */
+.commerce-filter-header h3 {
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--color-ink);
+}
+/*
  * Ver comentario en `ShowcaseFiltersBar.tsx`: los iconos `filter`/`refresh`
  * de la hoja Light no son cuadrados (~98x52px) como los de Dark (~41x41px), y
  * `MarketplacePixelIcon` los escala respetando esa proporcion -correcto para
@@ -585,8 +801,10 @@
   border: 1.5px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-surface);
+  font-family: var(--font-game-display);
   font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0.02em;
   line-height: 1.1;
   color: var(--color-muted);
   text-align: center;
@@ -700,21 +918,49 @@
     transparent 72%
   );
 }
+/*
+ * 8a pasada — identidad tipografica secundaria REAL del modulo, inspeccionada
+ * (no supuesta) en `.commerce-filter-row` ("Tipo de producto"/"Moneda del
+ * precio"/"Rango de precio", mas arriba en este archivo): `font-family:
+ * var(--font-game-display)` + `font-size:12px` + `font-weight:600` +
+ * `letter-spacing:0.02em`, SIN `text-transform:uppercase`. Es Cinzel, pero
+ * NUNCA la variante grande/negrita/mayuscula de "E-COMMERCE"/"VITRINA" -- un
+ * segundo nivel, mas discreto, para texto secundario. `.commerce-label-font`
+ * empaqueta exactamente esos 4 valores para reutilizarlos tal cual en
+ * "Filtro", nombres de producto, categoria y descripcion -- nunca en precios,
+ * inputs o botones, donde reduciria la legibilidad.
+ */
+.commerce-label-font {
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
 .commerce-product-name {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
   font-size: 13px;
   line-height: 16px;
   overflow-wrap: anywhere;
 }
 .commerce-product-description {
   flex-shrink: 0;
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
   line-height: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.commerce-type-label {
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .commerce-wish {
   position: absolute;

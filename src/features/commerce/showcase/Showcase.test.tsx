@@ -140,12 +140,17 @@ describe('Vitrina canonica', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Anterior' }))
     await screen.findByText(/pagina 1 de 3/u)
     expect(visibleNames()).toEqual(catalogProducts.slice(0, 12).map((item) => item.name))
-    // 7a pasada: "Anterior"/"Siguiente" deben ser los botones estables de
-    // E-commerce (`mk-btn-secondary`, marco real sin `transform` en ningun
-    // estado) -nunca el sprite que cambiaba de tamaño en hover-; el indicador
-    // "pagina X de Y" sigue intacto (no se toca la logica de paginacion).
-    expect(screen.getByRole('button', { name: 'Anterior' })).toHaveClass('mk-btn-secondary')
-    expect(screen.getByRole('button', { name: 'Siguiente' })).toHaveClass('mk-btn-secondary')
+    // 8a pasada: "Anterior"/"Siguiente" dejan el sprite `mk-btn-secondary`
+    // por la familia CSS pura `ec-btn-page`/`ec-btn-pill` (misma
+    // construccion real que "Crear sala de batalla"/"Refrescar" en Battle
+    // Rooms, sin `border-image`, sin `transform` en ningun estado); el
+    // indicador "pagina X de Y" sigue intacto (no se toca la logica de
+    // paginacion).
+    expect(screen.getByRole('button', { name: 'Anterior' })).toHaveClass('ec-btn-page')
+    expect(screen.getByRole('button', { name: 'Anterior' })).toHaveClass('ec-btn-pill')
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toHaveClass('ec-btn-page')
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toHaveClass('ec-btn-pill')
+    expect(screen.getByRole('button', { name: 'Anterior' })).not.toHaveClass('mk-btn-secondary')
     const requestedPages = fetcher.mock.calls
       .filter(([input]) => input.includes('/v1/catalog/products?'))
       .map(([input]) => new URL(input, globalThis.location.origin).searchParams.get('page'))

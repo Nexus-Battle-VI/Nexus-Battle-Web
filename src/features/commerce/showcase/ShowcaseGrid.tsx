@@ -127,7 +127,7 @@ export const ShowcaseGrid = ({
                   >
                     {product.name}
                   </span>
-                  <span className="flex items-center gap-1 text-xs text-muted">
+                  <span className="commerce-type-label flex items-center gap-1 text-xs text-muted">
                     <MarketplacePixelIcon icon={TYPE_ICON[product.type]} size="sm" />
                     {PRODUCT_TYPE_LABELS[product.type]}
                   </span>
@@ -192,15 +192,19 @@ export const ShowcaseGrid = ({
               </div>
               <div className="commerce-product-actions">
                 {/*
-                  Icono de ojo restaurado (6a pasada): la 5a pasada lo habia
-                  retirado, Richard revirtio esa decision tras el QA visual.
-                  El texto real sigue siendo HTML/i18n (ES/EN/FR/PT), nunca el
-                  "VIEW DETAILS" quemado del sprite: el PNG solo aporta el
-                  marco (`.mk-btn-secondary`, `border-image`).
+                  8a pasada: "Ver detalle" deja de usar el sprite
+                  `.mk-btn-secondary` (seguia leyendose como el control
+                  PixelLab antiguo aunque ya fuera geometricamente estable).
+                  Ahora reproduce la MISMA familia visual real de "Refrescar"
+                  en Battle Rooms (`.ec-btn-compact`, superficie CSS pura:
+                  icono + texto en negrita, sin mayusculas forzadas, sin
+                  fuente display -esa familia usa texto normal en negrita,
+                  no un titulo-). El icono de ojo y el texto real
+                  (HTML/i18n) siguen igual.
                 */}
                 <Button
                   variant="secondary"
-                  className="commerce-view mk-btn-secondary font-game-display tracking-wide uppercase"
+                  className="commerce-view ec-btn-compact"
                   onClick={() => {
                     onOpenDetail(product.productId)
                   }}

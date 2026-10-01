@@ -128,4 +128,60 @@ export const MARKETPLACE_PREVIEW_PRODUCTS: readonly ShowcaseProduct[] = [
     creditsPrice: 180,
     realMoneyPrice: { amount: 500, currency: 'USD' },
   }),
+  /*
+   * 8a pasada (polish visual final, STEP 8): Richard reporto que el panel de
+   * ATRIBUTOS de `ProductDetail` no mostraba contenido util en el preview --
+   * causa real: `base.attributes.values` esta vacio (`{}`) y NINGUN producto
+   * de este archivo lo sobrescribia hasta ahora. Este producto SI lo hace,
+   * reutilizando el esquema REAL de un ARMADURA tal como lo describe
+   * `src/features/admin/products/contract.ts` (mismas claves/enum que
+   * Catalog espera, nunca un shape inventado): `kind`, `slot` (parte de
+   * armadura), `compatibilityScope` + `compatibleHeroSubtypes`, `stackable`
+   * y dos `effects[]` reales (`STAT_MODIFIER` con magnitud `FIXED` y otro con
+   * magnitud `PERCENTAGE`/`basisPoints`) -- cubre Tipo, Compatibilidad,
+   * Efectos, Objetivo, Apilable, Estadistica, Operacion, Magnitud, Modo,
+   * Cantidad, Puntos base y Parte de armadura en una sola ficha, suficiente
+   * para juzgar labels/valores/grupos anidados/columnas sin inventar
+   * atributos incompatibles con el dominio real.
+   */
+  product({
+    productId: 'preview-rich-attrs-0009',
+    sku: 'preview-armadura-rica',
+    name: 'Coraza del Centinela Dorado',
+    description:
+      'Armadura de ejemplo con ficha de atributos completa para revisar el diseño del detalle.',
+    type: 'ARMADURA',
+    printRunMode: 'LIMITED',
+    printRun: 20,
+    availableUnits: 6,
+    creditsPrice: 650,
+    realMoneyPrice: { amount: 35000, currency: 'COP' },
+    attributes: {
+      schemaVersion: '1',
+      values: {
+        kind: 'ARMADURA',
+        slot: 'CHEST',
+        compatibilityScope: 'SELECTED_SUBTYPES',
+        compatibleHeroSubtypes: ['GUERRERO', 'MAGO'],
+        stackable: false,
+        effects: [
+          {
+            kind: 'STAT_MODIFIER',
+            target: 'SELF',
+            statistic: 'DEFENSE',
+            operation: 'INCREASE',
+            magnitude: { mode: 'FIXED', amount: 18 },
+          },
+          {
+            kind: 'STAT_MODIFIER',
+            target: 'SELF',
+            statistic: 'HEALTH',
+            operation: 'INCREASE',
+            magnitude: { mode: 'PERCENTAGE', basisPoints: 1200 },
+            durationTurns: 3,
+          },
+        ],
+      },
+    },
+  }),
 ] as const

@@ -203,18 +203,20 @@ describe('Formulario de pago simulado', () => {
   })
 
   /*
-   * 7a pasada (polish visual final): "Volver al carrito" y "Confirmar pago"
-   * deben ser los botones ESTABLES de E-commerce (`mk-btn-secondary`/
-   * `mk-btn-primary`, marco real via `border-image`, sin `transform` en
-   * ningun estado) -nunca un sprite que cambie de tamaño/posicion en hover.
-   * Este test fija esa clase para no perderla en un refactor futuro; no
-   * verifica estilos computados de hover (jsdom no renderiza `border-image`),
+   * 8a pasada: "Volver al carrito" paso de `mk-btn-secondary` (sprite) a
+   * `ec-btn-compact` -la misma familia CSS pura real de "Refrescar" en
+   * Battle Rooms, sin `border-image`-. "Confirmar pago" sigue en
+   * `mk-btn-primary`, que ya no cambia de imagen en `:hover` (ver
+   * `commerce.css`: el hover ahora es solo `filter`/`box-shadow`). Este
+   * test fija ambas clases para no perderlas en un refactor futuro; no
+   * verifica estilos computados de hover (jsdom no renderiza CSS real),
    * solo que el gancho de clase estable sigue presente.
    */
   it('usa los botones estables de E-commerce (sin layout shift en hover)', () => {
     renderPanel()
 
-    expect(screen.getByRole('button', { name: 'Volver al carrito' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Volver al carrito' })).toHaveClass('ec-btn-compact')
+    expect(screen.getByRole('button', { name: 'Volver al carrito' })).not.toHaveClass(
       'mk-btn-secondary',
     )
     expect(screen.getByRole('button', { name: 'Confirmar pago' })).toHaveClass('mk-btn-primary')
