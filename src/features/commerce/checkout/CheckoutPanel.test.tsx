@@ -202,6 +202,26 @@ describe('Formulario de pago simulado', () => {
     expect(onCancel).toHaveBeenCalledOnce()
   })
 
+  /*
+   * 8a pasada: "Volver al carrito" paso de `mk-btn-secondary` (sprite) a
+   * `ec-btn-compact` -la misma familia CSS pura real de "Refrescar" en
+   * Battle Rooms, sin `border-image`-. "Confirmar pago" sigue en
+   * `mk-btn-primary`, que ya no cambia de imagen en `:hover` (ver
+   * `commerce.css`: el hover ahora es solo `filter`/`box-shadow`). Este
+   * test fija ambas clases para no perderlas en un refactor futuro; no
+   * verifica estilos computados de hover (jsdom no renderiza CSS real),
+   * solo que el gancho de clase estable sigue presente.
+   */
+  it('usa los botones estables de E-commerce (sin layout shift en hover)', () => {
+    renderPanel()
+
+    expect(screen.getByRole('button', { name: 'Volver al carrito' })).toHaveClass('ec-btn-compact')
+    expect(screen.getByRole('button', { name: 'Volver al carrito' })).not.toHaveClass(
+      'mk-btn-secondary',
+    )
+    expect(screen.getByRole('button', { name: 'Confirmar pago' })).toHaveClass('mk-btn-primary')
+  })
+
   it('bloquea las acciones mientras se procesa el pago', () => {
     renderPanel({ isPaying: true })
 

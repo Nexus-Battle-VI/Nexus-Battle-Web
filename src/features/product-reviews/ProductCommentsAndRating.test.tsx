@@ -41,7 +41,51 @@ describe('ProductCommentsAndRating', () => {
     expect(screen.getByRole('radiogroup', { name: 'Calificación' })).toBeInTheDocument()
     expect(screen.getAllByRole('radio')).toHaveLength(5)
     expect(screen.getByRole('button', { name: 'Agregar imagen' })).toBeInTheDocument()
+    // 9a pasada: "Agregar imagen" usa la MISMA familia aprobada de la
+    // paginacion (sin flechas, sin copiar su texto); la funcion real de
+    // agregar/quitar/publicar imagenes se verifica, sin tocar, en el test
+    // "permite agregar y quitar campos de imagen..." mas abajo.
+    expect(screen.getByRole('button', { name: 'Agregar imagen' })).toHaveClass(
+      'ec-btn-page',
+      'ec-btn-pill',
+    )
     expect(screen.getByRole('button', { name: 'Publicar' })).toBeInTheDocument()
+    // 7a pasada: el color de la estrella seleccionada por tema (Dark=oro
+    // medieval, Light=azul diamante, ver `commerce.css`) se escopea con esta
+    // clase alrededor de `StarRatingInput`, sin tocar su logica de
+    // seleccion/teclado.
+    expect(
+      screen.getByRole('radiogroup', { name: 'Calificación' }).closest('.commerce-rating'),
+    ).not.toBeNull()
+  })
+
+  /*
+   * 9a pasada (QA visual final): las etiquetas del formulario adoptan la
+   * misma identidad tipografica secundaria ya aprobada ("Tipo de
+   * producto"/nombres de producto); el contenido que escribe la persona
+   * (textarea) y "Agregar imagen" (familia de boton, no tipografia) quedan
+   * fuera de este guard a proposito.
+   */
+  it('las etiquetas de la seccion de reseñas usan la identidad tipografica secundaria', () => {
+    renderWithProviders(
+      <ProductCommentsAndRating
+        productId={PRODUCT_ID}
+        publishComment={vi.fn()}
+        submitRating={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Comentarios y calificación' })).toHaveClass(
+      'commerce-label-font',
+    )
+    expect(screen.getByText('Imágenes (opcional)')).toHaveClass('commerce-label-font')
+    expect(screen.getByText('Calificación (opcional)')).toHaveClass('commerce-label-font')
+    // "Comentario" lo dibuja `FieldShell` como <label>; se tematiza por
+    // selector de etiqueta (`.commerce-reviews-form label`), no por clase
+    // propia -se confirma aqui que el <label> real existe dentro del
+    // contenedor escopeado-.
+    const commentLabel = screen.getByText('Comentario').closest('label')
+    expect(commentLabel?.closest('.commerce-reviews-form')).not.toBeNull()
   })
 
   it('rechaza un envio sin comentario antes de llamar a la API', async () => {

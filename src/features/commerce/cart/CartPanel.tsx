@@ -205,7 +205,14 @@ export const CartPanel = ({
                   />
 
                   <div className="min-w-0 flex-1">
-                    <p className="break-words text-sm font-medium text-ink">
+                    {/*
+                      9a pasada: mismo identidad tipografica secundaria ya
+                      aprobada en la Product Card (`commerce-label-font` =
+                      Cinzel 600 + letter-spacing, ver `commerce.css`) --
+                      solo el NOMBRE, nunca precio/cantidad/input/botones/
+                      total, que siguen en fuente UI normal.
+                    */}
+                    <p className="commerce-label-font break-words text-sm font-medium text-ink">
                       {line.name ?? line.sku}
                     </p>
                     <p className="text-xs text-muted">
