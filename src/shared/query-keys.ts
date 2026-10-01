@@ -227,6 +227,7 @@ export const queryKeys = {
     activePage: (params: {
       readonly page: number
       readonly pageSize: number
+      readonly search: string | null
       readonly publisherType: string | null
       readonly priceKind: string | null
       readonly hasBuyNow: boolean | null

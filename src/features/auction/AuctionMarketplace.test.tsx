@@ -3,6 +3,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { formatMoney } from '@/lib/format'
+import { queryKeys } from '@/shared/query-keys'
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
 import { AuctionMarketplace } from './AuctionMarketplace'
@@ -841,6 +842,161 @@ describe('AuctionMarketplace', () => {
         'href',
         '/auction/player-1',
       )
+    })
+
+    it('mantiene el input vacio y no envia search inicialmente ni mientras se escribe', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+
+      expect(search).toHaveValue('')
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16')
+      const requestsBeforeTyping = listUrls(fetchMock).length
+      await user.type(search, 'dragon')
+
+      expect(search).toHaveValue('dragon')
+      expect(listUrls(fetchMock)).toHaveLength(requestsBeforeTyping)
+    })
+
+    it('distingue busquedas aplicadas distintas en la query key', () => {
+      const base = {
+        page: 1,
+        pageSize: 16,
+        publisherType: null,
+        priceKind: null,
+        hasBuyNow: null,
+        sort: null,
+      }
+
+      expect(queryKeys.auctions.activePage({ ...base, search: 'dragon' })).not.toEqual(
+        queryKeys.auctions.activePage({ ...base, search: 'sword' }),
+      )
+      expect(queryKeys.auctions.activePage({ ...base, search: 'dragon' }).slice(0, 2)).toEqual([
+        'auctions',
+        'active',
+      ])
+    })
+
+    it.each([
+      ['dragon', 'dragon'],
+      ['  dragon  ', 'dragon'],
+      ['x', 'x'],
+    ])('aplica search=%j como %j al presionar Enter y vuelve a page 1', async (typed, expected) => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=2&pageSize=16')
+      })
+
+      await user.type(search, typed)
+      await user.keyboard('{Enter}')
+
+      expect(lastSearch(fetchMock)).toBe(`?page=1&pageSize=16&search=${expected}`)
+    })
+
+    it('combina search con filtros y sort sin romper el orden por precio', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.selectOptions(field('Compra inmediata'), 'true')
+      await user.selectOptions(field('Ordenar por'), 'priceDesc')
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe(
+          '?page=1&pageSize=16&publisherType=PLAYER&search=dragon&priceKind=CREDITS&hasBuyNow=true&sort=priceDesc',
+        )
+      })
+      expect(field('Tipo de precio')).toHaveValue('CREDITS')
+      expectOnlyValidPriceSorts(fetchMock)
+    })
+
+    it('conserva search al paginar y cambiar el tamano de pagina', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+      expect(lastSearch(fetchMock)).toBe('?page=2&pageSize=16&search=dragon')
+
+      await user.selectOptions(screen.getAllByRole('combobox')[4]!, '32')
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=32&search=dragon')
+    })
+
+    it('limpia solo search, conserva los otros filtros y sincroniza el input', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.click(screen.getByRole('button', { name: /Limpiar b.squeda/ }))
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&publisherType=PLAYER')
+      })
+      expect(search).toHaveValue('')
+      expect(field('Publicador')).toHaveValue('PLAYER')
+    })
+
+    it('Limpiar filtros elimina search, limpia el input y conserva pageSize', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.selectOptions(screen.getAllByRole('combobox')[4]!, '32')
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.click(clearButton()!)
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=32')
+      })
+      expect(search).toHaveValue('')
+      expect(field('Publicador')).toHaveValue('')
+    })
+
+    it('usa emptyFiltered y pinta los items de Auction sin filtrarlos localmente', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket((params) =>
+        params.get('search') === 'dragon' ? { total: 2, items: auctions } : { total: 0, items: [] },
+      )
+      renderWithProviders(<AuctionMarketplace />)
+      await screen.findByText('No hay subastas activas en este momento.')
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&search=dragon')
+      })
+      // Ninguno de los nombres locales contiene "dragon", pero Auction decidio incluirlos.
+      expect(await screen.findAllByRole('article')).toHaveLength(2)
+
+      fetchMock.mockImplementation((input: RequestInfo | URL) =>
+        Promise.resolve(
+          urlOf(input).includes('/v1/auctions?')
+            ? jsonResponse({ page: 1, pageSize: 16, total: 0, items: [] })
+            : jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')),
+        ),
+      )
+      await user.click(screen.getByRole('button', { name: /Limpiar b.squeda/ }))
+      await user.type(search, 'x')
+      await user.keyboard('{Enter}')
+      expect(
+        await screen.findByText('Ninguna subasta activa coincide con los filtros.'),
+      ).toBeInTheDocument()
     })
   })
 })
