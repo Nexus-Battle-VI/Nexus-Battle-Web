@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
@@ -94,7 +93,6 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
   const [stakeError, setStakeError] = useState<string | undefined>(undefined)
 
   const createRoom = useCreateBattleRoom()
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const wallet = useWallet()
 
@@ -119,12 +117,15 @@ export const CreateBattleRoomPanel = (): React.JSX.Element => {
 
     setRewardError(undefined)
     setStakeError(undefined)
-    // Igual que al unirse: tras crear, directo al lobby de la sala nueva.
-    createRoom.mutate(buildPayload(mode, capacity, amount, stake.amount), {
-      onSuccess: (room) => {
-        void navigate(`/play/rooms/${room.id}`)
-      },
-    })
+    // Hotfix post-despliegue: crear una sala ya NO navega automaticamente a
+    // su lobby -- el creador se queda en /play. `useCreateBattleRoom` (ver
+    // `hooks.ts`) ya invalida el listado publico y "mis salas" en su propio
+    // `onSuccess`, asi que la sala nueva aparece sola en "Salas disponibles"
+    // y el banner "Tu sala esta esperando jugadores" (`ActiveRoomBanner`,
+    // sin cambios) ofrece "Volver a la sala" para quien quiera entrar. Esto
+    // tambien evita asumir que el creador ya es miembro del Equipo A/B: se
+    // une despues con el flujo normal, igual que cualquier invitado.
+    createRoom.mutate(buildPayload(mode, capacity, amount, stake.amount))
   }
 
   return (

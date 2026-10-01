@@ -200,6 +200,28 @@
     font-size: 34px;
   }
 }
+/* Cierre final, Objetivo 3 (hero de Jugar Online en Light): en pantallas
+   grandes el fondo (`bg-play-lobby-light.png`, ver `.br-scene-lobby`) puede
+   reducir el contraste de "LOBBY DE COMBATE..." y "JUGAR ONLINE" -- el
+   scrim compartido (`--br-overlay-scrim`) es un lavado CLARO y suave (22%),
+   pensado para toda la escena, no solo para este texto. Sin panel/caja
+   nueva (identidad intacta): se refuerza solo el texto -- mas peso
+   tipografico y un halo claro alrededor (el MISMO truco que ya usa
+   `text-shadow`, solo mas presente), que separa el tono oscuro de
+   `--br-title`/`--br-lobby-eyebrow` de cualquier zona clara/ocupada de la
+   imagen de fondo. Dark no se toca: ya se lee bien (texto dorado sobre
+   fondo oscuro). */
+:root:not([data-theme='dark']) .br-heading-eyebrow {
+  text-shadow:
+    0 1px 2px rgba(255, 251, 240, 0.9),
+    0 0 10px rgba(255, 251, 240, 0.6);
+}
+:root:not([data-theme='dark']) .br-heading-title {
+  font-weight: 800;
+  text-shadow:
+    0 1px 3px rgba(255, 251, 240, 0.9),
+    0 0 16px rgba(255, 251, 240, 0.6);
+}
 .br-section-title {
   font-family: var(--font-game-display);
   font-weight: 600;
@@ -1218,6 +1240,39 @@
   background-color: var(--br-scrollbar-thumb-rooms);
 }
 .br-scrollbar--rooms::-webkit-scrollbar-thumb:hover {
+  background-color: var(--br-scrollbar-thumb-rooms-hover);
+}
+
+/* Cierre final, Objetivo 4: scrollbar RAIZ/documento dorado mientras se
+   esta dentro de Jugar Online. `AppLayout.tsx` ya calcula `play` por ruta
+   (`/play`, y por prefijo toda sala/batalla) y lo aplica como la clase
+   `br-main` en el `<main>` -- NUNCA en `html`/`body` (el nodo que Chromium
+   SI trata como scrollbar raiz del documento, mientras nada mas declare su
+   propio `overflow`; estilizar `body::-webkit-scrollbar` aqui no haria
+   nada). `html:has(.br-main)` reacciona solo mientras ese `<main>` esta
+   montado -- sale solo del tema en cuanto se navega fuera de `/play`, sin
+   tocar `AppLayout.tsx` ni agregar estado en JS. Reutiliza LITERALMENTE los
+   mismos tokens dorados de `.br-scrollbar--rooms` (track/thumb/radius/hover
+   ya aprobados), consistente en Dark y Light porque esos tokens ya cambian
+   solos por tema. Los scrollbars internos ya aprobados (chat, listado de
+   salas) NO se tocan: siguen con su propio `.br-scrollbar`/`--rooms`. */
+html:has(.br-main) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--br-scrollbar-thumb-rooms) var(--br-scrollbar-track);
+}
+html:has(.br-main)::-webkit-scrollbar {
+  width: 9px;
+}
+html:has(.br-main)::-webkit-scrollbar-track {
+  background: var(--br-scrollbar-track);
+}
+html:has(.br-main)::-webkit-scrollbar-thumb {
+  background-color: var(--br-scrollbar-thumb-rooms);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+html:has(.br-main)::-webkit-scrollbar-thumb:hover {
   background-color: var(--br-scrollbar-thumb-rooms-hover);
 }
 @media (max-width: 640px) {
