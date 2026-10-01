@@ -55,6 +55,7 @@ const equipment = (overrides: Partial<HeroEquipment> = {}): HeroEquipment => ({
       appliedToStats: false,
     },
   ],
+  locked: false,
   ...overrides,
 })
 

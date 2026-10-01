@@ -13,6 +13,7 @@ import {
   type EquipmentSlotId,
   type HeroEquipment,
 } from './api'
+import { isBattleLockError } from './battleLockPresentation'
 
 /**
  * Estado del equipamiento de un héroe. Solo se consulta cuando hay un héroe
@@ -55,6 +56,17 @@ export const useEquipItem = (
       // quedarian desactualizadas hasta el siguiente refetch. Se piden de nuevo
       // al servicio en lugar de recalcularlas aqui.
       void queryClient.invalidateQueries({ queryKey: queryKeys.inventory.heroSelection })
+    },
+    onError: (error) => {
+      // HU-29 (carrera): la lectura con la que se intento equipar podia decir
+      // `locked: false` si la batalla empezo despues de esa lectura. No se
+      // escribe nada sintetico en la cache -eso simularia un cambio que no
+      // ocurrio-: se vuelve a pedir el estado real, que ya traera `locked: true`.
+      if (isBattleLockError(error)) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.inventory.heroEquipment(heroReference ?? ''),
+        })
+      }
     },
   })
 }

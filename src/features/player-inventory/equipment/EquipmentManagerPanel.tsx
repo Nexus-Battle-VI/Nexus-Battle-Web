@@ -27,6 +27,8 @@ export interface EquipmentManagerPanelProps {
   readonly equipping: boolean
   readonly equipError: string | null
   readonly onEquip: () => void
+  /** HU-29: `true` mientras el héroe participa en una batalla activa. */
+  readonly locked: boolean
 }
 
 /**
@@ -51,6 +53,7 @@ export const EquipmentManagerPanel = ({
   equipping,
   equipError,
   onEquip,
+  locked,
 }: EquipmentManagerPanelProps): React.JSX.Element => {
   const { t } = useTranslation()
   const productFits =
@@ -75,12 +78,21 @@ export const EquipmentManagerPanel = ({
         <QueryState isLoading={equipmentLoading} error={equipmentError}>
           {equipment !== undefined && (
             <>
+              {locked && (
+                <p
+                  role="status"
+                  className="rounded-md border border-warning bg-warning/10 p-2 text-xs text-ink"
+                >
+                  {t('inventory:equipment.battleLock.message')}
+                </p>
+              )}
+
               <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div className="flex min-w-0 flex-col gap-3">
                   <EquipmentSlots
                     equipment={equipment}
                     selectedSlot={selectedSlot}
-                    disabled={equipping}
+                    disabled={equipping || locked}
                     compatibleType={selectedProductType}
                     capacity={capacity}
                     onSelectSlot={onSelectSlot}

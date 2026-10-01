@@ -65,7 +65,10 @@
     "equip": "Equipar",
     "equipping": "Equipando…",
     "equipFailed": "Não foi possível equipar o item. Tente novamente.",
-    "pickSlotHint": "Escolha um espaço para ver quais itens se encaixam."
+    "pickSlotHint": "Escolha um espaço para ver quais itens se encaixam.",
+    "battleLock": {
+      "message": "O equipamento não pode ser alterado: o herói está participando de uma batalha ativa. Você poderá alterá-lo novamente quando ela terminar."
+    }
   },
   "slots": {
     "WEAPON_1": "Arma 1",

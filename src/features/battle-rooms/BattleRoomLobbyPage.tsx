@@ -374,10 +374,12 @@ export const BattleRoomLobbyPage = (): React.JSX.Element => {
            * `leave`); Combat sigue siendo quien de verdad protege el `start`
            * contra un equipamiento vencido (HU-16, `HERO_CHANGED_SINCE_JOIN`/
            * `HERO_LOADOUT_CHANGED`, ya traducido arriba en `actionError`). No
-           * se construye aqui ningun bloqueo nuevo -eso es HU-29, todavia en
-           * dos PR abiertos (Player-Inventory #26, Web #90): revisar este
-           * enlace cuando esos se integren, por si entonces conviene enlazar
-           * a algo mas especifico que el inventario general.
+           * se construye aqui ningun bloqueo nuevo -eso es HU-29 (Player-
+           * Inventory #26, ya en develop): el aviso de bloqueo durante
+           * batalla activa vive en Mi Inventario/`HeroConfigurator`, que es
+           * donde este enlace lleva. No hace falta nada mas especifico
+           * aqui: este enlace solo evita que revisar el equipo abandone la
+           * sala.
            */}
           {isParticipant && (
             <Link
