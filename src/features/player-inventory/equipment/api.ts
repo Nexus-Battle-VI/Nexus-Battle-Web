@@ -99,6 +99,13 @@ export interface HeroEquipment {
   readonly effectiveStats: HeroStats
   readonly deltas: readonly HeroStatDelta[]
   readonly activeEffects: readonly EquippedEffect[]
+  /**
+   * `true` mientras el héroe participa en una batalla activa (HU-29):
+   * Player/Inventory es quien lo calcula a partir del compromiso que publica
+   * Combat al iniciar la batalla. El frontend NUNCA lo deriva (ni de la URL,
+   * ni de `localStorage`, ni de si hay una sala abierta): solo lo lee.
+   */
+  readonly locked: boolean
 }
 
 export const fetchHeroEquipment = (

@@ -65,7 +65,10 @@
     "equip": "Équiper",
     "equipping": "Équipement…",
     "equipFailed": "L'objet n'a pas pu être équipé. Réessayez.",
-    "pickSlotHint": "Choisissez un emplacement pour voir quels objets conviennent."
+    "pickSlotHint": "Choisissez un emplacement pour voir quels objets conviennent.",
+    "battleLock": {
+      "message": "L'équipement ne peut pas être modifié : le héros participe à une bataille active. Vous pourrez le changer à nouveau une fois celle-ci terminée."
+    }
   },
   "slots": {
     "WEAPON_1": "Arme 1",

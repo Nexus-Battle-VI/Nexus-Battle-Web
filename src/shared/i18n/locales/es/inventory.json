@@ -65,7 +65,10 @@
     "equip": "Equipar",
     "equipping": "Equipando…",
     "equipFailed": "No se pudo equipar el producto. Inténtalo de nuevo.",
-    "pickSlotHint": "Elige una ranura para ver qué objetos encajan."
+    "pickSlotHint": "Elige una ranura para ver qué objetos encajan.",
+    "battleLock": {
+      "message": "El equipamiento no se puede modificar: el héroe está participando en una batalla activa. Podrás volver a cambiarlo cuando termine."
+    }
   },
   "slots": {
     "WEAPON_1": "Arma 1",
