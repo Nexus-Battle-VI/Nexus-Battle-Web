@@ -848,7 +848,7 @@ describe('AuctionMarketplace', () => {
       const user = userEvent.setup()
       const fetchMock = stubMarket()
       await renderMarket()
-      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      const search = screen.getByRole('combobox', { name: 'Buscar subastas' })
 
       expect(search).toHaveValue('')
       expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16')
@@ -886,7 +886,7 @@ describe('AuctionMarketplace', () => {
       const user = userEvent.setup()
       const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
       await renderMarket()
-      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      const search = screen.getByRole('combobox', { name: 'Buscar subastas' })
       await user.click(screen.getByRole('button', { name: 'Siguiente' }))
       await waitFor(() => {
         expect(lastSearch(fetchMock)).toBe('?page=2&pageSize=16')
@@ -902,7 +902,7 @@ describe('AuctionMarketplace', () => {
       const user = userEvent.setup()
       const fetchMock = stubMarket()
       await renderMarket()
-      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      const search = screen.getByRole('combobox', { name: 'Buscar subastas' })
       await user.type(search, 'dragon')
       await user.keyboard('{Enter}')
       await user.selectOptions(field('Publicador'), 'PLAYER')
@@ -922,13 +922,13 @@ describe('AuctionMarketplace', () => {
       const user = userEvent.setup()
       const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
       await renderMarket()
-      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      const search = screen.getByRole('combobox', { name: 'Buscar subastas' })
       await user.type(search, 'dragon')
       await user.keyboard('{Enter}')
       await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
       expect(lastSearch(fetchMock)).toBe('?page=2&pageSize=16&search=dragon')
 
-      await user.selectOptions(screen.getAllByRole('combobox')[4]!, '32')
+      await user.selectOptions(screen.getAllByRole('combobox')[5]!, '32')
       expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=32&search=dragon')
     })
 
@@ -936,7 +936,7 @@ describe('AuctionMarketplace', () => {
       const user = userEvent.setup()
       const fetchMock = stubMarket()
       await renderMarket()
-      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      const search = screen.getByRole('combobox', { name: 'Buscar subastas' })
       await user.selectOptions(field('Publicador'), 'PLAYER')
       await user.type(search, 'dragon')
       await user.keyboard('{Enter}')
@@ -953,8 +953,8 @@ describe('AuctionMarketplace', () => {
       const user = userEvent.setup()
       const fetchMock = stubMarket()
       await renderMarket()
-      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
-      await user.selectOptions(screen.getAllByRole('combobox')[4]!, '32')
+      const search = screen.getByRole('combobox', { name: 'Buscar subastas' })
+      await user.selectOptions(screen.getAllByRole('combobox')[5]!, '32')
       await user.selectOptions(field('Publicador'), 'PLAYER')
       await user.type(search, 'dragon')
       await user.keyboard('{Enter}')
@@ -974,7 +974,7 @@ describe('AuctionMarketplace', () => {
       )
       renderWithProviders(<AuctionMarketplace />)
       await screen.findByText('No hay subastas activas en este momento.')
-      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      const search = screen.getByRole('combobox', { name: 'Buscar subastas' })
       await user.type(search, 'dragon')
       await user.keyboard('{Enter}')
 
@@ -997,6 +997,483 @@ describe('AuctionMarketplace', () => {
       expect(
         await screen.findByText('Ninguna subasta activa coincide con los filtros.'),
       ).toBeInTheDocument()
+    })
+  })
+
+  describe('autocomplete de sugerencias (HU-87)', () => {
+    const suggestion = (productId: string, name: string, type: string) => ({
+      productId,
+      name,
+      type,
+    })
+
+    interface SuggestionsResult {
+      readonly items: readonly unknown[]
+    }
+    interface SuggestionsFailure {
+      readonly status: number
+    }
+    interface ListResult {
+      readonly total: number
+      readonly items: readonly unknown[]
+    }
+
+    /** Backend simulado: catalogo + lista principal + `/v1/auctions/suggestions`. */
+    const stubCombobox = (options: {
+      readonly suggestions?: (params: URLSearchParams) => SuggestionsResult | SuggestionsFailure
+      readonly list?: (params: URLSearchParams) => ListResult
+    }) => {
+      const respondSuggestions = options.suggestions ?? (() => ({ items: [] }))
+      const respondList = options.list ?? (() => ({ total: 2, items: auctions }))
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        const params = new URL(url, 'http://localhost').searchParams
+        if (url.includes('/v1/auctions/suggestions')) {
+          const result = respondSuggestions(params)
+          return Promise.resolve(
+            'status' in result
+              ? jsonResponse({ code: 'INTERNAL' }, result.status)
+              : jsonResponse({ items: result.items }),
+          )
+        }
+        const { total, items } = respondList(params)
+        return Promise.resolve(
+          jsonResponse({
+            page: Number(params.get('page')),
+            pageSize: Number(params.get('pageSize')),
+            total,
+            items,
+          }),
+        )
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+
+    const listUrls = (fetchMock: ReturnType<typeof stubCombobox>): string[] =>
+      fetchMock.mock.calls
+        .map(([input]) => urlOf(input))
+        .filter((url) => url.includes('/v1/auctions?'))
+    const lastSearch = (fetchMock: ReturnType<typeof stubCombobox>): string =>
+      new URL(listUrls(fetchMock).at(-1) ?? '', 'http://localhost').search
+    const suggestionUrls = (fetchMock: ReturnType<typeof stubCombobox>): string[] =>
+      fetchMock.mock.calls
+        .map(([input]) => urlOf(input))
+        .filter((url) => url.includes('/v1/auctions/suggestions'))
+    const lastSuggestionUrl = (fetchMock: ReturnType<typeof stubCombobox>): string =>
+      suggestionUrls(fetchMock).at(-1) ?? ''
+    const search = (): HTMLElement => screen.getByRole('combobox', { name: 'Buscar subastas' })
+    const field = (name: string): HTMLElement => screen.getByRole('combobox', { name })
+    const renderMarket = async (): Promise<void> => {
+      renderWithProviders(<AuctionMarketplace />)
+      await screen.findByText('Espada del Nexo')
+    }
+
+    it('con menos de 3 caracteres no pide sugerencias ni abre el desplegable', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({})
+      await renderMarket()
+
+      await user.type(search(), 'xy')
+      await new Promise((resolve) => setTimeout(resolve, 350))
+
+      expect(suggestionUrls(fetchMock)).toHaveLength(0)
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    })
+
+    it('con 3+ caracteres pide sugerencias tras el debounce', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+
+      await user.type(search(), 'cor')
+
+      await waitFor(() => {
+        expect(suggestionUrls(fetchMock).length).toBeGreaterThan(0)
+      })
+    })
+
+    it('construye la query exacta: q, limit y filtros compatibles, sin sort/page/pageSize', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({ suggestions: () => ({ items: [] }) })
+      await renderMarket()
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.selectOptions(field('Tipo de precio'), 'CREDITS')
+      await user.selectOptions(field('Compra inmediata'), 'true')
+
+      await user.type(search(), 'drag')
+
+      await waitFor(() => {
+        expect(suggestionUrls(fetchMock).length).toBeGreaterThan(0)
+      })
+      const url = new URL(lastSuggestionUrl(fetchMock), 'http://localhost')
+      expect([...url.searchParams.keys()]).toEqual([
+        'q',
+        'limit',
+        'publisherType',
+        'priceKind',
+        'hasBuyNow',
+      ])
+      expect(url.searchParams.get('q')).toBe('drag')
+      expect(url.searchParams.get('limit')).toBe('8')
+      expect(url.searchParams.get('publisherType')).toBe('PLAYER')
+      expect(url.searchParams.get('priceKind')).toBe('CREDITS')
+      expect(url.searchParams.get('hasBuyNow')).toBe('true')
+      expect(url.searchParams.has('sort')).toBe(false)
+      expect(url.searchParams.has('page')).toBe(false)
+      expect(url.searchParams.has('pageSize')).toBe(false)
+    })
+
+    it('muestra el estado de carga mientras llegan las sugerencias', async () => {
+      const user = userEvent.setup()
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((input: RequestInfo | URL) => {
+          const url = urlOf(input)
+          if (url.includes('/v1/catalog/products/exclusive-1'))
+            return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+          if (url.includes('/v1/catalog/products/owned-1'))
+            return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+          if (url.includes('/v1/auctions/suggestions'))
+            return new Promise<Response>(() => undefined)
+          return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+        }),
+      )
+      renderWithProviders(<AuctionMarketplace />)
+      await screen.findByText('Espada del Nexo')
+
+      await user.type(search(), 'drag')
+
+      expect(await screen.findByText('Buscando sugerencias...')).toBeInTheDocument()
+    })
+
+    it('muestra "sin sugerencias" cuando Auction no encuentra coincidencias', async () => {
+      const user = userEvent.setup()
+      stubCombobox({ suggestions: () => ({ items: [] }) })
+      await renderMarket()
+
+      await user.type(search(), 'zzz')
+
+      expect(await screen.findByText('Sin sugerencias para esta búsqueda.')).toBeInTheDocument()
+    })
+
+    it('un error de sugerencias no rompe el marketplace principal', async () => {
+      const user = userEvent.setup()
+      stubCombobox({ suggestions: () => ({ status: 500 }) })
+      await renderMarket()
+
+      await user.type(search(), 'drag')
+
+      expect(await screen.findByText('No se pudieron cargar las sugerencias.')).toBeInTheDocument()
+      expect(screen.getAllByRole('article')).toHaveLength(2)
+    })
+
+    it('pinta nombre y tipo de cada sugerencia', async () => {
+      const user = userEvent.setup()
+      stubCombobox({
+        suggestions: () => ({
+          items: [
+            suggestion('p1', 'Corona del Nexo', 'EPICA'),
+            suggestion('p2', 'Cofre del Nexo', 'COFRE'),
+          ],
+        }),
+      })
+      await renderMarket()
+
+      await user.type(search(), 'nexo')
+
+      const listbox = await screen.findByRole('listbox')
+      const options = await within(listbox).findAllByRole('option')
+      expect(options).toHaveLength(2)
+      expect(options[0]).toHaveTextContent('Corona del Nexo')
+      expect(options[0]).toHaveTextContent('EPICA')
+      expect(options[1]).toHaveTextContent('Cofre del Nexo')
+      expect(options[1]).toHaveTextContent('COFRE')
+    })
+
+    it('clic en una sugerencia aplica la busqueda, vuelve a pagina 1 y cierra el desplegable', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+        list: () => ({ total: 100, items: auctions }),
+      })
+      await renderMarket()
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+      await screen.findByText('Página 2 de 7')
+
+      await user.type(search(), 'corona')
+      const option = await screen.findByRole('option', { name: /Corona del Nexo/ })
+      await user.click(option)
+
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&search=Corona+del+Nexo')
+      })
+      expect(search()).toHaveValue('Corona del Nexo')
+    })
+
+    it('ArrowDown/ArrowUp mueven el resaltado entre las opciones', async () => {
+      const user = userEvent.setup()
+      stubCombobox({
+        suggestions: () => ({
+          items: [
+            suggestion('p1', 'Corona del Nexo', 'EPICA'),
+            suggestion('p2', 'Cofre del Nexo', 'COFRE'),
+          ],
+        }),
+      })
+      await renderMarket()
+      await user.type(search(), 'nexo')
+      await screen.findByRole('option', { name: /Corona del Nexo/ })
+
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('option', { name: /Corona del Nexo/ })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      )
+
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('option', { name: /Cofre del Nexo/ })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      )
+
+      await user.keyboard('{ArrowUp}')
+      expect(screen.getByRole('option', { name: /Corona del Nexo/ })).toHaveAttribute(
+        'aria-selected',
+        'true',
+      )
+    })
+
+    it('Enter con una opcion resaltada la selecciona', async () => {
+      const user = userEvent.setup()
+      stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+      await user.type(search(), 'corona')
+      await screen.findByRole('option', { name: /Corona del Nexo/ })
+      await user.keyboard('{ArrowDown}')
+
+      await user.keyboard('{Enter}')
+
+      expect(search()).toHaveValue('Corona del Nexo')
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    })
+
+    it('Enter sin resaltado conserva la busqueda manual existente', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+      await user.type(search(), 'corona')
+      await screen.findByRole('option', { name: /Corona del Nexo/ })
+
+      await user.keyboard('{Enter}')
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&search=corona')
+      })
+      expect(search()).toHaveValue('corona')
+    })
+
+    it('Escape cierra el desplegable sin borrar el input ni la busqueda aplicada', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+      await user.type(search(), 'corona')
+      await screen.findByRole('option', { name: /Corona del Nexo/ })
+      await user.keyboard('{Enter}')
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&search=corona')
+      })
+
+      await user.keyboard('{ArrowDown}')
+      await screen.findByRole('listbox')
+      await user.keyboard('{Escape}')
+
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+      expect(search()).toHaveValue('corona')
+      expect(field('Publicador')).toHaveValue('')
+    })
+
+    it('Limpiar busqueda cierra el desplegable y limpia el resaltado', async () => {
+      const user = userEvent.setup()
+      stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+      await user.type(search(), 'corona')
+      await screen.findByRole('option', { name: /Corona del Nexo/ })
+      await user.keyboard('{Enter}')
+      const clearSearchButton = await screen.findByRole('button', { name: 'Limpiar búsqueda' })
+      await user.keyboard('{ArrowDown}')
+      await screen.findByRole('listbox')
+
+      await user.click(clearSearchButton)
+
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+      expect(search()).toHaveValue('')
+    })
+
+    it('Limpiar filtros cierra el desplegable y limpia el resaltado', async () => {
+      const user = userEvent.setup()
+      stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.type(search(), 'corona')
+      await screen.findByRole('option', { name: /Corona del Nexo/ })
+      await user.keyboard('{Enter}')
+      await user.keyboard('{ArrowDown}')
+      await screen.findByRole('listbox')
+
+      await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }))
+
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+      expect(search()).toHaveValue('')
+    })
+
+    it('las sugerencias conservan publisherType/priceKind/hasBuyNow activos', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({ suggestions: () => ({ items: [] }) })
+      await renderMarket()
+      await user.selectOptions(field('Publicador'), 'GAME_MASTER')
+      await user.selectOptions(field('Tipo de precio'), 'REAL_MONEY')
+
+      await user.type(search(), 'drag')
+
+      await waitFor(() => {
+        expect(suggestionUrls(fetchMock).length).toBeGreaterThan(0)
+      })
+      const url = new URL(lastSuggestionUrl(fetchMock), 'http://localhost')
+      expect(url.searchParams.get('publisherType')).toBe('GAME_MASTER')
+      expect(url.searchParams.get('priceKind')).toBe('REAL_MONEY')
+    })
+
+    it('nunca envia sort a las sugerencias aunque el orden este activo', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubCombobox({ suggestions: () => ({ items: [] }) })
+      await renderMarket()
+      await user.selectOptions(field('Ordenar por'), 'newest')
+
+      await user.type(search(), 'drag')
+
+      await waitFor(() => {
+        expect(suggestionUrls(fetchMock).length).toBeGreaterThan(0)
+      })
+      expect(
+        new URL(lastSuggestionUrl(fetchMock), 'http://localhost').searchParams.has('sort'),
+      ).toBe(false)
+    })
+
+    it('seleccionar una sugerencia no afecta priceKind ni el orden por precio', async () => {
+      const user = userEvent.setup()
+      stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+      await user.selectOptions(field('Ordenar por'), 'priceAsc')
+      expect(field('Tipo de precio')).toHaveValue('CREDITS')
+
+      await user.type(search(), 'corona')
+      await user.click(await screen.findByRole('option', { name: /Corona del Nexo/ }))
+
+      expect(field('Tipo de precio')).toHaveValue('CREDITS')
+      expect(field('Ordenar por')).toHaveValue('priceAsc')
+    })
+
+    it('una respuesta atrasada de una busqueda anterior no reemplaza a la mas reciente', async () => {
+      const user = userEvent.setup()
+      const resolvers = new Map<string, (response: Response) => void>()
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        if (url.includes('/v1/auctions/suggestions')) {
+          const q = new URL(url, 'http://localhost').searchParams.get('q') ?? ''
+          return new Promise<Response>((resolve) => {
+            resolvers.set(q, resolve)
+          })
+        }
+        return Promise.resolve(jsonResponse(activeAuctionPage(2)))
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      renderWithProviders(<AuctionMarketplace />)
+      await screen.findByText('Espada del Nexo')
+
+      await user.type(search(), 'cat')
+      await waitFor(() => {
+        expect(resolvers.has('cat')).toBe(true)
+      })
+
+      await user.clear(search())
+      await user.type(search(), 'dog')
+      await waitFor(() => {
+        expect(resolvers.has('dog')).toBe(true)
+      })
+
+      resolvers.get('dog')!(
+        jsonResponse({ items: [suggestion('p-dog', 'Perro del Nexo', 'MASCOTA')] }),
+      )
+      await screen.findByRole('option', { name: /Perro del Nexo/ })
+
+      resolvers.get('cat')!(
+        jsonResponse({ items: [suggestion('p-cat', 'Gato del Nexo', 'MASCOTA')] }),
+      )
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
+      expect(screen.queryByRole('option', { name: /Gato del Nexo/ })).not.toBeInTheDocument()
+      expect(screen.getByRole('option', { name: /Perro del Nexo/ })).toBeInTheDocument()
+    })
+
+    it('la clave de sugerencias distingue consultas y usa un prefijo propio', () => {
+      const base = { limit: 8, publisherType: null, priceKind: null, hasBuyNow: null }
+
+      expect(queryKeys.auctions.suggestions({ ...base, q: 'dragon' })).not.toEqual(
+        queryKeys.auctions.suggestions({ ...base, q: 'sword' }),
+      )
+      expect(queryKeys.auctions.suggestions({ ...base, q: 'dragon' }).slice(0, 2)).toEqual([
+        'auctions',
+        'suggestions',
+      ])
+    })
+
+    it('expone el patron ARIA combobox/listbox/option completo', async () => {
+      const user = userEvent.setup()
+      stubCombobox({
+        suggestions: () => ({ items: [suggestion('p1', 'Corona del Nexo', 'EPICA')] }),
+      })
+      await renderMarket()
+      const input = search()
+      expect(input).toHaveAttribute('aria-autocomplete', 'list')
+      expect(input).toHaveAttribute('aria-expanded', 'false')
+      expect(input).not.toHaveAttribute('aria-controls')
+      expect(input).not.toHaveAttribute('aria-activedescendant')
+
+      await user.type(input, 'corona')
+      const listbox = await screen.findByRole('listbox')
+      expect(input).toHaveAttribute('aria-expanded', 'true')
+      expect(input).toHaveAttribute('aria-controls', listbox.id)
+
+      const option = await screen.findByRole('option', { name: /Corona del Nexo/ })
+      expect(option).toHaveAttribute('aria-selected', 'false')
+
+      await user.keyboard('{ArrowDown}')
+      expect(option).toHaveAttribute('aria-selected', 'true')
+      expect(input).toHaveAttribute('aria-activedescendant', option.id)
     })
   })
 })
