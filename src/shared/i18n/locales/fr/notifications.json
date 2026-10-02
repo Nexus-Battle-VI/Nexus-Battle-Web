@@ -35,7 +35,9 @@
     "AUCTION_SETTLED_SELLER": "Enchère vendue",
     "AUCTION_SETTLED_WINNER": "Vous avez remporté l'enchère",
     "AUCTION_SETTLED_LOSER": "Enchère terminée",
-    "AUCTION_SETTLED_WITHOUT_BIDS": "Enchère sans offres"
+    "AUCTION_SETTLED_WITHOUT_BIDS": "Enchère sans offres",
+    "BATTLE_DROP_GAINED": "Objet obtenu",
+    "BATTLE_DROP_LOST": "Objet perdu"
   },
   "admin": {
     "crumb": "Bannière d'information",

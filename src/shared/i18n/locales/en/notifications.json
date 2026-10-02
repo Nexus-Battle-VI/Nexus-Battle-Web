@@ -35,7 +35,9 @@
     "AUCTION_SETTLED_SELLER": "Auction sold",
     "AUCTION_SETTLED_WINNER": "You won the auction",
     "AUCTION_SETTLED_LOSER": "Auction ended",
-    "AUCTION_SETTLED_WITHOUT_BIDS": "Auction without bids"
+    "AUCTION_SETTLED_WITHOUT_BIDS": "Auction without bids",
+    "BATTLE_DROP_GAINED": "Item obtained",
+    "BATTLE_DROP_LOST": "Item lost"
   },
   "admin": {
     "crumb": "Information banner",

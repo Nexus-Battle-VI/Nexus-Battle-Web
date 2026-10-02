@@ -26,6 +26,8 @@ describe('CatalogNotificationBadge', () => {
     ['AUCTION_SETTLED_WINNER', 'Ganaste la subasta'],
     ['AUCTION_SETTLED_LOSER', 'Subasta finalizada'],
     ['AUCTION_SETTLED_WITHOUT_BIDS', 'Subasta sin pujas'],
+    ['BATTLE_DROP_GAINED', 'Pieza obtenida'],
+    ['BATTLE_DROP_LOST', 'Pieza perdida'],
   ])('traduce %s a un texto legible, no el codigo crudo', (changeType, label) => {
     render(<CatalogNotificationBadge changeType={changeType} />)
 
