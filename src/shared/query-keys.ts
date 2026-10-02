@@ -233,5 +233,19 @@ export const queryKeys = {
       readonly hasBuyNow: boolean | null
       readonly sort: string | null
     }) => ['auctions', 'active', params] as const,
+    /**
+     * Sugerencias de autocompletado (`GET /v1/auctions/suggestions`).
+     * Prefijo propio, distinto de `active`: no es la misma consulta ni
+     * invalida igual. Sin `sort`/`page`/`pageSize`, que ese endpoint no
+     * admite; `q` siempre presente para que una respuesta vieja nunca
+     * reemplace a la de una busqueda mas reciente.
+     */
+    suggestions: (params: {
+      readonly q: string
+      readonly limit: number
+      readonly publisherType: string | null
+      readonly priceKind: string | null
+      readonly hasBuyNow: boolean | null
+    }) => ['auctions', 'suggestions', params] as const,
   },
 } as const
