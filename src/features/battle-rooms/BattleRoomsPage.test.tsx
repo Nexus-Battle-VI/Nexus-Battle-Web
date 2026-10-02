@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { screen, waitFor, within } from '@testing-library/react'
 import { Route, Routes } from 'react-router'
@@ -592,16 +595,26 @@ describe('BattleRoomsPage — volver a mi sala', () => {
     expect(screen.getByRole('link', { name: 'Continuar batalla' })).toBeInTheDocument()
   })
 
-  it('tras crear la sala navega directo a su lobby (igual que al unirse)', async () => {
-    const created = room({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd' })
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((_input: string, init?: RequestInit) =>
-        Promise.resolve(
-          init?.method === 'POST' ? jsonResponse(201, created) : jsonResponse(200, []),
-        ),
-      ),
-    )
+  // Hotfix post-despliegue (Objetivo 5 del brief): crear una sala ya NO
+  // navega automaticamente a su lobby -- obligaba a recargar/volver para
+  // seguir el flujo real (unirse a un equipo). El creador se queda en
+  // /play; la sala nueva aparece sola en "Salas disponibles" (el listado
+  // publico se invalida) y el banner "Tu sala esta esperando jugadores"
+  // ofrece "Volver a la sala" (el listado "mias" tambien se invalida) --
+  // ambas invalidaciones ya existian en `useCreateBattleRoom` (`hooks.ts`),
+  // sin tocar ningun contrato de backend.
+  it('tras crear la sala, NO navega: se queda en /play, la sala aparece en el listado y el banner ofrece "Volver a la sala"', async () => {
+    const created = room({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', createdBy: 'sujeto-ana' })
+    let createdRoomExists = false
+    const fetchImpl = vi.fn((_input: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        createdRoomExists = true
+        return Promise.resolve(jsonResponse(201, created))
+      }
+
+      return Promise.resolve(jsonResponse(200, createdRoomExists ? [created] : []))
+    })
+    vi.stubGlobal('fetch', fetchImpl)
     const user = userEvent.setup()
 
     renderWithProviders(
@@ -615,6 +628,82 @@ describe('BattleRoomsPage — volver a mi sala', () => {
 
     await user.click(screen.getByRole('button', { name: 'Crear sala de batalla' }))
 
-    expect(await screen.findByText('Lobby de la sala nueva')).toBeInTheDocument()
+    // La sala nueva aparece en "Salas disponibles" (listado publico invalidado)...
+    await screen.findByTestId(`battle-room-${created.id}`)
+    // ...y el banner ofrece volver a ella ("mis salas" tambien invalidado).
+    expect(await screen.findByRole('link', { name: 'Volver a la sala' })).toHaveAttribute(
+      'href',
+      `/play/rooms/${created.id}`,
+    )
+
+    // Nunca navega solo: la ruta del lobby jamas se monta, y el formulario
+    // de creacion (con su boton) sigue en pantalla -- seguimos en /play.
+    expect(screen.queryByText('Lobby de la sala nueva')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Crear sala de batalla' })).toBeInTheDocument()
+  })
+})
+
+/**
+ * Cierre final del remaster (Objetivo 3 y 4 del brief): correcciones
+ * PURAMENTE visuales, sin tocar layout/estructura/copy del hero ni del
+ * scrollbar raiz. Estas pruebas NO miden contraste/pixeles reales (eso lo
+ * hace Richard en el navegador) -- confirman (a) que el hero conserva sus
+ * mismas clases/texto (identidad intacta) y (b) que el refuerzo de Light y
+ * el scrollbar dorado del documento siguen presentes en `battle-rooms.css`.
+ */
+describe('BattleRoomsPage -- hero y scrollbar raiz (cierre final)', () => {
+  it('el hero conserva su texto y sus clases (br-heading-eyebrow/br-heading-title): ningun cambio de estructura', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse(200, []))),
+    )
+
+    renderWithProviders(<BattleRoomsPage />)
+    await screen.findByText(/No hay salas esperando jugadores/u)
+
+    const eyebrow = screen.getByText('Lobby de combate: crea una sala o unete a una existente.')
+    const title = screen.getByRole('heading', { name: 'Jugar Online', level: 1 })
+
+    expect(eyebrow).toHaveClass('br-heading-eyebrow')
+    expect(title).toHaveClass('br-heading-title')
+  })
+})
+
+describe('battle-rooms.css -- cierre final: refuerzo de hero en Light y scrollbar raiz dorado', () => {
+  const css = readFileSync(path.join(__dirname, 'battle-rooms.css'), 'utf-8')
+
+  it("Objetivo 3: el hero gana contraste SOLO en Light (:not([data-theme='dark'])), Dark queda intacto", () => {
+    expect(css).toContain(":root:not([data-theme='dark']) .br-heading-title")
+    expect(css).toContain(":root:not([data-theme='dark']) .br-heading-eyebrow")
+    // La regla base de .br-heading-title (Dark incluido) nunca cambia de peso.
+    const baseStart = css.indexOf('.br-heading-title {')
+    const baseEnd = css.indexOf('}', baseStart)
+    expect(css.slice(baseStart, baseEnd)).toContain('font-weight: 700')
+  })
+
+  it('Objetivo 4: el scrollbar raiz usa los MISMOS tokens dorados que .br-scrollbar--rooms (ningun color inventado)', () => {
+    const start = css.indexOf('html:has(.br-main) {')
+    const end = css.indexOf('html:has(.br-main)::-webkit-scrollbar-thumb:hover {')
+    const block = css.slice(start, css.indexOf('}', end) + 1)
+
+    expect(start).toBeGreaterThan(-1)
+    expect(block).toContain('var(--br-scrollbar-thumb-rooms)')
+    expect(block).toContain('var(--br-scrollbar-thumb-rooms-hover)')
+    expect(block).toContain('var(--br-scrollbar-track)')
+  })
+
+  it('el scrollbar raiz NUNCA apunta a body como SELECTOR real (Chromium no lo trata como scrollbar raiz del documento)', () => {
+    const start = css.indexOf('html:has(.br-main) {')
+    const end = css.indexOf(
+      'html:has(.br-main)::-webkit-scrollbar-thumb:hover {\n  background-color: var(--br-scrollbar-thumb-rooms-hover);\n}',
+    )
+    // Sin comentarios: la documentacion puede NOMBRAR "body" para explicar
+    // por que no se usa como selector (ver `noClientAuthority.test.ts`,
+    // mismo criterio).
+    const block = css.slice(start, end).replace(/\/\*[\s\S]*?\*\//gu, '')
+
+    expect(start).toBeGreaterThan(-1)
+    expect(block).not.toMatch(/\bbody::-webkit-scrollbar/u)
+    expect(block).not.toMatch(/\bbody\s*\{[^}]*scrollbar-color/u)
   })
 })

@@ -219,6 +219,19 @@ export const queryKeys = {
   },
   auctions: {
     active: ['auctions', 'active'] as const,
-    activePage: (page: number, pageSize: number) => ['auctions', 'active', page, pageSize] as const,
+    /**
+     * Una entrada por combinacion de pagina, tamano, filtros y orden. Todos los
+     * campos estan siempre presentes (`null` = sin filtro) para que la clave
+     * sea deterministica; el prefijo `active` sigue sirviendo para invalidar.
+     */
+    activePage: (params: {
+      readonly page: number
+      readonly pageSize: number
+      readonly search: string | null
+      readonly publisherType: string | null
+      readonly priceKind: string | null
+      readonly hasBuyNow: boolean | null
+      readonly sort: string | null
+    }) => ['auctions', 'active', params] as const,
   },
 } as const

@@ -3,6 +3,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { formatMoney } from '@/lib/format'
+import { queryKeys } from '@/shared/query-keys'
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
 import { AuctionMarketplace } from './AuctionMarketplace'
@@ -483,6 +484,519 @@ describe('AuctionMarketplace', () => {
         'href',
         '/auction/player-1?buyNow=1',
       )
+    })
+  })
+
+  describe('filtros y orden', () => {
+    interface ListResponse {
+      readonly total: number
+      readonly items: readonly unknown[]
+    }
+    const ALL: ListResponse = { total: 2, items: auctions }
+
+    /** Backend simulado: responde lo que diga `respond` segun los parametros recibidos. */
+    const stubMarket = (respond: (params: URLSearchParams) => ListResponse = () => ALL) => {
+      const fetchMock = vi.fn((input: RequestInfo | URL) => {
+        const url = urlOf(input)
+        if (url.includes('/v1/catalog/products/exclusive-1'))
+          return Promise.resolve(jsonResponse(product('exclusive-1', 'Corona del Nexo', 'EPICA')))
+        if (url.includes('/v1/catalog/products/owned-1'))
+          return Promise.resolve(jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')))
+        const params = new URL(url, 'http://localhost').searchParams
+        return Promise.resolve(
+          jsonResponse({
+            page: Number(params.get('page')),
+            pageSize: Number(params.get('pageSize')),
+            ...respond(params),
+          }),
+        )
+      })
+      vi.stubGlobal('fetch', fetchMock)
+      return fetchMock
+    }
+    const listUrls = (fetchMock: ReturnType<typeof stubMarket>): string[] =>
+      fetchMock.mock.calls
+        .map(([input]) => urlOf(input))
+        .filter((url) => url.includes('/v1/auctions?'))
+    const lastSearch = (fetchMock: ReturnType<typeof stubMarket>): string =>
+      new URL(listUrls(fetchMock).at(-1) ?? '', 'http://localhost').search
+    const field = (name: string): HTMLElement => screen.getByRole('combobox', { name })
+    const clearButton = () => screen.queryByRole('button', { name: 'Limpiar filtros' })
+    /** Ninguna peticion de la UI puede ordenar por precio sin priceKind=CREDITS. */
+    const expectOnlyValidPriceSorts = (fetchMock: ReturnType<typeof stubMarket>): void => {
+      for (const url of listUrls(fetchMock)) {
+        const params = new URL(url, 'http://localhost').searchParams
+        if (params.get('sort') === 'priceAsc' || params.get('sort') === 'priceDesc') {
+          expect(params.get('priceKind')).toBe('CREDITS')
+        }
+      }
+    }
+    const renderMarket = async (): Promise<void> => {
+      renderWithProviders(<AuctionMarketplace />)
+      await screen.findByText('Espada del Nexo')
+    }
+
+    it('muestra los cuatro filtros sin valor, sin Limpiar filtros, y pide solo page y pageSize', async () => {
+      const fetchMock = stubMarket()
+      await renderMarket()
+
+      expect(screen.getByRole('group', { name: 'Filtros de subastas' })).toBeInTheDocument()
+      for (const name of ['Publicador', 'Tipo de precio', 'Compra inmediata', 'Ordenar por']) {
+        expect(field(name)).toHaveValue('')
+      }
+      expect(
+        within(field('Ordenar por'))
+          .getAllByRole('option')
+          .map((option) => option.textContent),
+      ).toEqual([
+        'Orden por defecto',
+        'Próximas a cerrar',
+        'Más recientes',
+        'Más pujas',
+        'Precio menor',
+        'Precio mayor',
+      ])
+      expect(field('Ordenar por')).toHaveAccessibleDescription(
+        'Ordenar por precio muestra solo subastas en créditos.',
+      )
+      expect(clearButton()).not.toBeInTheDocument()
+      expect(listUrls(fetchMock)).toEqual([
+        expect.stringMatching(/\/v1\/auctions\?page=1&pageSize=16$/),
+      ])
+    })
+
+    it.each([
+      ['Publicador', 'PLAYER', '?page=1&pageSize=16&publisherType=PLAYER'],
+      ['Publicador', 'GAME_MASTER', '?page=1&pageSize=16&publisherType=GAME_MASTER'],
+      ['Tipo de precio', 'CREDITS', '?page=1&pageSize=16&priceKind=CREDITS'],
+      ['Tipo de precio', 'REAL_MONEY', '?page=1&pageSize=16&priceKind=REAL_MONEY'],
+      ['Compra inmediata', 'true', '?page=1&pageSize=16&hasBuyNow=true'],
+      ['Compra inmediata', 'false', '?page=1&pageSize=16&hasBuyNow=false'],
+      ['Ordenar por', 'closingSoon', '?page=1&pageSize=16&sort=closingSoon'],
+      ['Ordenar por', 'newest', '?page=1&pageSize=16&sort=newest'],
+      ['Ordenar por', 'mostBids', '?page=1&pageSize=16&sort=mostBids'],
+    ])('%s=%s pide %s y deja el filtrado a Auction', async (name, value, expected) => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+
+      await user.selectOptions(field(name), value)
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe(expected)
+      })
+      expect(field(name)).toHaveValue(value)
+      expect(clearButton()).toBeInTheDocument()
+      // Sin filtrado local: se pintan exactamente los items que devuelve Auction.
+      expect(await screen.findAllByRole('article')).toHaveLength(2)
+    })
+
+    it.each([
+      ['priceAsc', '', '?page=1&pageSize=16&priceKind=CREDITS&sort=priceAsc'],
+      ['priceDesc', 'REAL_MONEY', '?page=1&pageSize=16&priceKind=CREDITS&sort=priceDesc'],
+    ])('%s (desde tipo "%s") fija priceKind=CREDITS y lo muestra', async (sort, from, expected) => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      if (from !== '') {
+        await user.selectOptions(field('Tipo de precio'), from)
+      }
+
+      await user.selectOptions(field('Ordenar por'), sort)
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe(expected)
+      })
+      expect(field('Tipo de precio')).toHaveValue('CREDITS')
+      expectOnlyValidPriceSorts(fetchMock)
+    })
+
+    it.each([
+      ['REAL_MONEY', '?page=1&pageSize=16&priceKind=REAL_MONEY'],
+      ['', '?page=1&pageSize=16'],
+    ])(
+      'con orden por precio, cambiar el tipo de precio a "%s" vuelve al orden por defecto',
+      async (priceKind, expected) => {
+        const user = userEvent.setup()
+        const fetchMock = stubMarket()
+        await renderMarket()
+        await user.selectOptions(field('Ordenar por'), 'priceDesc')
+        await waitFor(() => {
+          expect(lastSearch(fetchMock)).toContain('sort=priceDesc')
+        })
+
+        await user.selectOptions(field('Tipo de precio'), priceKind)
+
+        await waitFor(() => {
+          expect(lastSearch(fetchMock)).toBe(expected)
+        })
+        expect(field('Ordenar por')).toHaveValue('')
+        expectOnlyValidPriceSorts(fetchMock)
+      },
+    )
+
+    it('con orden por precio, otros cambios lo conservan y volver al orden por defecto mantiene CREDITS', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      await user.selectOptions(field('Ordenar por'), 'priceAsc')
+
+      await user.selectOptions(field('Ordenar por'), 'priceDesc')
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.selectOptions(field('Compra inmediata'), 'true')
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe(
+          '?page=1&pageSize=16&publisherType=PLAYER&priceKind=CREDITS&hasBuyNow=true&sort=priceDesc',
+        )
+      })
+
+      await user.selectOptions(field('Ordenar por'), '')
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe(
+          '?page=1&pageSize=16&publisherType=PLAYER&priceKind=CREDITS&hasBuyNow=true',
+        )
+      })
+      expect(field('Tipo de precio')).toHaveValue('CREDITS')
+      expectOnlyValidPriceSorts(fetchMock)
+    })
+
+    it('cambiar un filtro o el orden desde una pagina posterior vuelve a la pagina 1', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      const goToPage3 = async (): Promise<void> => {
+        await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+        await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+        expect(await screen.findByText('Página 3 de 7')).toBeInTheDocument()
+      }
+
+      await goToPage3()
+      await user.selectOptions(field('Compra inmediata'), 'true')
+      expect(await screen.findByText('Página 1 de 7')).toBeInTheDocument()
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&hasBuyNow=true')
+
+      await goToPage3()
+      await user.selectOptions(field('Ordenar por'), 'newest')
+      expect(await screen.findByText('Página 1 de 7')).toBeInTheDocument()
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&hasBuyNow=true&sort=newest')
+    })
+
+    it('el tamano de pagina vuelve a la pagina 1 y conserva los filtros', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+      expect(await screen.findByText('Página 2 de 7')).toBeInTheDocument()
+
+      await user.selectOptions(field('Elementos por página'), '32')
+
+      expect(await screen.findByText('Página 1 de 4')).toBeInTheDocument()
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=32&publisherType=PLAYER')
+      expect(field('Publicador')).toHaveValue('PLAYER')
+    })
+
+    it('anterior y siguiente conservan filtros y orden', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      await user.selectOptions(field('Ordenar por'), 'priceAsc')
+      await user.selectOptions(field('Compra inmediata'), 'false')
+
+      await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+      expect(await screen.findByText('Página 2 de 7')).toBeInTheDocument()
+      expect(lastSearch(fetchMock)).toBe(
+        '?page=2&pageSize=16&priceKind=CREDITS&hasBuyNow=false&sort=priceAsc',
+      )
+
+      await user.click(screen.getByRole('button', { name: 'Anterior' }))
+      expect(await screen.findByText('Página 1 de 7')).toBeInTheDocument()
+      expect(lastSearch(fetchMock)).toBe(
+        '?page=1&pageSize=16&priceKind=CREDITS&hasBuyNow=false&sort=priceAsc',
+      )
+      expectOnlyValidPriceSorts(fetchMock)
+    })
+
+    it('Limpiar filtros vuelve al estado inicial y a la pagina 1, conservando el tamano', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      await user.selectOptions(field('Elementos por página'), '32')
+      await user.selectOptions(field('Publicador'), 'GAME_MASTER')
+      await user.selectOptions(field('Ordenar por'), 'mostBids')
+      await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+      expect(await screen.findByText('Página 2 de 4')).toBeInTheDocument()
+
+      await user.click(clearButton()!)
+
+      expect(await screen.findByText('Página 1 de 4')).toBeInTheDocument()
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=32')
+      for (const name of ['Publicador', 'Tipo de precio', 'Compra inmediata', 'Ordenar por']) {
+        expect(field(name)).toHaveValue('')
+      }
+      expect(field('Elementos por página')).toHaveValue('32')
+      expect(clearButton()).not.toBeInTheDocument()
+    })
+
+    it('cada combinacion de filtros es una consulta distinta', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await waitFor(() => {
+        expect(listUrls(fetchMock)).toHaveLength(2)
+      })
+      await user.selectOptions(field('Compra inmediata'), 'true')
+      await waitFor(() => {
+        expect(listUrls(fetchMock)).toHaveLength(3)
+      })
+
+      expect(listUrls(fetchMock).map((url) => new URL(url, 'http://localhost').search)).toEqual([
+        '?page=1&pageSize=16',
+        '?page=1&pageSize=16&publisherType=PLAYER',
+        '?page=1&pageSize=16&publisherType=PLAYER&hasBuyNow=true',
+      ])
+    })
+
+    it('sin filtros, un listado vacio conserva el mensaje actual aunque cambie el tamano', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 0, items: [] }))
+      renderWithProviders(<AuctionMarketplace />)
+      expect(
+        await screen.findByText('No hay subastas activas en este momento.'),
+      ).toBeInTheDocument()
+
+      // El tamano de pagina no es un filtro: no activa emptyFiltered.
+      await user.selectOptions(field('Elementos por página'), '48')
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=48')
+      })
+      expect(
+        await screen.findByText('No hay subastas activas en este momento.'),
+      ).toBeInTheDocument()
+      expect(clearButton()).not.toBeInTheDocument()
+    })
+
+    it('con filtros, un listado vacio indica que nada coincide', async () => {
+      const user = userEvent.setup()
+      stubMarket((params) => (params.has('publisherType') ? { total: 0, items: [] } : ALL))
+      await renderMarket()
+
+      await user.selectOptions(field('Publicador'), 'GAME_MASTER')
+
+      expect(
+        await screen.findByText('Ninguna subasta activa coincide con los filtros.'),
+      ).toBeInTheDocument()
+      expect(screen.queryByText('No hay subastas activas en este momento.')).not.toBeInTheDocument()
+    })
+
+    it('mientras carga muestra el estado de carga', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => new Promise<Response>(() => undefined)),
+      )
+      renderWithProviders(<AuctionMarketplace />)
+
+      expect(await screen.findByRole('status')).toBeInTheDocument()
+      expect(screen.queryAllByRole('article')).toHaveLength(0)
+    })
+
+    it('si Auction falla con filtros muestra el error', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      fetchMock.mockImplementation((input: RequestInfo | URL) =>
+        Promise.resolve(
+          urlOf(input).includes('/v1/auctions?')
+            ? jsonResponse({ code: 'INTERNAL' }, 500)
+            : jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')),
+        ),
+      )
+
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument()
+      expect(screen.queryAllByRole('article')).toHaveLength(0)
+    })
+
+    it('con filtros activos las tarjetas conservan pujas, tiempo restante y compra inmediata', async () => {
+      const user = userEvent.setup()
+      useSession.setState({ subject: 'buyer-1' })
+      stubMarket()
+      await renderMarket()
+
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.selectOptions(field('Ordenar por'), 'mostBids')
+
+      const card = (await screen.findAllByRole('article'))[1]!
+      expect(within(card).getByText('Espada del Nexo')).toBeInTheDocument()
+      expect(within(card).getByText('Pujas').nextElementSibling).toHaveTextContent('3')
+      expect(within(card).getByText('Tiempo restante')).toBeInTheDocument()
+      expect(within(card).getByRole('link', { name: 'Comprar ahora' })).toHaveAttribute(
+        'href',
+        '/auction/player-1?buyNow=1',
+      )
+      expect(within(card).getByRole('link', { name: 'Ver detalle' })).toHaveAttribute(
+        'href',
+        '/auction/player-1',
+      )
+    })
+
+    it('mantiene el input vacio y no envia search inicialmente ni mientras se escribe', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+
+      expect(search).toHaveValue('')
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16')
+      const requestsBeforeTyping = listUrls(fetchMock).length
+      await user.type(search, 'dragon')
+
+      expect(search).toHaveValue('dragon')
+      expect(listUrls(fetchMock)).toHaveLength(requestsBeforeTyping)
+    })
+
+    it('distingue busquedas aplicadas distintas en la query key', () => {
+      const base = {
+        page: 1,
+        pageSize: 16,
+        publisherType: null,
+        priceKind: null,
+        hasBuyNow: null,
+        sort: null,
+      }
+
+      expect(queryKeys.auctions.activePage({ ...base, search: 'dragon' })).not.toEqual(
+        queryKeys.auctions.activePage({ ...base, search: 'sword' }),
+      )
+      expect(queryKeys.auctions.activePage({ ...base, search: 'dragon' }).slice(0, 2)).toEqual([
+        'auctions',
+        'active',
+      ])
+    })
+
+    it.each([
+      ['dragon', 'dragon'],
+      ['  dragon  ', 'dragon'],
+      ['x', 'x'],
+    ])('aplica search=%j como %j al presionar Enter y vuelve a page 1', async (typed, expected) => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }))
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=2&pageSize=16')
+      })
+
+      await user.type(search, typed)
+      await user.keyboard('{Enter}')
+
+      expect(lastSearch(fetchMock)).toBe(`?page=1&pageSize=16&search=${expected}`)
+    })
+
+    it('combina search con filtros y sort sin romper el orden por precio', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.selectOptions(field('Compra inmediata'), 'true')
+      await user.selectOptions(field('Ordenar por'), 'priceDesc')
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe(
+          '?page=1&pageSize=16&publisherType=PLAYER&search=dragon&priceKind=CREDITS&hasBuyNow=true&sort=priceDesc',
+        )
+      })
+      expect(field('Tipo de precio')).toHaveValue('CREDITS')
+      expectOnlyValidPriceSorts(fetchMock)
+    })
+
+    it('conserva search al paginar y cambiar el tamano de pagina', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket(() => ({ total: 100, items: auctions }))
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.click(await screen.findByRole('button', { name: 'Siguiente' }))
+      expect(lastSearch(fetchMock)).toBe('?page=2&pageSize=16&search=dragon')
+
+      await user.selectOptions(screen.getAllByRole('combobox')[4]!, '32')
+      expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=32&search=dragon')
+    })
+
+    it('limpia solo search, conserva los otros filtros y sincroniza el input', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.click(screen.getByRole('button', { name: /Limpiar b.squeda/ }))
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&publisherType=PLAYER')
+      })
+      expect(search).toHaveValue('')
+      expect(field('Publicador')).toHaveValue('PLAYER')
+    })
+
+    it('Limpiar filtros elimina search, limpia el input y conserva pageSize', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket()
+      await renderMarket()
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.selectOptions(screen.getAllByRole('combobox')[4]!, '32')
+      await user.selectOptions(field('Publicador'), 'PLAYER')
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+      await user.click(clearButton()!)
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=32')
+      })
+      expect(search).toHaveValue('')
+      expect(field('Publicador')).toHaveValue('')
+    })
+
+    it('usa emptyFiltered y pinta los items de Auction sin filtrarlos localmente', async () => {
+      const user = userEvent.setup()
+      const fetchMock = stubMarket((params) =>
+        params.get('search') === 'dragon' ? { total: 2, items: auctions } : { total: 0, items: [] },
+      )
+      renderWithProviders(<AuctionMarketplace />)
+      await screen.findByText('No hay subastas activas en este momento.')
+      const search = screen.getByRole('searchbox', { name: 'Buscar subastas' })
+      await user.type(search, 'dragon')
+      await user.keyboard('{Enter}')
+
+      await waitFor(() => {
+        expect(lastSearch(fetchMock)).toBe('?page=1&pageSize=16&search=dragon')
+      })
+      // Ninguno de los nombres locales contiene "dragon", pero Auction decidio incluirlos.
+      expect(await screen.findAllByRole('article')).toHaveLength(2)
+
+      fetchMock.mockImplementation((input: RequestInfo | URL) =>
+        Promise.resolve(
+          urlOf(input).includes('/v1/auctions?')
+            ? jsonResponse({ page: 1, pageSize: 16, total: 0, items: [] })
+            : jsonResponse(product('owned-1', 'Espada del Nexo', 'ARMA')),
+        ),
+      )
+      await user.click(screen.getByRole('button', { name: /Limpiar b.squeda/ }))
+      await user.type(search, 'x')
+      await user.keyboard('{Enter}')
+      expect(
+        await screen.findByText('Ninguna subasta activa coincide con los filtros.'),
+      ).toBeInTheDocument()
     })
   })
 })
