@@ -272,8 +272,12 @@ describe('PlayerInventoryPage', () => {
     expect(screen.getByRole('heading', { name: 'Configurar héroe' })).toBeInTheDocument()
     expect(await screen.findByText(/Todavía no tienes héroes/u)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Equipar$/u })).toBeNull()
-    // No hay auto-equip ni HU-29/épicas en la vista.
-    expect(screen.queryByText(/batalla|épica|epic/iu)).toBeNull()
+    // No hay auto-equip ni bloqueo de batalla visible sin heroe.
+    expect(screen.queryByText(/batalla/iu)).toBeNull()
+    // HU-31: el panel de epica tambien pide elegir un heroe primero -misma
+    // guardia que el de equipamiento-, no ofrece equipar sin uno.
+    expect(screen.getByText('Elige un héroe para ver su épica equipada.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Equipar épica$/u })).toBeNull()
   })
 
   it('HU-28: elegir héroe propio, ranura y producto compatible equipa y refleja el nuevo estado', async () => {

@@ -70,6 +70,28 @@
       "message": "L'équipement ne peut pas être modifié : le héros participe à une bataille active. Vous pourrez le changer à nouveau une fois celle-ci terminée."
     }
   },
+  "epic": {
+    "title": "Épique",
+    "chooseHero": "Choisissez un héros pour voir son épique équipée.",
+    "none": "Aucune épique équipée.",
+    "equipped": "Équipée : {{name}}",
+    "compatible": "Compatible avec {{subtype}} : l'effet spécifique s'applique.",
+    "incompatible": "Ne correspond pas au sous-type du héros : seul l'effet général s'applique.",
+    "generalEffect": "Effet général",
+    "specificEffect": "Effet spécifique",
+    "specificEffectN": "Effet spécifique {{index}}",
+    "notApplicable": "Non applicable",
+    "select": "Choisir une épique",
+    "cancelSelect": "Annuler la sélection",
+    "selectHint": "Choisissez une épique dans votre inventaire pour l'équiper.",
+    "selectedItem": "Sélectionné : {{item}}",
+    "equip": "Équiper l'épique",
+    "equipping": "Équipement…",
+    "equipFailed": "L'épique n'a pas pu être équipée. Réessayez.",
+    "battleLock": {
+      "message": "L'épique ne peut pas être changée : le héros participe à une bataille active. Vous pourrez la changer à nouveau une fois celle-ci terminée."
+    }
+  },
   "slots": {
     "WEAPON_1": "Arme 1",
     "WEAPON_2": "Arme 2",

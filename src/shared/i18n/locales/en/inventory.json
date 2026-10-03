@@ -69,6 +69,28 @@
       "message": "Equipment can't be changed: the hero is in an active battle. You'll be able to change it again once it ends."
     }
   },
+  "epic": {
+    "title": "Epic",
+    "chooseHero": "Choose a hero to see its equipped epic.",
+    "none": "No epic equipped.",
+    "equipped": "Equipped: {{name}}",
+    "compatible": "Compatible with {{subtype}}: the specific effect applies.",
+    "incompatible": "Doesn't match the hero's subtype: only the general effect applies.",
+    "generalEffect": "General effect",
+    "specificEffect": "Specific effect",
+    "specificEffectN": "Specific effect {{index}}",
+    "notApplicable": "Not applicable",
+    "select": "Select epic",
+    "cancelSelect": "Cancel selection",
+    "selectHint": "Choose an epic from your inventory to equip it.",
+    "selectedItem": "Selected: {{item}}",
+    "equip": "Equip epic",
+    "equipping": "Equipping…",
+    "equipFailed": "The epic could not be equipped. Try again.",
+    "battleLock": {
+      "message": "The epic can't be changed: the hero is in an active battle. You'll be able to change it again once it ends."
+    }
+  },
   "slots": {
     "WEAPON_1": "Weapon 1",
     "WEAPON_2": "Weapon 2",

@@ -245,6 +245,8 @@
       "setCodeHint": "En MAJUSCULES, ou vide s'il n'appartient à aucun ensemble.",
       "compatibleSubtype": "Sous-type de héros compatible",
       "specificEffect": "Effet spécifique",
+      "specificEffects": "Effets spécifiques",
+      "specificEffectN": "Effet spécifique {{index}}",
       "addGeneral": "Ajouter un effet général facultatif",
       "addGeneralHint": "Il s'applique à tout héros utilisant l'Épique ; le spécifique uniquement au sous-type compatible.",
       "generalEffect": "Effet général",

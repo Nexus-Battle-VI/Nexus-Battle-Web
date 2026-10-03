@@ -48,6 +48,14 @@ export const queryKeys = {
     heroEquipment: (heroReference: string) =>
       ['inventory', 'me', 'hero-equipment', heroReference] as const,
     /**
+     * Epica equipada de un heroe propio (HU-31,
+     * `GET /api/inventories/me/heroes/:heroId/epic`). Clave distinta de
+     * `heroEquipment`: agregado hermano de HeroLoadout, con su propio
+     * recurso y version -- mismo criterio que `heroSelection` frente a
+     * `heroEquipment`.
+     */
+    heroEpic: (heroReference: string) => ['inventory', 'me', 'hero-epic', heroReference] as const,
+    /**
      * Heroes que el jugador puede preparar (HU-07,
      * `GET /api/inventories/me/heroes`). Sin parametros: el servicio deduce el
      * jugador del testimonio.
