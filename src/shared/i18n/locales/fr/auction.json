@@ -127,7 +127,26 @@
     "ownTitle": "C'est votre propre enchère",
     "ownDescription": "Vous ne pouvez pas acheter immédiatement un produit que vous avez vous-même publié.",
     "bids": "Nombre d’enchères",
-    "timeRemaining": "Temps restant"
+    "timeRemaining": "Temps restant",
+    "seller": {
+      "title": "Vendeur",
+      "unavailable": "Vendeur non disponible"
+    },
+    "notFound": {
+      "title": "Enchère introuvable",
+      "description": "Cette enchère n'existe pas ou n'est plus disponible.",
+      "backToMarketplace": "Retour au marketplace"
+    },
+    "forbidden": {
+      "title": "Accès non autorisé",
+      "description": "Vous n'avez pas la permission de consulter cette enchère."
+    },
+    "bidHistory": {
+      "title": "Historique des enchères",
+      "empty": "Aucune enchère enregistrée.",
+      "error": "L'historique des enchères n'a pas pu être chargé.",
+      "pagination": "Pagination de l'historique des enchères"
+    }
   },
   "countdown": {
     "days": "{{days}}j {{hours}}h {{minutes}}m {{seconds}}s",
