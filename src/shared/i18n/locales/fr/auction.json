@@ -128,6 +128,11 @@
     "ownDescription": "Vous ne pouvez pas acheter immédiatement un produit que vous avez vous-même publié.",
     "bids": "Nombre d’enchères",
     "timeRemaining": "Temps restant",
+    "share": "Partager",
+    "shareTitle": "Partager l’enchère",
+    "shareText": "Découvrez cette enchère sur Nexus Battle.",
+    "shareCopied": "Lien copié",
+    "shareError": "L’enchère n’a pas pu être partagée",
     "seller": {
       "title": "Vendeur",
       "unavailable": "Vendeur non disponible"

@@ -127,6 +127,11 @@
     "ownDescription": "You can't buy now a product you published yourself.",
     "bids": "Number of bids",
     "timeRemaining": "Time left",
+    "share": "Share",
+    "shareTitle": "Share auction",
+    "shareText": "Check out this auction on Nexus Battle.",
+    "shareCopied": "Link copied",
+    "shareError": "The auction could not be shared",
     "seller": {
       "title": "Seller",
       "unavailable": "Seller unavailable"

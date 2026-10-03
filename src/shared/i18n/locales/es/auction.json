@@ -128,6 +128,11 @@
     "ownDescription": "No puedes ejecutar la compra inmediata de un producto que tu mismo publicaste.",
     "bids": "Número de pujas",
     "timeRemaining": "Tiempo restante",
+    "share": "Compartir",
+    "shareTitle": "Compartir subasta",
+    "shareText": "Mira esta subasta en Nexus Battle.",
+    "shareCopied": "Enlace copiado",
+    "shareError": "No se pudo compartir la subasta",
     "seller": {
       "title": "Vendedor",
       "unavailable": "Vendedor no disponible"

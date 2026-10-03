@@ -614,6 +614,79 @@ describe('AuctionDetailPage (HU-64.1 / HU-88)', () => {
     })
   })
 
+  describe('compartir subasta (HU-88)', () => {
+    it('muestra la accion Compartir cuando el detalle existe', async () => {
+      montar()
+
+      expect(await screen.findByRole('button', { name: 'Compartir' })).toBeEnabled()
+    })
+
+    it('usa navigator.share con titulo, texto y URL limpia del detalle', async () => {
+      const share = vi.fn().mockResolvedValue(undefined)
+      vi.stubGlobal('navigator', { share })
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(share).toHaveBeenCalledTimes(1)
+      expect(share).toHaveBeenCalledWith({
+        title: 'Compartir subasta',
+        text: 'Mira esta subasta en Nexus Battle.',
+        url: `${window.location.origin}/auction/${AUCTION_ID}`,
+      })
+      expect(screen.queryByText('No se pudo compartir la subasta')).not.toBeInTheDocument()
+    })
+
+    it('trata AbortError de navigator.share como cancelacion silenciosa', async () => {
+      vi.stubGlobal('navigator', {
+        share: vi.fn().mockRejectedValue(new DOMException('cancelado', 'AbortError')),
+      })
+
+      montar()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      await waitFor(() => {
+        expect(screen.queryByText('No se pudo compartir la subasta')).not.toBeInTheDocument()
+      })
+    })
+
+    it('muestra feedback local para un error real de navigator.share', async () => {
+      vi.stubGlobal('navigator', { share: vi.fn().mockRejectedValue(new Error('denegado')) })
+
+      montar()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo compartir la subasta')
+    })
+
+    it('usa clipboard y confirma cuando navigator.share no esta disponible', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined)
+      vi.stubGlobal('navigator', { clipboard: { writeText } })
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/auction/${AUCTION_ID}`)
+      expect(await screen.findByRole('status')).toHaveTextContent('Enlace copiado')
+    })
+
+    it('muestra feedback local cuando clipboard falla o no esta disponible', async () => {
+      vi.stubGlobal('navigator', {
+        clipboard: { writeText: vi.fn().mockRejectedValue(new Error()) },
+      })
+
+      montar()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo compartir la subasta')
+    })
+  })
+
   describe('modalidad de pago (HU-88)', () => {
     it('D. PLAYER/CREDITS: muestra el precio minimo y la compra inmediata en creditos', async () => {
       vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(

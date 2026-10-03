@@ -54,6 +54,15 @@ const buyNowPriceLabel = (auction: AuctionDetail): string | null =>
 const linkClass =
   'inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors border border-border text-ink hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand'
 
+type ShareFeedback = 'copied' | 'error' | null
+
+/** El enlace compartido siempre apunta al detalle limpio, sin estado temporal de la UI. */
+const buildAuctionShareUrl = (auctionId: string): string =>
+  new URL(`/auction/${encodeURIComponent(auctionId)}`, window.location.origin).toString()
+
+const isShareAbort = (cause: unknown): boolean =>
+  typeof cause === 'object' && cause !== null && 'name' in cause && cause.name === 'AbortError'
+
 /**
  * Vista de detalle de una subasta para quien la va a COMPRAR (HU-64.1,
  * integrada aqui porque "Integrado en pantalla de detalle de subasta" es una
@@ -89,6 +98,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
   const [confirmed, setConfirmed] = useState(false)
   const [transaction, setTransaction] = useState<BuyNowConfirmation | null>(null)
   const [followError, setFollowError] = useState<string | null>(null)
+  const [shareFeedback, setShareFeedback] = useState<ShareFeedback>(null)
 
   const { items: watchlistItems, follow, unfollow, isSaving: isSavingFollow } = useWatchlist()
   const isFollowing = watchlistItems.some((item) => item.auction.id === auctionId)
@@ -103,6 +113,35 @@ export const AuctionDetailPage = (): React.JSX.Element => {
       }
     } catch (cause: unknown) {
       setFollowError(describeFollowError(cause))
+    }
+  }
+
+  const shareAuction = async (): Promise<void> => {
+    setShareFeedback(null)
+    const url = buildAuctionShareUrl(auctionId)
+    const payload = {
+      title: t('auction:detail.shareTitle'),
+      text: t('auction:detail.shareText'),
+      url,
+    }
+
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share(payload)
+      } catch (cause: unknown) {
+        // Cerrar el dialogo nativo es una cancelacion normal, no un error para la persona usuaria.
+        if (!isShareAbort(cause)) {
+          setShareFeedback('error')
+        }
+      }
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareFeedback('copied')
+    } catch {
+      setShareFeedback('error')
     }
   }
 
@@ -269,25 +308,44 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                   </div>
                 </section>
 
-                {auction.status === 'ACTIVE' && !isSeller && (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                      variant={isFollowing ? 'secondary' : 'primary'}
-                      loading={isSavingFollow}
-                      onClick={() => {
-                        void toggleFollow()
-                      }}
-                    >
-                      {isFollowing
-                        ? t('auction:watchlist.unfollow')
-                        : t('auction:watchlist.followThis')}
-                    </Button>
-                    {followError !== null && (
-                      <p role="alert" className="text-sm text-danger">
-                        {followError}
-                      </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="secondary" onClick={() => void shareAuction()}>
+                    {t('auction:detail.share')}
+                  </Button>
+                  {auction.status === 'ACTIVE' && !isSeller && (
+                    <>
+                      <Button
+                        variant={isFollowing ? 'secondary' : 'primary'}
+                        loading={isSavingFollow}
+                        onClick={() => {
+                          void toggleFollow()
+                        }}
+                      >
+                        {isFollowing
+                          ? t('auction:watchlist.unfollow')
+                          : t('auction:watchlist.followThis')}
+                      </Button>
+                      {followError !== null && (
+                        <p role="alert" className="text-sm text-danger">
+                          {followError}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+                {shareFeedback !== null && (
+                  <p
+                    role={shareFeedback === 'error' ? 'alert' : 'status'}
+                    className={
+                      shareFeedback === 'error' ? 'text-sm text-danger' : 'text-sm text-muted'
+                    }
+                  >
+                    {t(
+                      shareFeedback === 'copied'
+                        ? 'auction:detail.shareCopied'
+                        : 'auction:detail.shareError',
                     )}
-                  </div>
+                  </p>
                 )}
                 {
                   /*
