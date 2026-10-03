@@ -126,7 +126,26 @@
     "ownTitle": "This is your own auction",
     "ownDescription": "You can't buy now a product you published yourself.",
     "bids": "Number of bids",
-    "timeRemaining": "Time left"
+    "timeRemaining": "Time left",
+    "seller": {
+      "title": "Seller",
+      "unavailable": "Seller unavailable"
+    },
+    "notFound": {
+      "title": "Auction not found",
+      "description": "This auction doesn't exist or is no longer available.",
+      "backToMarketplace": "Back to marketplace"
+    },
+    "forbidden": {
+      "title": "Access not allowed",
+      "description": "You don't have permission to view this auction."
+    },
+    "bidHistory": {
+      "title": "Bid history",
+      "empty": "No bids recorded yet.",
+      "error": "The bid history could not be loaded.",
+      "pagination": "Bid history pagination"
+    }
   },
   "countdown": {
     "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",

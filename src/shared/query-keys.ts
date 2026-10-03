@@ -117,6 +117,15 @@ export const queryKeys = {
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /**
+     * Historial publico y paginado de pujas (HU-88,
+     * `GET /v1/auctions/:auctionId/bids`). Clave propia, distinta de
+     * `detail`: son dos consultas distintas y no deben compartir cache.
+     */
+    bidHistory: (auctionId: string, page: number, pageSize: number) =>
+      ['auction', 'bidHistory', auctionId, page, pageSize] as const,
+    /** Prefijo de `bidHistory` para invalidar todas sus paginas tras una puja exitosa. */
+    bidHistoryAll: (auctionId: string) => ['auction', 'bidHistory', auctionId] as const,
     /** Lista privada del jugador autenticado (HU-68). */
     watchlist: ['auction', 'watchlist'] as const,
     /**

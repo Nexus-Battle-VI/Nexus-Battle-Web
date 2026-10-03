@@ -127,7 +127,26 @@
     "ownTitle": "Es tu propia subasta",
     "ownDescription": "No puedes ejecutar la compra inmediata de un producto que tu mismo publicaste.",
     "bids": "Número de pujas",
-    "timeRemaining": "Tiempo restante"
+    "timeRemaining": "Tiempo restante",
+    "seller": {
+      "title": "Vendedor",
+      "unavailable": "Vendedor no disponible"
+    },
+    "notFound": {
+      "title": "Subasta no encontrada",
+      "description": "Esta subasta no existe o ya no está disponible.",
+      "backToMarketplace": "Volver al marketplace"
+    },
+    "forbidden": {
+      "title": "Acceso no permitido",
+      "description": "No tienes permisos para consultar esta subasta."
+    },
+    "bidHistory": {
+      "title": "Historial de pujas",
+      "empty": "No hay pujas registradas.",
+      "error": "No se pudo cargar el historial de pujas.",
+      "pagination": "Paginación del historial de pujas"
+    }
   },
   "countdown": {
     "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",
