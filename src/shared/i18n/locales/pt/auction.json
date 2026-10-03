@@ -128,6 +128,11 @@
     "ownDescription": "Você não pode fazer a compra imediata de um produto que você mesmo publicou.",
     "bids": "Número de lances",
     "timeRemaining": "Tempo restante",
+    "share": "Compartilhar",
+    "shareTitle": "Compartilhar leilão",
+    "shareText": "Confira este leilão no Nexus Battle.",
+    "shareCopied": "Link copiado",
+    "shareError": "Não foi possível compartilhar o leilão",
     "seller": {
       "title": "Vendedor",
       "unavailable": "Vendedor não disponível"
