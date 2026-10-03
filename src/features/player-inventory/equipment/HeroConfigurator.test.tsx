@@ -575,13 +575,15 @@ const GOLPE_DE_DEFENSA_EPIC = {
     operation: 'INCREASE',
     magnitude: { mode: 'FIXED', amount: 4 },
   },
-  specificEffect: {
-    kind: 'STAT_MODIFIER',
-    target: 'SELF',
-    statistic: 'ATTACK',
-    operation: 'INCREASE',
-    magnitude: { mode: 'FIXED', amount: 2 },
-  },
+  specificEffects: [
+    {
+      kind: 'STAT_MODIFIER',
+      target: 'SELF',
+      statistic: 'ATTACK',
+      operation: 'INCREASE',
+      magnitude: { mode: 'FIXED', amount: 2 },
+    },
+  ],
 }
 
 const EPIC_EQUIPPED = (
@@ -595,7 +597,7 @@ const EPIC_EQUIPPED = (
     ...GOLPE_DE_DEFENSA_EPIC,
     applied: overrides.applied ?? {
       baseApplied: GOLPE_DE_DEFENSA_EPIC.baseEffect,
-      additionalApplied: GOLPE_DE_DEFENSA_EPIC.specificEffect,
+      additionalApplied: GOLPE_DE_DEFENSA_EPIC.specificEffects,
     },
   },
   version: 1,
@@ -661,6 +663,51 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
     expect(screen.getByText('+2 Ataque')).toBeInTheDocument()
   })
 
+  it('GAP-HU31-CATALOG-MULTI-EFFECT: con varios efectos especificos simultaneos, muestra TODOS', async () => {
+    const user = userEvent.setup()
+    const critico = {
+      kind: 'STAT_MODIFIER',
+      target: 'SELF',
+      statistic: 'CRITICAL_CHANCE',
+      operation: 'INCREASE',
+      magnitude: { mode: 'FIXED', amount: 2 },
+    }
+    const epicConDosEspecificos = {
+      ...GOLPE_DE_DEFENSA_EPIC,
+      specificEffects: [...GOLPE_DE_DEFENSA_EPIC.specificEffects, critico],
+    }
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () =>
+          json({
+            heroId: 'pid-guerrero-tanque',
+            epic: {
+              ...epicConDosEspecificos,
+              applied: {
+                baseApplied: epicConDosEspecificos.baseEffect,
+                additionalApplied: epicConDosEspecificos.specificEffects,
+              },
+            },
+            version: 1,
+            locked: false,
+          }),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
+    expect(screen.getByText('+4 Defensa')).toBeInTheDocument()
+    expect(screen.getByText('Efecto específico 1')).toBeInTheDocument()
+    expect(screen.getByText('+2 Ataque')).toBeInTheDocument()
+    expect(screen.getByText('Efecto específico 2')).toBeInTheDocument()
+    expect(screen.getByText('+2 Probabilidad de crítico')).toBeInTheDocument()
+  })
+
   it('con subtipo NO coincidente, el efecto especifico se muestra sin aplicar', async () => {
     const user = userEvent.setup()
     fetchMock.mockImplementation(
@@ -671,7 +718,7 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
         () =>
           json(
             EPIC_EQUIPPED({
-              applied: { baseApplied: GOLPE_DE_DEFENSA_EPIC.baseEffect, additionalApplied: null },
+              applied: { baseApplied: GOLPE_DE_DEFENSA_EPIC.baseEffect, additionalApplied: [] },
             }),
           ),
       ),

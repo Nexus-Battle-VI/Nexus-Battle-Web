@@ -78,6 +78,7 @@
     "incompatible": "Doesn't match the hero's subtype: only the general effect applies.",
     "generalEffect": "General effect",
     "specificEffect": "Specific effect",
+    "specificEffectN": "Specific effect {{index}}",
     "notApplicable": "Not applicable",
     "select": "Select epic",
     "cancelSelect": "Cancel selection",

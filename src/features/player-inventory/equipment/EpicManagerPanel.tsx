@@ -29,10 +29,12 @@ export interface EpicManagerPanelProps {
 
 const EpicEffectRow = ({
   labelKey,
+  labelValues,
   effect,
   applied,
 }: {
   readonly labelKey: string
+  readonly labelValues?: Readonly<Record<string, unknown>>
   readonly effect: HeroEpic['baseEffect']
   readonly applied: boolean
 }): React.JSX.Element => {
@@ -40,7 +42,9 @@ const EpicEffectRow = ({
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 rounded border border-border px-2 py-1">
-      <span className="text-muted">{t(labelKey)}</span>
+      <span className="text-muted">
+        {labelValues === undefined ? t(labelKey) : t(labelKey, labelValues)}
+      </span>
       <span className={clsx('text-right', applied ? 'text-ink' : 'text-muted line-through')}>
         {effect === null ? t('inventory:epic.notApplicable') : describeEquipmentEffect(effect)}
       </span>
@@ -121,7 +125,7 @@ export const EpicManagerPanel = ({
                         {t('inventory:epic.equipped', { name: current.name })}
                       </p>
                       <p className="text-xs text-muted">
-                        {epic.epic?.applied.additionalApplied !== null
+                        {(epic.epic?.applied.additionalApplied.length ?? 0) > 0
                           ? t('inventory:epic.compatible', {
                               subtype: current.compatibleHeroSubtype,
                             })
@@ -155,11 +159,21 @@ export const EpicManagerPanel = ({
                     effect={current.baseEffect}
                     applied={epic.epic?.applied.baseApplied !== null}
                   />
-                  <EpicEffectRow
-                    labelKey="inventory:epic.specificEffect"
-                    effect={current.specificEffect}
-                    applied={epic.epic?.applied.additionalApplied !== null}
-                  />
+                  {current.specificEffects.map((effect, index) => (
+                    <EpicEffectRow
+                      key={`specific-${String(index)}`}
+                      labelKey={
+                        current.specificEffects.length > 1
+                          ? 'inventory:epic.specificEffectN'
+                          : 'inventory:epic.specificEffect'
+                      }
+                      effect={effect}
+                      applied={(epic.epic?.applied.additionalApplied.length ?? 0) > 0}
+                      {...(current.specificEffects.length > 1
+                        ? { labelValues: { index: index + 1 } }
+                        : {})}
+                    />
+                  ))}
                 </ul>
               )}
 

@@ -29,11 +29,16 @@ export interface HeroEpic {
   readonly compatibleHeroSubtype: string
   /** `null` = "No aplica" (Tabla 20, Chaman/Medico). */
   readonly baseEffect: EpicEffect | null
-  readonly specificEffect: EpicEffect
+  /**
+   * Minimo 1 (correccion GAP-HU31-CATALOG-MULTI-EFFECT): una epica puede
+   * combinar varios efectos especificos simultaneos (ej. +4 daño Y +2%
+   * critico, Golpe de defensa, Tabla 20).
+   */
+  readonly specificEffects: readonly EpicEffect[]
   readonly applied: {
     readonly baseApplied: EpicEffect | null
-    /** `null` cuando el subtipo del heroe no coincide con `compatibleHeroSubtype`. */
-    readonly additionalApplied: EpicEffect | null
+    /** Vacio cuando el subtipo del heroe no coincide con `compatibleHeroSubtype`. */
+    readonly additionalApplied: readonly EpicEffect[]
   }
 }
 

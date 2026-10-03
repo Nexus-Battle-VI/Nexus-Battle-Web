@@ -79,6 +79,7 @@
     "incompatible": "Não corresponde ao subtipo do herói: apenas o efeito geral se aplica.",
     "generalEffect": "Efeito geral",
     "specificEffect": "Efeito específico",
+    "specificEffectN": "Efeito específico {{index}}",
     "notApplicable": "Não aplicável",
     "select": "Selecionar épica",
     "cancelSelect": "Cancelar seleção",
