@@ -137,11 +137,6 @@ export const AuctionDetailPage = (): React.JSX.Element => {
       return
     }
 
-    if (navigator.clipboard === undefined) {
-      setShareFeedback('error')
-      return
-    }
-
     try {
       await navigator.clipboard.writeText(url)
       setShareFeedback('copied')
