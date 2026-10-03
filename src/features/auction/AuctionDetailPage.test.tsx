@@ -634,7 +634,7 @@ describe('AuctionDetailPage (HU-64.1 / HU-88)', () => {
 
       expect(await screen.findByText('Precio mínimo')).toBeInTheDocument()
       expect(
-        screen.getAllByText((_, element) => element?.textContent?.includes('900') === true).length,
+        screen.getAllByText((_, element) => element?.textContent.includes('900') === true).length,
       ).toBeGreaterThan(0)
       expect(screen.getByLabelText('Publicación oficial: Premium')).toHaveTextContent('Premium')
       expect(screen.queryByRole('button', { name: 'Registrar puja' })).not.toBeInTheDocument()
