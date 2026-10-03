@@ -52,11 +52,16 @@ const OWNED = [ownedHero('guerrero-tanque', 'Guerrero Tanque', 'GUERRERO_TANQUE'
  * seleccion preparada (`/heroes/selection`) y el equipamiento. Un mock ciego le
  * daria a una respuesta la forma de otra y el test pasaria por casualidad.
  */
+/** HU-31: sin epica equipada, sin bloqueo -- el estado por defecto de la mayoria de las pruebas de HU-28/HU-29, que no la ejercitan. */
+const NO_EPIC = (): Response =>
+  json({ heroId: 'pid-guerrero-tanque', epic: null, version: 0, locked: false })
+
 const routedFetch =
   (
     onEquipment: (url: string, init?: RequestInit) => Response,
     onSelection: (url: string, init?: RequestInit) => Response = NO_SELECTION,
     heroes: () => Response = () => json(OWNED),
+    onEpic: (url: string, init?: RequestInit) => Response = NO_EPIC,
   ): ((input: string, init?: RequestInit) => Promise<Response>) =>
   (input: string, init?: RequestInit) =>
     Promise.resolve(
@@ -64,7 +69,9 @@ const routedFetch =
         ? heroes()
         : input.includes('/selection')
           ? onSelection(input, init)
-          : onEquipment(input, init),
+          : input.includes('/epic')
+            ? onEpic(input, init)
+            : onEquipment(input, init),
     )
 
 const EMPTY_EQUIPMENT = {
@@ -156,6 +163,7 @@ const Harness = ({
   productType = null,
 }: HarnessProps): React.JSX.Element => {
   const [slot, setSlot] = useState<EquipmentSlotId | null>(null)
+  const [selectingEpic, setSelectingEpic] = useState(false)
   return (
     <HeroConfigurator
       selectedProductReference={productReference}
@@ -163,6 +171,10 @@ const Harness = ({
       selectedProductType={productType}
       selectedSlot={slot}
       onSelectSlot={setSlot}
+      selectingEpic={selectingEpic}
+      onToggleSelectingEpic={() => {
+        setSelectingEpic((active) => !active)
+      }}
     />
   )
 }
@@ -545,6 +557,217 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Catalog no disponible.')
+  })
+})
+
+const NO_EPIC_EQUIPPED = { heroId: 'pid-guerrero-tanque', epic: null, version: 0, locked: false }
+
+const GOLPE_DE_DEFENSA_EPIC = {
+  epicProductId: 'pid-golpe-de-defensa',
+  epicReference: 'golpe-de-defensa',
+  name: 'Golpe de defensa',
+  imageUrl: '',
+  compatibleHeroSubtype: 'GUERRERO_TANQUE',
+  baseEffect: {
+    kind: 'STAT_MODIFIER',
+    target: 'SELF',
+    statistic: 'DEFENSE',
+    operation: 'INCREASE',
+    magnitude: { mode: 'FIXED', amount: 4 },
+  },
+  specificEffect: {
+    kind: 'STAT_MODIFIER',
+    target: 'SELF',
+    statistic: 'ATTACK',
+    operation: 'INCREASE',
+    magnitude: { mode: 'FIXED', amount: 2 },
+  },
+}
+
+const EPIC_EQUIPPED = (
+  overrides: {
+    readonly applied?: { readonly baseApplied: unknown; readonly additionalApplied: unknown }
+    readonly locked?: boolean
+  } = {},
+): Record<string, unknown> => ({
+  heroId: 'pid-guerrero-tanque',
+  epic: {
+    ...GOLPE_DE_DEFENSA_EPIC,
+    applied: overrides.applied ?? {
+      baseApplied: GOLPE_DE_DEFENSA_EPIC.baseEffect,
+      additionalApplied: GOLPE_DE_DEFENSA_EPIC.specificEffect,
+    },
+  },
+  version: 1,
+  locked: overrides.locked ?? false,
+})
+
+/**
+ * HU-31 (contrato `hu-31-equipped-epic-v1`): Web presenta la epica equipada
+ * y permite seleccionar una nueva del inventario, SIN calcular compatibilidad
+ * ni efectos -- solo lee `applied.baseApplied`/`applied.additionalApplied`,
+ * ya resueltos por Player-Inventory. Reutiliza la misma rejilla de
+ * seleccion y el mismo mecanismo de bloqueo de batalla que HU-28/HU-29.
+ */
+describe('HeroConfigurator (HU-31) — epica equipada', () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockReset()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('sin epica equipada, el panel lo dice y no hay boton de Equipar visible', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(NO_EPIC_EQUIPPED),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByText('Sin épica equipada.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Equipar épica$/u })).toBeNull()
+  })
+
+  it('con una epica equipada y subtipo coincidente, muestra ambos efectos aplicados', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(EPIC_EQUIPPED()),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
+    expect(
+      screen.getByText('Compatible con GUERRERO_TANQUE: se aplica el efecto específico.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('+4 Defensa')).toBeInTheDocument()
+    expect(screen.getByText('+2 Ataque')).toBeInTheDocument()
+  })
+
+  it('con subtipo NO coincidente, el efecto especifico se muestra sin aplicar', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () =>
+          json(
+            EPIC_EQUIPPED({
+              applied: { baseApplied: GOLPE_DE_DEFENSA_EPIC.baseEffect, additionalApplied: null },
+            }),
+          ),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(
+      await screen.findByText(
+        'No coincide con el subtipo del héroe: solo se aplica el efecto general.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('seleccionar una epica del inventario y equiparla persiste el nuevo estado', async () => {
+    const user = userEvent.setup()
+    let putBody: unknown = null
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        (url, init) => {
+          if (init?.method === 'PUT') {
+            putBody = JSON.parse(init.body as string)
+            return json(EPIC_EQUIPPED())
+          }
+          return json(NO_EPIC_EQUIPPED)
+        },
+      ),
+    )
+
+    renderWithProviders(
+      <Harness
+        productReference="golpe-de-defensa"
+        productName="Golpe de defensa"
+        productType="EPICA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await screen.findByText('Sin épica equipada.')
+
+    await user.click(screen.getByRole('button', { name: 'Seleccionar épica' }))
+    expect(screen.getByText('Seleccionado: Golpe de defensa')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Equipar épica' }))
+
+    expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
+    expect(putBody).toEqual({ productReference: 'golpe-de-defensa' })
+  })
+
+  it('elegir una ranura de equipamiento cancela el modo de seleccion de epica', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(NO_EPIC_EQUIPPED),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    await user.click(screen.getByRole('button', { name: 'Seleccionar épica' }))
+    expect(screen.getByRole('button', { name: 'Cancelar selección' })).toBeInTheDocument()
+
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+
+    expect(screen.queryByRole('button', { name: 'Cancelar selección' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Seleccionar épica' })).toBeInTheDocument()
+  })
+
+  it('con locked:true, avisa de forma visible y oculta el boton de seleccionar', async () => {
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(EPIC_EQUIPPED({ locked: true })),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(
+      await screen.findByText(
+        'La épica no se puede cambiar: el héroe está participando en una batalla activa. Podrás volver a cambiarla cuando termine.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Seleccionar épica' })).toBeDisabled()
   })
 })
 

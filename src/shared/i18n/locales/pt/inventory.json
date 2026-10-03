@@ -70,6 +70,27 @@
       "message": "O equipamento não pode ser alterado: o herói está participando de uma batalha ativa. Você poderá alterá-lo novamente quando ela terminar."
     }
   },
+  "epic": {
+    "title": "Épica",
+    "chooseHero": "Escolha um herói para ver a épica equipada dele.",
+    "none": "Nenhuma épica equipada.",
+    "equipped": "Equipada: {{name}}",
+    "compatible": "Compatível com {{subtype}}: o efeito específico se aplica.",
+    "incompatible": "Não corresponde ao subtipo do herói: apenas o efeito geral se aplica.",
+    "generalEffect": "Efeito geral",
+    "specificEffect": "Efeito específico",
+    "notApplicable": "Não aplicável",
+    "select": "Selecionar épica",
+    "cancelSelect": "Cancelar seleção",
+    "selectHint": "Escolha uma épica do seu inventário para equipá-la.",
+    "selectedItem": "Selecionado: {{item}}",
+    "equip": "Equipar épica",
+    "equipping": "Equipando…",
+    "equipFailed": "Não foi possível equipar a épica. Tente novamente.",
+    "battleLock": {
+      "message": "A épica não pode ser alterada: o herói está participando de uma batalha ativa. Você poderá alterá-la novamente quando ela terminar."
+    }
+  },
   "slots": {
     "WEAPON_1": "Arma 1",
     "WEAPON_2": "Arma 2",

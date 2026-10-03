@@ -45,6 +45,10 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
   const [page, setPage] = useState(1)
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<EquipmentSlotId | null>(null)
+  // HU-31: mutuamente excluyente con `selectedSlot` -la epica no es una de
+  // las 2/6/2 ranuras de HU-28, pero comparte la misma rejilla de inventario
+  // para elegir el producto-.
+  const [selectingEpic, setSelectingEpic] = useState(false)
 
   const debouncedTerm = useDebouncedValue(term, 300)
   const searching = effectiveSearch(debouncedTerm) !== ''
@@ -67,8 +71,11 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
   const items = data?.items ?? []
   const totalItems = data?.totalItems ?? 0
 
-  const highlightType =
-    selectedSlot === null ? null : (SLOT_META_BY_ID.get(selectedSlot)?.productType ?? null)
+  const highlightType = selectingEpic
+    ? 'EPICA'
+    : selectedSlot === null
+      ? null
+      : (SLOT_META_BY_ID.get(selectedSlot)?.productType ?? null)
   const selectedItem = items.find((item) => item.itemId === selectedItemId)
   const selectedProductType = selectedItem?.product?.type ?? null
   const selectedProductName = selectedItem?.product?.name ?? null
@@ -97,7 +104,15 @@ export const PlayerInventoryPage = (): React.JSX.Element => {
           selectedProductName={selectedProductName}
           selectedProductType={selectedProductType}
           selectedSlot={selectedSlot}
-          onSelectSlot={setSelectedSlot}
+          onSelectSlot={(slot) => {
+            setSelectedSlot(slot)
+            if (slot !== null) setSelectingEpic(false)
+          }}
+          selectingEpic={selectingEpic}
+          onToggleSelectingEpic={() => {
+            setSelectingEpic((active) => !active)
+            setSelectedSlot(null)
+          }}
         />
       </div>
 
