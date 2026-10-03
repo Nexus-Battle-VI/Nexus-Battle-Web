@@ -60,6 +60,9 @@
     "searchLabel": "Pesquisar leilões",
     "searchPlaceholder": "Pesquisar por nome do produto",
     "clearSearch": "Limpar pesquisa",
+    "suggestionsLoading": "Buscando sugestões...",
+    "suggestionsEmpty": "Nenhuma sugestão para esta busca.",
+    "suggestionsError": "Não foi possível carregar as sugestões.",
     "publisherFilter": "Publicador",
     "publisherAll": "Todos",
     "publisherPlayer": "Jogadores",
@@ -124,7 +127,31 @@
     "ownTitle": "Este é o seu próprio leilão",
     "ownDescription": "Você não pode fazer a compra imediata de um produto que você mesmo publicou.",
     "bids": "Número de lances",
-    "timeRemaining": "Tempo restante"
+    "timeRemaining": "Tempo restante",
+    "share": "Compartilhar",
+    "shareTitle": "Compartilhar leilão",
+    "shareText": "Confira este leilão no Nexus Battle.",
+    "shareCopied": "Link copiado",
+    "shareError": "Não foi possível compartilhar o leilão",
+    "seller": {
+      "title": "Vendedor",
+      "unavailable": "Vendedor não disponível"
+    },
+    "notFound": {
+      "title": "Leilão não encontrado",
+      "description": "Este leilão não existe ou não está mais disponível.",
+      "backToMarketplace": "Voltar ao marketplace"
+    },
+    "forbidden": {
+      "title": "Acesso não permitido",
+      "description": "Você não tem permissão para consultar este leilão."
+    },
+    "bidHistory": {
+      "title": "Histórico de lances",
+      "empty": "Nenhum lance registrado.",
+      "error": "Não foi possível carregar o histórico de lances.",
+      "pagination": "Paginação do histórico de lances"
+    }
   },
   "countdown": {
     "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",

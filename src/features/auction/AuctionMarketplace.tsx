@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { BadgeDollarSign, Coins } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
@@ -12,15 +13,21 @@ import { formatMoney } from '@/lib/format'
 import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import {
   AUCTION_PAGE_SIZE,
   AUCTION_PAGE_SIZE_OPTIONS,
+  AUCTION_SUGGESTIONS_LIMIT,
+  AUCTION_SUGGESTIONS_MIN_QUERY_LENGTH,
   listActiveAuctions,
+  listAuctionSuggestions,
   type ActiveAuction,
   type ActiveAuctionQuery,
   type ActiveAuctionSort,
   type AuctionPriceKind,
   type AuctionPublisherType,
+  type AuctionSuggestion,
+  type AuctionSuggestionsQuery,
 } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
@@ -205,11 +212,33 @@ const toActiveAuctionQuery = (
   ...(filters.sort === '' ? {} : { sort: filters.sort }),
 })
 
+/**
+ * Traduce al contrato de `GET /v1/auctions/suggestions`: nunca `sort`,
+ * `page` ni `pageSize` -ese endpoint no los admite-, y los mismos filtros
+ * compatibles que la lista principal para que las sugerencias no se salgan
+ * del universo visible.
+ */
+const toAuctionSuggestionsQuery = (
+  q: string,
+  filters: MarketplaceFilters,
+): AuctionSuggestionsQuery => ({
+  q,
+  limit: AUCTION_SUGGESTIONS_LIMIT,
+  ...(filters.publisherType === '' ? {} : { publisherType: filters.publisherType }),
+  ...(filters.priceKind === '' ? {} : { priceKind: filters.priceKind }),
+  ...(filters.hasBuyNow === '' ? {} : { hasBuyNow: filters.hasBuyNow === 'true' }),
+})
+
 export const AuctionMarketplace = (): React.JSX.Element => {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(AUCTION_PAGE_SIZE)
   const [filters, setFilters] = useState<MarketplaceFilters>(DEFAULT_FILTERS)
   const [inputValue, setInputValue] = useState('')
+  /** El usuario cerro el desplegable a propósito (Escape, selección, limpiar); escribir lo reabre. */
+  const [closedByUser, setClosedByUser] = useState(false)
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null)
+  const comboboxRef = useRef<HTMLDivElement>(null)
+  const listboxId = useId()
   const roles = useSession((state) => state.roles)
   const { t } = useTranslation()
   const request = toActiveAuctionQuery(page, pageSize, filters)
@@ -228,6 +257,51 @@ export const AuctionMarketplace = (): React.JSX.Element => {
   })
   const hasActiveFilters = Object.values(filters).some((value) => value !== '')
 
+  const debouncedInput = useDebouncedValue(inputValue)
+  const suggestionsQueryText = debouncedInput.trim()
+  const suggestionsEnabled = suggestionsQueryText.length >= AUCTION_SUGGESTIONS_MIN_QUERY_LENGTH
+  const suggestionsRequest = toAuctionSuggestionsQuery(suggestionsQueryText, filters)
+  // Misma clave que la consulta que se envia, igual criterio que la lista principal.
+  const suggestionsQuery = useQuery({
+    queryKey: queryKeys.auctions.suggestions({
+      q: suggestionsRequest.q,
+      limit: suggestionsRequest.limit ?? AUCTION_SUGGESTIONS_LIMIT,
+      publisherType: suggestionsRequest.publisherType ?? null,
+      priceKind: suggestionsRequest.priceKind ?? null,
+      hasBuyNow: suggestionsRequest.hasBuyNow ?? null,
+    }),
+    queryFn: ({ signal }) => listAuctionSuggestions(suggestionsRequest, signal),
+    enabled: suggestionsEnabled,
+  })
+  const suggestions = suggestionsEnabled ? (suggestionsQuery.data?.items ?? []) : []
+  // Menos de 3 caracteres (tras el debounce) nunca esta abierto; si no, manda el cierre manual.
+  const isSuggestionsOpen = suggestionsEnabled && !closedByUser
+
+  // El resaltado es de ESTA busqueda: una nueva (tras el debounce) no hereda el resaltado anterior.
+  // Patron de React para estado derivado de un valor que cambia entre renders (sin efecto).
+  const [resolvedQueryText, setResolvedQueryText] = useState(suggestionsQueryText)
+  if (resolvedQueryText !== suggestionsQueryText) {
+    setResolvedQueryText(suggestionsQueryText)
+    setHighlightedIndex(null)
+  }
+
+  // Cierre al hacer clic fuera, mismo patron que `AdminNavMenu`.
+  useEffect(() => {
+    if (!isSuggestionsOpen) {
+      return
+    }
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (comboboxRef.current && !comboboxRef.current.contains(event.target as Node)) {
+        setClosedByUser(true)
+        setHighlightedIndex(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isSuggestionsOpen])
+
   // Otro filtro u orden cambia el conjunto de resultados: se vuelve a la primera pagina.
   const changeFilters = (patch: Partial<MarketplaceFilters>): void => {
     setFilters((current) => normalizeFilters(current, patch))
@@ -239,6 +313,26 @@ export const AuctionMarketplace = (): React.JSX.Element => {
   const clearSearch = (): void => {
     setInputValue('')
     changeFilters({ search: '' })
+    setClosedByUser(true)
+    setHighlightedIndex(null)
+  }
+  const optionId = (index: number): string => `${listboxId}-option-${String(index)}`
+  /** Mismo flujo de busqueda aplicada que Enter manual (HU-87): no duplica logica. */
+  const selectSuggestion = (suggestion: AuctionSuggestion): void => {
+    setInputValue(suggestion.name)
+    changeFilters({ search: suggestion.name })
+    setClosedByUser(true)
+    setHighlightedIndex(null)
+  }
+  const moveHighlight = (delta: 1 | -1): void => {
+    if (suggestions.length === 0) {
+      return
+    }
+    setClosedByUser(false)
+    setHighlightedIndex((current) => {
+      const base = current ?? (delta === 1 ? -1 : 0)
+      return (base + delta + suggestions.length) % suggestions.length
+    })
   }
   const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / pageSize))
 
@@ -285,23 +379,106 @@ export const AuctionMarketplace = (): React.JSX.Element => {
         className="space-y-3 rounded-lg border border-border bg-surface-raised p-4"
       >
         <div className="flex flex-wrap items-end gap-3">
-          <TextField
-            label={t('auction:market.searchLabel')}
-            placeholder={t('auction:market.searchPlaceholder')}
-            type="search"
-            maxLength={80}
-            value={inputValue}
-            onChange={(event) => {
-              setInputValue(event.target.value)
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                applySearch()
-              }
-            }}
-            className="w-full sm:max-w-md"
-          />
+          <div ref={comboboxRef} className="relative w-full sm:max-w-md">
+            <TextField
+              label={t('auction:market.searchLabel')}
+              placeholder={t('auction:market.searchPlaceholder')}
+              type="text"
+              maxLength={80}
+              value={inputValue}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={isSuggestionsOpen}
+              {...(isSuggestionsOpen ? { 'aria-controls': listboxId } : {})}
+              {...(highlightedIndex === null
+                ? {}
+                : { 'aria-activedescendant': optionId(highlightedIndex) })}
+              autoComplete="off"
+              onChange={(event) => {
+                setInputValue(event.target.value)
+                setClosedByUser(false)
+                setHighlightedIndex(null)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault()
+                  moveHighlight(1)
+                  return
+                }
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault()
+                  moveHighlight(-1)
+                  return
+                }
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  const activeSuggestion =
+                    highlightedIndex === null ? undefined : suggestions[highlightedIndex]
+                  if (activeSuggestion !== undefined) {
+                    selectSuggestion(activeSuggestion)
+                    return
+                  }
+                  applySearch()
+                  return
+                }
+                if (event.key === 'Escape' && isSuggestionsOpen) {
+                  setClosedByUser(true)
+                  setHighlightedIndex(null)
+                }
+              }}
+              className="w-full"
+            />
+            {isSuggestionsOpen && (
+              <ul
+                id={listboxId}
+                role="listbox"
+                className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-md border border-border bg-surface-raised py-1 shadow-lg"
+              >
+                {suggestionsQuery.isLoading && (
+                  <li role="status" className="px-3 py-2 text-sm text-muted">
+                    {t('auction:market.suggestionsLoading')}
+                  </li>
+                )}
+                {!suggestionsQuery.isLoading && suggestionsQuery.isError && (
+                  <li role="alert" className="px-3 py-2 text-sm text-danger">
+                    {t('auction:market.suggestionsError')}
+                  </li>
+                )}
+                {!suggestionsQuery.isLoading &&
+                  !suggestionsQuery.isError &&
+                  suggestions.length === 0 && (
+                    <li className="px-3 py-2 text-sm text-muted">
+                      {t('auction:market.suggestionsEmpty')}
+                    </li>
+                  )}
+                {suggestions.map((suggestion, index) => (
+                  <li
+                    key={suggestion.productId}
+                    id={optionId(index)}
+                    role="option"
+                    aria-selected={highlightedIndex === index}
+                    className={clsx(
+                      'cursor-pointer px-3 py-2 text-sm',
+                      highlightedIndex === index && 'bg-brand/10',
+                    )}
+                    onMouseEnter={() => {
+                      setHighlightedIndex(index)
+                    }}
+                    onMouseDown={(event) => {
+                      // Evita el blur del input antes de procesar el clic (patron estandar de listbox).
+                      event.preventDefault()
+                    }}
+                    onClick={() => {
+                      selectSuggestion(suggestion)
+                    }}
+                  >
+                    <span className="font-medium text-ink">{suggestion.name}</span>
+                    <span className="ml-2 text-xs text-muted">{suggestion.type}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {filters.search !== '' && (
             <Button variant="secondary" onClick={clearSearch}>
               {t('auction:market.clearSearch')}
@@ -380,6 +557,8 @@ export const AuctionMarketplace = (): React.JSX.Element => {
             onClick={() => {
               setInputValue('')
               changeFilters(DEFAULT_FILTERS)
+              setClosedByUser(true)
+              setHighlightedIndex(null)
             }}
           >
             {t('auction:market.clearFilters')}

@@ -20,14 +20,15 @@ export interface AuctionDetailBid {
   readonly placedAt: string
 }
 
-export interface AuctionDetail {
+interface AuctionDetailBase {
   readonly id: string
   readonly sellerId: string
+  /** HU-88: perfil publico del vendedor (Account); `null` si no se pudo resolver. */
+  readonly sellerDisplayName: string | null
+  readonly sellerAvatarUrl: string | null
   readonly productId: string
   readonly durationHours: 24 | 48
   readonly publicationFeeCredits: number
-  readonly minimumBidCredits: number
-  readonly buyNowCredits: number | null
   readonly status: string
   readonly publishedAt: string
   readonly closesAt: string
@@ -37,12 +38,72 @@ export interface AuctionDetail {
   readonly bidCount: number
 }
 
-/** `GET /api/v1/auctions/:auctionId` (HU-63.6). */
+/** Mismo vocabulario que `ActiveAuction` de `./api.ts` (listado): no se inventan nombres nuevos. */
+export interface PlayerAuctionDetail extends AuctionDetailBase {
+  readonly publisherType: 'PLAYER'
+  readonly priceKind: 'CREDITS'
+  readonly minimumBidCredits: number
+  readonly buyNowCredits: number | null
+  readonly currency: null
+  readonly minimumBidAmountMinor: null
+  readonly buyNowAmountMinor: null
+  readonly officialMark: null
+}
+
+export interface OfficialAuctionDetail extends AuctionDetailBase {
+  readonly publisherType: 'GAME_MASTER'
+  readonly priceKind: 'REAL_MONEY'
+  readonly minimumBidCredits: null
+  readonly buyNowCredits: null
+  readonly currency: string
+  readonly minimumBidAmountMinor: number
+  readonly buyNowAmountMinor: number | null
+  readonly officialMark: 'OFFICIAL' | 'PREMIUM'
+}
+
+export type AuctionDetail = PlayerAuctionDetail | OfficialAuctionDetail
+
+/** `GET /api/v1/auctions/:auctionId` (HU-63.6, extendido por HU-88). */
 export const fetchAuctionDetail = (
   auctionId: string,
   signal?: AbortSignal,
 ): Promise<AuctionDetail> =>
   httpClient.get<AuctionDetail>(`/v1/auctions/${encodeURIComponent(auctionId)}`, signal)
+
+/** Item publico del historial de pujas (HU-88): nunca trae identidad del postor. */
+export interface AuctionBidHistoryItem {
+  readonly id: string
+  readonly amountCredits: number
+  readonly placedAt: string
+}
+
+export interface AuctionBidHistoryPage {
+  readonly items: readonly AuctionBidHistoryItem[]
+  readonly total: number
+  readonly page: number
+  readonly pageSize: number
+}
+
+/** Mismo default que Auction (`GET /v1/auctions/:auctionId/bids`). */
+export const AUCTION_BID_HISTORY_PAGE_SIZE = 20
+
+/**
+ * `GET /v1/auctions/:auctionId/bids` (HU-88). Solo envia `page`/`pageSize`:
+ * Auction no admite ningun otro parametro en este endpoint.
+ */
+export const fetchAuctionBidHistory = (
+  auctionId: string,
+  page: number,
+  pageSize: number = AUCTION_BID_HISTORY_PAGE_SIZE,
+  signal?: AbortSignal,
+): Promise<AuctionBidHistoryPage> => {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+
+  return httpClient.get<AuctionBidHistoryPage>(
+    `/v1/auctions/${encodeURIComponent(auctionId)}/bids?${params.toString()}`,
+    signal,
+  )
+}
 
 export interface BuyerCreditsSnapshot {
   readonly balance: number

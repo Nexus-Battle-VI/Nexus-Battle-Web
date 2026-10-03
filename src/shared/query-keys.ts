@@ -125,6 +125,15 @@ export const queryKeys = {
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /**
+     * Historial publico y paginado de pujas (HU-88,
+     * `GET /v1/auctions/:auctionId/bids`). Clave propia, distinta de
+     * `detail`: son dos consultas distintas y no deben compartir cache.
+     */
+    bidHistory: (auctionId: string, page: number, pageSize: number) =>
+      ['auction', 'bidHistory', auctionId, page, pageSize] as const,
+    /** Prefijo de `bidHistory` para invalidar todas sus paginas tras una puja exitosa. */
+    bidHistoryAll: (auctionId: string) => ['auction', 'bidHistory', auctionId] as const,
     /** Lista privada del jugador autenticado (HU-68). */
     watchlist: ['auction', 'watchlist'] as const,
     /**
@@ -241,5 +250,19 @@ export const queryKeys = {
       readonly hasBuyNow: boolean | null
       readonly sort: string | null
     }) => ['auctions', 'active', params] as const,
+    /**
+     * Sugerencias de autocompletado (`GET /v1/auctions/suggestions`).
+     * Prefijo propio, distinto de `active`: no es la misma consulta ni
+     * invalida igual. Sin `sort`/`page`/`pageSize`, que ese endpoint no
+     * admite; `q` siempre presente para que una respuesta vieja nunca
+     * reemplace a la de una busqueda mas reciente.
+     */
+    suggestions: (params: {
+      readonly q: string
+      readonly limit: number
+      readonly publisherType: string | null
+      readonly priceKind: string | null
+      readonly hasBuyNow: boolean | null
+    }) => ['auctions', 'suggestions', params] as const,
   },
 } as const

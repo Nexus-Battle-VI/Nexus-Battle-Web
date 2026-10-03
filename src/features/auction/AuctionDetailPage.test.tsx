@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,14 +14,24 @@ import type { BuyNowConfirmation } from './detail-api'
 
 const AUCTION_ID = 'auction-123'
 
-const auction = (patch: Partial<detailApi.AuctionDetail> = {}): detailApi.AuctionDetail => ({
+const auction = (
+  patch: Partial<detailApi.PlayerAuctionDetail> = {},
+): detailApi.PlayerAuctionDetail => ({
   id: AUCTION_ID,
   sellerId: 'seller-1',
+  sellerDisplayName: 'Ana Ramirez',
+  sellerAvatarUrl: null,
   productId: 'product-1',
+  publisherType: 'PLAYER',
+  priceKind: 'CREDITS',
   durationHours: 24,
   publicationFeeCredits: 1,
   minimumBidCredits: 10,
   buyNowCredits: 2500,
+  currency: null,
+  minimumBidAmountMinor: null,
+  buyNowAmountMinor: null,
+  officialMark: null,
   status: 'ACTIVE',
   publishedAt: '2026-09-20T12:00:00.000Z',
   closesAt: '2026-09-22T12:00:00.000Z',
@@ -29,6 +39,39 @@ const auction = (patch: Partial<detailApi.AuctionDetail> = {}): detailApi.Auctio
   bidCount: 0,
   ...patch,
 })
+
+const officialAuction = (
+  patch: Partial<detailApi.OfficialAuctionDetail> = {},
+): detailApi.OfficialAuctionDetail => ({
+  id: AUCTION_ID,
+  sellerId: 'game-master-1',
+  sellerDisplayName: null,
+  sellerAvatarUrl: null,
+  productId: 'product-1',
+  publisherType: 'GAME_MASTER',
+  priceKind: 'REAL_MONEY',
+  durationHours: 48,
+  publicationFeeCredits: 0,
+  minimumBidCredits: null,
+  buyNowCredits: null,
+  currency: 'COP',
+  minimumBidAmountMinor: 90_000,
+  buyNowAmountMinor: 120_000,
+  officialMark: 'PREMIUM',
+  status: 'ACTIVE',
+  publishedAt: '2026-09-20T12:00:00.000Z',
+  closesAt: '2026-09-22T12:00:00.000Z',
+  currentBid: null,
+  bidCount: 0,
+  ...patch,
+})
+
+const emptyBidHistory: detailApi.AuctionBidHistoryPage = {
+  items: [],
+  total: 0,
+  page: 1,
+  pageSize: 20,
+}
 
 const producto = (
   patch: Partial<catalogApi.CanonicalProduct> = {},
@@ -70,15 +113,22 @@ const montar = (search = ''): void => {
   )
 }
 
-describe('AuctionDetailPage (HU-64.1)', () => {
+describe('AuctionDetailPage (HU-64.1 / HU-88)', () => {
   afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
   })
 
   beforeEach(() => {
     vi.restoreAllMocks()
     useSession.setState({ subject: 'buyer-1', accessToken: 'token', expiresAt: null })
     vi.spyOn(auctionApi, 'fetchWatchlist').mockResolvedValue({ items: [] })
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+    vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+    vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+    // HU-88: historial independiente del detalle; por defecto vacio salvo que
+    // un test lo sobreescriba explicitamente.
+    vi.spyOn(detailApi, 'fetchAuctionBidHistory').mockResolvedValue(emptyBidHistory)
   })
 
   it('muestra la tarjeta de compra inmediata cuando hay precio configurado y saldo suficiente', async () => {
@@ -91,7 +141,7 @@ describe('AuctionDetailPage (HU-64.1)', () => {
     expect(
       await screen.findByRole('heading', { name: 'Espada Legendaria Nexus' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('2.500 créditos')).toBeInTheDocument()
+    expect(screen.getAllByText('2.500 créditos')).not.toHaveLength(0)
     expect(
       screen.getByRole('checkbox', { name: 'Confirmo la compra inmediata' }),
     ).toBeInTheDocument()
@@ -492,6 +542,397 @@ describe('AuctionDetailPage (HU-64.1)', () => {
 
       expect(await screen.findByText('Es tu propia subasta')).toBeInTheDocument()
       expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('vendedor (HU-88)', () => {
+    it('A. muestra el sellerDisplayName cuando Auction lo resuelve', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ sellerDisplayName: 'Carlos Mendez' }),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Carlos Mendez')).toBeInTheDocument()
+    })
+
+    it('B. muestra el avatar cuando sellerAvatarUrl existe', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(new Blob(['fake-image-bytes'], { type: 'image/png' }), {
+            status: 200,
+            headers: { 'content-type': 'image/png' },
+          }),
+        ),
+      )
+      vi.stubGlobal('URL', {
+        ...URL,
+        createObjectURL: vi.fn().mockReturnValue('blob:fake-seller-avatar'),
+        revokeObjectURL: vi.fn(),
+      })
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({
+          sellerDisplayName: 'Carlos Mendez',
+          sellerAvatarUrl: '/accounts/seller-1/avatar',
+        }),
+      )
+
+      montar()
+
+      const image = await screen.findByRole('img', { name: 'Carlos Mendez' })
+      expect(image).toHaveAttribute('src', 'blob:fake-seller-avatar')
+    })
+
+    it('C. sellerDisplayName null: usa el fallback neutro, nunca sellerId como nombre', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ sellerDisplayName: null, sellerAvatarUrl: null }),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Vendedor no disponible')).toBeInTheDocument()
+      expect(screen.queryByText('seller-1')).not.toBeInTheDocument()
+      expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    })
+
+    it('J. Account degradado (seller null): el resto del detalle sigue visible', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ sellerDisplayName: null, sellerAvatarUrl: null, bidCount: 3 }),
+      )
+      vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+      vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+
+      montar()
+
+      expect(await screen.findByText('Vendedor no disponible')).toBeInTheDocument()
+      expect(
+        await screen.findByRole('heading', { name: 'Espada Legendaria Nexus' }),
+      ).toBeInTheDocument()
+      expect(screen.getByText('Número de pujas').nextElementSibling).toHaveTextContent(/^3$/)
+      expect(screen.getByRole('button', { name: 'Comprar ahora' })).toBeInTheDocument()
+    })
+  })
+
+  describe('compartir subasta (HU-88)', () => {
+    it('muestra la accion Compartir cuando el detalle existe', async () => {
+      montar()
+
+      expect(await screen.findByRole('button', { name: 'Compartir' })).toBeEnabled()
+    })
+
+    it('usa navigator.share con titulo, texto y URL limpia del detalle', async () => {
+      const share = vi.fn().mockResolvedValue(undefined)
+      vi.stubGlobal('navigator', { share })
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(share).toHaveBeenCalledTimes(1)
+      expect(share).toHaveBeenCalledWith({
+        title: 'Compartir subasta',
+        text: 'Mira esta subasta en Nexus Battle.',
+        url: `${window.location.origin}/auction/${AUCTION_ID}`,
+      })
+      expect(screen.queryByText('No se pudo compartir la subasta')).not.toBeInTheDocument()
+    })
+
+    it('trata AbortError de navigator.share como cancelacion silenciosa', async () => {
+      vi.stubGlobal('navigator', {
+        share: vi.fn().mockRejectedValue(new DOMException('cancelado', 'AbortError')),
+      })
+
+      montar()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      await waitFor(() => {
+        expect(screen.queryByText('No se pudo compartir la subasta')).not.toBeInTheDocument()
+      })
+    })
+
+    it('muestra feedback local para un error real de navigator.share', async () => {
+      vi.stubGlobal('navigator', { share: vi.fn().mockRejectedValue(new Error('denegado')) })
+
+      montar()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo compartir la subasta')
+    })
+
+    it('usa clipboard y confirma cuando navigator.share no esta disponible', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined)
+      vi.stubGlobal('navigator', { clipboard: { writeText } })
+
+      montar('?buyNow=1')
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/auction/${AUCTION_ID}`)
+      expect(await screen.findByRole('status')).toHaveTextContent('Enlace copiado')
+    })
+
+    it('muestra feedback local cuando clipboard falla o no esta disponible', async () => {
+      vi.stubGlobal('navigator', {
+        clipboard: { writeText: vi.fn().mockRejectedValue(new Error()) },
+      })
+
+      montar()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Compartir' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo compartir la subasta')
+    })
+  })
+
+  describe('modalidad de pago (HU-88)', () => {
+    it('D. PLAYER/CREDITS: muestra el precio minimo y la compra inmediata en creditos', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        auction({ minimumBidCredits: 15, buyNowCredits: 3000 }),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Precio mínimo')).toBeInTheDocument()
+      expect(screen.getByText('15 créditos')).toBeInTheDocument()
+      expect(screen.getByText('3.000 créditos')).toBeInTheDocument()
+    })
+
+    it('E. GAME_MASTER/REAL_MONEY: usa currency real, muestra la marca oficial y no ofrece puja', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(officialAuction())
+
+      montar()
+
+      expect(await screen.findByText('Precio mínimo')).toBeInTheDocument()
+      expect(
+        screen.getAllByText((_, element) => element?.textContent.includes('900') === true).length,
+      ).toBeGreaterThan(0)
+      expect(screen.getByLabelText('Publicación oficial: Premium')).toHaveTextContent('Premium')
+      expect(screen.queryByRole('button', { name: 'Registrar puja' })).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: 'Configurar puja automática' }),
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('checkbox', { name: 'Confirmo la compra inmediata' }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('E. GAME_MASTER sin buyNowAmountMinor: no muestra compra inmediata', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(
+        officialAuction({ buyNowAmountMinor: null }),
+      )
+
+      montar()
+
+      await screen.findByText('Precio mínimo')
+      expect(screen.getByText('No disponible')).toBeInTheDocument()
+    })
+  })
+
+  describe('historial de pujas (HU-88)', () => {
+    it('F. carga y muestra monto y fecha de cada item', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(detailApi, 'fetchAuctionBidHistory').mockResolvedValue({
+        items: [
+          { id: 'bid-1', amountCredits: 100, placedAt: '2026-10-02T16:30:00.000Z' },
+          { id: 'bid-2', amountCredits: 150, placedAt: '2026-10-02T17:00:00.000Z' },
+        ],
+        total: 2,
+        page: 1,
+        pageSize: 20,
+      })
+
+      montar()
+
+      expect(await screen.findByRole('heading', { name: 'Historial de pujas' })).toBeInTheDocument()
+      expect(await screen.findByText('100 créditos')).toBeInTheDocument()
+      expect(screen.getByText('150 créditos')).toBeInTheDocument()
+    })
+
+    it('F/G. nunca muestra bidderId, nickname ni un "Jugador anonimo" inventado', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(detailApi, 'fetchAuctionBidHistory').mockResolvedValue({
+        items: [{ id: 'bid-1', amountCredits: 100, placedAt: '2026-10-02T16:30:00.000Z' }],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      })
+
+      montar()
+
+      await screen.findByText('100 créditos')
+      expect(screen.queryByText(/Jugador an[oó]nimo/u)).not.toBeInTheDocument()
+      expect(screen.queryByText('other')).not.toBeInTheDocument()
+    })
+
+    it('F. vacio: muestra "No hay pujas registradas." sin tratarlo como error', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(detailApi, 'fetchAuctionBidHistory').mockResolvedValue(emptyBidHistory)
+
+      montar()
+
+      expect(await screen.findByText('No hay pujas registradas.')).toBeInTheDocument()
+      expect(
+        within(screen.getByRole('region', { name: 'Historial de pujas' })).queryByRole('alert'),
+      ).not.toBeInTheDocument()
+    })
+
+    it('F. error local: el resto del detalle sigue visible', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+      vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+      vi.spyOn(detailApi, 'fetchAuctionBidHistory').mockRejectedValue(
+        new HttpError(503, 'caido', { statusCode: 503 }),
+      )
+
+      montar()
+
+      expect(
+        await screen.findByText('No se pudo cargar el historial de pujas.'),
+      ).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Espada Legendaria Nexus' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Comprar ahora' })).toBeInTheDocument()
+    })
+
+    it('F. paginacion: Siguiente/Anterior piden la pagina correcta', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      const historyMock = vi
+        .spyOn(detailApi, 'fetchAuctionBidHistory')
+        .mockImplementation((_auctionId, page) =>
+          Promise.resolve({
+            items: [
+              {
+                id: `bid-${String(page)}`,
+                amountCredits: page * 10,
+                placedAt: '2026-10-02T16:30:00.000Z',
+              },
+            ],
+            total: 45,
+            page,
+            pageSize: 20,
+          }),
+        )
+
+      montar()
+
+      await screen.findByText('10 créditos')
+      expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+
+      await waitFor(() => {
+        expect(historyMock).toHaveBeenCalledWith(AUCTION_ID, 2, 20, expect.anything())
+      })
+      expect(await screen.findByText('Página 2 de 3')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Anterior' })).not.toBeDisabled()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Anterior' }))
+      await waitFor(() => {
+        expect(historyMock).toHaveBeenLastCalledWith(AUCTION_ID, 1, 20, expect.anything())
+      })
+    })
+
+    it('F. sin paginacion cuando total cabe en una sola pagina', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(detailApi, 'fetchAuctionBidHistory').mockResolvedValue({
+        items: [{ id: 'bid-1', amountCredits: 10, placedAt: '2026-10-02T16:30:00.000Z' }],
+        total: 1,
+        page: 1,
+        pageSize: 20,
+      })
+
+      montar()
+
+      await screen.findByText('10 créditos')
+      expect(screen.queryByRole('button', { name: 'Siguiente' })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('errores del detalle (HU-88)', () => {
+    it('H. 404: muestra "Subasta no encontrada" y un enlace al marketplace', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockRejectedValue(
+        new HttpError(404, 'no existe', { statusCode: 404, code: 'AUCTION_NOT_FOUND' }),
+      )
+
+      montar()
+
+      expect(await screen.findByText('Subasta no encontrada')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Volver al marketplace' })).toHaveAttribute(
+        'href',
+        '/auction',
+      )
+    })
+
+    it('I. 403: muestra el mensaje neutro de permisos y no muestra contenido parcial', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockRejectedValue(
+        new HttpError(403, 'prohibido', { statusCode: 403 }),
+      )
+
+      montar()
+
+      expect(
+        await screen.findByText('No tienes permisos para consultar esta subasta.'),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('heading', { name: 'Espada Legendaria Nexus' }),
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Tiempo restante')).not.toBeInTheDocument()
+    })
+
+    it('mantiene el estado generico para otros errores (500/red)', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockRejectedValue(
+        new HttpError(500, 'error interno', { statusCode: 500 }),
+      )
+
+      montar()
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument()
+      expect(screen.queryByText('Subasta no encontrada')).not.toBeInTheDocument()
+      expect(
+        screen.queryByText('No tienes permisos para consultar esta subasta.'),
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  describe('invalidacion tras una puja exitosa (HU-88)', () => {
+    it('R. registrar una puja invalida detalle e historial, ademas de la billetera', async () => {
+      vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction())
+      vi.spyOn(catalogApi, 'fetchCanonicalProduct').mockResolvedValue(producto())
+      vi.spyOn(detailApi, 'fetchBuyerCredits').mockResolvedValue({ balance: 5000 })
+      const bidApi = await import('./bidding/api')
+      vi.spyOn(bidApi, 'registerBid').mockResolvedValue({
+        id: 'bid-new',
+        auctionId: AUCTION_ID,
+        bidderId: 'buyer-1',
+        amountCredits: 50,
+        placedAt: '2026-09-21T12:00:00.000Z',
+      })
+
+      montar()
+
+      const historyCallsBefore = (detailApi.fetchAuctionBidHistory as ReturnType<typeof vi.fn>).mock
+        .calls.length
+      const detailCallsBefore = (detailApi.fetchAuctionDetail as ReturnType<typeof vi.fn>).mock
+        .calls.length
+
+      const amountInput = await screen.findByRole('spinbutton', { name: 'Monto de puja' })
+      await userEvent.clear(amountInput)
+      await userEvent.type(amountInput, '50')
+      await userEvent.click(screen.getByRole('button', { name: 'Registrar puja' }))
+
+      await waitFor(() => {
+        expect(
+          (detailApi.fetchAuctionDetail as ReturnType<typeof vi.fn>).mock.calls.length,
+        ).toBeGreaterThan(detailCallsBefore)
+      })
+      await waitFor(() => {
+        expect(
+          (detailApi.fetchAuctionBidHistory as ReturnType<typeof vi.fn>).mock.calls.length,
+        ).toBeGreaterThan(historyCallsBefore)
+      })
     })
   })
 })
