@@ -170,6 +170,33 @@
     "DEPENDENCY_UNAVAILABLE": "El servicio de créditos no está disponible en este momento. Inténtalo más tarde.",
     "unauthorized": "Tu sesión no es válida o venció. Vuelve a iniciar sesión."
   },
+  "cancellation": {
+    "title": "Cancelar subasta",
+    "description": "El servicio de subastas valida la disponibilidad definitiva.",
+    "action": "Cancelar subasta",
+    "hasBids": "No puedes cancelar una subasta que ya tiene pujas.",
+    "confirmTitle": "Confirmar cancelación",
+    "confirmBody": "La subasta quedará cancelada, el producto volverá a tu inventario, se aplica una penalización del 50 % de la comisión pagada y se reembolsa el otro 50 %.",
+    "penalty": "Penalización (50 %)",
+    "refund": "Reembolso (50 %)",
+    "confirmAction": "Sí, cancelar subasta",
+    "completed": "Subasta cancelada. El producto fue devuelto y se procesó el reembolso correspondiente.",
+    "processing": "La subasta fue cancelada. La devolución del producto o el reembolso todavía se está procesando.",
+    "terminal": "La subasta fue cancelada, pero una operación asociada requiere revisión.",
+    "cancelledOn": "Cancelada el {{date}}.",
+    "network": "No se pudo completar la cancelación por un problema de conexión. Se reintentará automáticamente.",
+    "errors": {
+      "AUCTION_HAS_BIDS": "No puedes cancelar una subasta que ya tiene pujas.",
+      "AUCTION_CANCELLATION_WINDOW_CLOSED": "No puedes cancelar la subasta durante las últimas 6 horas.",
+      "AUCTION_NOT_OWNER": "No tienes permiso para cancelar esta subasta.",
+      "AUCTION_NOT_ACTIVE": "Esta subasta ya no está activa.",
+      "AUCTION_NOT_FOUND": "No encontramos esta subasta.",
+      "IDEMPOTENCY_CONFLICT": "No se pudo repetir la operación de forma segura. Inténtalo nuevamente.",
+      "INVALID_IDEMPOTENCY_KEY": "No se pudo preparar la operación. Inténtalo nuevamente.",
+      "DEPENDENCY_UNAVAILABLE": "No pudimos completar una operación asociada. Inténtalo nuevamente.",
+      "unauthorized": "Tu sesión no es válida o venció. Vuelve a iniciar sesión."
+    }
+  },
   "detail": {
     "notActive": "Esta subasta ya no esta activa",
     "currentStatus": "Estado actual: {{status}}.",

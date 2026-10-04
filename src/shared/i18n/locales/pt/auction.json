@@ -170,6 +170,33 @@
     "DEPENDENCY_UNAVAILABLE": "O serviço de créditos não está disponível no momento. Tente mais tarde.",
     "unauthorized": "Sua sessão é inválida ou expirou. Entre novamente."
   },
+  "cancellation": {
+    "title": "Cancelar leilão",
+    "description": "O serviço de leilões toma a decisão final de elegibilidade.",
+    "action": "Cancelar leilão",
+    "hasBids": "Você não pode cancelar um leilão que já tem lances.",
+    "confirmTitle": "Confirmar cancelamento",
+    "confirmBody": "O leilão será cancelado, o produto voltará ao seu inventário, será aplicada uma penalidade de 50 % da taxa paga e os outros 50 % serão reembolsados.",
+    "penalty": "Penalidade (50 %)",
+    "refund": "Reembolso (50 %)",
+    "confirmAction": "Sim, cancelar leilão",
+    "completed": "Leilão cancelado. O produto foi devolvido e o reembolso aplicável foi processado.",
+    "processing": "O leilão foi cancelado. A devolução do produto ou o reembolso ainda está sendo processado.",
+    "terminal": "O leilão foi cancelado, mas uma operação associada requer revisão.",
+    "cancelledOn": "Cancelado em {{date}}.",
+    "network": "Não foi possível concluir o cancelamento devido a um problema de conexão. Ele será repetido automaticamente.",
+    "errors": {
+      "AUCTION_HAS_BIDS": "Você não pode cancelar um leilão que já tem lances.",
+      "AUCTION_CANCELLATION_WINDOW_CLOSED": "Você não pode cancelar o leilão nas últimas 6 horas.",
+      "AUCTION_NOT_OWNER": "Você não tem permissão para cancelar este leilão.",
+      "AUCTION_NOT_ACTIVE": "Este leilão não está mais ativo.",
+      "AUCTION_NOT_FOUND": "Não encontramos este leilão.",
+      "IDEMPOTENCY_CONFLICT": "Não foi possível repetir a operação com segurança. Tente novamente.",
+      "INVALID_IDEMPOTENCY_KEY": "Não foi possível preparar a operação. Tente novamente.",
+      "DEPENDENCY_UNAVAILABLE": "Não foi possível concluir uma operação associada. Tente novamente.",
+      "unauthorized": "Sua sessão é inválida ou expirou. Entre novamente."
+    }
+  },
   "detail": {
     "notActive": "Este leilão não está mais ativo",
     "currentStatus": "Status atual: {{status}}.",

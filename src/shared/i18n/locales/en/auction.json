@@ -169,6 +169,33 @@
     "DEPENDENCY_UNAVAILABLE": "The credits service is not available right now. Try again later.",
     "unauthorized": "Your session is invalid or has expired. Sign in again."
   },
+  "cancellation": {
+    "title": "Cancel auction",
+    "description": "The auction service makes the final eligibility decision.",
+    "action": "Cancel auction",
+    "hasBids": "You cannot cancel an auction that already has bids.",
+    "confirmTitle": "Confirm cancellation",
+    "confirmBody": "The auction will be cancelled, the product will return to your inventory, a 50% fee penalty applies, and the other 50% will be refunded.",
+    "penalty": "Penalty (50%)",
+    "refund": "Refund (50%)",
+    "confirmAction": "Yes, cancel auction",
+    "completed": "Auction cancelled. The product was returned and the applicable refund was processed.",
+    "processing": "The auction was cancelled. The product return or refund is still being processed.",
+    "terminal": "The auction was cancelled, but an associated operation requires review.",
+    "cancelledOn": "Cancelled on {{date}}.",
+    "network": "The cancellation could not be completed due to a connection problem. It will be retried automatically.",
+    "errors": {
+      "AUCTION_HAS_BIDS": "You cannot cancel an auction that already has bids.",
+      "AUCTION_CANCELLATION_WINDOW_CLOSED": "You cannot cancel the auction during its last 6 hours.",
+      "AUCTION_NOT_OWNER": "You do not have permission to cancel this auction.",
+      "AUCTION_NOT_ACTIVE": "This auction is no longer active.",
+      "AUCTION_NOT_FOUND": "We could not find this auction.",
+      "IDEMPOTENCY_CONFLICT": "The operation could not be safely repeated. Try again.",
+      "INVALID_IDEMPOTENCY_KEY": "The operation could not be prepared. Try again.",
+      "DEPENDENCY_UNAVAILABLE": "We could not complete an associated operation. Try again.",
+      "unauthorized": "Your session is invalid or has expired. Sign in again."
+    }
+  },
   "detail": {
     "notActive": "This auction is no longer active",
     "currentStatus": "Current status: {{status}}.",
