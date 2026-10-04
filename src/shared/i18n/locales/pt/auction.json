@@ -36,10 +36,59 @@
     "unavailable": "O leilão não está disponível para seguir.",
     "failed": "Não foi possível seguir o leilão. Tente novamente."
   },
+  "activity": {
+    "title": "Minha atividade de leilões",
+    "subtitle": "Consulte suas publicações, lances e operações em um só lugar.",
+    "related": "Acessos relacionados",
+    "watchlist": "Lista de acompanhamento",
+    "pendingClaims": "Produtos para resgatar",
+    "pageOf": "Página {{page}} de {{pages}}",
+    "minimumBid": "Lance mínimo",
+    "currentBid": "Oferta atual",
+    "bidCount": "Quantidade de lances",
+    "closes": "Encerramento",
+    "noBids": "Sem lances",
+    "owned": {
+      "title": "Meus leilões",
+      "description": "Publicações associadas à sua conta e ações autorizadas pelo Auction.",
+      "empty": "Você não publicou leilões.",
+      "pagination": "Paginação dos meus leilões",
+      "cancel": "Cancelar nos detalhes"
+    },
+    "bids": {
+      "title": "Meus lances",
+      "description": "Leilões dos quais você participou, sem informações privadas de outros jogadores.",
+      "empty": "Você ainda não participou de leilões.",
+      "pagination": "Paginação dos meus lances",
+      "mine": "Meu último lance",
+      "status": { "LEADING": "Liderando", "OUTBID": "Superado", "WON": "Ganho", "LOST": "Perdido" }
+    },
+    "transactions": {
+      "title": "Histórico",
+      "description": "Operações registradas pelo Auction sem reconstrução no navegador.",
+      "empty": "Não há operações de leilão registradas.",
+      "pagination": "Paginação do histórico",
+      "types": {
+        "PUBLICATION_FEE": "Comissão de publicação",
+        "BID_RESERVATION": "Reserva de lance",
+        "BUY_NOW_PURCHASE": "Compra imediata",
+        "SETTLEMENT_SALE": "Liquidação da venda",
+        "SETTLEMENT_WIN": "Liquidação vencedora",
+        "CANCELLATION_REFUND": "Reembolso de cancelamento",
+        "PRODUCT_CLAIM": "Resgate de produto"
+      }
+    },
+    "statistics": {
+      "title": "Estatísticas disponíveis",
+      "description": "Somente métricas respaldadas por uma fonte autoritativa são exibidas.",
+      "unavailable": "As estatísticas de visualização ainda não estão disponíveis."
+    }
+  },
   "market": {
     "title": "Leilões ativos",
     "subtitle": "Por padrão, as publicações oficiais aparecem primeiro, na ordem definida pelo Auction.",
     "otherViews": "Outras visões de leilões",
+    "myActivity": "Minha atividade",
     "myFollowed": "Meus leilões seguidos",
     "publishMine": "Publicar meu leilão",
     "publishOfficial": "Publicar produto oficial",

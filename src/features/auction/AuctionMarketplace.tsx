@@ -352,6 +352,12 @@ export const AuctionMarketplace = (): React.JSX.Element => {
          */}
         <nav aria-label={t('auction:market.otherViews')} className="flex flex-wrap gap-2">
           <Link
+            to="/auction/activity"
+            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
+          >
+            {t('auction:market.myActivity')}
+          </Link>
+          <Link
             to="/auction/watchlist"
             className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
           >

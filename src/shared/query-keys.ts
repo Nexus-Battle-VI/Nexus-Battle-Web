@@ -146,6 +146,16 @@ export const queryKeys = {
      * refrescan.
      */
     pendingClaims: ['auction', 'pending-claims'] as const,
+    /** Consultas privadas de HU-89; Auction deduce siempre al titular del JWT. */
+    activity: {
+      owned: (page: number, pageSize: number) =>
+        ['auction', 'activity', 'owned', page, pageSize] as const,
+      bids: (page: number, pageSize: number) =>
+        ['auction', 'activity', 'bids', page, pageSize] as const,
+      transactions: (page: number, pageSize: number) =>
+        ['auction', 'activity', 'transactions', page, pageSize] as const,
+      viewStatistics: ['auction', 'activity', 'view-statistics'] as const,
+    },
   },
   battleRooms: {
     /**

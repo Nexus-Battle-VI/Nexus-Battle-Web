@@ -389,6 +389,39 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
   })
 
+  /** HU-89: el panel personal es una ruta protegida y distinta de HU-68/HU-69. */
+  it('/auction/activity renderiza el panel personal', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const body = url.includes('/me/view-statistics')
+          ? {
+              availability: 'UNAVAILABLE',
+              reason: 'AUTHORITATIVE_SOURCE_NOT_CONFIGURED',
+              metrics: [],
+            }
+          : url.includes('/me/pending-claims')
+            ? []
+            : { items: [], page: 1, pageSize: 16, total: 0 }
+        return Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }),
+    )
+    renderRoute('/auction/activity')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Mi actividad de subastas' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
+
   /**
    * HU-74 + HU-09 (Task HU-09.5): `/missions/reports/:enrollmentId` es la pantalla
    * REAL del reporte, con la experiencia de cada derrota. La matrícula es lo único

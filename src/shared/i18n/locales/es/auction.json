@@ -36,10 +36,59 @@
     "unavailable": "La subasta no está disponible para seguimiento.",
     "failed": "No se pudo seguir la subasta. Inténtalo de nuevo."
   },
+  "activity": {
+    "title": "Mi actividad de subastas",
+    "subtitle": "Consulta tus publicaciones, pujas y operaciones desde un único lugar.",
+    "related": "Accesos relacionados",
+    "watchlist": "Lista de seguimiento",
+    "pendingClaims": "Productos por reclamar",
+    "pageOf": "Página {{page}} de {{pages}}",
+    "minimumBid": "Puja mínima",
+    "currentBid": "Oferta vigente",
+    "bidCount": "Cantidad de pujas",
+    "closes": "Cierre",
+    "noBids": "Sin pujas",
+    "owned": {
+      "title": "Mis subastas",
+      "description": "Publicaciones asociadas a tu cuenta y las acciones autorizadas por Auction.",
+      "empty": "No has publicado subastas.",
+      "pagination": "Paginación de mis subastas",
+      "cancel": "Cancelar en el detalle"
+    },
+    "bids": {
+      "title": "Mis pujas",
+      "description": "Subastas en las que participaste, sin información privada de otros jugadores.",
+      "empty": "Todavía no has participado en subastas.",
+      "pagination": "Paginación de mis pujas",
+      "mine": "Mi última puja",
+      "status": { "LEADING": "Liderando", "OUTBID": "Superada", "WON": "Ganada", "LOST": "Perdida" }
+    },
+    "transactions": {
+      "title": "Historial",
+      "description": "Operaciones registradas por Auction sin reconstrucciones en el navegador.",
+      "empty": "No hay operaciones de subasta registradas.",
+      "pagination": "Paginación del historial",
+      "types": {
+        "PUBLICATION_FEE": "Comisión de publicación",
+        "BID_RESERVATION": "Reserva de puja",
+        "BUY_NOW_PURCHASE": "Compra inmediata",
+        "SETTLEMENT_SALE": "Liquidación de venta",
+        "SETTLEMENT_WIN": "Liquidación ganadora",
+        "CANCELLATION_REFUND": "Reembolso de cancelación",
+        "PRODUCT_CLAIM": "Reclamo de producto"
+      }
+    },
+    "statistics": {
+      "title": "Estadísticas disponibles",
+      "description": "Solo se presentan métricas respaldadas por una fuente autoritativa.",
+      "unavailable": "Las estadísticas de visualización todavía no están disponibles."
+    }
+  },
   "market": {
     "title": "Subastas activas",
     "subtitle": "Por defecto, las publicaciones oficiales aparecen primero según el orden definido por Auction.",
     "otherViews": "Otras vistas de subastas",
+    "myActivity": "Mi actividad",
     "myFollowed": "Mis subastas seguidas",
     "publishMine": "Publicar mi subasta",
     "publishOfficial": "Publicar producto oficial",
