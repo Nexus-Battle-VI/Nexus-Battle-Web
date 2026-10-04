@@ -121,6 +121,33 @@
     "DEPENDENCY_UNAVAILABLE": "Le service de crédits n'est pas disponible pour le moment. Réessayez plus tard.",
     "unauthorized": "Votre session est invalide ou a expiré. Reconnectez-vous."
   },
+  "cancellation": {
+    "title": "Annuler l'enchère",
+    "description": "Le service d'enchères prend la décision finale d'éligibilité.",
+    "action": "Annuler l'enchère",
+    "hasBids": "Vous ne pouvez pas annuler une enchère qui a déjà des offres.",
+    "confirmTitle": "Confirmer l'annulation",
+    "confirmBody": "L'enchère sera annulée, le produit retournera dans votre inventaire, une pénalité de 50 % des frais sera appliquée et les 50 % restants seront remboursés.",
+    "penalty": "Pénalité (50 %)",
+    "refund": "Remboursement (50 %)",
+    "confirmAction": "Oui, annuler l'enchère",
+    "completed": "Enchère annulée. Le produit a été retourné et le remboursement a été traité.",
+    "processing": "L'enchère a été annulée. Le retour du produit ou le remboursement est encore en cours.",
+    "terminal": "L'enchère a été annulée, mais une opération associée doit être examinée.",
+    "cancelledOn": "Annulée le {{date}}.",
+    "network": "L'annulation n'a pas pu être terminée en raison d'un problème de connexion. Elle sera réessayée automatiquement.",
+    "errors": {
+      "AUCTION_HAS_BIDS": "Vous ne pouvez pas annuler une enchère qui a déjà des offres.",
+      "AUCTION_CANCELLATION_WINDOW_CLOSED": "Vous ne pouvez pas annuler l'enchère pendant ses 6 dernières heures.",
+      "AUCTION_NOT_OWNER": "Vous n'avez pas l'autorisation d'annuler cette enchère.",
+      "AUCTION_NOT_ACTIVE": "Cette enchère n'est plus active.",
+      "AUCTION_NOT_FOUND": "Nous n'avons pas trouvé cette enchère.",
+      "IDEMPOTENCY_CONFLICT": "L'opération n'a pas pu être répétée en toute sécurité. Réessayez.",
+      "INVALID_IDEMPOTENCY_KEY": "L'opération n'a pas pu être préparée. Réessayez.",
+      "DEPENDENCY_UNAVAILABLE": "Nous n'avons pas pu terminer une opération associée. Réessayez.",
+      "unauthorized": "Votre session est invalide ou a expiré. Reconnectez-vous."
+    }
+  },
   "detail": {
     "notActive": "Cette enchère n'est plus active",
     "currentStatus": "Statut actuel : {{status}}.",

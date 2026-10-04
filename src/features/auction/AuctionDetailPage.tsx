@@ -22,15 +22,20 @@ import { AuctionBidPanel } from './bidding/AuctionBidPanel'
 import { AutoBidPanel } from './auto-bid/AutoBidPanel'
 import {
   describeBuyNowFailure,
+  describeAuctionCancellationFailure,
+  cancelAuction,
   executeBuyNow,
   fetchAuctionDetail,
   fetchBuyerCredits,
   isRetryableBuyNowError,
+  isRetryableAuctionCancellationError,
   type AuctionDetail,
+  type AuctionCancellationConfirmation,
   type BuyNowConfirmation,
 } from './detail-api'
 import { newIdempotencyKey } from './idempotencyKey'
 import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCard'
+import { AuctionCancellationCard } from './cancellation/AuctionCancellationCard'
 import { useWatchlist } from './useWatchlist'
 
 const MAX_AUTOMATIC_RETRIES = 3
@@ -97,6 +102,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
   const queryClient = useQueryClient()
   const [confirmed, setConfirmed] = useState(false)
   const [transaction, setTransaction] = useState<BuyNowConfirmation | null>(null)
+  const [cancellation, setCancellation] = useState<AuctionCancellationConfirmation | null>(null)
   const [followError, setFollowError] = useState<string | null>(null)
   const [shareFeedback, setShareFeedback] = useState<ShareFeedback>(null)
 
@@ -197,6 +203,26 @@ export const AuctionDetailPage = (): React.JSX.Element => {
       resyncWithServer()
     },
     onError: resyncWithServer,
+  })
+
+  /**
+   * La variable de mutacion ES la Idempotency-Key: React Query la conserva
+   * en todos los retries de este click; cada nueva confirmacion genera otra.
+   */
+  const cancellationMutation = useMutation({
+    mutationFn: (idempotencyKey: string) => cancelAuction(auctionId, idempotencyKey),
+    retry: (failureCount, error) =>
+      isRetryableAuctionCancellationError(error) && failureCount < MAX_AUTOMATIC_RETRIES,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000),
+    onSuccess: (confirmation) => {
+      setCancellation(confirmation)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auction.detail(auctionId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auctions.active })
+    },
+    onError: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auction.detail(auctionId) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auctions.active })
+    },
   })
 
   const purchaseStage =
@@ -355,7 +381,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                    * mostrando la confirmacion, no el aviso generico de "ya no
                    * esta activa".
                    */
-                  transaction === null && auction.status !== 'ACTIVE' ? (
+                  transaction === null && cancellation === null && auction.status !== 'ACTIVE' ? (
                     <Card
                       title={t('auction:detail.notActive')}
                       description={t('auction:detail.currentStatus', { status: auction.status })}
@@ -363,12 +389,34 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                       {null}
                     </Card>
                   ) : transaction === null && isSeller ? (
-                    <Card
-                      title={t('auction:detail.ownTitle')}
-                      description={t('auction:detail.ownDescription')}
-                    >
-                      {null}
-                    </Card>
+                    auction.publisherType === 'PLAYER' ? (
+                      <Card
+                        title={t('auction:detail.ownTitle')}
+                        description={t('auction:detail.ownDescription')}
+                      >
+                        <AuctionCancellationCard
+                          publicationFeeCredits={auction.publicationFeeCredits}
+                          bidCount={auction.bidCount}
+                          loading={cancellationMutation.isPending}
+                          confirmation={cancellation}
+                          error={
+                            cancellationMutation.isError
+                              ? describeAuctionCancellationFailure(cancellationMutation.error)
+                              : null
+                          }
+                          onCancel={() => {
+                            cancellationMutation.mutate(newIdempotencyKey())
+                          }}
+                        />
+                      </Card>
+                    ) : (
+                      <Card
+                        title={t('auction:detail.ownTitle')}
+                        description={t('auction:detail.ownDescription')}
+                      >
+                        {null}
+                      </Card>
+                    )
                   ) : auction.publisherType ===
                     'GAME_MASTER' ? null /* HU-88: compra inmediata en dinero real aun no tiene flujo en Web. */ : (
                     <QueryState isLoading={productQuery.isPending} error={productQuery.error}>

@@ -2,15 +2,17 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient } from '@tanstack/react-query'
 
 import { renderWithProviders } from '@/test/render'
 import * as catalogApi from '@/features/catalog/api'
 import { HttpError } from '@/lib/http'
+import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import * as auctionApi from './api'
 import { AuctionDetailPage } from './AuctionDetailPage'
 import * as detailApi from './detail-api'
-import type { BuyNowConfirmation } from './detail-api'
+import type { AuctionCancellationConfirmation, BuyNowConfirmation } from './detail-api'
 
 const AUCTION_ID = 'auction-123'
 
@@ -100,6 +102,19 @@ const confirmacion = (patch: Partial<BuyNowConfirmation> = {}): BuyNowConfirmati
   debitedCredits: 2500,
   remainingCredits: 2500,
   closedAt: '2026-09-22T12:00:00.000Z',
+  replayed: false,
+  ...patch,
+})
+
+const cancelacion = (
+  patch: Partial<AuctionCancellationConfirmation> = {},
+): AuctionCancellationConfirmation => ({
+  auctionId: AUCTION_ID,
+  status: 'CANCELLED',
+  cancelledAt: '2026-10-03T12:00:00.000Z',
+  refundAmountCredits: 0.5,
+  walletRefundStatus: 'CONFIRMED',
+  inventoryReleaseStatus: 'CONFIRMED',
   replayed: false,
   ...patch,
 })
@@ -201,6 +216,53 @@ describe('AuctionDetailPage (HU-64.1 / HU-88)', () => {
       screen.queryByRole('button', { name: 'Configurar puja automática' }),
     ).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Comprar ahora' })).not.toBeInTheDocument()
+  })
+
+  it('HU-90: seller ACTIVE ve el CTA de cancelacion; comprador y CANCELLED no', async () => {
+    useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+    montar()
+    expect(await screen.findByRole('button', { name: 'Cancelar subasta' })).toBeInTheDocument()
+
+    useSession.setState({ subject: 'buyer-1', accessToken: 'token', expiresAt: null })
+    vi.spyOn(detailApi, 'fetchAuctionDetail').mockResolvedValue(auction({ status: 'CANCELLED' }))
+  })
+
+  it('HU-90: confirma, envía una key y muestra resultado confirmado', async () => {
+    useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+    const execute = vi.spyOn(detailApi, 'cancelAuction').mockResolvedValue(cancelacion())
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar subasta' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sí, cancelar subasta' }))
+    expect(
+      await screen.findByText(
+        'Subasta cancelada. El producto fue devuelto y se procesó el reembolso correspondiente.',
+      ),
+    ).toBeInTheDocument()
+    expect(execute).toHaveBeenCalledWith(AUCTION_ID, expect.any(String))
+  })
+
+  it('HU-90: retry conserva la key, doble submit no duplica y se invalidan detalle/lista', async () => {
+    useSession.setState({ subject: 'seller-1', accessToken: 'token', expiresAt: null })
+    const execute = vi
+      .spyOn(detailApi, 'cancelAuction')
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValueOnce(cancelacion())
+    const invalidate = vi.spyOn(QueryClient.prototype, 'invalidateQueries')
+    montar()
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar subasta' }))
+    const confirm = screen.getByRole('button', { name: 'Sí, cancelar subasta' })
+    await userEvent.dblClick(confirm)
+    await waitFor(
+      () => {
+        expect(execute).toHaveBeenCalledTimes(2)
+      },
+      { timeout: 4000 },
+    )
+    expect(execute.mock.calls[0]?.[1]).toBe(execute.mock.calls[1]?.[1])
+    await waitFor(() => {
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.auction.detail(AUCTION_ID) })
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.auctions.active })
+    })
   })
 
   it('un comprador conserva los controles de puja y compra', async () => {

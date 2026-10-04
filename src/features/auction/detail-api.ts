@@ -29,9 +29,11 @@ interface AuctionDetailBase {
   readonly productId: string
   readonly durationHours: 24 | 48
   readonly publicationFeeCredits: number
-  readonly status: string
+  readonly status: 'ACTIVE' | 'FINISHED' | 'SOLD' | 'CANCELLED'
   readonly publishedAt: string
   readonly closesAt: string
+  /** Fecha de cancelacion manual; solo existe para `CANCELLED` (HU-90). */
+  readonly cancelledAt?: string | null
   /** `null` si nadie ha pujado todavia. */
   readonly currentBid: AuctionDetailBid | null
   /** Total de pujas persistidas; no se deriva de `currentBid`. */
@@ -188,6 +190,67 @@ export const executeBuyNow = (
  * HU-64.6.
  */
 export const isRetryableBuyNowError = (error: unknown): boolean => !(error instanceof HttpError)
+
+export type AuctionCancellationEffectStatus =
+  'PENDING' | 'CONFIRMED' | 'RETRYABLE' | 'TERMINAL_ERROR'
+
+/** Respuesta real de `POST /v1/auctions/:auctionId/cancel` (HU-90). */
+export interface AuctionCancellationConfirmation {
+  readonly auctionId: string
+  readonly status: 'CANCELLED'
+  readonly cancelledAt: string
+  readonly refundAmountCredits: number
+  readonly walletRefundStatus: AuctionCancellationEffectStatus
+  readonly inventoryReleaseStatus: AuctionCancellationEffectStatus
+  readonly replayed: boolean
+}
+
+export type AuctionCancellationErrorCode =
+  | 'AUCTION_NOT_FOUND'
+  | 'AUCTION_NOT_OWNER'
+  | 'AUCTION_NOT_ACTIVE'
+  | 'AUCTION_HAS_BIDS'
+  | 'AUCTION_CANCELLATION_WINDOW_CLOSED'
+  | 'IDEMPOTENCY_CONFLICT'
+  | 'INVALID_IDEMPOTENCY_KEY'
+  | 'DEPENDENCY_UNAVAILABLE'
+
+interface AuctionCancellationErrorBody {
+  readonly code?: AuctionCancellationErrorCode
+}
+
+/** El endpoint no recibe body: la identidad viene del token y la key del header. */
+export const cancelAuction = (
+  auctionId: string,
+  idempotencyKey: string,
+): Promise<AuctionCancellationConfirmation> =>
+  httpClient.post<AuctionCancellationConfirmation>(
+    `/v1/auctions/${encodeURIComponent(auctionId)}/cancel`,
+    undefined,
+    { 'Idempotency-Key': idempotencyKey },
+  )
+
+/** Solo fallos de red se reintentan; un rechazo de negocio es definitivo. */
+export const isRetryableAuctionCancellationError = (error: unknown): boolean =>
+  !(error instanceof HttpError)
+
+const cancellationErrorCode = (error: HttpError): AuctionCancellationErrorCode | undefined => {
+  const body = error.body
+
+  return typeof body === 'object' && body !== null && 'code' in body
+    ? (body as AuctionCancellationErrorBody).code
+    : undefined
+}
+
+export const describeAuctionCancellationFailure = (error: unknown): string => {
+  if (!(error instanceof HttpError)) return i18n.t('auction:cancellation.network')
+
+  const code = cancellationErrorCode(error)
+  if (code !== undefined) return i18n.t(`auction:cancellation.errors.${code}`)
+  if (error.isUnauthorized) return i18n.t('auction:cancellation.errors.unauthorized')
+
+  return describeFailure(error, i18n.t, currentLanguage())
+}
 
 const buyNowErrorCode = (error: HttpError): BuyNowErrorCode | undefined => {
   const body = error.body
