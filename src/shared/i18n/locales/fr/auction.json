@@ -36,10 +36,59 @@
     "unavailable": "L'enchère n'est pas disponible pour le suivi.",
     "failed": "Impossible de suivre l'enchère. Réessayez."
   },
+  "activity": {
+    "title": "Mon activité d'enchères",
+    "subtitle": "Consultez vos publications, enchères et opérations au même endroit.",
+    "related": "Accès associés",
+    "watchlist": "Liste de suivi",
+    "pendingClaims": "Produits à réclamer",
+    "pageOf": "Page {{page}} sur {{pages}}",
+    "minimumBid": "Enchère minimale",
+    "currentBid": "Offre actuelle",
+    "bidCount": "Nombre d'enchères",
+    "closes": "Clôture",
+    "noBids": "Aucune enchère",
+    "owned": {
+      "title": "Mes enchères",
+      "description": "Publications associées à votre compte et actions autorisées par Auction.",
+      "empty": "Vous n'avez publié aucune enchère.",
+      "pagination": "Pagination de mes enchères",
+      "cancel": "Annuler depuis le détail"
+    },
+    "bids": {
+      "title": "Mes offres",
+      "description": "Enchères auxquelles vous avez participé, sans données privées des autres joueurs.",
+      "empty": "Vous n'avez pas encore participé à une enchère.",
+      "pagination": "Pagination de mes offres",
+      "mine": "Ma dernière offre",
+      "status": { "LEADING": "En tête", "OUTBID": "Dépassée", "WON": "Gagnée", "LOST": "Perdue" }
+    },
+    "transactions": {
+      "title": "Historique",
+      "description": "Opérations enregistrées par Auction sans reconstruction dans le navigateur.",
+      "empty": "Aucune opération d'enchère n'est enregistrée.",
+      "pagination": "Pagination de l'historique",
+      "types": {
+        "PUBLICATION_FEE": "Frais de publication",
+        "BID_RESERVATION": "Réservation d'offre",
+        "BUY_NOW_PURCHASE": "Achat immédiat",
+        "SETTLEMENT_SALE": "Règlement de vente",
+        "SETTLEMENT_WIN": "Règlement gagnant",
+        "CANCELLATION_REFUND": "Remboursement d'annulation",
+        "PRODUCT_CLAIM": "Réclamation de produit"
+      }
+    },
+    "statistics": {
+      "title": "Statistiques disponibles",
+      "description": "Seules les métriques provenant d'une source fiable sont affichées.",
+      "unavailable": "Les statistiques de consultation ne sont pas encore disponibles."
+    }
+  },
   "market": {
     "title": "Enchères actives",
     "subtitle": "Par défaut, les publications officielles apparaissent en premier selon l'ordre défini par Auction.",
     "otherViews": "Autres vues d'enchères",
+    "myActivity": "Mon activité",
     "myFollowed": "Mes enchères suivies",
     "publishMine": "Publier mon enchère",
     "publishOfficial": "Publier un produit officiel",

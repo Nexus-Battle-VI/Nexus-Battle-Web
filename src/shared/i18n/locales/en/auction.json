@@ -35,10 +35,59 @@
     "unavailable": "The auction is not available to follow.",
     "failed": "The auction could not be followed. Try again."
   },
+  "activity": {
+    "title": "My auction activity",
+    "subtitle": "Review your listings, bids and operations in one place.",
+    "related": "Related shortcuts",
+    "watchlist": "Watchlist",
+    "pendingClaims": "Products to claim",
+    "pageOf": "Page {{page}} of {{pages}}",
+    "minimumBid": "Minimum bid",
+    "currentBid": "Current offer",
+    "bidCount": "Number of bids",
+    "closes": "Closes",
+    "noBids": "No bids",
+    "owned": {
+      "title": "My auctions",
+      "description": "Listings associated with your account and actions authorized by Auction.",
+      "empty": "You have not published any auctions.",
+      "pagination": "My auctions pagination",
+      "cancel": "Cancel from details"
+    },
+    "bids": {
+      "title": "My bids",
+      "description": "Auctions you joined, without private information from other players.",
+      "empty": "You have not participated in any auctions yet.",
+      "pagination": "My bids pagination",
+      "mine": "My latest bid",
+      "status": { "LEADING": "Leading", "OUTBID": "Outbid", "WON": "Won", "LOST": "Lost" }
+    },
+    "transactions": {
+      "title": "History",
+      "description": "Operations recorded by Auction without browser-side reconstruction.",
+      "empty": "There are no recorded auction operations.",
+      "pagination": "History pagination",
+      "types": {
+        "PUBLICATION_FEE": "Publication fee",
+        "BID_RESERVATION": "Bid reservation",
+        "BUY_NOW_PURCHASE": "Buy-now purchase",
+        "SETTLEMENT_SALE": "Sale settlement",
+        "SETTLEMENT_WIN": "Winning settlement",
+        "CANCELLATION_REFUND": "Cancellation refund",
+        "PRODUCT_CLAIM": "Product claim"
+      }
+    },
+    "statistics": {
+      "title": "Available statistics",
+      "description": "Only metrics backed by an authoritative source are shown.",
+      "unavailable": "View statistics are not available yet."
+    }
+  },
   "market": {
     "title": "Active auctions",
     "subtitle": "By default, official listings appear first, in the order defined by Auction.",
     "otherViews": "Other auction views",
+    "myActivity": "My activity",
     "myFollowed": "My followed auctions",
     "publishMine": "Publish my auction",
     "publishOfficial": "Publish official product",
