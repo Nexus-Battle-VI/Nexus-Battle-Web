@@ -43,6 +43,7 @@ import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
 import { OfficialAuctionPublisher } from '@/features/auction/OfficialAuctionPublisher'
 import { AuctionMarketplace } from '@/features/auction/AuctionMarketplace'
+import { AuctionActivityPage } from '@/features/auction/activity/AuctionActivityPage'
 
 const { devRoutes, publicDevRoutes } = import.meta.env.DEV
   ? await import('./dev-routes')
@@ -310,6 +311,9 @@ export const routes: RouteObject[] = [
       // esa ruta la ocupa ahora el listado de arriba, que se construyo
       // despues y por eso no pudo reclamarla desde el principio.
       { path: 'auction/watchlist', element: <AuctionPage /> },
+      // HU-89: punto unificado de actividad personal; reutiliza mediante
+      // enlaces las pantallas existentes de HU-68 y HU-69.
+      { path: 'auction/activity', element: <AuctionActivityPage /> },
       // Formulario del vendedor para publicar un producto propio en subasta
       // (HU-62.5). Ruta propia -no `/auction`- para no competir con el
       // listado de arriba.
