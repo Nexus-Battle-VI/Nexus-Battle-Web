@@ -163,6 +163,9 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
       startedAt: null,
       teams: [],
       preparationStatus: 'TEAMS_RESOLVED',
+      combatRoomId: null,
+      engineLastSeq: null,
+      lastSyncedSeq: 0,
       registeredTeams: [
         {
           teamId: 'team-registered',
@@ -187,7 +190,77 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
     expect(screen.getByText('Jugador: A')).toBeInTheDocument()
     expect(screen.queryByText(/Héroe/u)).not.toBeInTheDocument()
     expect(screen.getByText('Sin resultado final confirmado.')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'E1 · Equipos definidos; preparación pendiente' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/todos los eventos conocidos de Combat/u)).not.toBeInTheDocument()
   })
+  it.each([
+    {
+      label: 'en curso con eventos pendientes',
+      patch: { lastSyncedSeq: 3, engineLastSeq: 5 },
+      warning: true,
+    },
+    {
+      label: 'finalizado con eventos pendientes',
+      patch: { status: 'FINISHED', lastSyncedSeq: 3, engineLastSeq: 5 },
+      warning: true,
+    },
+    {
+      label: 'en curso con el cursor alcanzado',
+      patch: { lastSyncedSeq: 3, engineLastSeq: 3 },
+      warning: false,
+    },
+    {
+      label: 'con sala pero sin cursor conocido de Combat',
+      patch: { lastSyncedSeq: 3, engineLastSeq: null },
+      warning: false,
+    },
+    {
+      label: 'con DTO anterior sin cursor de Combat',
+      patch: { lastSyncedSeq: 3 },
+      warning: false,
+    },
+    {
+      label: 'sin cursor del archivo guardado',
+      patch: { engineLastSeq: 5 },
+      warning: false,
+    },
+    {
+      label: 'sin sala de Combat',
+      patch: { combatRoomId: null, lastSyncedSeq: 3, engineLastSeq: 5 },
+      warning: false,
+    },
+    {
+      label: 'finalizado con archivo completo',
+      patch: { status: 'FINISHED', logComplete: true, lastSyncedSeq: 3, engineLastSeq: 3 },
+      warning: false,
+    },
+  ] satisfies readonly { label: string; patch: Partial<MatchDetail>; warning: boolean }[])(
+    'solo avisa de retraso confirmado: $label',
+    async ({ patch, warning }) => {
+      const match: MatchDetail = {
+        ...detail(),
+        combatRoomId: 'qa-combat-room',
+        ...patch,
+      }
+      renderWithProviders(
+        <TournamentEncountersPanel
+          id="T1"
+          subject="player"
+          api={{
+            list: vi.fn().mockResolvedValue([match]),
+            detail: vi.fn().mockResolvedValue(match),
+          }}
+        />,
+      )
+      await userEvent.click(await screen.findByRole('button', { name: /E2 · Ronda/u }))
+      await screen.findByRole('region', { name: 'Registro del combate E2' })
+      const notice = screen.queryByText(/todos los eventos conocidos de Combat/u)
+      if (warning) expect(notice).toBeInTheDocument()
+      else expect(notice).not.toBeInTheDocument()
+    },
+  )
   it('paginas de 100 eventos usan nextSeq aunque logComplete sea true; sin mezclar payloads', async () => {
     const event = (seq: number) => ({
       seq,

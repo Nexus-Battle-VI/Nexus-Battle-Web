@@ -175,11 +175,15 @@ export const TournamentEncountersPanel = ({
                 Última sincronización del archivo: {dateLabel(view.syncedAt)}.
               </p>
             )}
-            {!view.logComplete && (
-              <p role="status">
-                El archivo todavía no ha alcanzado todos los eventos conocidos de Combat.
-              </p>
-            )}
+            {!view.logComplete &&
+              view.combatRoomId &&
+              typeof view.engineLastSeq === 'number' &&
+              typeof view.lastSyncedSeq === 'number' &&
+              view.lastSyncedSeq < view.engineLastSeq && (
+                <p role="status">
+                  El archivo todavía no ha alcanzado todos los eventos conocidos de Combat.
+                </p>
+              )}
             <h4 className="font-semibold">Turnos y eventos</h4>
             {uniqueEvents.length === 0 && <p>Todavía no hay eventos conservados.</p>}
             <ol className="grid min-w-0 gap-2" aria-label="Eventos del combate">
