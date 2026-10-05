@@ -24,6 +24,16 @@ let resolvedDevRoutes: RouteObject[] = []
 let resolvedPublicDevRoutes: RouteObject[] = []
 
 if (import.meta.env.DEV) {
+  const TournamentLocalPageLazy = lazy(() =>
+    import('@/features/tournament/dev/TournamentLocalPage').then((module) => ({
+      default: module.TournamentLocalPage,
+    })),
+  )
+  const TournamentRegistrationPreviewLazy = lazy(() =>
+    import('@/features/tournament/dev/TournamentRegistrationPreview').then((module) => ({
+      default: module.TournamentRegistrationPreview,
+    })),
+  )
   const [
     { HeroesDevPreviewLazy },
     { ProductsDevPreviewLazy },
@@ -424,6 +434,23 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <DifficultySelectorDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/tournament',
+      element: (
+        <Suspense fallback={null}>
+          <TournamentLocalPageLazy />
+        </Suspense>
+      ),
+    },
+    { path: '__dev/tournament/local', element: <Navigate to="/__dev/tournament" replace /> },
+    {
+      path: '__dev/tournament/registration',
+      element: (
+        <Suspense fallback={null}>
+          <TournamentRegistrationPreviewLazy />
         </Suspense>
       ),
     },
