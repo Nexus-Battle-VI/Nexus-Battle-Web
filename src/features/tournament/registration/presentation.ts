@@ -12,10 +12,12 @@ export const teamStatus: Record<EntryTeam['status'], string> = {
 export const priceLabel = (method: PaidMethod | EntryPayment): string => {
   if (method.method === 'FREE') return 'Gratis · sin cobro'
   if (method.method === 'CREDITS') return `${String(method.amount)} créditos`
-  return `${(method.amountMinor / 10 ** method.minorUnit).toLocaleString('es-CO', {
-    minimumFractionDigits: method.minorUnit,
-    maximumFractionDigits: method.minorUnit,
-  })} ${method.currency} · pago simulado`
+  const amount = BigInt(method.amountMinor)
+  const scale = 10n ** BigInt(method.minorUnit)
+  const whole = (amount / scale).toLocaleString('es-CO')
+  const fraction =
+    method.minorUnit === 0 ? '' : `,${(amount % scale).toString().padStart(method.minorUnit, '0')}`
+  return `${whole}${fraction} ${method.currency} · pago simulado`
 }
 export const matchStatus = (match: MatchSummary): string => {
   if (match.status === 'IN_PROGRESS') return 'En curso'

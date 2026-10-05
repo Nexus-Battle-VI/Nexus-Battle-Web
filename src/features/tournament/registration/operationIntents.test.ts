@@ -116,6 +116,28 @@ describe('intenciones duraderas del cliente', () => {
       phase: 'UNCERTAIN',
     })
   })
+  it('si la escritura falla por cuota, recupera el mismo ID aunque la lectura siga disponible', async () => {
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Sin espacio', 'QuotaExceededError')
+    })
+    const command = vi
+      .fn<(operationId: string) => Promise<string>>()
+      .mockRejectedValueOnce(new TypeError('Respuesta perdida'))
+      .mockResolvedValueOnce('CONFIRMED')
+    const first = renderHook(() => useOperation('quota-recovery'))
+    await act(async () => {
+      await first.result.current.run('entry:CREDITS', 'pending', command)
+    })
+    expect(sessionStorage.getItem('nexus:tournament:intent:v2:quota-recovery')).toBeNull()
+    first.unmount()
+    write.mockRestore()
+    const next = renderHook(() => useOperation('quota-recovery'))
+    await act(async () => {
+      await next.result.current.run('entry:CREDITS', 'pending', command)
+    })
+    expect(command.mock.calls[1]?.[0]).toBe(command.mock.calls[0]?.[0])
+    expect(readIntent('quota-recovery')).toBeNull()
+  })
 })
 describe('importes y estados sin suposiciones del cliente', () => {
   it('respeta moneda y precisión configuradas sin convertir créditos', () => {
@@ -143,5 +165,18 @@ describe('importes y estados sin suposiciones del cliente', () => {
       matchStatus({ ...base, status: 'WAITING_PARTICIPANTS', preparationStatus: 'TEAMS_RESOLVED' }),
     ).toMatch(/preparación pendiente/u)
     expect(matchStatus({ ...base, status: 'READY' })).toMatch(/héroes definidos/u)
+  })
+  it('muestra todas las unidades del importe seguro máximo y respeta precisión cero', () => {
+    expect(
+      priceLabel({
+        method: 'SIMULATED_MONEY',
+        amountMinor: Number.MAX_SAFE_INTEGER,
+        currency: 'COP',
+        minorUnit: 6,
+      }),
+    ).toBe('9.007.199.254,740991 COP · pago simulado')
+    expect(
+      priceLabel({ method: 'SIMULATED_MONEY', amountMinor: 100, currency: 'JPY', minorUnit: 0 }),
+    ).toBe('100 JPY · pago simulado')
   })
 })

@@ -8,7 +8,9 @@ export interface OperationIntent {
 const prefix = 'nexus:tournament:intent:v2:'
 // Only IDs and non-sensitive business fingerprints. Never cards or credentials.
 const memory = new Map<string, OperationIntent>()
+const memoryOnly = new Set<string>()
 export const readIntent = (scope: string): OperationIntent | null => {
+  if (memoryOnly.has(scope)) return memory.get(scope) ?? null
   try {
     const raw = sessionStorage.getItem(prefix + scope)
     if (raw === null) return null
@@ -23,12 +25,15 @@ export const readIntent = (scope: string): OperationIntent | null => {
         typeof value.fingerprint === 'string' &&
         'phase' in value &&
         (value.phase === 'UNCERTAIN' || value.phase === 'REJECTED')
-      )
-        return {
+      ) {
+        const intent: OperationIntent = {
           operationId: value.operationId,
           fingerprint: value.fingerprint,
           phase: value.phase,
         }
+        memory.set(scope, intent)
+        return intent
+      }
     }
   } catch {
     /* Storage unavailable: preserve intent for this page lifetime. */
@@ -39,16 +44,18 @@ export const saveIntent = (scope: string, intent: OperationIntent): void => {
   memory.set(scope, intent)
   try {
     sessionStorage.setItem(prefix + scope, JSON.stringify(intent))
+    memoryOnly.delete(scope)
   } catch {
-    /* In-memory fallback. */
+    memoryOnly.add(scope)
   }
 }
 export const clearIntent = (scope: string): void => {
   memory.delete(scope)
   try {
     sessionStorage.removeItem(prefix + scope)
+    memoryOnly.delete(scope)
   } catch {
-    /* In-memory fallback. */
+    memoryOnly.add(scope)
   }
 }
 export const isDefinitiveRejection = (error: unknown): boolean => {
