@@ -1,6 +1,7 @@
 import { Navigate, type RouteObject } from 'react-router'
 
 import { AppLayout } from '@/app/AppLayout'
+import { ChatWidget } from '@/features/chat/ChatWidget'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
@@ -212,6 +213,7 @@ export const routes: RouteObject[] = [
     element: (
       <PublicOnlyRoute>
         <LoginPage />
+        <ChatWidget />
       </PublicOnlyRoute>
     ),
   },
@@ -220,6 +222,7 @@ export const routes: RouteObject[] = [
     element: (
       <PublicOnlyRoute>
         <RecoveryPage />
+        <ChatWidget />
       </PublicOnlyRoute>
     ),
   },
@@ -234,13 +237,26 @@ export const routes: RouteObject[] = [
   // antigua puerta al hosted UI desaparecio con ese cambio.
   {
     path: '/register',
-    element: <RegistrationPage onSubmit={registerAccount} />,
+    element: (
+      <>
+        <RegistrationPage onSubmit={registerAccount} />
+        <ChatWidget />
+      </>
+    ),
   },
   // La ruta de retorno del proveedor de identidad OIDC. No aparece en la
   // navegacion ni la enlaza ningun control: se conserva por si una compilacion
   // futura reactiva el flujo de codigo, pero el alta y el login del producto
   // ocurren enteros en la UI propia.
-  { path: '/auth/callback', element: <AuthCallbackPage /> },
+  {
+    path: '/auth/callback',
+    element: (
+      <>
+        <AuthCallbackPage />
+        <ChatWidget />
+      </>
+    ),
+  },
 
   // Vista previa de desarrollo, fuera de `RequireSession` y solo con
   // `import.meta.env.DEV` (ver `./dev-routes`). Vacio en produccion.
