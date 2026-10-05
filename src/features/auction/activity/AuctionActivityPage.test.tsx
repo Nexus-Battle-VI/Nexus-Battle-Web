@@ -130,13 +130,18 @@ describe('AuctionActivityPage', () => {
   })
 
   it('solo muestra el enlace de cancelación cuando Auction lo autoriza', async () => {
-    vi.stubGlobal('fetch', responses())
+    const user = userEvent.setup()
+    const fetch = responses()
+    vi.stubGlobal('fetch', fetch)
     renderWithProviders(<AuctionActivityPage />)
 
     const owned = screen.getByRole('region', { name: 'Mis subastas' })
-    expect(
-      await within(owned).findByRole('link', { name: 'Cancelar en el detalle' }),
-    ).toHaveAttribute('href', '/auction/auction-owned?cancel=1')
+    const cancelLink = await within(owned).findByRole('link', { name: 'Cancelar en el detalle' })
+    expect(cancelLink).toHaveAttribute('href', '/auction/auction-owned?cancel=1')
+
+    await user.click(cancelLink)
+
+    expect(fetch.mock.calls.some(([input]) => requestUrl(input).endsWith('/cancel'))).toBe(false)
   })
 
   it('pagina en Auction sin cambiar el propietario de la consulta', async () => {

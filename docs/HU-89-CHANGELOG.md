@@ -51,3 +51,18 @@ El panel enlaza las rutas existentes `/auction/watchlist` (HU-68) y `/auction/pe
 
 Vitest emite avisos conocidos de JSDOM porque no implementa `HTMLCanvasElement.getContext`
 sin el paquete opcional `canvas`; estos avisos no causan fallos y las 3026 pruebas terminan en verde.
+
+## TASK 89.5 — QA / Security frontend
+
+La validación transversal demuestra que el panel y las capacidades reutilizadas permanecen asociadas a la sesión vigente:
+
+- `App` remonta `SessionQueryProvider` con el `subject` autenticado como clave;
+- al cambiar de identidad se cancelan las consultas, se elimina la caché y no se muestra información anterior durante la nueva carga;
+- una respuesta tardía de la sesión anterior no puede repoblar el panel;
+- los clientes de actividad, Watchlist y Pending Claims toman el token actual y no aceptan identificadores externos;
+- los estados `401` y `403` se presentan como errores sin conservar contenido privado;
+- el panel solo enlaza al flujo de cancelación de HU-90 y no llama su endpoint;
+- la ausencia de estadísticas continúa mostrándose como indisponibilidad, nunca como cero.
+
+La matriz y la evidencia están documentadas en
+[`docs/tasks/TASK-89.5-qa-security-frontend.md`](tasks/TASK-89.5-qa-security-frontend.md).

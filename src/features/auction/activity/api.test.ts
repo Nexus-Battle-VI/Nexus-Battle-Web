@@ -8,6 +8,9 @@ const json = (body: unknown): Response =>
     headers: { 'content-type': 'application/json' },
   })
 
+const requestUrl = (input: RequestInfo | URL): string =>
+  typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+
 afterEach(() => vi.unstubAllGlobals())
 
 describe('API del panel personal HU-89', () => {
@@ -24,13 +27,15 @@ describe('API del panel personal HU-89', () => {
     await fetchMyTransactions({ page: 4, pageSize: 25 })
     await fetchMyViewStatistics()
 
-    expect(fetch.mock.calls.map(([input]) => String(input))).toEqual([
+    const urls = fetch.mock.calls.map(([input]) => requestUrl(input as RequestInfo | URL))
+    expect(urls).toEqual([
       expect.stringContaining('/v1/auctions/me/owned?page=2&pageSize=10'),
       expect.stringContaining('/v1/auctions/me/bids?page=3&pageSize=20'),
       expect.stringContaining('/v1/auctions/me/transactions?page=4&pageSize=25'),
       expect.stringContaining('/v1/auctions/me/view-statistics'),
     ])
-    expect(fetch.mock.calls.every(([input]) => !String(input).includes('userId'))).toBe(true)
-    expect(fetch.mock.calls.every(([input]) => !String(input).includes('playerId'))).toBe(true)
+    for (const identifier of ['userId', 'playerId', 'sellerId', 'bidderId']) {
+      expect(urls.every((url) => !url.includes(identifier))).toBe(true)
+    }
   })
 })
