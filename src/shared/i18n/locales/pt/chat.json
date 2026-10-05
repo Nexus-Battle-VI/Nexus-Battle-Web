@@ -1,0 +1,23 @@
+{
+  "open": "Abrir ajuda",
+  "close": "Fechar ajuda",
+  "title": "Ajuda",
+  "placeholder": "Escreve a tua pergunta",
+  "send": "Enviar",
+  "typing": "A escrever…",
+  "suggestions": "Perguntas relacionadas",
+  "topics": "Temas",
+  "topicRules": "Regras do turno",
+  "topicMission": "Missões",
+  "topicAuction": "Leilão",
+  "topicAccount": "Conta",
+  "attach": "Anexar captura",
+  "attached": "Captura anexada: {{name}}",
+  "clear": "Limpar histórico",
+  "transfer": "Transferir para o suporte",
+  "transferred": "Pronto para passar ao suporte. O ticket abre no passo seguinte.",
+  "preferences": "Preferências",
+  "showTime": "Mostrar a hora",
+  "empty": "Pergunta sobre regras, produtos, missões ou a tua conta.",
+  "error": "Não foi possível enviar. Tenta de novo."
+}
