@@ -2,6 +2,7 @@ import { Navigate, type RouteObject } from 'react-router'
 import { TournamentRegistrationPage } from '@/features/tournament/registration/TournamentRegistrationPage'
 
 import { AppLayout } from '@/app/AppLayout'
+import { ChatWidget } from '@/features/chat/ChatWidget'
 import { NotFoundPage } from '@/app/NotFoundPage'
 import { AuthCallbackPage } from '@/app/AuthCallbackPage'
 import { RequireSession } from '@/app/RequireSession'
@@ -40,6 +41,7 @@ import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPa
 import { ProductManagementPage } from '@/features/admin/products/ProductManagementPage'
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
+import { ModelAdminPage } from '@/features/admin/chatbot/ModelAdminPage'
 import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
 import { OfficialAuctionPublisher } from '@/features/auction/OfficialAuctionPublisher'
 import { AuctionMarketplace } from '@/features/auction/AuctionMarketplace'
@@ -142,6 +144,11 @@ export const ADMIN_NAVIGATION: readonly NavigationItem[] = [
     requiredPrimaryRole: 'ADMINISTRATOR',
   },
   {
+    path: '/admin/chatbot',
+    label: 'Modelo del chatbot',
+    requiredPrimaryRole: 'ADMINISTRATOR',
+  },
+  {
     path: '/admin/roles',
     label: 'Gestionar roles',
     requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
@@ -212,6 +219,7 @@ export const routes: RouteObject[] = [
     element: (
       <PublicOnlyRoute>
         <LoginPage />
+        <ChatWidget />
       </PublicOnlyRoute>
     ),
   },
@@ -220,6 +228,7 @@ export const routes: RouteObject[] = [
     element: (
       <PublicOnlyRoute>
         <RecoveryPage />
+        <ChatWidget />
       </PublicOnlyRoute>
     ),
   },
@@ -234,13 +243,26 @@ export const routes: RouteObject[] = [
   // antigua puerta al hosted UI desaparecio con ese cambio.
   {
     path: '/register',
-    element: <RegistrationPage onSubmit={registerAccount} />,
+    element: (
+      <>
+        <RegistrationPage onSubmit={registerAccount} />
+        <ChatWidget />
+      </>
+    ),
   },
   // La ruta de retorno del proveedor de identidad OIDC. No aparece en la
   // navegacion ni la enlaza ningun control: se conserva por si una compilacion
   // futura reactiva el flujo de codigo, pero el alta y el login del producto
   // ocurren enteros en la UI propia.
-  { path: '/auth/callback', element: <AuthCallbackPage /> },
+  {
+    path: '/auth/callback',
+    element: (
+      <>
+        <AuthCallbackPage />
+        <ChatWidget />
+      </>
+    ),
+  },
 
   // Vista previa de desarrollo, fuera de `RequireSession` y solo con
   // `import.meta.env.DEV` (ver `./dev-routes`). Vacio en produccion.
@@ -395,6 +417,14 @@ export const routes: RouteObject[] = [
         element: (
           <RequireAdministrator>
             <BannerManagementPage />
+          </RequireAdministrator>
+        ),
+      },
+      {
+        path: 'admin/chatbot',
+        element: (
+          <RequireAdministrator>
+            <ModelAdminPage />
           </RequireAdministrator>
         ),
       },

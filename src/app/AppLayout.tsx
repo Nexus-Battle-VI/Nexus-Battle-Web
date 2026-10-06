@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router'
 
+import { ChatWidget } from '@/features/chat/ChatWidget'
 import { MissionFinishedNotice } from '@/features/missions/MissionFinishedNotice'
 import { ECOMMERCE_PATH } from '@/routes/routes'
 
@@ -35,6 +36,7 @@ export const AppLayout = (): React.JSX.Element => {
         <Outlet />
       </main>
       <MissionFinishedNotice />
+      <ChatWidget />
     </div>
   )
 }
