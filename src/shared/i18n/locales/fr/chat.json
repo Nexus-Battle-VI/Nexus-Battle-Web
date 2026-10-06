@@ -19,5 +19,6 @@
   "preferences": "Préférences",
   "showTime": "Afficher l'heure",
   "empty": "Demande les règles, les produits, les missions ou ton compte.",
-  "error": "Envoi impossible. Réessaie."
+  "error": "Envoi impossible. Réessaie.",
+  "openSection": "Ouvrir cette section"
 }

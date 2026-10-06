@@ -10,6 +10,7 @@ export interface ChatReply {
   readonly suggestions: readonly string[]
   readonly view: string | null
   readonly sessionId: string | null
+  readonly assistedAction?: { readonly name: string; readonly path: string } | null
 }
 
 export interface ChatTurn {

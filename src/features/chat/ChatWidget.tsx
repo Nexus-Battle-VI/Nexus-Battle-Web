@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router'
+import { useLocation, Link } from 'react-router'
 
 import { askChat, clearChatHistory, viewFromPath } from './api'
 
@@ -9,12 +9,20 @@ interface Bubble {
   readonly role: 'user' | 'assistant'
   readonly text: string
   readonly at: string
+  readonly path: string | null
 }
 
 const TIME_KEY = 'chat-show-time'
 
 const stamp = (): string =>
   new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+const safePath = (path: string | null | undefined): string | null => {
+  if (path === undefined || path === null || !path.startsWith('/') || path.startsWith('//')) {
+    return null
+  }
+  return path
+}
 
 export const ChatWidget = (): React.JSX.Element => {
   const { t } = useTranslation()
@@ -50,7 +58,7 @@ export const ChatWidget = (): React.JSX.Element => {
     setPending(true)
     setBubbles((current) => [
       ...current,
-      { id: crypto.randomUUID(), role: 'user', text, at: stamp() },
+      { id: crypto.randomUUID(), role: 'user', text, at: stamp(), path: null },
     ])
     void askChat(text, viewFromPath(pathname), sessionId)
       .then((reply) => {
@@ -63,6 +71,7 @@ export const ChatWidget = (): React.JSX.Element => {
             role: 'assistant',
             text: reply.answer ?? t('chat:empty'),
             at: stamp(),
+            path: safePath(reply.assistedAction?.path),
           },
         ])
       })
@@ -119,7 +128,7 @@ export const ChatWidget = (): React.JSX.Element => {
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
         {bubbles.length === 0 ? <p className="text-sm text-muted">{t('chat:empty')}</p> : null}
         {bubbles.map((bubble) => (
-          <p
+          <div
             key={bubble.id}
             className={
               bubble.role === 'user'
@@ -127,9 +136,12 @@ export const ChatWidget = (): React.JSX.Element => {
                 : 'self-start rounded-md bg-surface-raised px-2 py-1 text-sm'
             }
           >
-            {bubble.text}
-            {showTime ? <span className="ml-2 text-xs text-muted">{bubble.at}</span> : null}
-          </p>
+            <p>
+              {bubble.text}
+              {showTime ? <span className="ml-2 text-xs text-muted">{bubble.at}</span> : null}
+            </p>
+            {bubble.path !== null ? <Link to={bubble.path}>{t('chat:openSection')}</Link> : null}
+          </div>
         ))}
         {pending ? (
           <p role="status" className="text-sm text-muted">

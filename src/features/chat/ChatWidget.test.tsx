@@ -88,6 +88,22 @@ describe('ChatWidget', () => {
       'false',
     )
   })
+
+  it('muestra el camino cuando la respuesta trae una acción asistida', async () => {
+    vi.spyOn(chatApi, 'askChat').mockResolvedValue({
+      ...reply,
+      suggestions: [],
+      assistedAction: { name: 'configuracion_cuenta', path: '/account' },
+    })
+    const user = userEvent.setup()
+    renderWithProviders(<ChatWidget />, { route: '/ecommerce' })
+    await user.click(screen.getByRole('button', { name: 'Abrir ayuda' }))
+    await user.type(screen.getByLabelText('Escribe tu pregunta'), 'mi cuenta')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+
+    const link = await screen.findByRole('link', { name: 'Abrir esta sección' })
+    expect(link).toHaveAttribute('href', '/account')
+  })
 })
 
 describe('viewFromPath', () => {
