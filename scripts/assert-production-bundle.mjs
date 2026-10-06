@@ -4,6 +4,14 @@ import process from 'node:process'
 
 const DIST_DIRECTORY = path.resolve('dist')
 const FORBIDDEN_MARKERS = [
+  '__dev/tournament',
+  'TournamentLocalPage',
+  'TournamentRegistrationPreview',
+  'LocalTournamentGateway',
+  'DEV_TOURNAMENT_ACTORS',
+  'DEV_REGISTRATION_TOURNAMENT',
+  'createRegistrationPreviewApis',
+  'dev-tournament-v2',
   'AccountDevPreview',
   '/__dev/account',
   'jugador.demo@nexus.test',

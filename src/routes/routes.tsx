@@ -1,4 +1,5 @@
 import { Navigate, type RouteObject } from 'react-router'
+import { TournamentRegistrationPage } from '@/features/tournament/registration/TournamentRegistrationPage'
 
 import { AppLayout } from '@/app/AppLayout'
 import { ChatWidget } from '@/features/chat/ChatWidget'
@@ -41,7 +42,6 @@ import { ProductManagementPage } from '@/features/admin/products/ProductManageme
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModelAdminPage } from '@/features/admin/chatbot/ModelAdminPage'
-import { ModuleUnavailable } from '@/components/ui/ModuleUnavailable'
 import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
 import { OfficialAuctionPublisher } from '@/features/auction/OfficialAuctionPublisher'
 import { AuctionMarketplace } from '@/features/auction/AuctionMarketplace'
@@ -314,7 +314,8 @@ export const routes: RouteObject[] = [
           </RequireAdministrator>
         ),
       },
-      { path: 'tournament', element: <ModuleUnavailable titleKey="app:nav.tournament" /> },
+      { path: 'tournament', element: <TournamentRegistrationPage /> },
+      { path: 'tournament/registration', element: <Navigate to="/tournament" replace /> },
       { path: 'inventory', element: <PlayerInventoryPage /> },
       // HU-07 se consolido en "Mi Inventario" (2026-09-22): elegir heroe,
       // verlo y equiparlo viven ahora en la misma pantalla (`/inventory`).
