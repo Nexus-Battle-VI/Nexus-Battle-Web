@@ -28,5 +28,22 @@
   "trend": "Trend",
   "noTopic": "No intent",
   "emptyPeriod": "There are no queries in the period.",
-  "milliseconds": "{{value}} ms"
+  "milliseconds": "{{value}} ms",
+  "dictionaryTitle": "Chatbot dictionary",
+  "intent": "Intent",
+  "language": "Language",
+  "priority": "Priority",
+  "answer": "Answer",
+  "variations": "Example questions",
+  "variationsHint": "One question per line.",
+  "view": "View",
+  "createEntry": "Save entry",
+  "saveEntry": "Save changes",
+  "newEntry": "New entry",
+  "remove": "Delete",
+  "edit": "Edit",
+  "emptyDictionary": "There are no entries yet.",
+  "requiredEntry": "The intent, the answer and at least one question are required.",
+  "spanish": "Spanish",
+  "english": "English"
 }
