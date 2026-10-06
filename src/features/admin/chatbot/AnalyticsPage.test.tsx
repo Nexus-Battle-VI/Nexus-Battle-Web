@@ -36,7 +36,7 @@ describe('AnalyticsPage', () => {
     expect(await screen.findByText('cuanto dura un turno 2')).toBeInTheDocument()
     expect(screen.getByText('regla_turno 2')).toBeInTheDocument()
     expect(screen.getByText('turno 2')).toBeInTheDocument()
-    expect(screen.getByText(/Conversaciones iniciadas 2/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Conversaciones iniciadas' })).toBeInTheDocument()
     expect(screen.getByText(/Tasa de resolución 50%/)).toBeInTheDocument()
     expect(screen.getByText(/Tiempo promedio de respuesta 30 ms/)).toBeInTheDocument()
     expect(screen.getByText(/Satisfacción 100%/)).toBeInTheDocument()

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { describeFailure } from '@/shared/i18n/errors'
-import { useLanguage } from '@/shared/i18n/language'
+import { Card } from '@/components/ui/Card'
+import { QueryState } from '@/components/ui/QueryState'
+import { TextField } from '@/components/ui/form/TextField'
 
 import type { UsageReport } from './api'
 import { useAnalytics } from './useModelAdmin'
@@ -18,7 +19,6 @@ const percent = (value: number | null): string => {
 
 export const AnalyticsPage = (): React.JSX.Element => {
   const { t } = useTranslation()
-  const language = useLanguage((state) => state.language)
   const [from, setFrom] = useState(today)
   const [to, setTo] = useState(today)
   const { report, isLoading, error } = useAnalytics(from, to)
@@ -28,32 +28,26 @@ export const AnalyticsPage = (): React.JSX.Element => {
       <h1 className="text-xl font-semibold">{t('chatbotAdmin:analyticsTitle')}</h1>
       <p className="text-sm text-muted">{t('chatbotAdmin:utc')}</p>
       <div className="flex flex-wrap gap-3">
-        <label className="text-sm">
-          {t('chatbotAdmin:from')}
-          <input
-            type="date"
-            value={from}
-            className="ml-2 rounded border border-border bg-transparent px-2 py-1"
-            onChange={(event) => {
-              setFrom(event.target.value)
-            }}
-          />
-        </label>
-        <label className="text-sm">
-          {t('chatbotAdmin:to')}
-          <input
-            type="date"
-            value={to}
-            className="ml-2 rounded border border-border bg-transparent px-2 py-1"
-            onChange={(event) => {
-              setTo(event.target.value)
-            }}
-          />
-        </label>
+        <TextField
+          label={t('chatbotAdmin:from')}
+          type="date"
+          value={from}
+          onChange={(event) => {
+            setFrom(event.target.value)
+          }}
+        />
+        <TextField
+          label={t('chatbotAdmin:to')}
+          type="date"
+          value={to}
+          onChange={(event) => {
+            setTo(event.target.value)
+          }}
+        />
       </div>
-      {isLoading ? <p role="status">{t('chatbotAdmin:loading')}</p> : null}
-      {error !== null ? <p role="alert">{describeFailure(error, t, language)}</p> : null}
-      {report !== null ? <ReportView report={report} /> : null}
+      <QueryState isLoading={isLoading} error={error}>
+        {report !== null ? <ReportView report={report} /> : null}
+      </QueryState>
     </section>
   )
 }
@@ -67,47 +61,43 @@ const ReportView = ({ report }: { readonly report: UsageReport }): React.JSX.Ele
 
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <p>
-        {t('chatbotAdmin:conversations')} {String(report.conversationsStarted)}
-      </p>
-      <section>
-        <h2 className="font-semibold">{t('chatbotAdmin:questions')}</h2>
+      <Card title={t('chatbotAdmin:conversations')}>
+        <p>{String(report.conversationsStarted)}</p>
+        <p>
+          {t('chatbotAdmin:resolution')} {percent(report.resolutionRate)}
+        </p>
+        <p>
+          {t('chatbotAdmin:responseTime')} {time}
+        </p>
+        <p>
+          {t('chatbotAdmin:satisfaction')} {percent(report.satisfaction)}
+        </p>
+        <p>
+          {t('chatbotAdmin:escalations')} {String(report.escalations)}
+        </p>
+      </Card>
+      <Card title={t('chatbotAdmin:questions')}>
         <CountList
           rows={report.frequentQuestions}
           label={(row) => row.text}
           empty={t('chatbotAdmin:emptyPeriod')}
         />
-      </section>
-      <section>
-        <h2 className="font-semibold">{t('chatbotAdmin:topics')}</h2>
+      </Card>
+      <Card title={t('chatbotAdmin:topics')}>
         <CountList
           rows={report.topics}
           label={(row) => row.intent ?? t('chatbotAdmin:noTopic')}
           empty={t('chatbotAdmin:emptyPeriod')}
         />
-      </section>
-      <p>
-        {t('chatbotAdmin:resolution')} {percent(report.resolutionRate)}
-      </p>
-      <p>
-        {t('chatbotAdmin:responseTime')} {time}
-      </p>
-      <p>
-        {t('chatbotAdmin:satisfaction')} {percent(report.satisfaction)}
-      </p>
-      <p>
-        {t('chatbotAdmin:escalations')} {String(report.escalations)}
-      </p>
-      <section>
-        <h2 className="font-semibold">{t('chatbotAdmin:keywords')}</h2>
+      </Card>
+      <Card title={t('chatbotAdmin:keywords')}>
         <CountList
           rows={report.keywords}
           label={(row) => row.text}
           empty={t('chatbotAdmin:emptyPeriod')}
         />
-      </section>
-      <section>
-        <h2 className="font-semibold">{t('chatbotAdmin:trend')}</h2>
+      </Card>
+      <Card title={t('chatbotAdmin:trend')}>
         <ul>
           {report.trend.map((point) => (
             <li key={point.date}>
@@ -115,7 +105,7 @@ const ReportView = ({ report }: { readonly report: UsageReport }): React.JSX.Ele
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
     </div>
   )
 }
