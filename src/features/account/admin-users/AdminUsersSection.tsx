@@ -2,12 +2,13 @@ import { useState, type SyntheticEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { Download } from '@/components/ui/icons'
-import { StatusBadge } from '@/components/ui/StatusBadge'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, statusLabel } from '@/lib/format'
 import { HttpError, type HttpDownload } from '@/lib/http'
 import { primaryRole, roleLabel } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
+import { AccountPixelIcon } from '../AccountPixelIcon'
 import {
   saveAdminAccountsDownload,
   type AdminAccountQueryCriteria,
@@ -93,14 +94,33 @@ const criteriaFrom = (
   }
 }
 
+/* Badge de estado local a Admin -- no el `StatusBadge` compartido (ese
+ * componente tambien pinta estados de producto/sala de batalla en otros
+ * modulos; darle aqui un acabado metalico habria cambiado su apariencia en
+ * TODOS lados). Reutiliza `statusLabel` para el texto -misma fuente de
+ * traduccion que ya usaba `StatusBadge`, cero cambio de contrato- y solo
+ * cambia las clases visuales segun el status real (ver account.css,
+ * `.account-admin-status--suspended`/`--pending`; "Activa" reutiliza
+ * `.account-achievement-badge` tal cual, mismo acabado esmeralda ya
+ * aprobado). */
+const AdminStatusBadge = ({ status }: { readonly status: string }): React.JSX.Element => {
+  const className =
+    status === 'ACTIVE'
+      ? 'account-achievement-badge'
+      : status === 'SUSPENDED'
+        ? 'account-achievement-badge account-admin-status--suspended'
+        : 'account-achievement-badge account-admin-status--pending'
+  return <span className={className}>{statusLabel(status)}</span>
+}
+
 const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): React.JSX.Element => {
   const role = primaryRole(account.roles)
   const { t } = useTranslation()
 
   return (
-    <li className="grid min-w-0 gap-3 border-b border-border bg-surface p-4 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+    <li className="account-admin-result grid min-w-0 gap-3 border-t p-4 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
       <div className="min-w-0">
-        <p className="break-words text-sm font-semibold text-ink">{account.displayName}</p>
+        <p className="account-title break-words text-sm font-semibold">{account.displayName}</p>
         <p className="mt-1 break-all text-xs text-muted">ID: {account.id}</p>
         <p className="mt-1 break-all text-xs text-muted">{account.email}</p>
         <p className="mt-1 text-xs text-muted">
@@ -108,10 +128,10 @@ const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): Re
           <time dateTime={account.registeredAt}>{formatDateTime(account.registeredAt)}</time>
         </p>
       </div>
-      <span className="text-xs font-semibold text-ink">
+      <span className="account-label text-xs">
         {role === null ? t('account:adminUsers.noRole') : roleLabel(role)}
       </span>
-      <StatusBadge status={account.status} />
+      <AdminStatusBadge status={account.status} />
     </li>
   )
 }
@@ -200,167 +220,195 @@ export const AdminUsersSection = ({
 
   return (
     <section className="min-w-0 space-y-5" aria-labelledby="admin-users-title">
-      <header className="space-y-3">
-        <h2 id="admin-users-title" className="text-xl font-semibold text-ink">
-          {t('account:adminUsers.title')}
-        </h2>
-        <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand bg-brand/10 px-2 py-1 text-xs font-semibold text-ink">
-          <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
-          {t('account:adminUsers.role', {
-            role: sessionRole === null ? t('common:notAvailable') : roleLabel(sessionRole),
-          })}
-        </span>
-      </header>
-
-      <form className="space-y-4" onSubmit={applyCriteria}>
-        <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-ink">
-            {t('account:adminUsers.search')}
-          </legend>
-          <p className="text-xs text-muted">{t('account:adminUsers.searchHint')}</p>
-
-          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(12rem,0.55fr)]">
-            <label className={LABEL_CLASS}>
-              {t('account:adminUsers.searchLabel')}
-              <input
-                value={searchText}
-                onChange={(event) => {
-                  setSearchText(event.target.value)
-                }}
-                className={`${FIELD_CLASS} mt-1`}
-                placeholder={t('account:adminUsers.searchPlaceholder')}
-              />
-            </label>
-
-            <label className={LABEL_CLASS}>
-              {t('account:adminUsers.searchField')}
-              <select
-                value={searchField}
-                onChange={(event) => {
-                  setSearchField(event.target.value as SearchField)
-                }}
-                className={`${FIELD_CLASS} mt-1`}
-              >
-                <option value="all" disabled>
-                  {t('account:adminUsers.fields.all')}
-                </option>
-                <option value="firstNames">{t('account:adminUsers.fields.firstNames')}</option>
-                <option value="displayName">{t('account:adminUsers.fields.displayName')}</option>
-                <option value="email">{t('account:adminUsers.fields.email')}</option>
-                <option value="id">{t('account:adminUsers.fields.id')}</option>
-              </select>
-            </label>
+      {/* Ronda 2 (brief seccion 54/55/56/63): esta ruta es funcional de admin
+       * (fuera del alcance del remaster de jugador, seccion 43), pero debe
+       * integrarse visualmente al resto de Mi Cuenta -no quedar "diferente"-.
+       * Icono real + tipografia display en el titulo, badge de rol
+       * tematizado, formulario envuelto en `.account-panel`. Cero cambios de
+       * logica.
+       *
+       * Ronda 4 (brief seccion 59-66): el encabezado vivia FUERA del panel,
+       * flotando directo sobre el escenario -en Dark justo delante de una
+       * antorcha de bajo contraste, en Light sobre arquitectura brillante-.
+       * Se mueve DENTRO del mismo `.account-panel` que ya envuelve el
+       * formulario -se extiende el panel existente hacia arriba, no se crea
+       * un segundo panel-, con `divide-y` para separar visualmente
+       * encabezado/formulario sin otro marco. */}
+      <Card className="account-panel min-w-0 divide-y divide-border/60">
+        <header className="flex items-center gap-2 pb-4">
+          <AccountPixelIcon icon="admin" size="md" />
+          <div>
+            <h2 id="admin-users-title" className="account-title text-xl font-semibold">
+              {t('account:adminUsers.title')}
+            </h2>
+            <span className="account-role-badge mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-xs font-semibold">
+              <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+              {t('account:adminUsers.role', {
+                role: sessionRole === null ? t('common:notAvailable') : roleLabel(sessionRole),
+              })}
+            </span>
           </div>
-        </fieldset>
+        </header>
 
-        <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-ink">
-            {t('account:adminUsers.filters')}
-          </legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className={LABEL_CLASS}>
-              {t('account:adminUsers.roleFilter')}
-              <select
-                value={role}
-                onChange={(event) => {
-                  setRole(event.target.value as RoleFilter)
-                }}
-                className={`${FIELD_CLASS} mt-1`}
+        <form className="space-y-4 pt-4" onSubmit={applyCriteria}>
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-semibold text-ink">
+              {t('account:adminUsers.search')}
+            </legend>
+            <p className="text-xs text-muted">{t('account:adminUsers.searchHint')}</p>
+
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(12rem,0.55fr)]">
+              <label className={LABEL_CLASS}>
+                {t('account:adminUsers.searchLabel')}
+                <input
+                  value={searchText}
+                  onChange={(event) => {
+                    setSearchText(event.target.value)
+                  }}
+                  className={`${FIELD_CLASS} mt-1`}
+                  placeholder={t('account:adminUsers.searchPlaceholder')}
+                />
+              </label>
+
+              <label className={LABEL_CLASS}>
+                {t('account:adminUsers.searchField')}
+                <select
+                  value={searchField}
+                  onChange={(event) => {
+                    setSearchField(event.target.value as SearchField)
+                  }}
+                  className={`${FIELD_CLASS} mt-1`}
+                >
+                  <option value="all" disabled>
+                    {t('account:adminUsers.fields.all')}
+                  </option>
+                  <option value="firstNames">{t('account:adminUsers.fields.firstNames')}</option>
+                  <option value="displayName">{t('account:adminUsers.fields.displayName')}</option>
+                  <option value="email">{t('account:adminUsers.fields.email')}</option>
+                  <option value="id">{t('account:adminUsers.fields.id')}</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-semibold text-ink">
+              {t('account:adminUsers.filters')}
+            </legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={LABEL_CLASS}>
+                {t('account:adminUsers.roleFilter')}
+                <select
+                  value={role}
+                  onChange={(event) => {
+                    setRole(event.target.value as RoleFilter)
+                  }}
+                  className={`${FIELD_CLASS} mt-1`}
+                >
+                  <option value="">{t('account:adminUsers.all')}</option>
+                  <option value="PLAYER">{roleLabel('PLAYER')}</option>
+                  <option value="MODERATOR">{roleLabel('MODERATOR')}</option>
+                  <option value="ADMINISTRATOR">{roleLabel('ADMINISTRATOR')}</option>
+                  <option value="SUPER_ADMINISTRATOR">{roleLabel('SUPER_ADMINISTRATOR')}</option>
+                </select>
+              </label>
+
+              <label className={LABEL_CLASS}>
+                {t('account:adminUsers.statusFilter')}
+                <select
+                  value={status}
+                  onChange={(event) => {
+                    setStatus(event.target.value as StatusFilter)
+                  }}
+                  className={`${FIELD_CLASS} mt-1`}
+                >
+                  <option value="">{t('account:adminUsers.all')}</option>
+                  <option value="PENDING_VERIFICATION">
+                    {t('account:adminUsers.status.PENDING_VERIFICATION')}
+                  </option>
+                  <option value="ACTIVE">{t('account:adminUsers.status.ACTIVE')}</option>
+                  <option value="SUSPENDED">{t('account:adminUsers.status.SUSPENDED')}</option>
+                </select>
+              </label>
+
+              <label className={LABEL_CLASS}>
+                {t('account:adminUsers.from')}
+                <input
+                  type="date"
+                  aria-label={t('account:adminUsers.from')}
+                  value={registeredFromDate}
+                  onChange={(event) => {
+                    setRegisteredFromDate(event.target.value)
+                  }}
+                  aria-describedby={
+                    validationMessage === null ? undefined : 'registered-range-error'
+                  }
+                  aria-invalid={validationMessage !== null}
+                  className={`${FIELD_CLASS} mt-1`}
+                />
+                <span className={CONTROL_HELP}>{t('account:adminUsers.fromHint')}</span>
+              </label>
+
+              <label className={LABEL_CLASS}>
+                {t('account:adminUsers.to')}
+                <input
+                  type="date"
+                  aria-label={t('account:adminUsers.to')}
+                  value={registeredToDate}
+                  onChange={(event) => {
+                    setRegisteredToDate(event.target.value)
+                  }}
+                  aria-describedby={
+                    validationMessage === null ? undefined : 'registered-range-error'
+                  }
+                  aria-invalid={validationMessage !== null}
+                  className={`${FIELD_CLASS} mt-1`}
+                />
+                <span className={CONTROL_HELP}>{t('account:adminUsers.toHint')}</span>
+              </label>
+
+              <label className={LABEL_CLASS}>
+                {t('account:adminUsers.sanctions')}
+                <select
+                  value={sanctionHistory}
+                  onChange={(event) => {
+                    setSanctionHistory(event.target.value as SanctionHistoryFilter)
+                  }}
+                  className={`${FIELD_CLASS} mt-1`}
+                >
+                  <option value="">{t('account:adminUsers.sanctionsAny')}</option>
+                  <option value="true">{t('account:adminUsers.sanctionsWith')}</option>
+                  <option value="false">{t('account:adminUsers.sanctionsWithout')}</option>
+                </select>
+              </label>
+            </div>
+
+            {validationMessage !== null && (
+              <p
+                id="registered-range-error"
+                role="alert"
+                className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger"
               >
-                <option value="">{t('account:adminUsers.all')}</option>
-                <option value="PLAYER">{roleLabel('PLAYER')}</option>
-                <option value="MODERATOR">{roleLabel('MODERATOR')}</option>
-                <option value="ADMINISTRATOR">{roleLabel('ADMINISTRATOR')}</option>
-                <option value="SUPER_ADMINISTRATOR">{roleLabel('SUPER_ADMINISTRATOR')}</option>
-              </select>
-            </label>
+                {t(validationMessage)}
+              </p>
+            )}
+          </fieldset>
 
-            <label className={LABEL_CLASS}>
-              {t('account:adminUsers.statusFilter')}
-              <select
-                value={status}
-                onChange={(event) => {
-                  setStatus(event.target.value as StatusFilter)
-                }}
-                className={`${FIELD_CLASS} mt-1`}
-              >
-                <option value="">{t('account:adminUsers.all')}</option>
-                <option value="PENDING_VERIFICATION">
-                  {t('account:adminUsers.status.PENDING_VERIFICATION')}
-                </option>
-                <option value="ACTIVE">{t('account:adminUsers.status.ACTIVE')}</option>
-                <option value="SUSPENDED">{t('account:adminUsers.status.SUSPENDED')}</option>
-              </select>
-            </label>
-
-            <label className={LABEL_CLASS}>
-              {t('account:adminUsers.from')}
-              <input
-                type="date"
-                aria-label={t('account:adminUsers.from')}
-                value={registeredFromDate}
-                onChange={(event) => {
-                  setRegisteredFromDate(event.target.value)
-                }}
-                aria-describedby={validationMessage === null ? undefined : 'registered-range-error'}
-                aria-invalid={validationMessage !== null}
-                className={`${FIELD_CLASS} mt-1`}
-              />
-              <span className={CONTROL_HELP}>{t('account:adminUsers.fromHint')}</span>
-            </label>
-
-            <label className={LABEL_CLASS}>
-              {t('account:adminUsers.to')}
-              <input
-                type="date"
-                aria-label={t('account:adminUsers.to')}
-                value={registeredToDate}
-                onChange={(event) => {
-                  setRegisteredToDate(event.target.value)
-                }}
-                aria-describedby={validationMessage === null ? undefined : 'registered-range-error'}
-                aria-invalid={validationMessage !== null}
-                className={`${FIELD_CLASS} mt-1`}
-              />
-              <span className={CONTROL_HELP}>{t('account:adminUsers.toHint')}</span>
-            </label>
-
-            <label className={LABEL_CLASS}>
-              {t('account:adminUsers.sanctions')}
-              <select
-                value={sanctionHistory}
-                onChange={(event) => {
-                  setSanctionHistory(event.target.value as SanctionHistoryFilter)
-                }}
-                className={`${FIELD_CLASS} mt-1`}
-              >
-                <option value="">{t('account:adminUsers.sanctionsAny')}</option>
-                <option value="true">{t('account:adminUsers.sanctionsWith')}</option>
-                <option value="false">{t('account:adminUsers.sanctionsWithout')}</option>
-              </select>
-            </label>
-          </div>
-
-          {validationMessage !== null && (
-            <p
-              id="registered-range-error"
-              role="alert"
-              className="rounded-md border border-danger bg-danger/10 p-3 text-sm text-danger"
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button type="submit" variant="account-primary" className="w-full">
+              {t('account:adminUsers.submit')}
+            </Button>
+            <Button
+              type="button"
+              variant="account-secondary"
+              className="w-full"
+              onClick={clearCriteria}
             >
-              {t(validationMessage)}
-            </p>
-          )}
-        </fieldset>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button type="submit" className="w-full">
-            {t('account:adminUsers.submit')}
-          </Button>
-          <Button type="button" variant="secondary" className="w-full" onClick={clearCriteria}>
-            {t('account:adminUsers.clear')}
-          </Button>
-        </div>
-      </form>
+              {t('account:adminUsers.clear')}
+            </Button>
+          </div>
+        </form>
+      </Card>
 
       {query.isLoading && (
         <p role="status" className="text-sm text-muted">
@@ -380,22 +428,43 @@ export const AdminUsersSection = ({
       {query.isSuccess && (
         <>
           <section aria-label={t('account:adminUsers.statsLabel')} className="space-y-3">
-            <h3 className="text-sm font-semibold text-ink">{t('account:adminUsers.stats')}</h3>
+            {/* Ronda 4 (brief seccion 67-74): las 3 cards eran
+             * `rounded-lg border border-border bg-surface-raised` genericas
+             * -blancas/negras planas, bajo contraste en Light-. Mismo sistema
+             * visual que ya usan las stat-cards de Estadisticas
+             * (`.account-stat-card`, brief lo pide explicitamente: "no
+             * inventar un sistema nuevo"), con un acento semantico sutil por
+             * estado via `data-tone` (positivo=activos, warning=suspendidos,
+             * neutral=baneados -"No disponible" se mantiene intacto, cero
+             * numero inventado-). */}
+            <h3 className="account-title text-sm font-semibold">{t('account:adminUsers.stats')}</h3>
             <dl className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-border bg-surface-raised p-4">
-                <dt className="text-xs text-muted">{t('account:adminUsers.active')}</dt>
-                <dd data-stat="active" className="mt-1 text-xl font-semibold text-success">
+              <div
+                className="account-stat-card account-admin-stat rounded-lg p-4"
+                data-tone="positive"
+              >
+                <dt className="account-label text-xs">{t('account:adminUsers.active')}</dt>
+                <dd data-stat="active" className="mt-1 text-xl font-semibold text-ink tabular-nums">
                   {query.data.statusCounts.active}
                 </dd>
               </div>
-              <div className="rounded-lg border border-border bg-surface-raised p-4">
-                <dt className="text-xs text-muted">{t('account:adminUsers.suspended')}</dt>
-                <dd data-stat="suspended" className="mt-1 text-xl font-semibold text-warning">
+              <div
+                className="account-stat-card account-admin-stat rounded-lg p-4"
+                data-tone="warning"
+              >
+                <dt className="account-label text-xs">{t('account:adminUsers.suspended')}</dt>
+                <dd
+                  data-stat="suspended"
+                  className="mt-1 text-xl font-semibold text-ink tabular-nums"
+                >
                   {query.data.statusCounts.suspended}
                 </dd>
               </div>
-              <div className="rounded-lg border border-border bg-surface-raised p-4">
-                <dt className="text-xs text-muted">{t('account:adminUsers.banned')}</dt>
+              <div
+                className="account-stat-card account-admin-stat rounded-lg p-4"
+                data-tone="neutral"
+              >
+                <dt className="account-label text-xs">{t('account:adminUsers.banned')}</dt>
                 <dd data-stat="banned" className="mt-1 text-sm font-semibold text-muted">
                   {t('common:notAvailable')}
                 </dd>
@@ -405,17 +474,17 @@ export const AdminUsersSection = ({
 
           <section
             aria-label={t('account:adminUsers.resultsLabel')}
-            className="overflow-hidden rounded-lg border border-border"
+            className="account-panel overflow-hidden rounded-lg"
           >
-            <div className="bg-surface-raised p-4">
-              <h3 className="text-sm font-semibold text-ink">
+            <div className="p-4">
+              <h3 className="account-title text-base font-semibold">
                 {t('account:adminUsers.results', { total: String(query.data.items.length) })}
               </h3>
               <p className="mt-1 text-xs text-muted">{t('account:adminUsers.resultsHint')}</p>
             </div>
 
             {query.data.items.length === 0 ? (
-              <p className="bg-surface p-4 text-sm text-muted">{t('account:adminUsers.empty')}</p>
+              <p className="p-4 text-sm text-muted">{t('account:adminUsers.empty')}</p>
             ) : (
               <ul>
                 {query.data.items.map((account) => (
@@ -429,7 +498,7 @@ export const AdminUsersSection = ({
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant="secondary"
+                variant="account-secondary"
                 disabled
                 aria-label={t('account:adminUsers.previousPage')}
               >
@@ -437,7 +506,7 @@ export const AdminUsersSection = ({
               </Button>
               <Button
                 type="button"
-                variant="secondary"
+                variant="account-secondary"
                 disabled
                 aria-label={t('account:adminUsers.nextPage')}
               >
@@ -450,7 +519,7 @@ export const AdminUsersSection = ({
           <div className="flex flex-col items-start gap-2 sm:items-end">
             <Button
               type="button"
-              variant="secondary"
+              variant="account-secondary"
               loading={exportMutation.isPending}
               disabled={query.data.items.length === 0}
               onClick={exportResults}

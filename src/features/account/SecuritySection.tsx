@@ -7,7 +7,10 @@ import { Card } from '@/components/ui/Card'
 import { PasswordField } from '@/components/ui/PasswordField'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
-import { TotpEnrollment } from './security/TotpEnrollment'
+import { useTheme } from '@/shared/theme'
+import { accountFormControls } from './accountRemasterAssets'
+import { AccountPixelIcon } from './AccountPixelIcon'
+import { TotpEnrollment, type TotpEnrollmentProps } from './security/TotpEnrollment'
 import { changeOwnPassword, type ChangePasswordInput } from './security/passwordApi'
 import { FIELD_CLASS, FIELD_ERROR_CLASS, FIELD_LABEL_CLASS } from './fieldStyles'
 
@@ -29,11 +32,20 @@ export interface SecuritySectionProps {
   readonly changePassword?: (input: ChangePasswordInput) => Promise<void>
   /** Nota honesta sobre la limitacion de autenticacion del entorno local. */
   readonly showLocalAuthNote?: boolean
+  /**
+   * Transportes TOTP inyectables, reenviados tal cual a `TotpEnrollment`
+   * (mismo patron que `changePassword`). Sin valor: `TotpEnrollment` usa sus
+   * propios transportes reales por defecto -produccion no cambia-.
+   */
+  readonly onTotpEnroll?: TotpEnrollmentProps['onEnroll']
+  readonly onTotpConfirm?: TotpEnrollmentProps['onConfirm']
 }
 
 export const SecuritySection = ({
   changePassword = changeOwnPassword,
   showLocalAuthNote = false,
+  onTotpEnroll,
+  onTotpConfirm,
 }: SecuritySectionProps = {}): React.JSX.Element => {
   const [fields, setFields] = useState(EMPTY)
   // Guarda la CLAVE del aviso local; se traduce al pintar.
@@ -41,6 +53,18 @@ export const SecuritySection = ({
   const errorId = useId()
   const { t } = useTranslation()
   const language = useLanguage((state) => state.language)
+  const theme = useTheme((state) => state.theme)
+  // Ronda 2 (brief seccion 27/28): `PasswordField` es compartido (Registro,
+  // Login); el ojo tematico se inyecta SOLO aqui via las props opcionales
+  // nuevas, sin tocar el comportamiento del boton real (sigue siendo
+  // `<button type="button">` con `aria-label`/`aria-pressed`, solo cambia su
+  // representacion visual).
+  const eyeIcon = (
+    <img src={accountFormControls.eyeShow[theme]} alt="" aria-hidden className="h-4 w-4" />
+  )
+  const eyeOffIcon = (
+    <img src={accountFormControls.eyeHide[theme]} alt="" aria-hidden className="h-4 w-4" />
+  )
 
   const mutation = useMutation({
     mutationFn: (input: ChangePasswordInput) => changePassword(input),
@@ -87,8 +111,13 @@ export const SecuritySection = ({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <AccountPixelIcon icon="security" size="md" />
+        <h2 className="account-title text-lg font-semibold">{t('account:sections.security')}</h2>
+      </div>
+
       {showLocalAuthNote && (
-        <Card>
+        <Card className="account-subpanel account-info-note">
           <p className="text-sm text-muted">
             <span className="font-medium text-ink">{t('account:security.localNoteTitle')}</span>{' '}
             {t('account:security.localNote')}
@@ -97,12 +126,13 @@ export const SecuritySection = ({
       )}
 
       <Card
+        className="account-panel"
         title={t('account:security.passwordTitle')}
         description={t('account:security.passwordDescription')}
       >
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div>
-            <label htmlFor="current-password" className={FIELD_LABEL_CLASS}>
+            <label htmlFor="current-password" className={`${FIELD_LABEL_CLASS} account-label`}>
               {t('account:security.current')}
             </label>
             <PasswordField
@@ -111,11 +141,13 @@ export const SecuritySection = ({
               autoComplete="current-password"
               value={fields.current}
               onChange={update('current')}
+              eyeIcon={eyeIcon}
+              eyeOffIcon={eyeOffIcon}
             />
           </div>
 
           <div>
-            <label htmlFor="new-password" className={FIELD_LABEL_CLASS}>
+            <label htmlFor="new-password" className={`${FIELD_LABEL_CLASS} account-label`}>
               {t('account:security.new')}
             </label>
             <PasswordField
@@ -126,11 +158,13 @@ export const SecuritySection = ({
               onChange={update('next')}
               aria-invalid={shownError !== null}
               aria-describedby={shownError !== null ? errorId : undefined}
+              eyeIcon={eyeIcon}
+              eyeOffIcon={eyeOffIcon}
             />
           </div>
 
           <div>
-            <label htmlFor="confirm-password" className={FIELD_LABEL_CLASS}>
+            <label htmlFor="confirm-password" className={`${FIELD_LABEL_CLASS} account-label`}>
               {t('account:security.confirm')}
             </label>
             <PasswordField
@@ -139,6 +173,8 @@ export const SecuritySection = ({
               autoComplete="new-password"
               value={fields.confirm}
               onChange={update('confirm')}
+              eyeIcon={eyeIcon}
+              eyeOffIcon={eyeOffIcon}
             />
           </div>
 
@@ -149,7 +185,7 @@ export const SecuritySection = ({
           )}
 
           <div className="flex items-center gap-3">
-            <Button type="submit" loading={mutation.isPending}>
+            <Button type="submit" variant="account-primary" loading={mutation.isPending}>
               {t('account:security.change')}
             </Button>
             {mutation.isSuccess && (
@@ -162,10 +198,14 @@ export const SecuritySection = ({
       </Card>
 
       <Card
+        className="account-panel"
         title={t('account:security.totpTitle')}
         description={t('account:security.totpDescription')}
       >
-        <TotpEnrollment />
+        <TotpEnrollment
+          {...(onTotpEnroll === undefined ? {} : { onEnroll: onTotpEnroll })}
+          {...(onTotpConfirm === undefined ? {} : { onConfirm: onTotpConfirm })}
+        />
       </Card>
     </div>
   )

@@ -7,6 +7,7 @@ import { useSession } from '@/shared/session'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
 
+import { AccountPixelIcon } from '../AccountPixelIcon'
 import { toPlayerAchievements } from './missionAchievements'
 import { StatisticsPanel } from './StatisticsPanel'
 import type { AchievementsPanelState, StatisticsPanelState } from './types'
@@ -54,12 +55,15 @@ export const StatisticsSection = ({ state }: StatisticsSectionProps = {}): React
             : { status: 'ready', items: toPlayerAchievements(achievements.data) }
 
   return (
-    <section aria-labelledby="account-statistics-heading" className="space-y-5">
-      <header>
-        <h2 id="account-statistics-heading" className="text-2xl font-semibold text-ink">
-          {t('account:statistics.title')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('account:statistics.subtitle')}</p>
+    <section aria-labelledby="account-statistics-heading" className="account-panel space-y-5 p-5">
+      <header className="flex items-center gap-2">
+        <AccountPixelIcon icon="statistics" size="md" />
+        <div>
+          <h2 id="account-statistics-heading" className="account-title text-2xl font-semibold">
+            {t('account:statistics.title')}
+          </h2>
+          <p className="mt-1 text-sm text-muted">{t('account:statistics.subtitle')}</p>
+        </div>
       </header>
 
       <StatisticsPanel

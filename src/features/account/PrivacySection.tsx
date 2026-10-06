@@ -7,13 +7,19 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { HttpError, type HttpDownload } from '@/lib/http'
 import { primaryRole, roleLabel } from '@/shared/rbac'
+import { useTheme } from '@/shared/theme'
+import { AccountPixelIcon } from './AccountPixelIcon'
+import { accountPrivacy } from './accountRemasterAssets'
 import {
   downloadOwnPersonalData,
   saveOwnPersonalDataDownload,
   type OwnPersonalData,
   type PrivacyExportFormat,
 } from './api'
-import { AccountDeletionRequest } from './privacy/AccountDeletionRequest'
+import {
+  AccountDeletionRequest,
+  type AccountDeletionRequestProps,
+} from './privacy/AccountDeletionRequest'
 import { useOwnPersonalData } from './useOwnAccount'
 import { countryName } from './countries'
 
@@ -24,7 +30,6 @@ interface SummaryRow {
 
 interface ExportOption {
   readonly format: PrivacyExportFormat
-  readonly icon: string
   readonly descriptionKey: string
 }
 
@@ -37,12 +42,14 @@ export type PrivacyExportTransport = (format: PrivacyExportFormat) => Promise<Ht
 export interface PrivacySectionProps {
   readonly exportPersonalData?: PrivacyExportTransport
   readonly saveExport?: (file: HttpDownload, format: PrivacyExportFormat) => void
+  /** Reenviado a `AccountDeletionRequest` (vease su prop `requestDeletion`). */
+  readonly requestDeletion?: AccountDeletionRequestProps['requestDeletion']
 }
 
 const EXPORT_OPTIONS: readonly ExportOption[] = [
-  { format: 'json', icon: '{ }', descriptionKey: 'account:privacy.export.json' },
-  { format: 'xml', icon: '</>', descriptionKey: 'account:privacy.export.xml' },
-  { format: 'pdf', icon: 'PDF', descriptionKey: 'account:privacy.export.pdf' },
+  { format: 'json', descriptionKey: 'account:privacy.export.json' },
+  { format: 'xml', descriptionKey: 'account:privacy.export.xml' },
+  { format: 'pdf', descriptionKey: 'account:privacy.export.pdf' },
 ]
 
 const SummaryRow = ({ label, value }: SummaryRow): React.JSX.Element => (
@@ -95,11 +102,12 @@ const exportErrorMessage = (error: unknown, format: PrivacyExportFormat): string
 const ExportOptions = ({
   exportPersonalData,
   saveExport,
-}: Required<PrivacySectionProps>): React.JSX.Element => {
+}: Required<Pick<PrivacySectionProps, 'exportPersonalData' | 'saveExport'>>): React.JSX.Element => {
   // `message` guarda la CLAVE del aviso; se traduce al pintar (cambia con el idioma).
   const [feedback, setFeedback] = useState<ExportFeedback | null>(null)
   const exportMutation = useMutation({ mutationFn: exportPersonalData })
   const { t } = useTranslation()
+  const theme = useTheme((state) => state.theme)
 
   const requestExport = (format: PrivacyExportFormat): void => {
     setFeedback(null)
@@ -145,22 +153,22 @@ const ExportOptions = ({
           return (
             <article
               key={option.format}
-              className="flex min-w-0 flex-col items-center gap-2 rounded-lg border border-border bg-surface p-4 text-center"
+              className="account-stat-card flex min-w-0 flex-col items-center gap-2 rounded-lg p-4 text-center"
               aria-label={t('account:privacy.export.card', { format: label })}
             >
-              <span
+              <img
                 aria-hidden
-                className="flex h-9 w-9 items-center justify-center rounded-md border border-brand bg-brand/15 text-xs font-semibold text-brand"
-              >
-                {option.icon}
-              </span>
+                alt=""
+                className="account-export-icon"
+                src={accountPrivacy.exportIcon[option.format][theme]}
+              />
               <h4 className="text-sm font-semibold text-ink">{label}</h4>
               <p className="min-h-8 min-w-0 max-w-full break-words text-xs text-muted">
                 {t(option.descriptionKey)}
               </p>
               <Button
                 type="button"
-                variant="secondary"
+                variant="account-secondary"
                 loading={isPending}
                 disabled={exportMutation.isPending}
                 onClick={() => {
@@ -209,17 +217,23 @@ const ExportOptions = ({
 export const PrivacySection = ({
   exportPersonalData = downloadOwnPersonalData,
   saveExport = saveOwnPersonalDataDownload,
+  requestDeletion,
 }: PrivacySectionProps = {}): React.JSX.Element => {
   const query = useOwnPersonalData()
   const { t } = useTranslation()
   const sessionExpired = query.error instanceof HttpError && query.error.isUnauthorized
 
+  const theme = useTheme((state) => state.theme)
+
   return (
-    <section className="min-w-0 space-y-5">
+    <section className="account-panel min-w-0 space-y-5 p-5 sm:p-6">
       <div className="space-y-3">
-        <div>
-          <h2 className="text-xl font-semibold text-ink">{t('account:privacy.title')}</h2>
-          <p className="mt-2 text-sm text-muted">{t('account:privacy.subtitle')}</p>
+        <div className="flex items-center gap-2">
+          <AccountPixelIcon icon="privacy" size="md" />
+          <div>
+            <h2 className="account-title text-xl font-semibold">{t('account:privacy.title')}</h2>
+            <p className="mt-2 text-sm text-muted">{t('account:privacy.subtitle')}</p>
+          </div>
         </div>
 
         {query.isSuccess && (
@@ -239,8 +253,8 @@ export const PrivacySection = ({
       )}
 
       {query.isError && (
-        <Card>
-          <p role="alert" className="text-sm text-danger">
+        <Card className="account-danger-zone">
+          <p role="alert" className="text-sm font-medium text-danger">
             {sessionExpired ? t('account:privacy.sessionExpired') : t('account:privacy.loadFailed')}
           </p>
         </Card>
@@ -248,12 +262,20 @@ export const PrivacySection = ({
 
       {query.isSuccess && (
         <section aria-label={t('account:privacy.summary')} className="space-y-3">
-          <div>
-            <h3 className="text-sm font-semibold text-ink">{t('account:privacy.summary')}</h3>
-            <p className="mt-2 text-xs text-muted">{t('account:privacy.summaryHint')}</p>
+          <div className="flex items-center gap-2">
+            <img
+              aria-hidden
+              alt=""
+              className="h-8 w-auto"
+              src={accountPrivacy.personalDataBadge[theme]}
+            />
+            <div>
+              <h3 className="text-sm font-semibold text-ink">{t('account:privacy.summary')}</h3>
+              <p className="mt-2 text-xs text-muted">{t('account:privacy.summaryHint')}</p>
+            </div>
           </div>
 
-          <dl className="rounded-lg border border-border bg-surface p-4">
+          <dl className="account-subpanel p-4">
             {rowsFrom(query.data, t).map((row) => (
               <SummaryRow key={row.label} label={row.label} value={row.value} />
             ))}
@@ -263,7 +285,7 @@ export const PrivacySection = ({
 
       <ExportOptions exportPersonalData={exportPersonalData} saveExport={saveExport} />
 
-      <AccountDeletionRequest />
+      <AccountDeletionRequest {...(requestDeletion === undefined ? {} : { requestDeletion })} />
     </section>
   )
 }

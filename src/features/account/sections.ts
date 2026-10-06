@@ -1,4 +1,5 @@
 import { ADMIN_USER_PRIMARY_ROLES, primaryRole } from '@/shared/rbac'
+import type { AccountSectionIconName } from './accountRemasterAssets'
 
 /**
  * Secciones de "Mi cuenta" (HU-05.4).
@@ -20,26 +21,40 @@ export interface AccountSection {
   readonly labelKey: string
   readonly end: boolean
   readonly requiredPrimaryRoles?: readonly string[]
+  /** Icono del remaster visual Sprint 3 (las 7 secciones de jugador + `admin`). */
+  readonly icon?: AccountSectionIconName
 }
 
 export const ACCOUNT_SECTIONS: readonly AccountSection[] = [
-  { to: '.', labelKey: 'account:sections.profile', end: true },
-  { to: 'security', labelKey: 'account:sections.security', end: false },
-  { to: 'preferences', labelKey: 'account:sections.preferences', end: false },
-  { to: 'statistics', labelKey: 'account:sections.statistics', end: false },
-  { to: 'subscriptions', labelKey: 'account:sections.subscriptions', end: false },
-  { to: 'payment-methods', labelKey: 'account:sections.paymentMethods', end: false },
+  { to: '.', labelKey: 'account:sections.profile', end: true, icon: 'profile' },
+  { to: 'security', labelKey: 'account:sections.security', end: false, icon: 'security' },
+  { to: 'preferences', labelKey: 'account:sections.preferences', end: false, icon: 'preferences' },
+  { to: 'statistics', labelKey: 'account:sections.statistics', end: false, icon: 'statistics' },
+  {
+    to: 'subscriptions',
+    labelKey: 'account:sections.subscriptions',
+    end: false,
+    icon: 'subscriptions',
+  },
+  {
+    to: 'payment-methods',
+    labelKey: 'account:sections.paymentMethods',
+    end: false,
+    icon: 'paymentMethods',
+  },
   {
     to: 'privacy',
     labelKey: 'account:sections.privacy',
     end: false,
     requiredPrimaryRoles: ['PLAYER'],
+    icon: 'privacy',
   },
   {
     to: 'admin-users',
     labelKey: 'account:sections.adminUsers',
     end: false,
     requiredPrimaryRoles: ADMIN_USER_PRIMARY_ROLES,
+    icon: 'admin',
   },
 ]
 

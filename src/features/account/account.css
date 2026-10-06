@@ -1,0 +1,942 @@
+/*
+ * ============================================================
+ * MI CUENTA — remaster visual Sprint 3
+ * Dark: "The Guardian's Lodge" / "Guardian Archive"
+ * Light: "The Royal Archive"
+ * ============================================================
+ * Fuente de los assets: `src/features/account/accountRemasterAssets.ts`
+ * (manifest -> `public/assets/account/`, derivados de
+ * `Sprint-3-Remaster-Visual/Mi Cuenta`, kit fuente NUNCA tocado). Mismo
+ * criterio que `commerce.css`/`battle-rooms.css`: todo vive en ESTE archivo,
+ * que solo `AccountPage` importa -no toca ningun otro modulo ni el navbar
+ * global-. Todo selector queda bajo `.account-page`/`.account-shell` para no
+ * contaminar el resto de la aplicacion (seccion 21/65 del brief).
+ *
+ * Paleta: se REUTILIZAN los tokens globales ya existentes
+ * (`--color-brand`, `--color-accent-gold`, `--color-surface`, `--color-ink`,
+ * `--color-danger`, `--color-success`, `--font-game-display` = Cinzel) — no
+ * se reemplaza ningun valor global, solo se definen tokens NUEVOS, scoped a
+ * Account, para los materiales propios del kit (hierro/bronce/burdeos en
+ * Dark; marfil/oro/zafiro en Light).
+ */
+
+.account-page {
+  /* Tokens propios de Mi Cuenta -mismo criterio que `--br-ink`/`--br-accent`
+   * en battle-rooms.css-: valores EXPLICITOS por tema (no derivados de
+   * `color-mix` con el brand generico), porque Light (Royal Archive:
+   * ivory/gold/sapphire) y Dark (Guardian's Lodge: iron/bronze/burgundy/
+   * amethyst) son dos materiales distintos, no un recolor mecanico (brief
+   * seccion 49/59). Nunca se sobreescribe ningun token GLOBAL existente. */
+  --account-ink: #1c2541;
+  --account-muted: #4a5578;
+  --account-accent: #0b3d91;
+  --account-accent-2: #b8860b;
+  --account-danger: #7a1f1f;
+  --account-panel-bg: color-mix(in oklab, #fbf4e2 88%, transparent);
+  --account-panel-bg-strong: color-mix(in oklab, #fbf4e2 97%, transparent);
+  --account-nav-item-bg: color-mix(in oklab, #fbf4e2 55%, transparent);
+  --account-overlay-top: color-mix(in oklab, #faf6ec 58%, transparent);
+  --account-overlay-fade: color-mix(in oklab, #faf6ec 10%, transparent);
+  --account-frame-shadow: 0 10px 30px -12px color-mix(in oklab, black 45%, transparent);
+  --account-gold: var(--color-accent-gold);
+  --account-title-glow: color-mix(in oklab, var(--account-accent) 35%, transparent);
+
+  position: relative;
+  isolation: isolate;
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 18px clamp(14px, 2vw, 28px) 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  color: var(--account-ink);
+}
+:root[data-theme='dark'] .account-page {
+  --account-ink: #f1e6cf;
+  --account-muted: #c3b7e0;
+  --account-accent: #c9a646;
+  --account-accent-2: #9b6bd6;
+  --account-danger: #e2847d;
+  --account-panel-bg: color-mix(in oklab, #1a1510 82%, transparent);
+  --account-panel-bg-strong: color-mix(in oklab, #15110d 92%, transparent);
+  --account-nav-item-bg: color-mix(in oklab, #1a1510 55%, transparent);
+  --account-overlay-top: color-mix(in oklab, #0c0a08 62%, transparent);
+  --account-overlay-fade: color-mix(in oklab, #0c0a08 16%, transparent);
+  --account-title-glow: color-mix(in oklab, var(--account-accent-2) 45%, transparent);
+}
+
+.account-main {
+  max-width: 1680px;
+}
+
+/* El escenario completo del kit (Guardian's Lodge / Royal Archive) cubre TODA
+ * el area de la pagina, no solo un recuadro: `inset: 0` sobre un contenedor
+ * que crece con el contenido (privacidad/seguridad son mas altas que Perfil).
+ * `background-size: cover` nunca deforma la escena; el degradado superior
+ * (`::after`) solo mejora la legibilidad de la cabecera, el resto del arte
+ * queda visible detras de los paneles reales. */
+.account-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url('/assets/account/backgrounds/bg-account-light.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+}
+.account-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+    180deg,
+    var(--account-overlay-top) 0%,
+    var(--account-overlay-fade) 240px,
+    transparent 480px
+  );
+}
+:root[data-theme='dark'] .account-page::before {
+  background-image: url('/assets/account/backgrounds/bg-account-dark.png');
+}
+
+/* Scrollbar de pagina: paleta real del kit (burdeos/oro Dark, zafiro/oro
+ * Light), igual tecnica que `.br-main` en battle-rooms.css -- reacciona solo
+ * mientras `/account*` esta montado, sin tocar `AppLayout.tsx`. Prioridad
+ * usabilidad > decoracion (brief seccion 44): el thumb usa el PNG real del
+ * kit como imagen de fondo SOLO en navegadores que soportan
+ * `::-webkit-scrollbar-thumb` con `background-image`; `scrollbar-color` es el
+ * fallback universal con los mismos colores. */
+html:has(.account-main) {
+  scrollbar-width: thin;
+  /* Ronda 3 (gate de scrollbar, brief seccion 72-84): el bug real era
+   * `var(--account-gold)` -token scoped a `.account-page`, INDEFINIDO en
+   * `html`, el elemento donde corre esta regla-. Una custom property
+   * indefinida invalida la funcion `color-mix()` completa, y el navegador
+   * descarta TODA la declaracion `scrollbar-color` en silencio (sin error de
+   * consola) -quedaba en `auto`, confirmado via
+   * `getComputedStyle(document.documentElement).scrollbarColor`. Se usa el
+   * token GLOBAL real (`--color-accent-gold`, definido en `:root` en
+   * `index.css`), no el alias scoped. Verificado visualmente en Chrome tras
+   * el fix: thumb bronce/oro visible en Dark, zafiro/oro en Light. */
+  scrollbar-color: color-mix(in oklab, var(--color-brand) 55%, var(--color-accent-gold))
+    var(--color-surface);
+}
+html:has(.account-main) ::-webkit-scrollbar {
+  width: 12px;
+}
+html:has(.account-main) ::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+html:has(.account-main) ::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--color-brand) 55%, var(--color-accent-gold));
+  background-image: url('/assets/account/scrollbars/thumb-light.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 70% auto;
+  border-radius: 8px;
+  border: 2px solid var(--color-surface);
+}
+:root[data-theme='dark'] html:has(.account-main) ::-webkit-scrollbar-thumb {
+  background-image: url('/assets/account/scrollbars/thumb-dark.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Topbar — SOLO el control "Volver" (ronda 2, brief seccion 4/5/78/79).
+ * ------------------------------------------------------------------
+ * El bloque Hero completo (emblema + "MI CUENTA" + subtitulo visibles) se
+ * elimino: decision de diseño del equipo, no una correccion de bug. Lo unico
+ * que sobrevive es el control de regreso, ahora con la placa real del kit
+ * (`02-Hero-Header/back-plate-*`, que ya trae la flecha dibujada) en vez de
+ * un boton generico. Sin `min-height`/padding grande de hero: el espacio
+ * vertical que antes ocupaba el encabezado queda libre para el contenido
+ * (brief seccion 6/79, "sube el grid principal... no dejes un margin-top
+ * equivalente al hero anterior"). */
+.account-topbar {
+  display: flex;
+  align-items: center;
+}
+.account-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  filter: drop-shadow(0 3px 8px color-mix(in oklab, black 35%, transparent));
+  transition: transform 150ms ease;
+}
+.account-back-button:hover {
+  transform: translateY(-1px) scale(1.03);
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-back-button {
+    transition: none;
+  }
+  .account-back-button:hover {
+    transform: none;
+  }
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Shell — grid de dos columnas (sin tocar el breakpoint `lg` existente).
+ * ------------------------------------------------------------------
+ */
+.account-shell {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 64rem) {
+  .account-shell {
+    /* Ronda 3 (brief seccion 13/28): "Richard permite agrandar el sidebar si
+     * hace falta -- prioridad: EL BOTON DEBE VERSE COMPLETO". Se amplia de
+     * 18rem a 20rem para que labels largos ("Estadisticas y logros", "Panel
+     * administrativo") quepan con el nuevo tipo display (Cinzel es mas ancho
+     * que la fuente generica anterior) sin aplastar el arte del marco. */
+    grid-template-columns: minmax(0, 20rem) 1fr;
+  }
+}
+
+/* Resumen de cuenta (AccountSummary) y cada `Card` de seccion reciben esta
+ * clase vía `className` (prop ya existente de `Card`) -- NO se modifica
+ * `Card.tsx`. El centro semitransparente deja ver, debajo, el escenario. */
+.account-panel {
+  /* Correccion ronda 1 (brief seccion 17/47): antes esta regla declaraba
+   * `background-image` con el MISMO PNG que `border-image-source` (sin
+   * `background-size`, por tanto a tamano intrinseco) ADEMAS de
+   * `border-image-slice: ... fill` -que ya pinta la region central del
+   * recorte como fondo-. El resultado eran dos copias del motivo ornamental
+   * superpuestas, una de ellas invadiendo el encabezado del panel. Ahora: el
+   * marco (border-image) usa solo sus 4 bordes -sin la palabra clave `fill`,
+   * que descartaba la region central en vez de usarla como textura de
+   * fondo-, y el interior es una superficie solida y legible
+   * (`--account-panel-bg`, parchment/ledger segun tema) sin ninguna imagen
+   * de fondo adicional. */
+  position: relative;
+  background-color: var(--account-panel-bg);
+  border-image-source: url('/assets/account/content-panels/panel-frame-light.png');
+  border-image-slice: 40;
+  border-image-width: 14px;
+  border-image-repeat: stretch;
+  border-style: solid;
+  border-width: 14px;
+  border-color: transparent;
+  border-radius: 14px;
+  box-shadow: var(--account-frame-shadow);
+  padding: 20px;
+}
+:root[data-theme='dark'] .account-panel {
+  border-image-source: url('/assets/account/content-panels/panel-frame-dark.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Navegacion lateral — `AccountSectionNav`.
+ * ------------------------------------------------------------------
+ * Desktop: marco vertical completo via `border-image` (familia
+ * 03-Side-Navigation). Mobile/tablet (por debajo de `sm`, mismo breakpoint
+ * que ya usaba `AccountSectionNav`): tira horizontal con scroll propio, SIN
+ * el marco vertical completo -- el brief es explicito en no forzar el frame
+ * de escritorio en 390px (seccion 19).
+ */
+.account-nav {
+  position: relative;
+  padding: 18px 10px;
+}
+@media (min-width: 40rem) {
+  .account-nav {
+    /* Ronda 4 (brief seccion 7-12): el marco exterior (`frame-*.png`, con sus
+     * rieles y remates propios) se quita POR COMPLETO -decision de diseño,
+     * no un bug-. Cada boton ya trae su propia placa ornamentada
+     * (`item-default-*`), asi que un segundo marco alrededor competia
+     * visualmente con ellas ("el panel exterior compite con las placas").
+     * Se conserva la estructura `<nav><ul>` intacta -solo el contenedor
+     * pierde su piel: sin `border-image`, sin fondo propio, sin sombra-, los
+     * botones quedan flotando directamente sobre el escenario, como piezas
+     * fisicas independientes. */
+    padding: 0;
+  }
+}
+
+.account-nav-list {
+  display: flex;
+  gap: 6px;
+}
+@media (min-width: 40rem) {
+  .account-nav-list {
+    flex-direction: column;
+    /* Ronda 4 (brief seccion 13): con el marco exterior fuera, hay aire de
+     * sobra -gap uniforme ~14px entre placas (rango 10-16px pedido). */
+    gap: 14px;
+  }
+}
+
+.account-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-family: var(--font-game-display);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+  color: var(--account-ink);
+  white-space: nowrap;
+  background-color: transparent;
+  transition:
+    transform 150ms ease,
+    filter 150ms ease,
+    background-color 150ms ease;
+}
+.account-nav-item:hover {
+  background-color: var(--account-nav-item-bg);
+  transform: translateX(2px);
+}
+@media (min-width: 40rem) {
+  .account-nav-item {
+    /* Etiquetas largas (`Datos personales y exportacion`, y las de fr/pt
+     * -brief seccion 123-) necesitan poder envolver a 2 lineas en vez de
+     * recortarse sin elipsis: en desktop hay columna fija, no una tira con
+     * scroll, asi que envolver es mas seguro que truncar contenido real. */
+    white-space: normal;
+    line-height: 1.2;
+    min-height: 64px;
+    /* Ronda 3 (brief seccion 14/15/18 de la ronda 3): la placa COMPLETA
+     * (`item-default-*.png`, 340px de ancho) es el boton -no un recorte de
+     * 34px en cada borde con un rectangulo HTML solido en el centro, que era
+     * el bug real: "una capa/superficie HTML tapaba el arte". `border-image`
+     * con `fill` pinta la region central (madera lisa, sin ornamento que
+     * deformar) como fondo real del boton, estirada SOLO horizontalmente
+     * -nunca verticalmente, `border-image-repeat: stretch` en el eje
+     * horizontal es seguro aqui porque el centro de la placa es textura
+     * plana-, mientras los remates ornamentales (gema izquierda, aldaba
+     * derecha) quedan fijos en su ancho real via `border-image-width`. Los
+     * valores de `slice` se midieron en el PNG real (muestreo de pixeles),
+     * no se adivinaron: el limite izquierdo/derecho es donde el bronce
+     * ornamental termina y empieza la madera lisa. */
+    /* Ronda 3 (fix de la misma pasada): los remates se achicaron de
+     * 46/50px a 30/34px -el ancho renderizado (`border-image-width`) es
+     * independiente del recorte de origen (`slice`), reducirlo NO recorta
+     * mas o menos arte, solo decide cuanto espacio en pantalla ocupa- para
+     * dejar sitio real a labels largos con Cinzel ("Estadisticas y logros"
+     * media 186px de ancho real, medido en vivo; con el valor anterior solo
+     * quedaban 32px de contenido disponible -texto literalmente cortado-). */
+    padding: 10px 30px 10px 34px;
+    position: relative;
+    border-style: solid;
+    border-width: 0 30px 0 34px;
+    border-image-source: url('/assets/account/side-navigation/item-default-light.png');
+    border-image-slice: 0 50 0 50 fill;
+    border-image-width: 0 30px 0 34px;
+    border-image-repeat: stretch;
+    background-color: transparent;
+  }
+  :root[data-theme='dark'] .account-nav-item {
+    /* `border-image-slice` usa pixeles de la imagen FUENTE (donde esta el
+     * remate ornamental en el PNG real, medido por muestreo: 80/85px de un
+     * sprite de 340px de ancho) -- es independiente de `border-image-width`
+     * (el tamano YA ESCALADO en pantalla). Igualarlos por error dejaba 0px
+     * de contenido real para icono+texto (bug encontrado y corregido en esta
+     * misma pasada: `imgRect.width` medido en 0 via DevTools). */
+    border-image-source: url('/assets/account/side-navigation/item-default-dark.png');
+    border-image-slice: 0 85 0 80 fill;
+    /* Ronda 5 (micro-polish): `padding` reservaba el MISMO ancho que
+     * `border-image-width` otra vez -38px/32px duplicados encima de los
+     * 38px/32px del borde-, dejando solo ~147px utiles (medido via
+     * getBoundingClientRect en vivo) para un label que mide ~152px de ancho
+     * real con Cinzel 700 -de ahi el wrap a 2 lineas solo en Dark, nunca en
+     * Light (sus valores no duplicaban: padding 30/34 vs border 30/34 pero
+     * con un slice de ornamento mas angosto). El borde YA reserva el espacio
+     * visual del remate; el padding solo necesita el respiro interior minimo
+     * antes del icono/texto, no otro bloque identico. Reducido a 10px/10px
+     * -se mantiene border-width/border-image-width intactos, el ornamento no
+     * cambia de tamano- liberando ~54px de ancho util, suficiente para que
+     * "Estadisticas y logros" quede en una sola linea (verificado en vivo). */
+    padding: 10px 10px 10px 10px;
+    border-width: 0 32px 0 38px;
+    border-image-width: 0 32px 0 38px;
+  }
+  .account-nav-item:hover {
+    transform: none;
+    filter: brightness(1.08);
+    background-color: transparent;
+  }
+  .account-nav-item:hover {
+    border-image-source: url('/assets/account/side-navigation/item-hover-light.png');
+  }
+  :root[data-theme='dark'] .account-nav-item:hover {
+    border-image-source: url('/assets/account/side-navigation/item-hover-dark.png');
+  }
+  /* Estado activo — ronda 4 (brief seccion 18-27): UNA sola capa visual, sin
+   * `background-color`/`box-shadow` superpuesto (el cambio de piel ES el
+   * feedback), pero la PIEZA base cambio respecto a la ronda 3.
+   *
+   * Light: `item-active-light.png` resulto ser un asset distinto por
+   * completo -un blason/corona horizontal (cortinas + gema enorme), pensado
+   * para otro uso, nunca para esta placa- confirmado abriendo el PNG real:
+   * geometria totalmente distinta a `item-default-*`/`item-hover-*`. Por eso
+   * "METODOS DE PAGO" quedaba ilegible encima de un asset gigante ajeno. El
+   * propio brief lo resuelve: Richard ya aprobo visualmente el aspecto HOVER
+   * de Light, asi que `aria-current="page"` reutiliza exactamente esa misma
+   * pieza (`item-hover-light.png`) en vez de `item-active-light.png` -una
+   * sola piel para hover+active, misma geometria que default, cero salto-.
+   *
+   * Dark: `item-active-dark.png` SI es una placa (no un asset ajeno), pero
+   * trae cortinas colgantes que sobresalen por debajo del marco -mas alta
+   * que `item-default-dark.png`/`item-hover-dark.png`-, lo que desplazaba
+   * visualmente el conjunto y generaba la "linea violeta" bajo items activos
+   * (en realidad el remate inferior de la cortina, no una linea CSS suelta).
+   * Se usa `item-hover-dark.png` -misma geometria exacta que default- como
+   * base tambien para active, y el refuerzo de seleccion es SOLO CSS:
+   * `filter: brightness` + un resplandor exterior sutil (`box-shadow`
+   * `0 0 Npx`, difuminado hacia afuera, nunca una linea solida inset que
+   * recorte contra el borde). */
+  .account-nav-item[aria-current='page'] {
+    font-weight: 700;
+    color: var(--account-accent-2);
+    background-color: transparent;
+    border-image-source: url('/assets/account/side-navigation/item-hover-light.png');
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--account-accent-2) 45%, transparent);
+  }
+  :root[data-theme='dark'] .account-nav-item[aria-current='page'] {
+    border-image-source: url('/assets/account/side-navigation/item-hover-dark.png');
+    filter: brightness(1.16);
+    box-shadow: 0 0 10px 1px color-mix(in oklab, var(--account-accent-2) 55%, transparent);
+  }
+}
+/* Por debajo de `sm` no hay familia de assets (tira horizontal compacta): la
+ * seccion activa se sigue reconociendo sin depender solo del color (brief
+ * 110) via un subrayado inset + mas peso de fuente. Ronda 4 (brief seccion
+ * 24-27): esta regla vivia SIN scope de media query, asi que tambien se
+ * aplicaba en desktop -ENCIMA del cambio de piel por `border-image`-,
+ * dibujando una linea solida con `--account-accent-2` (violeta en Dark) bajo
+ * items como Perfil/Estadisticas/Metodos de pago. Diagnosticado via
+ * DevTools -computed style mostraba el box-shadow activo a cualquier ancho-,
+ * no era una franja horneada en el PNG. Se limita a `max-width: 39.99rem`
+ * -el mismo corte que ya usa el resto del componente para la tira movil-
+ * para que en desktop el UNICO feedback sea el `border-image`. */
+@media (max-width: 39.99rem) {
+  .account-nav-item[aria-current='page'] {
+    font-weight: 700;
+    box-shadow: inset 0 -3px 0 0 var(--account-accent-2);
+  }
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Botones — gradiente CSS scoped (brief seccion 21/22/23/55/58), MISMO
+ * criterio que `.br-btn-primary` en battle-rooms.css: nunca una imagen
+ * completa con texto horneado, nunca un boton raster que se estire. El
+ * gancho de clase (`account-primary`/`account-secondary`/`account-danger`)
+ * vive en `Button.tsx`; el aspecto real vive aqui, scoped a Account.
+ * ------------------------------------------------------------------
+ */
+.account-btn-primary,
+.account-btn-secondary,
+.account-btn-danger {
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in oklab, var(--account-accent-2) 55%, transparent);
+  border-radius: 10px;
+  color: var(--account-ink);
+  box-shadow: var(--account-frame-shadow);
+  transition:
+    filter 120ms ease-out,
+    transform 100ms ease-out,
+    box-shadow 120ms ease-out;
+}
+.account-btn-primary {
+  border-color: var(--account-accent-2);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--account-accent-2) 22%, var(--account-panel-bg-strong)),
+    color-mix(in oklab, var(--account-accent-2) 42%, var(--account-panel-bg-strong))
+  );
+}
+.account-btn-secondary {
+  background: linear-gradient(
+    180deg,
+    var(--account-panel-bg-strong),
+    color-mix(in oklab, var(--account-accent-2) 14%, var(--account-panel-bg-strong))
+  );
+}
+.account-btn-danger {
+  border-color: var(--account-danger);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--account-danger) 20%, var(--account-panel-bg-strong)),
+    color-mix(in oklab, var(--account-danger) 42%, var(--account-panel-bg-strong))
+  );
+}
+/* Resalte interior fijo de 1px -nunca un medallon que se estire-, mismo
+ * principio que la leccion de `br-btn-*` (seccion 55/62 del brief: ningun
+ * estado puede "cambiar de skin" via una imagen que se deforma). */
+.account-btn-primary::after,
+.account-btn-secondary::after,
+.account-btn-danger::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in oklab, white 20%, transparent);
+  pointer-events: none;
+}
+.account-btn-primary:hover:not(:disabled),
+.account-btn-secondary:hover:not(:disabled),
+.account-btn-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.account-btn-primary:active:not(:disabled),
+.account-btn-secondary:active:not(:disabled),
+.account-btn-danger:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.97);
+}
+.account-btn-primary:disabled,
+.account-btn-secondary:disabled,
+.account-btn-danger:disabled {
+  filter: grayscale(0.3);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Form controls — piel sobre los inputs/selects REALES ya existentes
+ * (`FIELD_CLASS` de `@/components/ui/form/fieldStyles`, no se toca ese
+ * archivo global: el skin queda scoped aqui bajo `.account-panel`).
+ * ------------------------------------------------------------------
+ */
+.account-panel input[type='text'],
+.account-panel input[type='password'],
+.account-panel input[type='email'],
+.account-panel select {
+  background-color: color-mix(in oklab, white 55%, var(--account-panel-bg-strong));
+  border: 1px solid color-mix(in oklab, var(--account-accent-2) 28%, transparent);
+  border-radius: 10px;
+  color: var(--account-ink);
+}
+:root[data-theme='dark'] .account-panel input[type='text'],
+:root[data-theme='dark'] .account-panel input[type='password'],
+:root[data-theme='dark'] .account-panel input[type='email'],
+:root[data-theme='dark'] .account-panel select {
+  background-color: color-mix(in oklab, black 35%, var(--account-panel-bg-strong));
+}
+.account-panel input:focus-visible,
+.account-panel select:focus-visible {
+  outline: 2px solid var(--account-accent-2);
+  outline-offset: 2px;
+  border-color: var(--account-accent-2);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Preferencias — selector de tema (pieza mas distintiva del modulo) e idioma.
+ * ------------------------------------------------------------------
+ * Correccion ronda 1 (brief seccion 27): la franja decorativa que cruzaba
+ * "Claro"/"Oscuro" se elimino -el brief es explicito: "no quiero una linea
+ * decorativa atravesando los textos"-. En su lugar, dos selector-cards
+ * (`.account-option-card`, reutilizada tambien por el selector de idioma)
+ * con icono + label + hint, inspiradas en el selector de modo de batalla de
+ * Jugar Online (icono grande, texto real, estado `is-selected` claro).
+ */
+.account-option-card {
+  border-color: color-mix(in oklab, var(--account-accent-2) 30%, transparent);
+  background-color: var(--account-panel-bg-strong);
+}
+.account-option-card:hover {
+  background-color: color-mix(in oklab, var(--account-accent-2) 8%, var(--account-panel-bg-strong));
+}
+.account-option-card.is-selected {
+  border-color: var(--account-accent-2);
+  background-color: color-mix(
+    in oklab,
+    var(--account-accent-2) 14%,
+    var(--account-panel-bg-strong)
+  );
+  box-shadow: 0 0 0 1px var(--account-accent-2);
+}
+.account-option-card__icon {
+  color: var(--account-accent-2);
+  background-color: color-mix(in oklab, var(--account-accent-2) 16%, transparent);
+}
+
+.account-flag {
+  height: 18px;
+  width: auto;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px color-mix(in oklab, black 25%, transparent);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Barra DEV de QA (ronda 1) — `AccountDevPreview.tsx`. NUNCA se alcanza
+ * fuera de `import.meta.env.DEV`; vive aqui solo porque `account.css` ya es
+ * el stylesheet scoped de todo el modulo.
+ * ------------------------------------------------------------------
+ */
+.account-dev-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: color-mix(in oklab, var(--color-brand) 12%, var(--color-surface));
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.75rem;
+}
+.account-dev-toolbar__notice {
+  color: var(--color-ink);
+}
+.account-dev-toolbar__theme {
+  display: inline-flex;
+  gap: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  padding: 2px;
+  background-color: var(--color-surface-raised);
+}
+.account-dev-toolbar__theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+.account-dev-toolbar__theme-btn[aria-pressed='true'] {
+  background-color: var(--color-brand);
+  color: var(--color-brand-ink);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Privacidad / Exportacion — zona sensible (familia 08-Privacy-Export).
+ * ------------------------------------------------------------------
+ */
+.account-export-icon {
+  height: 34px;
+  width: auto;
+}
+/* Superficie liviana para contenido ANIDADO dentro de un `.account-panel`
+ * (ej. la tabla de resumen de datos personales dentro de la seccion de
+ * Privacidad): un divisor simple, no un segundo marco ornamental completo
+ * -evita el "doble frame" cuando un panel ya vive dentro de otro-. */
+.account-subpanel {
+  border-radius: 10px;
+  background-color: var(--account-panel-bg-strong);
+  border: 1px solid color-mix(in oklab, var(--account-accent-2) 20%, transparent);
+}
+.account-info-note {
+  border-color: color-mix(in oklab, var(--account-accent-2) 45%, transparent);
+  background-color: color-mix(in oklab, var(--account-accent-2) 9%, var(--account-panel-bg-strong));
+}
+/* Ronda 4 (brief seccion 52/65/76): `danger-frame-*.png` resulto ser un
+ * blason/crest compuesto (escudo + cadenas + cristales en angulos dispares),
+ * no una franja de 4 lados uniforme -estirarlo via `border-image` recortaba
+ * sus elementos ornamentales contra el borde del recuadro, el mismo tipo de
+ * bug ya encontrado y corregido en el marco del side-nav-. Se vuelve a un
+ * borde solido simple (mismo criterio que `.account-inline-state--danger`),
+ * y el crest se usa aparte, como insignia pequena junto al titulo (ver
+ * `AccountDeletionRequest.tsx`), nunca estirado. */
+.account-danger-zone {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, var(--account-danger) 45%, transparent);
+  background-color: color-mix(in oklab, var(--account-danger) 8%, var(--account-panel-bg-strong));
+  box-shadow: var(--account-frame-shadow);
+  padding: 18px;
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Estadisticas — stat cards + estados (brief seccion 30-38): ya NO son
+ * rectangulos blancos sueltos, usan la misma superficie/marco que el resto
+ * del modulo, con un tratamiento especifico por estado (loading centrado,
+ * error = danger zone, pending desaturado).
+ * ------------------------------------------------------------------
+ */
+.account-stat-card {
+  position: relative;
+  background-color: var(--account-panel-bg-strong);
+  border: 1px solid color-mix(in oklab, var(--account-accent-2) 22%, transparent);
+  box-shadow: var(--account-frame-shadow);
+}
+/* Admin stats (ronda 4, brief seccion 68-74): reusa `.account-stat-card`
+ * -mismo sistema que Estadisticas, brief seccion 69 "no copiar literalmente
+ * dimensiones... concepto: themed surface + small decorative accent"- con un
+ * acento de borde superior sutil segun semantica (`data-tone`). Nunca un
+ * fondo solido verde/ambar: solo un filo de 3px, legible en ambos temas. */
+.account-admin-stat {
+  border-top-width: 3px;
+}
+.account-admin-stat[data-tone='positive'] {
+  border-top-color: color-mix(in oklab, var(--color-success) 65%, transparent);
+}
+.account-admin-stat[data-tone='warning'] {
+  border-top-color: color-mix(in oklab, var(--color-warning) 70%, transparent);
+}
+.account-admin-stat[data-tone='neutral'] {
+  border-top-color: color-mix(in oklab, var(--account-muted) 45%, transparent);
+  opacity: 0.85;
+}
+/* Ronda 2 (brief seccion 36/45/46): loading/error/pending de Statistics ya
+ * NO envuelven en `.account-panel`/`.account-danger-zone` -el marco
+ * ornamental completo (border-image) esta pensado para un panel de seccion
+ * entero, no para una sola linea de estado; en una caja corta el recorte del
+ * marco se veia estirado/cortado ("placa gigante", "arte raro/cortado"). Esta
+ * superficie es deliberadamente mas liviana: borde fino + esquinas
+ * redondeadas, sin imagen de marco. */
+.account-inline-state {
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, var(--account-accent-2) 30%, transparent);
+  background-color: var(--account-panel-bg-strong);
+  box-shadow: var(--account-frame-shadow);
+}
+.account-inline-state--danger {
+  border-color: color-mix(in oklab, var(--account-danger) 45%, transparent);
+  background-color: color-mix(in oklab, var(--account-danger) 10%, var(--account-panel-bg-strong));
+}
+.account-state-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 72px;
+  padding: 10px;
+  text-align: center;
+  color: var(--account-muted);
+}
+.account-state-panel--pending {
+  opacity: 0.72;
+  filter: saturate(0.75);
+}
+.account-state-panel__orb {
+  height: 22px;
+  width: 22px;
+  border-radius: 999px;
+  border: 3px solid color-mix(in oklab, var(--account-accent-2) 30%, transparent);
+  border-top-color: var(--account-accent-2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .account-state-panel__orb {
+    animation: account-orb-spin 900ms linear infinite;
+  }
+}
+@keyframes account-orb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Badge "Obtenido" de cada logro (brief ronda 4, seccion 50-54): antes era
+ * un pill plano (`bg-success/15 text-success`), generico e identico en
+ * ambos temas. Acabado premium/metalico via CSS -nunca una imagen, el texto
+ * sigue siendo HTML real-, distinto por tema: Light = diamante/cristal
+ * (marfil calido + plata-azul + acento zafiro), Dark = esmeralda metalica
+ * (verde profundo + highlight mas claro + borde oro-antiguo sutil). Pequeno
+ * a proposito -no debe competir con el titulo del logro-. */
+.account-achievement-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.account-achievement-badge {
+  color: #0d4a3f;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, #eef6ff 92%, transparent) 0%,
+    color-mix(in oklab, #bcd9ef 85%, transparent) 55%,
+    color-mix(in oklab, #7fb8d8 75%, transparent) 100%
+  );
+  border-color: color-mix(in oklab, var(--account-accent-2) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    0 1px 2px color-mix(in oklab, #1c2541 25%, transparent);
+}
+:root[data-theme='dark'] .account-achievement-badge {
+  color: #d9f7e8;
+  background: linear-gradient(160deg, #1d6e52 0%, #0f4a37 55%, #0a3528 100%);
+  border-color: color-mix(in oklab, var(--account-gold) 55%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, #7fe8bd 45%, transparent),
+    0 1px 3px color-mix(in oklab, black 45%, transparent);
+}
+
+/* Badge de estado en "Resultados" de Admin (ronda 5/micro-polish, brief
+ * seccion 23-29): "Activa"/"Suspendida" eran pills planos (`bg-success/15`/
+ * `bg-danger/15`, el mismo `StatusBadge` COMPARTIDO que usan E-commerce/
+ * Jugar Online para otros dominios -producto, sala de batalla-). Tocar ese
+ * componente global para un acabado especifico de Account habria arrastrado
+ * el cambio a esos otros modulos (fuera de alcance, prohibido por el brief).
+ * En vez de eso: Admin renderiza su propio badge local (`AdminStatusBadge`
+ * en `AdminUsersSection.tsx`, nunca importa `StatusBadge` para esto), que
+ * REUTILIZA LA MISMA CLASE `.account-achievement-badge` (sin cambios aqui)
+ * para "Activa" -identico acabado esmeralda ya aprobado en Estadisticas-, y
+ * solo anade la variante rubi que faltaba para "Suspendida" -misma forma
+ * (padding/radius/font-size heredados de `.account-achievement-badge` via
+ * la misma clase base), solo cambia el color-. "Pendiente" (tercer status
+ * real del contrato, `PENDING_VERIFICATION`) usa un tono neutro/muted, sin
+ * urgencia falsa. El VALOR del status y su logica de negocio no cambian -
+ * solo la presentacion de este punto de la UI-. */
+.account-admin-status--suspended {
+  color: #4a0e16;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, #fbeef0 92%, transparent) 0%,
+    color-mix(in oklab, #e8b9c2 85%, transparent) 55%,
+    color-mix(in oklab, #c97a8a 75%, transparent) 100%
+  );
+  border-color: color-mix(in oklab, var(--account-accent) 50%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    0 1px 2px color-mix(in oklab, #3a0a10 25%, transparent);
+}
+:root[data-theme='dark'] .account-admin-status--suspended {
+  color: #ffd9de;
+  background: linear-gradient(160deg, #7a1f2b 0%, #4f1119 55%, #330a10 100%);
+  border-color: color-mix(in oklab, var(--account-gold) 50%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, #ff9aa8 40%, transparent),
+    0 1px 3px color-mix(in oklab, black 45%, transparent);
+}
+.account-admin-status--pending {
+  color: var(--account-ink);
+  background: color-mix(in oklab, var(--account-ink) 10%, transparent);
+  border-color: color-mix(in oklab, var(--account-ink) 25%, transparent);
+}
+
+/* Fila de resultados de Admin (ronda 5/micro-polish, brief seccion 15-35):
+ * era `bg-surface p-4` generico -misma superficie que CUALQUIER lista plana
+ * de la app, sin lenguaje Account-. El contenedor completo (el `<section>`
+ * en `AdminUsersSection.tsx`) ahora usa `.account-panel` -mismo marco/
+ * superficie ya usados en el formulario de filtros justo encima, no un
+ * sistema nuevo-, asi que cada fila NO necesita su propio fondo -pintarlo
+ * dos veces (panel + fila) apilaria la misma transparencia y se veria mas
+ * opaco de lo esperado-, solo un separador sutil mezclado con el acento del
+ * tema en vez de un `border-border` generico. Nombre de usuario:
+ * `.account-title` (Cinzel), igual jerarquia que cualquier otro titulo de
+ * entidad en Account -no es un tamano nuevo, es la misma clase que ya usan
+ * las secciones-. */
+.account-admin-result {
+  border-top-color: color-mix(in oklab, var(--account-accent) 22%, transparent);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Empty states ceremoniosos — Suscripciones / Metodos de pago (brief
+ * seccion 39/40/105/106): el placeholder sigue siendo el mismo (cero datos
+ * inventados), pero con mas presencia que un parrafo pequeno a la izquierda.
+ * ------------------------------------------------------------------
+ */
+.account-empty-state {
+  max-width: 32rem;
+  margin-inline: auto;
+}
+.account-empty-state__icon {
+  height: 56px !important;
+  filter: drop-shadow(0 0 14px var(--account-title-glow));
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Decoraciones — moderadas, no interactivas (brief seccion 45).
+ * ------------------------------------------------------------------
+ */
+.account-summary-name {
+  font-family: var(--font-game-display);
+  color: var(--account-accent-2);
+}
+/*
+ * Ronda 3 (brief seccion 3-13 de la ronda 3, "gate" de tipografia): se
+ * confirmo en codigo -no se adivino- el sistema de 2 niveles YA usado por
+ * E-commerce/Jugar Online (`rg` sobre `font-game-display`/`commerce.css`/
+ * `battle-rooms.css`):
+ *   DISPLAY -> `var(--font-game-display)` = Cinzel (`src/index.css:33`,
+ *     ya usado en `commerce.css`/`battle-rooms.css`/`CartPanel.tsx`).
+ *   BODY/UI -> `'Inter Variable'` (ya es el font-family por DEFECTO de
+ *     `body` en `src/index.css:220-225`, cargado via
+ *     `@fontsource-variable/inter/wght.css` en `main.tsx:4`) -- por eso
+ *     NO hace falta una clase para el body text, ya lo hereda; solo los
+ *     titulos/labels importantes necesitan la clase `.account-title`/
+ *     `.account-label` para pasarse a Cinzel.
+ * Aplicado de forma sistematica en Perfil/Seguridad/Preferencias/
+ * Estadisticas/Suscripciones/Pagos/Privacidad/Admin/Side-Nav.
+ */
+.account-title {
+  font-family: var(--font-game-display);
+  color: var(--account-accent);
+  letter-spacing: 0.01em;
+}
+/* `Card` (componente compartido `src/components/ui/Card.tsx`) renderiza su
+ * `title` como `<h2>` HERMANO directo del `<section className="account-panel">`
+ * -no se toca `Card.tsx` (afectaria TODA la app): un selector scoped aqui
+ * cubre automaticamente Preferencias/Estadisticas/Suscripciones/Pagos sin
+ * tocar el componente compartido. */
+.account-panel > h2 {
+  font-family: var(--font-game-display);
+  color: var(--account-accent);
+  letter-spacing: 0.01em;
+}
+.account-label {
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--account-muted);
+}
+.account-role-badge {
+  border: 1px solid color-mix(in oklab, var(--account-accent-2) 40%, transparent);
+  color: var(--account-muted);
+  background-color: var(--account-panel-bg-strong);
+}
+.account-gem-accent {
+  height: 16px;
+  width: auto;
+  pointer-events: none;
+}
+.account-pixel-icon {
+  pointer-events: none;
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Micro-animaciones — hover/seleccion, nunca movimiento constante.
+ * ------------------------------------------------------------------
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .account-panel,
+  .account-nav-item {
+    transition-duration: 180ms;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-nav-item {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Responsive — mobile/tablet (brief seccion 19/51).
+ * ------------------------------------------------------------------
+ */
+@media (max-width: 39.99rem) {
+  .account-page {
+    padding: 12px 10px 40px;
+    border-radius: 12px;
+  }
+}

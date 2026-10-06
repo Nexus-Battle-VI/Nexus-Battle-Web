@@ -23,11 +23,24 @@ import { Eye, EyeOff } from './icons'
 export interface PasswordFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Obligatorio: asocia la etiqueta (`htmlFor`) y el `aria-controls` del boton. */
   readonly id: string
+  /**
+   * Icono alternativo para el estado "visible"/"oculto" del ojo. Opcional:
+   * sin esto, el componente sigue usando `Eye`/`EyeOff` exactamente como
+   * antes (Registro, Login). Existe para que un modulo con su propio
+   * lenguaje visual aprobado -ej. Mi Cuenta, ronda 2 del remaster- pueda
+   * vestir el MISMO boton funcional con sus assets, sin duplicar
+   * `PasswordField` ni tocar su comportamiento (brief seccion 27/28/120:
+   * "no dupliques... skin visual mediante classes/wrappers scoped").
+   */
+  readonly eyeIcon?: React.ReactNode
+  readonly eyeOffIcon?: React.ReactNode
 }
 
 export const PasswordField = ({
   id,
   className,
+  eyeIcon,
+  eyeOffIcon,
   ...rest
 }: PasswordFieldProps): React.JSX.Element => {
   const [visible, setVisible] = useState(false)
@@ -53,11 +66,9 @@ export const PasswordField = ({
         }}
         className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-md p-1.5 text-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
-        {visible ? (
-          <EyeOff className="h-4 w-4" aria-hidden="true" />
-        ) : (
-          <Eye className="h-4 w-4" aria-hidden="true" />
-        )}
+        {visible
+          ? (eyeOffIcon ?? <EyeOff className="h-4 w-4" aria-hidden="true" />)
+          : (eyeIcon ?? <Eye className="h-4 w-4" aria-hidden="true" />)}
       </button>
     </div>
   )

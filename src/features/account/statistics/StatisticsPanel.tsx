@@ -1,10 +1,11 @@
-import type { ComponentType, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
 import { Card } from '@/components/ui/Card'
-import { Gamepad2, Swords, Trophy, TrendingUp } from '@/components/ui/icons'
+import { useTheme } from '@/shared/theme'
 import { formatInteger, formatLocale } from '@/shared/i18n/format'
+import { accountStatisticsIcons, type AccountStatisticsIconName } from '../accountRemasterAssets'
 import type {
   AchievementsPanelState,
   PlayerAchievement,
@@ -26,7 +27,7 @@ import type {
  * (fallo temporal). El estado vacío NUNCA usa `role="alert"` ni color de peligro.
  */
 
-const CARD_SURFACE = 'rounded-lg border border-border bg-surface-raised p-5'
+const CARD_SURFACE = 'account-stat-card rounded-lg p-5'
 const PENDING_HINT = 'text-xs text-muted'
 
 /**
@@ -45,18 +46,42 @@ const DEPTH_HOVER =
   'hover:translate-y-px hover:scale-[0.995] hover:border-brand/40 hover:shadow-inner ' +
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100'
 
+/**
+ * Ronda 3 (brief seccion 49/50/51): reemplaza los iconos genericos de Lucide
+ * (`Gamepad2`/`Swords`/`TrendingUp`/`Trophy`) por piezas REALES del kit
+ * -`accountStatisticsIcons`, recortadas de las mismas hojas de
+ * `05-Section-Icons` ya usadas para la navegacion, nunca arte nuevo-.
+ */
+const StatIcon = ({
+  icon,
+  className = 'h-7 w-auto',
+}: {
+  readonly icon: AccountStatisticsIconName
+  readonly className?: string
+}): React.JSX.Element => {
+  const theme = useTheme((state) => state.theme)
+  return (
+    <img
+      src={accountStatisticsIcons[icon][theme]}
+      alt=""
+      aria-hidden="true"
+      className={clsx('account-stat-card__icon shrink-0', className)}
+    />
+  )
+}
+
 interface StatCardProps {
-  readonly icon: ComponentType<{ className?: string; 'aria-hidden'?: boolean }>
+  readonly icon: AccountStatisticsIconName
   readonly label: string
   readonly className?: string
   readonly children: ReactNode
 }
 
-const StatCard = ({ icon: Icon, label, className, children }: StatCardProps): React.JSX.Element => (
+const StatCard = ({ icon, label, className, children }: StatCardProps): React.JSX.Element => (
   <div className={clsx(CARD_SURFACE, DEPTH_HOVER, className)}>
     <div className="flex items-center gap-2">
-      <Icon aria-hidden className="h-4 w-4 text-muted" />
-      <h3 className="text-sm font-medium text-ink">{label}</h3>
+      <StatIcon icon={icon} />
+      <h3 className="account-label text-sm">{label}</h3>
     </div>
     <div className="mt-3">{children}</div>
   </div>
@@ -95,6 +120,22 @@ const ProgressPending = (): React.JSX.Element => {
   )
 }
 
+/**
+ * Ronda 4 (brief seccion 47/48/123): antes TODO logro usaba el icono
+ * `firstVictory` -"Primera victoria" y "Veterano de la arena" se veian
+ * identicos-. HU-06.3 (backend de estadisticas/logros) sigue diferida: no
+ * existe un campo `type`/`slug` en el contrato real todavia, asi que no hay
+ * nada que inventar ahi. Lo que SI existe hoy es `achievement.id` -un
+ * identificador, no texto traducido visible-, con un slug semantico tanto en
+ * datos reales como en fixtures DEV. Mapear por `id` en
+ * vez de por `achievement.name` (que SI es texto traducido/visible) es la
+ * solucion seguia que pide el brief, con un fallback estable a
+ * `firstVictory` para cualquier logro futuro que no matchee -nunca revienta,
+ * nunca inventa un tercer icono-.
+ */
+const achievementIcon = (achievement: PlayerAchievement): AccountStatisticsIconName =>
+  achievement.id.includes('veteran') ? 'veteran' : 'firstVictory'
+
 const AchievementItem = ({
   achievement,
 }: {
@@ -104,13 +145,17 @@ const AchievementItem = ({
 
   return (
     <li className={clsx(CARD_SURFACE, 'flex gap-3', DEPTH_HOVER)}>
-      <Trophy aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+      <StatIcon icon={achievementIcon(achievement)} className="mt-0.5 h-5 w-auto" />
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-medium text-ink">{achievement.name}</p>
-          <span className="inline-flex rounded-full bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
-            {t('account:statistics.obtained')}
-          </span>
+          <p className="account-title text-sm font-medium">{achievement.name}</p>
+          {/* Ronda 4 (brief seccion 50-54): el badge "Obtenido" plano
+           * (`bg-success/15`) se reemplaza por un acabado premium/metalico
+           * via CSS -nunca una imagen-, distinto por tema (`.account-
+           * achievement-badge`, definido en `account.css`: esmeralda
+           * metalica en Dark, diamante/cristal en Light). El texto
+           * "Obtenido" no cambia. */}
+          <span className="account-achievement-badge">{t('account:statistics.obtained')}</span>
         </div>
         {achievement.description !== undefined && (
           <p className="text-xs text-muted">{achievement.description}</p>
@@ -148,31 +193,33 @@ const AchievementsBlock = ({
   return (
     <section aria-labelledby="account-achievements-heading" className="space-y-3">
       <div className="flex items-center gap-2">
-        <Trophy aria-hidden className="h-4 w-4 text-muted" />
-        <h3 id="account-achievements-heading" className="text-base font-semibold text-ink">
+        <StatIcon icon="veteran" className="h-5 w-auto" />
+        <h3 id="account-achievements-heading" className="account-title text-base font-semibold">
           {t('account:statistics.achievements')}
         </h3>
       </div>
 
       {state.status === 'pending' ? (
-        <Card>
+        <Card className="account-inline-state account-state-panel account-state-panel--pending">
+          <StatIcon icon="veteran" className="h-6 w-auto" />
           <p className="text-sm font-medium text-ink">{t('account:statistics.notAvailable')}</p>
           <p className="mt-1 text-xs text-muted">{t('account:statistics.achievementsPending')}</p>
         </Card>
       ) : state.status === 'loading' ? (
-        <Card>
+        <Card className="account-inline-state account-state-panel">
+          <span aria-hidden className="account-state-panel__orb" />
           <p role="status" className="text-sm text-muted">
             {t('account:statistics.achievementsLoading')}
           </p>
         </Card>
       ) : state.status === 'error' ? (
-        <Card>
-          <p role="alert" className="text-sm text-danger">
+        <Card className="account-inline-state account-inline-state--danger account-state-panel">
+          <p role="alert" className="text-sm font-medium text-danger">
             {state.message}
           </p>
         </Card>
       ) : state.items.length === 0 ? (
-        <Card>
+        <Card className="account-inline-state account-state-panel">
           <p className="text-sm text-muted">{t('account:statistics.achievementsEmpty')}</p>
         </Card>
       ) : (
@@ -197,7 +244,7 @@ const StatsGrid = ({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <StatCard icon={Gamepad2} label={t('account:statistics.gamesPlayed')}>
+      <StatCard icon="gamesPlayed" label={t('account:statistics.gamesPlayed')}>
         {pending || statistics === null ? (
           <PendingMetric hint={t('account:statistics.gamesPlayedPending')} />
         ) : (
@@ -205,7 +252,7 @@ const StatsGrid = ({
         )}
       </StatCard>
 
-      <StatCard icon={Swords} label={t('account:statistics.wins')}>
+      <StatCard icon="victories" label={t('account:statistics.wins')}>
         {pending || statistics === null ? (
           <PendingMetric hint={t('account:statistics.winsPending')} />
         ) : (
@@ -214,7 +261,7 @@ const StatsGrid = ({
       </StatCard>
 
       <StatCard
-        icon={TrendingUp}
+        icon="progress"
         label={t('account:statistics.generalProgress')}
         className="sm:col-span-2 lg:col-span-1"
       >
@@ -243,18 +290,21 @@ export const StatisticsPanel = ({
 
   if (state.status === 'loading') {
     return (
-      <p role="status" className="text-sm">
-        <strong className="font-semibold text-ink underline underline-offset-2">
-          {t('account:statistics.loading')}
-        </strong>
-      </p>
+      <Card className="account-inline-state account-state-panel">
+        <span aria-hidden className="account-state-panel__orb" />
+        <p role="status" className="text-sm">
+          <strong className="font-semibold text-ink underline underline-offset-2">
+            {t('account:statistics.loading')}
+          </strong>
+        </p>
+      </Card>
     )
   }
 
   if (state.status === 'error') {
     return (
-      <Card>
-        <p role="alert" className="text-sm text-danger">
+      <Card className="account-inline-state account-inline-state--danger account-state-panel">
+        <p role="alert" className="text-sm font-medium text-danger">
           {state.message ?? t('account:statistics.loadFailed')}
         </p>
       </Card>

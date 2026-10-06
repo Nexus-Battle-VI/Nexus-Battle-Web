@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { statusLabel } from '@/lib/format'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
+import { AccountPixelIcon } from './AccountPixelIcon'
 import { validateDisplayName, type OwnAccount, type OwnAccountEdit } from './api'
 import { useAccountContext } from './outletContext'
 import { useUpdateOwnAccount } from './useOwnAccount'
@@ -36,7 +37,7 @@ interface ReadonlyRowProps {
 
 const ReadonlyRow = ({ label, value }: ReadonlyRowProps): React.JSX.Element => (
   <div>
-    <span className={FIELD_LABEL_CLASS}>{label}</span>
+    <span className={`${FIELD_LABEL_CLASS} account-label`}>{label}</span>
     <p className={`mt-1 ${READONLY_FIELD_CLASS}`}>{value}</p>
   </div>
 )
@@ -92,7 +93,12 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
   }
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+    <form className="account-panel space-y-5 p-5" onSubmit={handleSubmit} noValidate>
+      <div className="flex items-center gap-2">
+        <AccountPixelIcon icon="profile" size="md" />
+        <h2 className="account-title text-lg font-semibold">{t('account:sections.profile')}</h2>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <ReadonlyRow label={t('account:profile.firstNames')} value={account.firstNames} />
         <ReadonlyRow label={t('account:profile.lastNames')} value={account.lastNames} />
@@ -101,7 +107,7 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
       </div>
 
       <div>
-        <label htmlFor="account-display-name" className={FIELD_LABEL_CLASS}>
+        <label htmlFor="account-display-name" className={`${FIELD_LABEL_CLASS} account-label`}>
           {t('account:profile.displayName')}
         </label>
         <input
@@ -129,7 +135,7 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
       </div>
 
       <div>
-        <label htmlFor="account-country" className={FIELD_LABEL_CLASS}>
+        <label htmlFor="account-country" className={`${FIELD_LABEL_CLASS} account-label`}>
           {t('account:profile.country')}
         </label>
         <select
@@ -154,7 +160,12 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
       </div>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" loading={mutation.isPending} disabled={unchanged}>
+        <Button
+          type="submit"
+          variant="account-primary"
+          loading={mutation.isPending}
+          disabled={unchanged}
+        >
           {t('account:profile.save')}
         </Button>
         {mutation.isSuccess && (
