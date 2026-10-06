@@ -41,6 +41,8 @@ describe('KnowledgeAdminPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'es: regla_turno' })).toBeInTheDocument()
     expect(screen.getByText('El combate es por turnos.')).toBeInTheDocument()
+    expect(screen.getByText('cuanto dura un turno')).toBeInTheDocument()
+    expect(screen.getByText(/Prioridad 10/)).toBeInTheDocument()
 
     await user.type(screen.getByLabelText('Intención'), 'modo_mision')
     await user.type(screen.getByLabelText('Respuesta'), 'Una mision bloquea al heroe.')

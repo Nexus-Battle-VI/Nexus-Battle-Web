@@ -180,6 +180,19 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
             <li key={entry.id}>
               <Card title={`${entry.language}: ${entry.intent}`}>
                 <p className="text-sm">{entry.answer}</p>
+                <p className="mt-2 text-sm text-muted">
+                  {t('chatbotAdmin:priority')} {String(entry.priority)}
+                </p>
+                {entry.view !== null ? (
+                  <p className="text-sm text-muted">
+                    {t('chatbotAdmin:view')} {entry.view}
+                  </p>
+                ) : null}
+                <ul className="mt-2 list-disc pl-5 text-sm">
+                  {entry.variations.map((variation) => (
+                    <li key={variation}>{variation}</li>
+                  ))}
+                </ul>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     variant="secondary"
