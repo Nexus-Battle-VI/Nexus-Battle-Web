@@ -54,6 +54,10 @@ describe('ChatWidget', () => {
 
   it('limpia el historial, adjunta una captura y abre la transferencia', async () => {
     vi.spyOn(chatApi, 'askChat').mockResolvedValue(reply)
+    const openTicket = vi.spyOn(chatApi, 'openSupportTicket').mockResolvedValue({
+      id: 'ticket-9',
+      sessionId: 'session-1',
+    })
     const clear = vi.spyOn(chatApi, 'clearChatHistory').mockResolvedValue(null)
     const user = userEvent.setup()
     renderWithProviders(<ChatWidget />, { route: '/ecommerce' })
@@ -68,6 +72,8 @@ describe('ChatWidget', () => {
     expect(screen.getByText('Captura adjunta: fallo.png')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Transferir a soporte' }))
+    expect(openTicket).toHaveBeenCalledWith('hola', 'catalogo', 'session-1')
+    expect(await screen.findByText('Consulta registrada: ticket-9')).toBeInTheDocument()
     expect(screen.getByText(/Listo para pasar a soporte/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Limpiar historial' }))
@@ -103,6 +109,22 @@ describe('ChatWidget', () => {
 
     const link = await screen.findByRole('link', { name: 'Abrir esta sección' })
     expect(link).toHaveAttribute('href', '/account')
+  })
+
+  it('muestra el número cuando la consulta no se resolvió', async () => {
+    vi.spyOn(chatApi, 'askChat').mockResolvedValue({
+      ...reply,
+      answered: false,
+      answer: null,
+      suggestions: [],
+      ticketId: 'ticket-1',
+    })
+    const user = userEvent.setup()
+    renderWithProviders(<ChatWidget />, { route: '/ecommerce' })
+    await user.click(screen.getByRole('button', { name: 'Abrir ayuda' }))
+    await user.type(screen.getByLabelText('Escribe tu pregunta'), 'no se')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    expect(await screen.findByText('Consulta registrada: ticket-1')).toBeInTheDocument()
   })
 })
 

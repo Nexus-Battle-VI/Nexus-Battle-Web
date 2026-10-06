@@ -20,5 +20,6 @@
   "showTime": "Show the time",
   "empty": "Ask about rules, products, missions or your account.",
   "error": "Could not send. Try again.",
-  "openSection": "Open this section"
+  "openSection": "Open this section",
+  "ticket": "Question recorded: {{id}}"
 }
