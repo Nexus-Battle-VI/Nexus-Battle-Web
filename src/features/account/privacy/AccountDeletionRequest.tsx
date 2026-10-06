@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { formatDateTime } from '@/lib/format'
 import { HttpError } from '@/lib/http'
+import { useTheme } from '@/shared/theme'
+import { accountPrivacy } from '../accountRemasterAssets'
 import { requestOwnAccountDeletion, type AccountDeletionRequest as DeletionReceipt } from './api'
 
 export type AccountDeletionRequestTransport = () => Promise<DeletionReceipt>
@@ -22,6 +24,23 @@ const deletionErrorKey = (error: unknown): string =>
   error instanceof HttpError && error.isUnauthorized
     ? 'account:deletion.sessionExpired'
     : 'account:deletion.failed'
+
+/**
+ * Insignia decorativa junto al titulo de la zona de peligro (ronda 4, brief
+ * seccion 52/65/76). Decorativa -`aria-hidden`/`alt=""`-: el texto real
+ * ("Eliminar mi cuenta") sigue siendo quien comunica el significado.
+ */
+const DangerBadge = (): React.JSX.Element => {
+  const theme = useTheme((state) => state.theme)
+  return (
+    <img
+      src={accountPrivacy.dangerFrame[theme]}
+      alt=""
+      aria-hidden
+      className="h-10 w-auto shrink-0"
+    />
+  )
+}
 
 /**
  * Solicitud de eliminacion de la cuenta propia (HU-43.5), integrada en el
@@ -70,10 +89,13 @@ export const AccountDeletionRequest = ({
     const { status, receivedAt } = mutation.data
 
     return (
-      <section className="space-y-3" aria-labelledby="account-deletion-title">
-        <h3 id="account-deletion-title" className="text-sm font-semibold text-ink">
-          {t('account:deletion.title')}
-        </h3>
+      <section className="account-danger-zone space-y-3" aria-labelledby="account-deletion-title">
+        <div className="flex items-center gap-2">
+          <DangerBadge />
+          <h3 id="account-deletion-title" className="text-sm font-semibold text-ink">
+            {t('account:deletion.title')}
+          </h3>
+        </div>
         <div
           role="status"
           className="space-y-2 rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
@@ -92,12 +114,15 @@ export const AccountDeletionRequest = ({
   }
 
   return (
-    <section className="space-y-3" aria-labelledby="account-deletion-title">
-      <div>
-        <h3 id="account-deletion-title" className="text-sm font-semibold text-ink">
-          {t('account:deletion.title')}
-        </h3>
-        <p className="mt-2 text-xs text-muted">{t('account:deletion.intro')}</p>
+    <section className="account-danger-zone space-y-3" aria-labelledby="account-deletion-title">
+      <div className="flex items-start gap-2">
+        <DangerBadge />
+        <div>
+          <h3 id="account-deletion-title" className="text-sm font-semibold text-ink">
+            {t('account:deletion.title')}
+          </h3>
+          <p className="mt-2 text-xs text-muted">{t('account:deletion.intro')}</p>
+        </div>
       </div>
 
       {mutation.isError && (
@@ -112,7 +137,7 @@ export const AccountDeletionRequest = ({
       {step === 'idle' ? (
         <Button
           type="button"
-          variant="danger"
+          variant="account-danger"
           onClick={() => {
             setStep('confirming')
           }}
@@ -123,7 +148,7 @@ export const AccountDeletionRequest = ({
         <div
           role="group"
           aria-labelledby="account-deletion-confirm-title"
-          className="space-y-3 rounded-lg border border-danger bg-danger/5 p-4"
+          className="account-subpanel space-y-3 p-4"
         >
           <p id="account-deletion-confirm-title" className="text-sm font-medium text-ink">
             {t('account:deletion.confirmQuestion')}
@@ -132,7 +157,7 @@ export const AccountDeletionRequest = ({
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              variant="danger"
+              variant="account-danger"
               loading={mutation.isPending}
               onClick={handleConfirm}
             >
@@ -140,7 +165,7 @@ export const AccountDeletionRequest = ({
             </Button>
             <Button
               type="button"
-              variant="secondary"
+              variant="account-secondary"
               disabled={mutation.isPending}
               onClick={handleCancel}
             >

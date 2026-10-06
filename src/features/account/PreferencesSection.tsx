@@ -7,7 +7,17 @@ import { setLanguage, useLanguage } from '@/shared/i18n/language'
 import { LANGUAGE_NATIVE_NAMES, SUPPORTED_LANGUAGES, type Language } from '@/shared/i18n/languages'
 import { useTheme, type Theme } from '@/shared/theme'
 
+import type { OwnAccount } from './api'
+import { AccountPixelIcon } from './AccountPixelIcon'
+import { accountPreferences } from './accountRemasterAssets'
 import { useUpdatePreferredLanguage } from './useOwnAccount'
+
+const LANGUAGE_FLAG: Readonly<Record<Language, keyof typeof accountPreferences.flags>> = {
+  es: 'es',
+  en: 'en',
+  fr: 'fr',
+  pt: 'pt',
+}
 
 /**
  * Preferencias de la cuenta (HU-05.4, HU-05 CA-04).
@@ -39,7 +49,28 @@ const THEME_OPTIONS: readonly {
 ]
 
 const OPTION_CLASS =
-  'flex min-h-11 flex-col gap-1 rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait'
+  'account-option-card flex min-h-11 flex-col gap-1 rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-wait'
+
+/**
+ * Ronda 2 (brief seccion 32/33): el SVG inline de la ronda 1 se reemplaza por
+ * los medallones de sol/luna REALES del kit (`accountPreferences.themeOptionIcon`,
+ * derivados de `Fantasy Gothic UI Sprite Sheet.png` en Dark y de
+ * `account-preferences-kit-light-v01.png` en Light -no es un recolor
+ * mecanico del mismo recorte-). Decorativos (`aria-hidden`/`alt=""`): el
+ * texto real "Claro"/"Oscuro" sigue siendo quien comunica el significado
+ * (brief seccion 81).
+ */
+const ThemeOptionIcon = ({ option }: { readonly option: Theme }): React.JSX.Element => {
+  const theme = useTheme((state) => state.theme)
+  return (
+    <img
+      src={accountPreferences.themeOptionIcon[option][theme]}
+      alt=""
+      aria-hidden
+      className="h-7 w-auto"
+    />
+  )
+}
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed'
 
@@ -50,10 +81,21 @@ type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed'
  * Account. Si Account rechaza o no responde, se vuelve al idioma anterior y se
  * avisa: la interfaz nunca queda afirmando una preferencia que no se guardo.
  */
-const LanguagePreference = (): React.JSX.Element => {
+interface LanguagePreferenceProps {
+  /**
+   * Transporte inyectable (vista previa DEV), mismo patron que
+   * `changePassword`/`exportPersonalData`. Sin valor: `useUpdatePreferredLanguage`
+   * usa `updateOwnPreferredLanguage` real -produccion no cambia-.
+   */
+  readonly savePreferredLanguage?: (language: Language) => Promise<OwnAccount>
+}
+
+const LanguagePreference = ({
+  savePreferredLanguage,
+}: LanguagePreferenceProps): React.JSX.Element => {
   const { t } = useTranslation()
   const language = useLanguage((state) => state.language)
-  const save = useUpdatePreferredLanguage()
+  const save = useUpdatePreferredLanguage(savePreferredLanguage)
   const [status, setStatus] = useState<SaveStatus>('idle')
 
   const choose = async (next: Language): Promise<void> => {
@@ -83,8 +125,11 @@ const LanguagePreference = (): React.JSX.Element => {
     })
   }
 
+  const theme = useTheme((state) => state.theme)
+
   return (
     <Card
+      className="account-panel"
       title={t('account:preferences.language.title')}
       description={t('account:preferences.language.description')}
     >
@@ -106,16 +151,23 @@ const LanguagePreference = (): React.JSX.Element => {
               onClick={() => {
                 void choose(option)
               }}
-              className={clsx(
-                OPTION_CLASS,
-                selected ? 'border-brand bg-brand/10' : 'border-border hover:bg-surface',
-              )}
+              className={clsx(OPTION_CLASS, selected && 'is-selected')}
             >
-              <span className="block text-sm font-medium text-ink">
-                {LANGUAGE_NATIVE_NAMES[option]}
-                {selected && (
-                  <span className="ml-2 text-xs text-brand">{t('account:preferences.active')}</span>
-                )}
+              <span className="flex items-center gap-2">
+                <img
+                  aria-hidden
+                  alt=""
+                  className="account-flag"
+                  src={accountPreferences.flags[LANGUAGE_FLAG[option]][theme]}
+                />
+                <span className="block text-sm font-medium text-ink">
+                  {LANGUAGE_NATIVE_NAMES[option]}
+                  {selected && (
+                    <span className="ml-2 text-xs text-brand">
+                      {t('account:preferences.active')}
+                    </span>
+                  )}
+                </span>
               </span>
               <span className="block text-xs uppercase text-muted">{option}</span>
             </button>
@@ -138,14 +190,27 @@ const LanguagePreference = (): React.JSX.Element => {
   )
 }
 
-export const PreferencesSection = (): React.JSX.Element => {
+export interface PreferencesSectionProps {
+  /** Reenviado a `LanguagePreference` (vease su prop homonima). */
+  readonly savePreferredLanguage?: LanguagePreferenceProps['savePreferredLanguage']
+}
+
+export const PreferencesSection = ({
+  savePreferredLanguage,
+}: PreferencesSectionProps = {}): React.JSX.Element => {
   const { t } = useTranslation()
   const theme = useTheme((state) => state.theme)
   const setTheme = useTheme((state) => state.setTheme)
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <AccountPixelIcon icon="preferences" size="md" />
+        <h2 className="account-title text-lg font-semibold">{t('account:sections.preferences')}</h2>
+      </div>
+
       <Card
+        className="account-panel"
         title={t('account:preferences.theme.title')}
         description={t('account:preferences.theme.description')}
       >
@@ -167,9 +232,16 @@ export const PreferencesSection = (): React.JSX.Element => {
                 }}
                 className={clsx(
                   OPTION_CLASS,
-                  selected ? 'border-brand bg-brand/10' : 'border-border hover:bg-surface',
+                  'flex-row items-center gap-3',
+                  selected && 'is-selected',
                 )}
               >
+                <span
+                  aria-hidden
+                  className="account-option-card__icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                >
+                  <ThemeOptionIcon option={option.value} />
+                </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-ink">
                     {t(option.labelKey)}
@@ -187,7 +259,9 @@ export const PreferencesSection = (): React.JSX.Element => {
         </div>
       </Card>
 
-      <LanguagePreference />
+      <LanguagePreference
+        {...(savePreferredLanguage === undefined ? {} : { savePreferredLanguage })}
+      />
     </div>
   )
 }

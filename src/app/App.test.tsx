@@ -69,6 +69,35 @@ describe('AppLayout', () => {
 
     expect(screen.getByText('contenido de prueba')).toBeInTheDocument()
   })
+
+  /**
+   * Remaster visual de Mi Cuenta (Sprint 3): `/account*` pasa a usar el mismo
+   * shell ancho sin `max-w-6xl` que ya tenian Commerce/Play/Inventory, para
+   * que el escenario a sangre completa (Guardian's Lodge / Royal Archive)
+   * cubra todo el ancho disponible. Esta prueba demuestra, por comportamiento
+   * observable (la clase real que decide el ancho), que SOLO cambio Account:
+   * las otras rutas conservan exactamente su tratamiento previo.
+   */
+  it.each([
+    ['/account', 'account-main'],
+    ['/account/security', 'account-main'],
+    ['/ecommerce', 'commerce-main'],
+    ['/play', 'br-main'],
+    ['/play/rooms/42', 'br-main'],
+    ['/inventory', 'max-w-7xl'],
+    ['/catalog', 'max-w-6xl'],
+  ])('asigna el shell esperado para %s', (path, expectedClass) => {
+    renderWithProviders(
+      <Routes>
+        <Route path="*" element={<AppLayout />}>
+          <Route path="*" element={<p>contenido</p>} />
+        </Route>
+      </Routes>,
+      { route: path },
+    )
+
+    expect(screen.getByRole('main')).toHaveClass(expectedClass)
+  })
 })
 
 describe('NotFoundPage', () => {

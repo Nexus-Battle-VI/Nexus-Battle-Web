@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router'
-import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import { AccountPixelIcon } from './AccountPixelIcon'
 import { accountSectionsForRoles } from './sections'
 
 export interface AccountSectionNavProps {
@@ -22,23 +22,23 @@ export const AccountSectionNav = ({ roles }: AccountSectionNavProps): React.JSX.
   const { t } = useTranslation()
 
   return (
-    <nav aria-label={t('account:sections.label')} className="min-w-0 overflow-hidden">
-      <ul className="flex w-full max-w-full gap-1 overflow-x-auto sm:flex-col sm:overflow-visible">
+    <nav aria-label={t('account:sections.label')} className="account-nav min-w-0 overflow-hidden">
+      <ul className="account-nav-list w-full max-w-full overflow-x-auto sm:overflow-visible">
         {sections.map((section) => (
-          <li key={section.to} className="shrink-0">
+          <li key={section.to} className="shrink-0 sm:w-full sm:shrink">
+            {/* Ronda 2 (brief seccion 14/15): antes la clase incluia
+             * `text-brand`/`text-muted` de Tailwind segun `isActive`, que
+             * competia con el color tematico de `.account-nav-item[aria-current]`
+             * de `account.css` -de ahi "el texto activo se monta con el
+             * frame". El color del item activo ahora lo decide SOLO ese
+             * selector CSS (via `aria-current="page"`, que `NavLink` ya
+             * gestiona), sin clases de color inline. */}
             <NavLink
               to={section.to}
               end={section.end}
-              className={({ isActive }) =>
-                clsx(
-                  'block rounded-md px-3 py-2 text-sm whitespace-nowrap transition-colors',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                  isActive
-                    ? 'bg-brand/12 font-medium text-brand'
-                    : 'text-muted hover:bg-surface hover:text-ink',
-                )
-              }
+              className="account-nav-item focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
+              {section.icon !== undefined && <AccountPixelIcon icon={section.icon} size="sm" />}
               {t(section.labelKey)}
             </NavLink>
           </li>
