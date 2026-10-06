@@ -75,7 +75,7 @@ describe('NAVIGATION', () => {
 })
 
 describe('ADMIN_NAVIGATION', () => {
-  it('declara los cinco accesos administrativos agrupados, sin duplicados', () => {
+  it('declara los accesos administrativos agrupados, sin duplicados', () => {
     const paths = ADMIN_NAVIGATION.map((item) => item.path)
 
     expect(paths).toEqual([
@@ -85,6 +85,7 @@ describe('ADMIN_NAVIGATION', () => {
       // que a su vez enlaza a `/admin/products/new` sin tocar ese path.
       '/admin/products',
       '/admin/banners',
+      '/admin/chatbot',
       '/admin/roles',
       '/admin/comments/moderation',
     ])

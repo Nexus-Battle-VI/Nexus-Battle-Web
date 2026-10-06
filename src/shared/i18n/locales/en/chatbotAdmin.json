@@ -1,0 +1,16 @@
+{
+  "title": "Chatbot model",
+  "train": "Retrain",
+  "loading": "Loading versions…",
+  "active": "Active version",
+  "candidate": "Candidate version",
+  "accuracy": "Validation accuracy",
+  "macro": "Macro F1",
+  "precision": "Live precision",
+  "experimentOff": "No candidate is in the test. Every session uses the active version.",
+  "experimentOn": "A candidate is in the A/B test. The other sessions stay on the active version.",
+  "promoted": "Validation authorized the promotion.",
+  "rejected": "Validation did not authorize the promotion. The candidate was kept.",
+  "empty": "There were no examples to train on.",
+  "busy": "A training run is already in progress."
+}
