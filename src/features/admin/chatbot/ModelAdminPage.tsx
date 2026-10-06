@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { describeFailure } from '@/shared/i18n/errors'
 import { useLanguage } from '@/shared/i18n/language'
 
@@ -69,8 +70,7 @@ const VersionCard = ({ version }: { readonly version: ModelVersionRow }): React.
   const stateKey = version.state === 'ACTIVE' ? 'chatbotAdmin:active' : 'chatbotAdmin:candidate'
 
   return (
-    <article className="rounded-lg border border-border p-4">
-      <h2 className="text-sm font-semibold">{t(stateKey)}</h2>
+    <Card title={t(stateKey)}>
       <p className="text-sm">
         {t('chatbotAdmin:accuracy')} {percent(version.accuracy)}
       </p>
@@ -80,6 +80,6 @@ const VersionCard = ({ version }: { readonly version: ModelVersionRow }): React.
       <p className="text-sm">
         {t('chatbotAdmin:precision')} {percent(version.precision)}
       </p>
-    </article>
+    </Card>
   )
 }
