@@ -43,6 +43,7 @@ import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePa
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModelAdminPage } from '@/features/admin/chatbot/ModelAdminPage'
 import { AnalyticsPage } from '@/features/admin/chatbot/AnalyticsPage'
+import { KnowledgeAdminPage } from '@/features/admin/chatbot/KnowledgeAdminPage'
 import { PublishAuctionPage } from '@/features/auction/PublishAuctionPage'
 import { OfficialAuctionPublisher } from '@/features/auction/OfficialAuctionPublisher'
 import { AuctionMarketplace } from '@/features/auction/AuctionMarketplace'
@@ -147,6 +148,11 @@ export const ADMIN_NAVIGATION: readonly NavigationItem[] = [
   {
     path: '/admin/chatbot',
     label: 'Modelo del chatbot',
+    requiredPrimaryRole: 'ADMINISTRATOR',
+  },
+  {
+    path: '/admin/chatbot/knowledge',
+    label: 'Diccionario del chatbot',
     requiredPrimaryRole: 'ADMINISTRATOR',
   },
   {
@@ -431,6 +437,14 @@ export const routes: RouteObject[] = [
         element: (
           <RequireAdministrator>
             <ModelAdminPage />
+          </RequireAdministrator>
+        ),
+      },
+      {
+        path: 'admin/chatbot/knowledge',
+        element: (
+          <RequireAdministrator>
+            <KnowledgeAdminPage />
           </RequireAdministrator>
         ),
       },

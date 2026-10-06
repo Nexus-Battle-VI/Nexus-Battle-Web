@@ -53,3 +53,37 @@ export const fetchAnalytics = (
   })
   return httpClient.get(`/v1/chatbot/admin/analytics?${params.toString()}`, signal)
 }
+
+export interface KnowledgeEntry {
+  readonly id: string
+  readonly intent: string
+  readonly language: string
+  readonly priority: number
+  readonly answer: string
+  readonly variations: readonly string[]
+  readonly view: string | null
+}
+
+export interface KnowledgeDraft {
+  readonly intent: string
+  readonly language: string
+  readonly priority: number
+  readonly answer: string
+  readonly variations: readonly string[]
+  readonly view: string | null
+}
+
+export const fetchKnowledge = (signal?: AbortSignal): Promise<readonly KnowledgeEntry[]> =>
+  httpClient.get('/v1/chatbot/admin/knowledge', signal)
+
+export const createKnowledge = (draft: KnowledgeDraft): Promise<KnowledgeEntry> =>
+  httpClient.post('/v1/chatbot/admin/knowledge', draft)
+
+export const updateKnowledge = (id: string, draft: KnowledgeDraft): Promise<KnowledgeEntry> =>
+  httpClient.request(`/v1/chatbot/admin/knowledge/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: draft,
+  })
+
+export const deleteKnowledge = (id: string): Promise<null> =>
+  httpClient.delete(`/v1/chatbot/admin/knowledge/${encodeURIComponent(id)}`)

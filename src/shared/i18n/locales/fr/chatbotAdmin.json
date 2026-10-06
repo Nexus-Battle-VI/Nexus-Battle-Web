@@ -28,5 +28,22 @@
   "trend": "Tendance",
   "noTopic": "Sans intention",
   "emptyPeriod": "Il n'y a pas de questions sur la période.",
-  "milliseconds": "{{value}} ms"
+  "milliseconds": "{{value}} ms",
+  "dictionaryTitle": "Dictionnaire du chatbot",
+  "intent": "Intention",
+  "language": "Langue",
+  "priority": "Priorité",
+  "answer": "Réponse",
+  "variations": "Questions d'exemple",
+  "variationsHint": "Une question par ligne.",
+  "view": "Vue",
+  "createEntry": "Enregistrer l'entrée",
+  "saveEntry": "Enregistrer les changements",
+  "newEntry": "Nouvelle entrée",
+  "remove": "Supprimer",
+  "edit": "Modifier",
+  "emptyDictionary": "Il n'y a pas encore d'entrées.",
+  "requiredEntry": "L'intention, la réponse et au moins une question sont obligatoires.",
+  "spanish": "Espagnol",
+  "english": "Anglais"
 }
