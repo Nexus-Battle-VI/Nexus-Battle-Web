@@ -21,5 +21,7 @@
   "empty": "Demande les règles, les produits, les missions ou ton compte.",
   "error": "Envoi impossible. Réessaie.",
   "openSection": "Ouvrir cette section",
-  "ticket": "Question enregistrée : {{id}}"
+  "ticket": "Question enregistrée : {{id}}",
+  "useful": "Utile",
+  "notUseful": "Pas utile"
 }

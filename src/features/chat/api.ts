@@ -12,11 +12,14 @@ export interface ChatReply {
   readonly sessionId: string | null
   readonly assistedAction?: { readonly name: string; readonly path: string } | null
   readonly ticketId?: string | null
+  readonly turnId?: string | null
 }
 
 export interface ChatTurn {
+  readonly id: string
   readonly question: string
   readonly answer: string | null
+  readonly useful: boolean | null
 }
 
 export interface OpenedTicket {
@@ -46,10 +49,38 @@ export const openSupportTicket = (
     ...(sessionId === null ? {} : { sessionId }),
   })
 
-export const chatHistory = (sessionId: string | null): Promise<{ turns: readonly ChatTurn[] }> => {
+export const chatHistory = (
+  sessionId: string | null,
+): Promise<{ sessionId: string | null; turns: readonly ChatTurn[] }> => {
   const query = sessionId === null ? '' : `?sessionId=${encodeURIComponent(sessionId)}`
   return httpClient.get(`/v1/chatbot/messages/history${query}`)
 }
+
+export const rateChat = (
+  turnId: string,
+  useful: boolean,
+  sessionId: string | null,
+): Promise<{ id: string; useful: boolean }> =>
+  httpClient.post(`/v1/chatbot/messages/${encodeURIComponent(turnId)}/rating`, {
+    useful,
+    ...(sessionId === null ? {} : { sessionId }),
+  })
+
+export const chatPreferences = (
+  sessionId: string | null,
+): Promise<{ showTime: boolean; sessionId: string | null }> => {
+  const query = sessionId === null ? '' : `?sessionId=${encodeURIComponent(sessionId)}`
+  return httpClient.get(`/v1/chatbot/preferences${query}`)
+}
+
+export const saveChatPreferences = (
+  showTime: boolean,
+  sessionId: string | null,
+): Promise<{ showTime: boolean }> =>
+  httpClient.request('/v1/chatbot/preferences', {
+    method: 'PUT',
+    body: { showTime, ...(sessionId === null ? {} : { sessionId }) },
+  })
 
 export const clearChatHistory = (sessionId: string | null): Promise<null> => {
   const query = sessionId === null ? '' : `?sessionId=${encodeURIComponent(sessionId)}`
