@@ -21,5 +21,7 @@
   "empty": "Pregunta por reglas, productos, misiones o tu cuenta.",
   "error": "No se pudo enviar. Inténtalo de nuevo.",
   "openSection": "Abrir esta sección",
-  "ticket": "Consulta registrada: {{id}}"
+  "ticket": "Consulta registrada: {{id}}",
+  "useful": "Útil",
+  "notUseful": "No útil"
 }

@@ -22,6 +22,9 @@ const reply = {
 describe('ChatWidget', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    vi.spyOn(chatApi, 'chatHistory').mockResolvedValue({ sessionId: null, turns: [] })
+    vi.spyOn(chatApi, 'chatPreferences').mockResolvedValue({ showTime: true, sessionId: null })
+    vi.spyOn(chatApi, 'saveChatPreferences').mockResolvedValue({ showTime: true })
   })
 
   it('está en cualquier vista y envía la pregunta con la vista actual', async () => {
@@ -125,6 +128,19 @@ describe('ChatWidget', () => {
     await user.type(screen.getByLabelText('Escribe tu pregunta'), 'no se')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
     expect(await screen.findByText('Consulta registrada: ticket-1')).toBeInTheDocument()
+  })
+
+  it('califica la respuesta de esta sesión', async () => {
+    vi.spyOn(chatApi, 'askChat').mockResolvedValue({ ...reply, turnId: 'turn-1' })
+    const rate = vi.spyOn(chatApi, 'rateChat').mockResolvedValue({ id: 'turn-1', useful: true })
+    const user = userEvent.setup()
+    renderWithProviders(<ChatWidget />, { route: '/missions' })
+    await user.click(screen.getByRole('button', { name: 'Abrir ayuda' }))
+    await user.type(screen.getByLabelText('Escribe tu pregunta'), 'cuanto dura el turno')
+    await user.click(screen.getByRole('button', { name: 'Enviar' }))
+    await user.click(await screen.findByRole('button', { name: 'Útil' }))
+    expect(rate).toHaveBeenCalledWith('turn-1', true, 'session-1')
+    expect(screen.getByRole('button', { name: 'Útil' })).toHaveAttribute('aria-pressed', 'true')
   })
 })
 

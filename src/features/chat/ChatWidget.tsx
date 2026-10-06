@@ -1,8 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link } from 'react-router'
 
-import { askChat, clearChatHistory, openSupportTicket, viewFromPath } from './api'
+import {
+  askChat,
+  chatHistory,
+  chatPreferences,
+  clearChatHistory,
+  openSupportTicket,
+  rateChat,
+  saveChatPreferences,
+  viewFromPath,
+  type ChatTurn,
+} from './api'
 
 interface Bubble {
   readonly id: string
@@ -10,9 +20,12 @@ interface Bubble {
   readonly text: string
   readonly at: string
   readonly path: string | null
+  readonly rateId: string | null
+  readonly useful: boolean | null
 }
 
 const TIME_KEY = 'chat-show-time'
+const SESSION_KEY = 'chat-session-id'
 
 const stamp = (): string =>
   new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -23,6 +36,28 @@ const safePath = (path: string | null | undefined): string | null => {
   }
   return path
 }
+
+const turnsToBubbles = (turns: readonly ChatTurn[], empty: string): readonly Bubble[] =>
+  turns.flatMap((turn) => [
+    {
+      id: `${turn.id}-question`,
+      role: 'user' as const,
+      text: turn.question,
+      at: '',
+      path: null,
+      rateId: null,
+      useful: null,
+    },
+    {
+      id: turn.id,
+      role: 'assistant' as const,
+      text: turn.answer ?? empty,
+      at: '',
+      path: null,
+      rateId: turn.id,
+      useful: turn.useful,
+    },
+  ])
 
 export const ChatWidget = (): React.JSX.Element => {
   const { t } = useTranslation()
@@ -42,6 +77,29 @@ export const ChatWidget = (): React.JSX.Element => {
     () => globalThis.sessionStorage.getItem(TIME_KEY) !== '0',
   )
 
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    const stored = globalThis.sessionStorage.getItem(SESSION_KEY)
+    void chatHistory(stored)
+      .then((history) => {
+        if (history.sessionId !== null) {
+          globalThis.sessionStorage.setItem(SESSION_KEY, history.sessionId)
+          setSessionId(history.sessionId)
+        }
+        setBubbles((current) =>
+          current.length > 0 ? current : turnsToBubbles(history.turns, t('chat:empty')),
+        )
+        return chatPreferences(history.sessionId ?? stored)
+      })
+      .then((prefs) => {
+        setShowTime(prefs.showTime)
+        globalThis.sessionStorage.setItem(TIME_KEY, prefs.showTime ? '1' : '0')
+      })
+      .catch(() => undefined)
+  }, [open, t])
+
   const topics = [
     t('chat:topicRules'),
     t('chat:topicMission'),
@@ -59,7 +117,15 @@ export const ChatWidget = (): React.JSX.Element => {
     setPending(true)
     setBubbles((current) => [
       ...current,
-      { id: crypto.randomUUID(), role: 'user', text, at: stamp(), path: null },
+      {
+        id: crypto.randomUUID(),
+        role: 'user',
+        text,
+        at: stamp(),
+        path: null,
+        rateId: null,
+        useful: null,
+      },
     ])
     void askChat(text, viewFromPath(pathname), sessionId)
       .then((reply) => {
@@ -69,11 +135,13 @@ export const ChatWidget = (): React.JSX.Element => {
         setBubbles((current) => [
           ...current,
           {
-            id: crypto.randomUUID(),
+            id: reply.turnId ?? crypto.randomUUID(),
             role: 'assistant',
             text: reply.answer ?? t('chat:empty'),
             at: stamp(),
             path: safePath(reply.assistedAction?.path),
+            rateId: reply.turnId ?? null,
+            useful: null,
           },
         ])
       })
@@ -170,6 +238,48 @@ export const ChatWidget = (): React.JSX.Element => {
               {showTime ? <span className="ml-2 text-xs text-muted">{bubble.at}</span> : null}
             </p>
             {bubble.path !== null ? <Link to={bubble.path}>{t('chat:openSection')}</Link> : null}
+            {bubble.rateId !== null ? (
+              <p>
+                <button
+                  type="button"
+                  aria-pressed={bubble.useful === true}
+                  onClick={() => {
+                    void rateChat(bubble.rateId ?? '', true, sessionId)
+                      .then(() => {
+                        setBubbles((current) =>
+                          current.map((item) =>
+                            item.id === bubble.id ? { ...item, useful: true } : item,
+                          ),
+                        )
+                      })
+                      .catch(() => {
+                        setFailed(true)
+                      })
+                  }}
+                >
+                  {t('chat:useful')}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={bubble.useful === false}
+                  onClick={() => {
+                    void rateChat(bubble.rateId ?? '', false, sessionId)
+                      .then(() => {
+                        setBubbles((current) =>
+                          current.map((item) =>
+                            item.id === bubble.id ? { ...item, useful: false } : item,
+                          ),
+                        )
+                      })
+                      .catch(() => {
+                        setFailed(true)
+                      })
+                  }}
+                >
+                  {t('chat:notUseful')}
+                </button>
+              </p>
+            ) : null}
           </div>
         ))}
         {pending ? (
@@ -280,6 +390,9 @@ export const ChatWidget = (): React.JSX.Element => {
             onChange={(event) => {
               setShowTime(event.target.checked)
               globalThis.sessionStorage.setItem(TIME_KEY, event.target.checked ? '1' : '0')
+              void saveChatPreferences(event.target.checked, sessionId).catch(() => {
+                setFailed(true)
+              })
             }}
           />
           {t('chat:showTime')}
