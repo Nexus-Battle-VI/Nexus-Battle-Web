@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link } from 'react-router'
 
-import { askChat, clearChatHistory, viewFromPath } from './api'
+import { askChat, clearChatHistory, openSupportTicket, viewFromPath } from './api'
 
 interface Bubble {
   readonly id: string
@@ -36,6 +36,7 @@ export const ChatWidget = (): React.JSX.Element => {
   const [suggestions, setSuggestions] = useState<readonly string[]>([])
   const [attachment, setAttachment] = useState<string | null>(null)
   const [handoff, setHandoff] = useState(false)
+  const [ticketId, setTicketId] = useState<string | null>(null)
   const [prefsOpen, setPrefsOpen] = useState(false)
   const [showTime, setShowTime] = useState(
     () => globalThis.sessionStorage.getItem(TIME_KEY) !== '0',
@@ -64,6 +65,7 @@ export const ChatWidget = (): React.JSX.Element => {
       .then((reply) => {
         setSessionId(reply.sessionId)
         setSuggestions(reply.suggestions)
+        setTicketId(reply.ticketId ?? null)
         setBubbles((current) => [
           ...current,
           {
@@ -83,10 +85,37 @@ export const ChatWidget = (): React.JSX.Element => {
       })
   }
 
+  const transfer = (): void => {
+    if (ticketId !== null) {
+      setHandoff(true)
+      return
+    }
+    const last = [...bubbles].reverse().find((bubble) => bubble.role === 'user')
+    if (last === undefined || pending) {
+      setHandoff(true)
+      return
+    }
+    setPending(true)
+    setFailed(false)
+    void openSupportTicket(last.text, viewFromPath(pathname), sessionId)
+      .then((opened) => {
+        setSessionId(opened.sessionId ?? sessionId)
+        setTicketId(opened.id)
+        setHandoff(true)
+      })
+      .catch(() => {
+        setFailed(true)
+      })
+      .finally(() => {
+        setPending(false)
+      })
+  }
+
   const clear = (): void => {
     void clearChatHistory(sessionId).finally(() => {
       setBubbles([])
       setSuggestions([])
+      setTicketId(null)
       setHandoff(false)
     })
   }
@@ -153,6 +182,7 @@ export const ChatWidget = (): React.JSX.Element => {
             {t('chat:error')}
           </p>
         ) : null}
+        {ticketId !== null ? <p role="status">{t('chat:ticket', { id: ticketId })}</p> : null}
         {handoff ? <p className="text-sm">{t('chat:transferred')}</p> : null}
         {attachment !== null ? (
           <p className="text-xs text-muted">{t('chat:attached', { name: attachment })}</p>
@@ -230,12 +260,7 @@ export const ChatWidget = (): React.JSX.Element => {
         <button type="button" onClick={clear}>
           {t('chat:clear')}
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setHandoff(true)
-          }}
-        >
+        <button type="button" onClick={transfer}>
           {t('chat:transfer')}
         </button>
         <button

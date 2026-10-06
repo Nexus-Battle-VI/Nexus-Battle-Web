@@ -11,11 +11,17 @@ export interface ChatReply {
   readonly view: string | null
   readonly sessionId: string | null
   readonly assistedAction?: { readonly name: string; readonly path: string } | null
+  readonly ticketId?: string | null
 }
 
 export interface ChatTurn {
   readonly question: string
   readonly answer: string | null
+}
+
+export interface OpenedTicket {
+  readonly id: string
+  readonly sessionId: string | null
 }
 
 export const askChat = (
@@ -24,6 +30,17 @@ export const askChat = (
   sessionId: string | null,
 ): Promise<ChatReply> =>
   httpClient.post<ChatReply>('/v1/chatbot/messages', {
+    text,
+    ...(view === null ? {} : { view }),
+    ...(sessionId === null ? {} : { sessionId }),
+  })
+
+export const openSupportTicket = (
+  text: string,
+  view: string | null,
+  sessionId: string | null,
+): Promise<OpenedTicket> =>
+  httpClient.post<OpenedTicket>('/v1/chatbot/tickets', {
     text,
     ...(view === null ? {} : { view }),
     ...(sessionId === null ? {} : { sessionId }),
