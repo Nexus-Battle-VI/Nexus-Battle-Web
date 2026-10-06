@@ -1,0 +1,16 @@
+{
+  "title": "Modèle du chatbot",
+  "train": "Réentraîner",
+  "loading": "Chargement des versions…",
+  "active": "Version active",
+  "candidate": "Version candidate",
+  "accuracy": "Exactitude de validation",
+  "macro": "F1 macro",
+  "precision": "Précision en direct",
+  "experimentOff": "Aucune candidate n'est en test. Toutes les sessions utilisent la version active.",
+  "experimentOn": "Une candidate est dans le test A/B. Les autres sessions restent sur la version active.",
+  "promoted": "La validation a autorisé la promotion.",
+  "rejected": "La validation n'a pas autorisé la promotion. La candidate a été conservée.",
+  "empty": "Il n'y avait pas d'exemples à entraîner.",
+  "busy": "Un entraînement est déjà en cours."
+}
