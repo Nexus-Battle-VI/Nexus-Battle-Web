@@ -86,6 +86,8 @@ describe('ADMIN_NAVIGATION', () => {
       '/admin/products',
       '/admin/banners',
       '/admin/chatbot',
+      '/admin/chatbot/knowledge',
+      '/admin/chatbot/analytics',
       '/admin/roles',
       '/admin/comments/moderation',
     ])
@@ -310,12 +312,21 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('los modulos aun no implementados se muestran deshabilitados, no simulados', async () => {
+  it('/tournament abre el producto autenticado en DEV y conserva el alias de inscripción', async () => {
     useSession.setState(AUTHENTICATED_STATE)
-    renderRoute('/tournament')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(new Response('[]', { headers: { 'content-type': 'application/json' } })),
+      ),
+    )
+    const { router } = renderRoute('/tournament/registration')
 
     expect(await screen.findByRole('heading', { name: 'Torneo' })).toBeInTheDocument()
-    expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/tournament')
+    expect(screen.getByLabelText('Tu código de jugador')).toHaveValue(AUTHENTICATED_STATE.subject)
+    expect(await screen.findByText('No hay torneos disponibles todavía.')).toBeInTheDocument()
+    expect(screen.queryByText(/demo histórica/u)).not.toBeInTheDocument()
   })
 
   it('/missions muestra el tablón real en lugar del marcador', async () => {

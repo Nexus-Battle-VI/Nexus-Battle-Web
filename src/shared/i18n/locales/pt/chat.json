@@ -21,5 +21,7 @@
   "empty": "Pergunta sobre regras, produtos, missões ou a tua conta.",
   "error": "Não foi possível enviar. Tenta de novo.",
   "openSection": "Abrir esta secção",
-  "ticket": "Pergunta registada: {{id}}"
+  "ticket": "Pergunta registada: {{id}}",
+  "useful": "Útil",
+  "notUseful": "Não útil"
 }

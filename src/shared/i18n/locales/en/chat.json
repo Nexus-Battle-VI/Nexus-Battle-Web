@@ -21,5 +21,7 @@
   "empty": "Ask about rules, products, missions or your account.",
   "error": "Could not send. Try again.",
   "openSection": "Open this section",
-  "ticket": "Question recorded: {{id}}"
+  "ticket": "Question recorded: {{id}}",
+  "useful": "Useful",
+  "notUseful": "Not useful"
 }

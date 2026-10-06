@@ -1,0 +1,14 @@
+@import '@fontsource/cinzel/600.css';
+
+.tournament-page {
+  overflow-wrap: anywhere;
+}
+.tournament-page h1,
+.tournament-page h2 {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.tournament-page h1 {
+  border-inline-start: 3px solid var(--color-accent-gold, var(--color-brand));
+  padding-inline-start: 0.75rem;
+}

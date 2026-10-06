@@ -15,7 +15,7 @@ import prettier from 'eslint-config-prettier'
  * TypeScript 7 mediante el alias `typescript7`. Vease ADR-003.
  */
 export default defineConfig([
-  globalIgnores(['dist/**', 'coverage/**', 'node_modules/**']),
+  globalIgnores(['dist/**', 'coverage/**', 'node_modules/**', '.tmp/**']),
 
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,

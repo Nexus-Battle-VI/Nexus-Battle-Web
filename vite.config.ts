@@ -62,6 +62,7 @@ export default defineConfig({
       exclude: [
         'src/main.tsx',
         'src/test/**',
+        'src/features/tournament/dev/**',
         'src/**/*.test.{ts,tsx}',
         'src/**/index.ts',
         'src/vite-env.d.ts',
