@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { queryKeys } from '@/shared/query-keys'
 
-import { fetchModelVersions, startModelTraining } from './api'
+import { fetchAnalytics, fetchModelVersions, startModelTraining } from './api'
 
 export const useModelVersions = () => {
   const query = useQuery({
@@ -26,4 +26,17 @@ export const useStartModelTraining = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.admin.chatbotModels })
     },
   })
+}
+
+export const useAnalytics = (from: string, to: string) => {
+  const query = useQuery({
+    queryKey: [...queryKeys.admin.chatbotAnalytics, from, to],
+    queryFn: ({ signal }) => fetchAnalytics(from, to, signal),
+  })
+
+  return {
+    report: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.error,
+  }
 }

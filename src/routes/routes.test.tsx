@@ -86,6 +86,7 @@ describe('ADMIN_NAVIGATION', () => {
       '/admin/products',
       '/admin/banners',
       '/admin/chatbot',
+      '/admin/chatbot/analytics',
       '/admin/roles',
       '/admin/comments/moderation',
     ])
