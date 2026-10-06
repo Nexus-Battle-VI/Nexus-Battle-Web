@@ -19,5 +19,6 @@
   "preferences": "Preferencias",
   "showTime": "Mostrar la hora",
   "empty": "Pregunta por reglas, productos, misiones o tu cuenta.",
-  "error": "No se pudo enviar. Inténtalo de nuevo."
+  "error": "No se pudo enviar. Inténtalo de nuevo.",
+  "openSection": "Abrir esta sección"
 }

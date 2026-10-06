@@ -19,5 +19,6 @@
   "preferences": "Preferences",
   "showTime": "Show the time",
   "empty": "Ask about rules, products, missions or your account.",
-  "error": "Could not send. Try again."
+  "error": "Could not send. Try again.",
+  "openSection": "Open this section"
 }
