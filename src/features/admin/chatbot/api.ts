@@ -25,3 +25,31 @@ export const fetchModelVersions = (signal?: AbortSignal): Promise<readonly Model
 
 export const startModelTraining = (): Promise<TrainingResult> =>
   httpClient.post('/v1/chatbot/admin/model-training')
+
+export interface UsageReport {
+  readonly conversationsStarted: number
+  readonly frequentQuestions: readonly { readonly text: string; readonly count: number }[]
+  readonly topics: readonly { readonly intent: string | null; readonly count: number }[]
+  readonly resolutionRate: number | null
+  readonly averageResponseMs: number | null
+  readonly satisfaction: number | null
+  readonly escalations: number
+  readonly keywords: readonly { readonly text: string; readonly count: number }[]
+  readonly trend: readonly {
+    readonly date: string
+    readonly queries: number
+    readonly resolved: number
+  }[]
+}
+
+export const fetchAnalytics = (
+  from: string,
+  to: string,
+  signal?: AbortSignal,
+): Promise<UsageReport> => {
+  const params = new URLSearchParams({
+    from: `${from}T00:00:00.000Z`,
+    to: `${to}T23:59:59.999Z`,
+  })
+  return httpClient.get(`/v1/chatbot/admin/analytics?${params.toString()}`, signal)
+}

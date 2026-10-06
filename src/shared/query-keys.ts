@@ -26,6 +26,7 @@ export const queryKeys = {
       readonly lifecycleStatus: string | null
     }) => ['admin', 'products', params] as const,
     chatbotModels: ['admin', 'chatbot', 'models'] as const,
+    chatbotAnalytics: ['admin', 'chatbot', 'analytics'] as const,
   },
   inventory: {
     byOwner: (ownerId: string) => ['inventory', ownerId] as const,
