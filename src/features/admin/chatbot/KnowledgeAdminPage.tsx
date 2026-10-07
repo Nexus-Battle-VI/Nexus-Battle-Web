@@ -159,6 +159,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
                   t('chatbotAdmin:imported', {
                     created: String(result.created),
                     skipped: String(result.skipped),
+                    reinforced: String(result.reinforced ?? 0),
                   }),
                 )
                 reload()

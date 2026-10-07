@@ -24,6 +24,11 @@ let resolvedDevRoutes: RouteObject[] = []
 let resolvedPublicDevRoutes: RouteObject[] = []
 
 if (import.meta.env.DEV) {
+  const TournamentModesPreviewLazy = lazy(() =>
+    import('@/features/tournament/dev/TournamentModesPreview').then((module) => ({
+      default: module.TournamentModesPreview,
+    })),
+  )
   const TournamentLocalPageLazy = lazy(() =>
     import('@/features/tournament/dev/TournamentLocalPage').then((module) => ({
       default: module.TournamentLocalPage,
@@ -197,6 +202,14 @@ if (import.meta.env.DEV) {
   )
 
   resolvedPublicDevRoutes = [
+    {
+      path: '__dev/tournament/formats',
+      element: (
+        <Suspense fallback={null}>
+          <TournamentModesPreviewLazy />
+        </Suspense>
+      ),
+    },
     {
       path: '__dev/chatbot-admin',
       element: (

@@ -76,7 +76,7 @@ describe('KnowledgeAdminPage', () => {
 
   it('importa un documento y avisa cuántas entradas eran nuevas', async () => {
     vi.mocked(fetchKnowledge).mockResolvedValue([])
-    vi.mocked(importKnowledge).mockResolvedValue({ created: 1, skipped: 0 })
+    vi.mocked(importKnowledge).mockResolvedValue({ created: 1, skipped: 0, reinforced: 4 })
     vi.mocked(exportKnowledge).mockResolvedValue({ schemaVersion: 1, entries: [] })
     const user = userEvent.setup()
     renderWithProviders(<KnowledgeAdminPage />)
@@ -87,7 +87,8 @@ describe('KnowledgeAdminPage', () => {
     })
     await user.upload(screen.getByLabelText('Importar'), file)
     expect(importKnowledge).toHaveBeenCalledWith({ schemaVersion: 1, entries: [] })
-    expect(await screen.findByText('Entradas nuevas: 1. Ya existentes: 0.')).toBeInTheDocument()
+    expect(await screen.findByText(/Entradas nuevas: 1/)).toBeInTheDocument()
+    expect(screen.getByText(/Frases añadidas: 4/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Exportar' }))
     expect(exportKnowledge).toHaveBeenCalledOnce()

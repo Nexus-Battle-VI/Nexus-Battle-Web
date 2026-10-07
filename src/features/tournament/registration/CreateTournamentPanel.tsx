@@ -1,9 +1,18 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { TournamentButton as Button } from '../TournamentVisuals'
+import { TournamentCard as Card } from '../TournamentVisuals'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
-import type { EntryPolicy, PaidMethod, RegistrationApi } from './api'
+import {
+  MODALITIES_CONTRACT_VERSION,
+  type EntryPolicy,
+  type PaidMethod,
+  type RegistrationApi,
+  type TournamentMode,
+} from './api'
+import { modalities } from './modalities'
+import { calendarPreview } from './calendar'
+import { dateLabel } from './presentation'
 import { amountInMinorUnits } from './money'
 import { useOperation } from './useOperation'
 
@@ -11,17 +20,21 @@ export const CreateTournamentPanel = ({
   subject,
   api,
   onCreated,
+  initiallyOpen = false,
 }: {
   readonly subject: string
   readonly api: RegistrationApi
   readonly onCreated: (id: string) => void
+  readonly initiallyOpen?: boolean
 }): React.JSX.Element => {
-  const operation = useOperation(JSON.stringify([subject, 'create-tournament']))
+  const operation = useOperation(
+    JSON.stringify([subject, 'create-tournament', MODALITIES_CONTRACT_VERSION]),
+  )
   const draft = (() => {
     try {
       const value: unknown = JSON.parse(operation.intent?.fingerprint ?? 'null')
       return Array.isArray(value) &&
-        value.length === 9 &&
+        value.length === 10 &&
         value.every((part) => typeof part === 'string')
         ? value
         : []
@@ -38,6 +51,9 @@ export const CreateTournamentPanel = ({
   const [opensAt, setOpensAt] = useState(draft[6] ?? '')
   const [closesAt, setClosesAt] = useState(draft[7] ?? '')
   const [startsAt, setStartsAt] = useState(draft[8] ?? '')
+  const [mode, setMode] = useState<TournamentMode>(
+    draft[9] === 'SOLO' || draft[9] === 'TRIO' ? draft[9] : 'DUO',
+  )
   const [validation, setValidation] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
   const hasCredits = policyKind === 'CREDITS' || policyKind === 'BOTH'
@@ -52,6 +68,7 @@ export const CreateTournamentPanel = ({
     opensAt,
     closesAt,
     startsAt,
+    mode,
   ])
   const locked = operation.busy || operation.intent !== null || created !== null
   const submit = async (): Promise<void> => {
@@ -100,6 +117,7 @@ export const CreateTournamentPanel = ({
         opensAt: opening.toISOString(),
         closesAt: closing.toISOString(),
         startsAt: start.toISOString(),
+        tournamentMode: mode,
       }),
     )
     if (result !== null) {
@@ -109,7 +127,7 @@ export const CreateTournamentPanel = ({
   }
   return (
     <Card>
-      <details>
+      <details open={initiallyOpen}>
         <summary className="cursor-pointer font-semibold">Crear torneo · administración</summary>
         <form
           className="mt-4 grid gap-4"
@@ -119,6 +137,19 @@ export const CreateTournamentPanel = ({
             void submit()
           }}
         >
+          <SelectField
+            label="Modalidad del torneo"
+            value={mode}
+            disabled={locked}
+            options={Object.entries(modalities).map(([value, details]) => ({
+              value,
+              label: `${details.label} · ${details.summary}`,
+            }))}
+            onChange={(event) => {
+              setMode(event.target.value as TournamentMode)
+            }}
+          />
+          <p>{modalities[mode].summary}. La modalidad queda fija al crear.</p>
           <TextField
             label="Nombre del torneo"
             value={name}
@@ -203,7 +234,7 @@ export const CreateTournamentPanel = ({
               [
                 ['Apertura de inscripción', opensAt, setOpensAt],
                 ['Cierre de inscripción', closesAt, setClosesAt],
-                ['Inicio del torneo', startsAt, setStartsAt],
+                ['Apertura de la primera aceptación', startsAt, setStartsAt],
               ] as const
             ).map(([label, value, set]) => (
               <TextField
@@ -219,9 +250,39 @@ export const CreateTournamentPanel = ({
               />
             ))}
           </div>
+          {calendarPreview(startsAt).length > 0 && (
+            <div
+              className="tournament-calendar-scroll"
+              tabIndex={0}
+              aria-label="Vista previa del calendario"
+            >
+              <table className="tournament-calendar">
+                <caption>Vista previa de seis rondas · el servidor guarda el calendario</caption>
+                <thead>
+                  <tr>
+                    <th>Ronda</th>
+                    <th>Aceptación personal</th>
+                    <th>Inicio previsto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {calendarPreview(startsAt).map((round) => (
+                    <tr key={round.round}>
+                      <th>{round.round}</th>
+                      <td>
+                        {dateLabel(round.opensAt)} – {dateLabel(round.closesAt)}
+                      </td>
+                      <td>{dateLabel(round.plannedStartAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <p className="text-sm text-muted">
             Fechas en tu hora local. Los precios se configuran por separado y no se convierten entre
-            créditos y moneda. El servidor exige al menos 91 × 24 horas entre inicios de torneos.
+            créditos y moneda. Cada justa tiene dos minutos de aceptación y comienza al cierre de su
+            ventana. Las rondas están separadas por diez minutos; los horarios quedan fijos.
           </p>
           {operation.intent?.phase === 'UNCERTAIN' && (
             <p role="status">Creación pendiente de comprobar. Se conserva el mismo intento.</p>

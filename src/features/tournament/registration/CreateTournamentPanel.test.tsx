@@ -24,7 +24,7 @@ const fillSchedule = async (user: ReturnType<typeof userEvent.setup>) => {
   for (const [name, value] of [
     ['Apertura de inscripción', '2026-10-05T10:00'],
     ['Cierre de inscripción', '2026-10-07T10:00'],
-    ['Inicio del torneo', '2026-10-08T10:00'],
+    ['Apertura de la primera aceptación', '2026-10-08T10:00'],
   ])
     await user.type(screen.getByLabelText(new RegExp(name!)), value!)
 }
@@ -65,8 +65,8 @@ describe('configuración administrativa sin tarifas inventadas', () => {
     await user.click(screen.getByText('Crear torneo · administración'))
     await fillSchedule(user)
     await user.selectOptions(screen.getByLabelText(/Política de inscripción/u), 'FREE')
-    await user.clear(screen.getByLabelText(/Inicio del torneo/u))
-    await user.type(screen.getByLabelText(/Inicio del torneo/u), '2026-10-06T10:00')
+    await user.clear(screen.getByLabelText(/Apertura de la primera aceptación/u))
+    await user.type(screen.getByLabelText(/Apertura de la primera aceptación/u), '2026-10-06T10:00')
     await user.click(screen.getByRole('button', { name: 'Crear torneo' }))
     expect(
       await screen.findByText(
