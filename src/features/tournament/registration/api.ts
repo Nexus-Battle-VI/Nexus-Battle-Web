@@ -1,6 +1,16 @@
 import { httpClient } from '@/lib/http'
 
 export const TOURNAMENT_CONTRACT_VERSION = 'torneos-hu77-84-78-hu83-v2.0.0'
+export const MODALITIES_CONTRACT_VERSION = 'torneos-v3.0.0'
+export type TournamentMode = 'SOLO' | 'DUO' | 'TRIO'
+export type TeamSize = 1 | 2 | 3
+export interface RegistrationMember {
+  readonly subject: string
+  readonly position: number
+  readonly consentAt: string | null
+  readonly consentVersion: string | null
+  readonly displayName?: string | null
+}
 export interface TeamAvatar {
   readonly kind: 'ACCOUNT_AVATAR'
   readonly subject: string
@@ -17,6 +27,9 @@ export type EntryPolicy =
   | { readonly version: 1; readonly free: true; readonly methods: readonly [] }
   | { readonly version: 1; readonly free: false; readonly methods: readonly PaidMethod[] }
 export interface EntryTournament {
+  readonly contractVersion?: string
+  readonly tournamentMode?: TournamentMode
+  readonly teamSize?: TeamSize
   readonly id: string
   readonly name: string
   readonly entryPolicy: EntryPolicy
@@ -32,7 +45,7 @@ export interface RegistrationReceipt {
   readonly kind: 'TEAM_REGISTRATION'
   readonly tournamentId: string
   readonly teamId: string
-  readonly memberIds: readonly [string, string]
+  readonly memberIds: readonly string[]
   readonly registeredAt: string
   readonly status: 'REGISTERED'
 }
@@ -65,7 +78,8 @@ export interface EntryTeam {
   readonly name: string
   readonly avatar: TeamAvatar
   readonly ownerId: string
-  readonly companionId: string
+  readonly companionId: string | null
+  readonly members?: readonly RegistrationMember[]
   readonly status:
     | 'AWAITING_CONSENT'
     | 'PENDING_PAYMENT'
@@ -88,6 +102,9 @@ export interface EntryView {
     readonly confirmed: number
     readonly reserved: number
     readonly available: number
+    readonly teamSize?: TeamSize
+    readonly confirmedPeople?: number
+    readonly totalPeople?: number
   }
   readonly teams: readonly EntryTeam[]
 }
@@ -101,7 +118,8 @@ export interface RegistrationInput {
   readonly operationId: string
   readonly name: string
   readonly avatar: TeamAvatar
-  readonly companionId: string
+  readonly companionId?: string
+  readonly invitedMemberIds?: readonly string[]
 }
 export interface EntryInput {
   readonly operationId: string
@@ -109,6 +127,7 @@ export interface EntryInput {
   readonly card?: SimulatedCard
 }
 export interface CreateTournamentInput {
+  readonly tournamentMode?: TournamentMode
   readonly operationId: string
   readonly name: string
   readonly entryPolicy: EntryPolicy

@@ -15,7 +15,7 @@ export interface MatchSummary {
     readonly teamId: string
     readonly name: string
     readonly avatar: TeamAvatar
-    readonly memberIds: readonly [string, string]
+    readonly memberIds: readonly string[]
   } | null)[]
   readonly preparationStatus?:
     | 'WAITING_TEAMS'

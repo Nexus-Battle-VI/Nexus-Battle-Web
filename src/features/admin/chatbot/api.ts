@@ -110,6 +110,7 @@ export interface KnowledgeDocument {
 export interface ImportResult {
   readonly created: number
   readonly skipped: number
+  readonly reinforced?: number
 }
 
 export const exportKnowledge = (signal?: AbortSignal): Promise<KnowledgeDocument> =>

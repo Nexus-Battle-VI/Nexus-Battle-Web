@@ -18,9 +18,16 @@ afterEach(() => {
 })
 describe('llaves del servidor, permisos y ocho humanos', () => {
   it.each([5, 7])(
-    'bloquea publicación con %i confirmados sin tratar pendientes como plazas',
+    'solicita la validación del servidor con %i confirmados sin publicar localmente',
     async (confirmed) => {
-      const api = { view: vi.fn().mockResolvedValue(null), publish: vi.fn() }
+      const api = {
+        view: vi.fn().mockResolvedValue(null),
+        publish: vi.fn().mockRejectedValue(
+          new HttpError(409, 'Se necesitan ocho equipos humanos confirmados.', {
+            code: 'INSUFFICIENT_CONFIRMED_TEAMS',
+          }),
+        ),
+      }
       renderWithProviders(
         <TournamentBracketPanel
           id="T1"
@@ -31,9 +38,16 @@ describe('llaves del servidor, permisos y ocho humanos', () => {
         />,
       )
       const button = await screen.findByRole('button', { name: 'Publicar llaves' })
-      expect(button).toBeDisabled()
+      expect(button).toBeEnabled()
       expect(screen.getByText(/Se requieren ocho equipos humanos/u)).toBeInTheDocument()
-      expect(api.publish).not.toHaveBeenCalled()
+      await userEvent.click(button)
+      expect(api.publish).toHaveBeenCalledWith('T1', expect.any(String))
+      expect(
+        await screen.findByText('Se necesitan ocho equipos humanos confirmados.'),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('region', { name: 'Árbol desplazable de llaves' }),
+      ).not.toBeInTheDocument()
     },
   )
   it('un jugador consulta bloqueo sin botón administrativo', async () => {
@@ -53,6 +67,7 @@ describe('llaves del servidor, permisos y ocho humanos', () => {
   })
   it('publica snapshot v2 con ambos árboles, final e identidad distinta de etiqueta', async () => {
     const { brackets } = createRegistrationPreviewApis()
+    const choose = vi.fn()
     const api: BracketApi = {
       view: vi.fn().mockResolvedValue(null),
       publish: vi.fn(brackets.publish),
@@ -64,22 +79,30 @@ describe('llaves del servidor, permisos y ocho humanos', () => {
         roles={['SUPER_ADMINISTRATOR']}
         confirmed={8}
         api={api}
+        progress={{
+          view: vi.fn().mockResolvedValue({ bracket: null, champion: null, eliminatedTeamIds: [] }),
+        }}
+        onChooseMatch={choose}
       />,
     )
     await userEvent.click(await screen.findByRole('button', { name: 'Publicar llaves' }))
     expect(
       await screen.findByText('Llaves publicadas · ocho equipos humanos · inscripción cerrada.'),
     ).toBeInTheDocument()
-    for (const name of ['Árbol de ganadores', 'Árbol de secundarios', 'Final'])
+    for (const name of ['Árbol de ganadores', 'Árbol de perdedores', 'Final'])
       expect(screen.getByRole('region', { name })).toBeInTheDocument()
     expect(
       within(screen.getByRole('region', { name: 'Árbol de ganadores' })).getAllByRole('button'),
     ).toHaveLength(7)
     expect(
-      within(screen.getByRole('region', { name: 'Árbol de secundarios' })).getAllByRole('button'),
+      within(screen.getByRole('region', { name: 'Árbol de perdedores' })).getAllByRole('button'),
     ).toHaveLength(6)
     await userEvent.click(screen.getByRole('button', { name: /E9 · Ronda/u }))
-    expect(screen.getByText('Identidad del encuentro: dev-tournament-v2:E9')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('link', { name: 'Ver registro de E9' }))
+    expect(choose).toHaveBeenCalledWith('dev-tournament-v2:E9')
+    expect(
+      screen.queryByText('Identidad del encuentro: dev-tournament-v2:E9'),
+    ).not.toBeInTheDocument()
     expect(
       within(screen.getByRole('region', { name: 'Detalle de E9' })).getByText(
         'Perdedor de E6 vs. Ganador de E7',
@@ -143,7 +166,7 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
       detail: vi.fn().mockResolvedValue(detail()),
     }
     renderWithProviders(<TournamentEncountersPanel id="T1" subject="player" api={api} />)
-    await userEvent.click(await screen.findByRole('button', { name: /E2 · Ronda/u }))
+    await userEvent.selectOptions(await screen.findByLabelText('Elegir justa'), 'server/stable:E2')
     expect(api.detail).toHaveBeenCalledWith('T1', 'server/stable:E2', 0)
     expect(await screen.findByText('E2 · En curso')).toBeInTheDocument()
     expect(
@@ -185,7 +208,7 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
         }}
       />,
     )
-    await userEvent.click(await screen.findByRole('button', { name: /E1 · Ronda/u }))
+    await userEvent.selectOptions(await screen.findByLabelText('Elegir justa'), 'server/stable:E1')
     expect(await screen.findByText('Equipo registrado')).toBeInTheDocument()
     expect(screen.getByText('Jugador: A')).toBeInTheDocument()
     expect(screen.queryByText(/Héroe/u)).not.toBeInTheDocument()
@@ -254,7 +277,10 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
           }}
         />,
       )
-      await userEvent.click(await screen.findByRole('button', { name: /E2 · Ronda/u }))
+      await userEvent.selectOptions(
+        await screen.findByLabelText('Elegir justa'),
+        'server/stable:E2',
+      )
       await screen.findByRole('region', { name: 'Registro del combate E2' })
       const notice = screen.queryByText(/todos los eventos conocidos de Combat/u)
       if (warning) expect(notice).toBeInTheDocument()
@@ -296,7 +322,8 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
     }
     renderWithProviders(<TournamentEncountersPanel id="T1" subject="player" api={api} />)
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: /E2 · Ronda/u }))
+    await user.selectOptions(await screen.findByLabelText('Elegir justa'), 'server/stable:E2')
+    await user.click(await screen.findByText('Historial de acciones (100)'))
     await user.click(await screen.findByRole('button', { name: 'Ver siguientes eventos' }))
     expect(api.detail).toHaveBeenLastCalledWith('T1', 'server/stable:E2', 100)
     expect(await screen.findByText(/101. Ataque básico/u)).toBeInTheDocument()
@@ -327,7 +354,7 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
         }}
       />,
     )
-    await userEvent.click(await screen.findByRole('button', { name: /E2 · Ronda/u }))
+    await userEvent.selectOptions(await screen.findByLabelText('Elegir justa'), 'server/stable:E2')
     expect(await screen.findByText('Combat finalizó sin ganador.')).toBeInTheDocument()
     expect(screen.queryByText(/Ganador informado/u)).not.toBeInTheDocument()
   })
@@ -357,7 +384,10 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
           }}
         />,
       )
-      await userEvent.click(await screen.findByRole('button', { name: /E2 · Ronda/u }))
+      await userEvent.selectOptions(
+        await screen.findByLabelText('Elegir justa'),
+        'server/stable:E2',
+      )
       expect(
         await screen.findByText(`Resultado informado por Combat: ${outcome}`),
       ).toBeInTheDocument()
@@ -374,7 +404,7 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
         .mockResolvedValueOnce({ ...detail(), tournamentId: 'T2' }),
     }
     renderWithProviders(<TournamentEncountersPanel id="T1" subject="player" api={api} />)
-    await userEvent.click(await screen.findByRole('button', { name: /E2 · Ronda/u }))
+    await userEvent.selectOptions(await screen.findByLabelText('Elegir justa'), 'server/stable:E2')
     await userEvent.click(await screen.findByRole('button', { name: 'Volver a consultar combate' }))
     await act(async () => {
       await Promise.resolve()
@@ -393,11 +423,11 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
         .mockImplementationOnce(() => new Promise<MatchDetail>(() => undefined)),
     }
     renderWithProviders(<TournamentEncountersPanel id="T1" subject="player" api={api} />)
-    await userEvent.click(await screen.findByRole('button', { name: /E1 · Ronda/u }))
+    await userEvent.selectOptions(await screen.findByLabelText('Elegir justa'), 'server/stable:E1')
     expect(
       await screen.findByRole('region', { name: 'Registro del combate E1' }),
     ).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: /E2 · Ronda/u }))
+    await userEvent.selectOptions(await screen.findByLabelText('Elegir justa'), 'server/stable:E2')
     expect(
       screen.queryByRole('region', { name: 'Registro del combate E1' }),
     ).not.toBeInTheDocument()

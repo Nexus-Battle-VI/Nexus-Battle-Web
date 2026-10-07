@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { TournamentButton as Button } from '../TournamentVisuals'
+import { TournamentCard as Card } from '../TournamentVisuals'
+import { tournamentHumanName } from '../tournamentHeroIdentity'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 import type { EntryPolicy, EntryTeam, RegistrationApi, SimulatedCard } from './api'
 import { TeamAvatar, type AvatarDownload } from './TeamAvatar'
 import { dateLabel, priceLabel, teamStatus } from './presentation'
 import { useOperation } from './useOperation'
+import { membersOf } from './modalities'
 
 const emptyCard: SimulatedCard = { holder: '', number: '', expiry: '', securityCode: '' }
 export const TeamRegistrationCard = ({
@@ -20,6 +22,7 @@ export const TeamRegistrationCard = ({
   onResult,
   canMutate,
   avatarDownload,
+  displayName,
 }: {
   readonly subject: string
   readonly id: string
@@ -31,14 +34,15 @@ export const TeamRegistrationCard = ({
   readonly onResult: (team: EntryTeam) => Promise<void>
   readonly canMutate: boolean
   readonly avatarDownload?: AvatarDownload | undefined
+  readonly displayName?: string | null
 }): React.JSX.Element => {
+  const members = membersOf(team)
+  const self = members.find((member) => member.subject === subject)
   const operation = useOperation(
-    JSON.stringify([subject, id, 'team', team.id]),
+    JSON.stringify([subject, id, 'team', team.id, members.length, 'members-v3']),
     (intent) =>
       (intent.fingerprint.startsWith('entry:') && team.status === 'CONFIRMED') ||
-      (intent.fingerprint === 'accept' &&
-        team.status !== 'AWAITING_CONSENT' &&
-        team.consentAt !== null) ||
+      (intent.fingerprint === 'accept' && self?.consentAt != null) ||
       (['reject', 'cancel'].includes(intent.fingerprint) && team.status === 'CANCELLED'),
   )
   const [method, setMethod] = useState(() =>
@@ -50,13 +54,14 @@ export const TeamRegistrationCard = ({
   )
   const [card, setCard] = useState<SimulatedCard>(emptyCard)
   const owner = subject === team.ownerId
-  const state = JSON.stringify([team.status, team.failure, team.entryReceipt?.id, open])
+  const state = JSON.stringify([team.status, team.failure, team.entryReceipt?.id, open, members])
   const receipt = team.entryReceipt
   const paidMethod = !policy.free ? policy.methods.find((m) => m.method === method) : undefined
   const fingerprint = policy.free ? 'entry:FREE' : `entry:${method}`
   const entryIntent = operation.intent?.fingerprint.startsWith('entry:') === true
   const pending = team.status === 'PAYMENT_PENDING' || team.status === 'COMPENSATING'
   const run = async (action: 'accept' | 'reject' | 'cancel' | 'entry'): Promise<void> => {
+    if (self === undefined || (action === 'entry' && !owner)) return
     const result = await operation.run(
       action === 'entry' ? fingerprint : action,
       state,
@@ -94,30 +99,60 @@ export const TeamRegistrationCard = ({
         <div className="min-w-0 flex-1">
           <h2 className="font-game-display text-xl text-ink">{team.name}</h2>
           <p className="mt-2 font-semibold" role="status">
-            {teamStatus[team.status]}
+            {team.status === 'AWAITING_CONSENT' && members.length === 2
+              ? 'Esperando aceptación del compañero'
+              : teamStatus[team.status]}
           </p>
         </div>
       </div>
-      <dl className="mt-4 grid gap-2 text-sm">
-        <div>
-          <dt className="font-semibold">Creador y responsable del pago</dt>
-          <dd className="break-all">
-            {team.ownerId}
-            {owner ? ' (tú)' : ''}
-          </dd>
-        </div>
-        <div>
-          <dt className="font-semibold">Compañero</dt>
-          <dd className="break-all">
-            {team.companionId}
-            {subject === team.companionId ? ' (tú)' : ''}
-          </dd>
-        </div>
-      </dl>
-      <p className="mt-3 text-sm">Aceptación del creador: {dateLabel(team.createdAt)}.</p>
-      {team.consentAt !== null && (
-        <p className="text-sm">Aceptación del compañero: {dateLabel(team.consentAt)}.</p>
-      )}
+      <ul
+        className="tournament-team-members"
+        aria-label="Integrantes y consentimiento de inscripción"
+      >
+        {members.map((member, index) => (
+          <li key={member.subject}>
+            <TeamAvatar
+              subject={subject}
+              avatarSubject={member.subject}
+              {...(avatarDownload ? { download: avatarDownload } : {})}
+            />
+            <div>
+              <p className="font-semibold">
+                {member.subject === subject
+                  ? (tournamentHumanName(displayName) ?? 'Tu cuenta')
+                  : (tournamentHumanName(member.displayName) ??
+                    (members.length === 2
+                      ? 'Nombre del compañero pendiente'
+                      : `Integrante ${String(index + 1)}`))}
+                {member.subject === subject ? ' (tú)' : ''}
+              </p>
+              <p className="text-sm">
+                {member.subject === team.ownerId ? 'Creador y responsable del pago' : 'Compañero'}
+              </p>
+              <p className="text-sm">
+                {member.consentAt === null
+                  ? 'Inscripción: esperando su aceptación'
+                  : `Inscripción aceptada: ${dateLabel(member.consentAt)}`}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <details className="tournament-technical">
+        <summary>Códigos de los integrantes</summary>
+        <p className="break-all">Creador: {team.ownerId}</p>
+        {members
+          .filter((member) => member.subject !== team.ownerId)
+          .map((member) => (
+            <p key={member.subject} className="break-all">
+              Compañero: {member.subject}
+            </p>
+          ))}
+      </details>
+      <p className="mt-3 text-sm">
+        Aceptar la inscripción no acepta las justas: cada persona responde de nuevo antes de su
+        combate.
+      </p>
       <details className="mt-4">
         <summary className="cursor-pointer font-semibold">Comprobante de registro</summary>
         <p className="mt-2 break-all text-sm">{team.registrationReceipt.id}</p>
@@ -126,10 +161,10 @@ export const TeamRegistrationCard = ({
         </p>
       </details>
       {team.status === 'AWAITING_CONSENT' &&
-        (owner ? (
+        (owner || self?.consentAt != null ? (
           <p className="mt-4 text-muted">
-            Tu compañero debe entrar a Torneo desde su cuenta y aceptar este nombre, avatar e
-            integrantes.
+            Cada compañero pendiente debe entrar a Torneo desde su cuenta y aceptar este nombre,
+            avatar e integrantes.
           </p>
         ) : (
           <div className="mt-4 grid gap-3">
@@ -140,7 +175,10 @@ export const TeamRegistrationCard = ({
             <div className="flex flex-wrap gap-3">
               <Button
                 disabled={
-                  !open || !canMutate || (locked && operation.intent?.fingerprint !== 'accept')
+                  !open ||
+                  !canMutate ||
+                  self === undefined ||
+                  (locked && operation.intent?.fingerprint !== 'accept')
                 }
                 loading={operation.busy}
                 onClick={() => void run('accept')}
@@ -149,7 +187,11 @@ export const TeamRegistrationCard = ({
               </Button>
               <Button
                 variant="secondary"
-                disabled={!canMutate || (locked && operation.intent?.fingerprint !== 'reject')}
+                disabled={
+                  !canMutate ||
+                  self === undefined ||
+                  (locked && operation.intent?.fingerprint !== 'reject')
+                }
                 onClick={() => void run('reject')}
               >
                 Rechazar
@@ -302,20 +344,25 @@ export const TeamRegistrationCard = ({
           aria-label="Comprobante de inscripción confirmada"
         >
           <h3 className="font-semibold">Cupo {String(receipt.slot)} confirmado</h3>
-          <p className="break-all text-sm">Comprobante de inscripción: {receipt.id}</p>
-          <p className="mt-2">{priceLabel(receipt.payment)}</p>
-          {receipt.payment.chargeId !== null && (
-            <p className="break-all text-sm">Comprobante de pago: {receipt.payment.chargeId}</p>
-          )}
-          {receipt.payment.method === 'SIMULATED_MONEY' && (
-            <>
-              <p className="break-all text-sm">
-                Referencia simulada: {receipt.payment.reference} · Tarjeta:{' '}
-                {receipt.payment.maskedCard}
-              </p>
-              <p className="text-sm">No se movió dinero real.</p>
-            </>
-          )}
+          <details className="mt-2">
+            <summary className="cursor-pointer font-semibold">
+              Comprobantes de inscripción y pago
+            </summary>
+            <p className="break-all text-sm">Comprobante de inscripción: {receipt.id}</p>
+            <p className="mt-2">{priceLabel(receipt.payment)}</p>
+            {receipt.payment.chargeId !== null && (
+              <p className="break-all text-sm">Comprobante de pago: {receipt.payment.chargeId}</p>
+            )}
+            {receipt.payment.method === 'SIMULATED_MONEY' && (
+              <>
+                <p className="break-all text-sm">
+                  Referencia simulada: {receipt.payment.reference} · Tarjeta:{' '}
+                  {receipt.payment.maskedCard}
+                </p>
+                <p className="text-sm">No se movió dinero real.</p>
+              </>
+            )}
+          </details>
         </section>
       )}
     </Card>
