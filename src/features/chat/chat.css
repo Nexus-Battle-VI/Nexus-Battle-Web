@@ -158,6 +158,11 @@
   font-size: 0.75rem;
   cursor: pointer;
 }
+a.help-btn {
+  display: inline-block;
+  margin-top: 6px;
+  text-decoration: none;
+}
 .help-btn-primary {
   border-image-slice: 32% 38% fill;
   border-image-source: url('/assets/ecommerce/buttons/primary-light-default.png');

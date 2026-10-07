@@ -57,7 +57,7 @@ const turnsToBubbles = (turns: readonly ChatTurn[], empty: string): readonly Bub
       role: 'assistant' as const,
       text: turn.answer ?? empty,
       at: '',
-      path: null,
+      path: safePath(turn.assistedAction?.path),
       rateId: turn.id,
       useful: turn.useful,
     },
@@ -241,7 +241,11 @@ export const ChatWidget = (): React.JSX.Element => {
                 {bubble.text}
                 {showTime ? <span className="ml-2 text-xs text-muted">{bubble.at}</span> : null}
               </p>
-              {bubble.path !== null ? <Link to={bubble.path}>{t('chat:openSection')}</Link> : null}
+              {bubble.path !== null ? (
+                <Link className="help-btn" to={bubble.path}>
+                  {t('chat:openSection')}
+                </Link>
+              ) : null}
               {bubble.rateId !== null ? (
                 <p className="mt-1 flex flex-wrap gap-1">
                   <button

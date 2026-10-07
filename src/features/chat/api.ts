@@ -20,6 +20,7 @@ export interface ChatTurn {
   readonly question: string
   readonly answer: string | null
   readonly useful: boolean | null
+  readonly assistedAction?: { readonly name: string; readonly path: string } | null
 }
 
 export interface OpenedTicket {
