@@ -97,6 +97,47 @@ const VersionCard = ({ version }: { readonly version: ModelVersionRow }): React.
           notUseful: String(version.notUseful),
         })}
       </p>
+      {version.perIntentF1.length > 0 ? (
+        <>
+          <p className="mt-3 text-sm font-medium">{t('chatbotAdmin:perIntent')}</p>
+          <ul className="text-sm">
+            {version.perIntentF1.map((score) => (
+              <li key={score.label}>
+                {score.label} {percent(score.score)}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+      <ConfusionList version={version} />
     </Card>
+  )
+}
+
+const ConfusionList = ({
+  version,
+}: {
+  readonly version: ModelVersionRow
+}): React.JSX.Element | null => {
+  const { t } = useTranslation()
+  if (version.perIntentF1.length === 0) {
+    return null
+  }
+  const mismatches = version.confusion.filter((cell) => cell.actual !== cell.predicted)
+  if (mismatches.length === 0) {
+    return <p className="mt-2 text-sm">{t('chatbotAdmin:noConfusion')}</p>
+  }
+  return (
+    <ul className="mt-2 text-sm">
+      {mismatches.map((cell) => (
+        <li key={`${cell.actual}:${cell.predicted}`}>
+          {t('chatbotAdmin:confused', {
+            actual: cell.actual,
+            predicted: cell.predicted,
+            count: String(cell.count),
+          })}
+        </li>
+      ))}
+    </ul>
   )
 }

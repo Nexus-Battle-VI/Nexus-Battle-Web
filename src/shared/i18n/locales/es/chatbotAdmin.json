@@ -54,5 +54,8 @@
   "singleExamples": "Clases con un solo ejemplo: {{labels}}",
   "ticketsTitle": "Tickets de soporte",
   "emptyTickets": "Todavía no hay tickets.",
-  "askedBy": "Quién preguntó"
+  "askedBy": "Quién preguntó",
+  "perIntent": "F1 por intención",
+  "confused": "{{actual}} se leyó como {{predicted}} ({{count}})",
+  "noConfusion": "La validación no confundió clases."
 }
