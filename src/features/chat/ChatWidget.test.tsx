@@ -114,6 +114,27 @@ describe('ChatWidget', () => {
     expect(link).toHaveAttribute('href', '/account')
   })
 
+  it('recupera el camino al abrir un historial que ya lo trae', async () => {
+    vi.spyOn(chatApi, 'chatHistory').mockResolvedValue({
+      sessionId: 'session-1',
+      turns: [
+        {
+          id: 'turn-1',
+          question: 'que tengo en el inventario',
+          answer: 'El inventario se consulta en el momento.',
+          useful: null,
+          assistedAction: { name: 'buscar_inventario', path: '/inventory' },
+        },
+      ],
+    })
+    const user = userEvent.setup()
+    renderWithProviders(<ChatWidget />, { route: '/ecommerce' })
+    await user.click(screen.getByRole('button', { name: 'Abrir ayuda' }))
+
+    const link = await screen.findByRole('link', { name: 'Abrir esta sección' })
+    expect(link).toHaveAttribute('href', '/inventory')
+  })
+
   it('muestra el número cuando la consulta no se resolvió', async () => {
     vi.spyOn(chatApi, 'askChat').mockResolvedValue({
       ...reply,
