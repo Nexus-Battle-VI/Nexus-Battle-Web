@@ -8,6 +8,8 @@ import { TextField } from '@/components/ui/form/TextField'
 import type { UsageReport } from './api'
 import { useAnalytics } from './useModelAdmin'
 
+import './chatbot-admin.css'
+
 const today = (): string => new Date().toISOString().slice(0, 10)
 
 const percent = (value: number | null): string => {
@@ -24,7 +26,7 @@ export const AnalyticsPage = (): React.JSX.Element => {
   const { report, isLoading, error } = useAnalytics(from, to)
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-6">
+    <section className="cb-page flex flex-col gap-4">
       <h1 className="text-xl font-semibold">{t('chatbotAdmin:analyticsTitle')}</h1>
       <p className="text-sm text-muted">{t('chatbotAdmin:utc')}</p>
       <div className="flex flex-wrap gap-3">

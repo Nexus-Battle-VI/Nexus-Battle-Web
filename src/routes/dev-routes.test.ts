@@ -39,6 +39,7 @@ describe('devRoutes', () => {
     // catalogo local no siempre tiene salas/heroes suficientes para
     // inspeccionar cada estado.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
+      '__dev/chatbot-admin',
       '__dev/ecommerce/marketplace-preview',
       '__dev/battle-rooms/lobby-remaster-preview',
       '__dev/battle-rooms/room-remaster-preview',
