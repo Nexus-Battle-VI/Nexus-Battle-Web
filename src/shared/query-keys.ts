@@ -28,6 +28,7 @@ export const queryKeys = {
     chatbotModels: ['admin', 'chatbot', 'models'] as const,
     chatbotAnalytics: ['admin', 'chatbot', 'analytics'] as const,
     chatbotKnowledge: ['admin', 'chatbot', 'knowledge'] as const,
+    chatbotTickets: ['admin', 'chatbot', 'tickets'] as const,
   },
   inventory: {
     byOwner: (ownerId: string) => ['inventory', ownerId] as const,
