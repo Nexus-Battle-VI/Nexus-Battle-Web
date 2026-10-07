@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link } from 'react-router'
 
-import { Button } from '@/components/ui/Button'
+import { BattlePixelIcon } from '@/features/battle-rooms/BattlePixelIcon'
+
+import './chat.css'
 
 import {
   askChat,
@@ -192,46 +194,47 @@ export const ChatWidget = (): React.JSX.Element => {
 
   if (!open) {
     return (
-      <Button
-        aria-label={t('chat:open')}
-        aria-expanded={false}
-        className="fixed bottom-4 right-4 z-40 rounded-full shadow-lg"
-        onClick={() => {
-          setOpen(true)
-        }}
-      >
-        {t('chat:title')}
-      </Button>
+      <div className="help-dock">
+        <button
+          type="button"
+          aria-label={t('chat:open')}
+          aria-expanded={false}
+          className="help-launcher"
+          onClick={() => {
+            setOpen(true)
+          }}
+        >
+          <BattlePixelIcon icon="chat" size="lg" />
+        </button>
+      </div>
     )
   }
 
   return (
-    <section
-      aria-label={t('chat:title')}
-      className="fixed bottom-4 right-4 z-40 flex max-h-[70vh] w-80 min-w-64 resize flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-xl"
-    >
-      <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <h2 className="text-sm font-semibold">{t('chat:title')}</h2>
-        <Button
-          variant="secondary"
+    <div className="help-dock">
+    <section aria-label={t('chat:title')} className="help-panel">
+      <header className="help-panel-header">
+        <h2 className="help-panel-title">{t('chat:title')}</h2>
+        <button
+          type="button"
           aria-label={t('chat:close')}
-          className="px-2 py-1 text-xs"
+          className="help-btn"
           onClick={() => {
             setOpen(false)
           }}
         >
           {t('chat:close')}
-        </Button>
+        </button>
       </header>
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+      <div className="help-panel-scroll">
         {bubbles.length === 0 ? <p className="text-sm text-muted">{t('chat:empty')}</p> : null}
         {bubbles.map((bubble) => (
           <div
             key={bubble.id}
             className={
               bubble.role === 'user'
-                ? 'self-end rounded-md bg-brand/15 px-2 py-1 text-sm'
-                : 'self-start rounded-md bg-surface-raised px-2 py-1 text-sm'
+                ? 'help-bubble help-bubble-user'
+                : 'help-bubble help-bubble-assistant'
             }
           >
             <p>
@@ -241,10 +244,10 @@ export const ChatWidget = (): React.JSX.Element => {
             {bubble.path !== null ? <Link to={bubble.path}>{t('chat:openSection')}</Link> : null}
             {bubble.rateId !== null ? (
               <p className="mt-1 flex flex-wrap gap-1">
-                <Button
-                  variant={bubble.useful === true ? 'primary' : 'secondary'}
+                <button
+                  type="button"
+                  className="help-btn"
                   aria-pressed={bubble.useful === true}
-                  className="px-2 py-1 text-xs"
                   onClick={() => {
                     void rateChat(bubble.rateId ?? '', true, sessionId)
                       .then(() => {
@@ -260,11 +263,11 @@ export const ChatWidget = (): React.JSX.Element => {
                   }}
                 >
                   {t('chat:useful')}
-                </Button>
-                <Button
-                  variant={bubble.useful === false ? 'primary' : 'secondary'}
+                </button>
+                <button
+                  type="button"
+                  className="help-btn"
                   aria-pressed={bubble.useful === false}
-                  className="px-2 py-1 text-xs"
                   onClick={() => {
                     void rateChat(bubble.rateId ?? '', false, sessionId)
                       .then(() => {
@@ -280,7 +283,7 @@ export const ChatWidget = (): React.JSX.Element => {
                   }}
                 >
                   {t('chat:notUseful')}
-                </Button>
+                </button>
               </p>
             ) : null}
           </div>
@@ -302,38 +305,38 @@ export const ChatWidget = (): React.JSX.Element => {
         ) : null}
       </div>
       {suggestions.length > 0 ? (
-        <ul aria-label={t('chat:suggestions')} className="flex flex-wrap gap-1 px-3 pb-2">
+        <ul aria-label={t('chat:suggestions')} className="help-topics">
           {suggestions.map((item) => (
             <li key={item}>
-              <Button
-                variant="secondary"
-                className="px-2 py-1 text-xs"
+              <button
+                type="button"
+                className="help-btn"
                 onClick={() => {
                   send(item)
                 }}
               >
                 {item}
-              </Button>
+              </button>
             </li>
           ))}
         </ul>
       ) : null}
-      <div className="flex flex-wrap gap-1 px-3 pb-2" aria-label={t('chat:topics')}>
+      <div className="help-topics" aria-label={t('chat:topics')}>
         {topics.map((topic) => (
-          <Button
+          <button
             key={topic}
-            variant="secondary"
-            className="px-2 py-1 text-xs"
+            type="button"
+            className="help-btn"
             onClick={() => {
               setDraft(topic)
             }}
           >
             {topic}
-          </Button>
+          </button>
         ))}
       </div>
       <form
-        className="flex gap-2 border-t border-border p-3"
+        className="help-panel-form"
         onSubmit={(event) => {
           event.preventDefault()
           send(draft)
@@ -343,7 +346,7 @@ export const ChatWidget = (): React.JSX.Element => {
           aria-label={t('chat:placeholder')}
           list="chat-topics"
           value={draft}
-          className="min-w-0 flex-1 rounded border border-border bg-transparent px-2 py-1 text-sm"
+          className="help-field"
           placeholder={t('chat:placeholder')}
           onChange={(event) => {
             setDraft(event.target.value)
@@ -354,11 +357,11 @@ export const ChatWidget = (): React.JSX.Element => {
             <option key={topic} value={topic} />
           ))}
         </datalist>
-        <Button type="submit" disabled={pending} className="px-3 py-1">
+        <button type="submit" className="help-btn help-btn-primary" disabled={pending}>
           {t('chat:send')}
-        </Button>
+        </button>
       </form>
-      <footer className="flex flex-wrap gap-2 px-3 pb-3 text-xs">
+      <footer className="help-panel-footer">
         <label className="cursor-pointer">
           {t('chat:attach')}
           <input
@@ -370,21 +373,21 @@ export const ChatWidget = (): React.JSX.Element => {
             }}
           />
         </label>
-        <Button variant="secondary" className="px-2 py-1 text-xs" onClick={clear}>
+        <button type="button" className="help-btn" onClick={clear}>
           {t('chat:clear')}
-        </Button>
-        <Button variant="secondary" className="px-2 py-1 text-xs" onClick={transfer}>
+        </button>
+        <button type="button" className="help-btn" onClick={transfer}>
           {t('chat:transfer')}
-        </Button>
-        <Button
-          variant="secondary"
-          className="px-2 py-1 text-xs"
+        </button>
+        <button
+          type="button"
+          className="help-btn"
           onClick={() => {
             setPrefsOpen((current) => !current)
           }}
         >
           {t('chat:preferences')}
-        </Button>
+        </button>
       </footer>
       {prefsOpen ? (
         <label className="flex items-center gap-2 px-3 pb-3 text-xs">
@@ -403,5 +406,6 @@ export const ChatWidget = (): React.JSX.Element => {
         </label>
       ) : null}
     </section>
+    </div>
   )
 }
