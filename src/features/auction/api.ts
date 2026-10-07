@@ -97,6 +97,48 @@ export const AUCTION_PAGE_SIZE = 16
 /** Tamanos que ofrece el selector; todos dentro del maximo de Auction (100). */
 export const AUCTION_PAGE_SIZE_OPTIONS = [16, 32, 48] as const
 
+/** Limite por defecto de `GET /v1/auctions/suggestions` (tambien el maximo de Auction es 20). */
+export const AUCTION_SUGGESTIONS_LIMIT = 8
+
+/** Minimo de caracteres que exige Auction antes de pedir sugerencias. */
+export const AUCTION_SUGGESTIONS_MIN_QUERY_LENGTH = 3
+
+export type AuctionPublisherType = 'PLAYER' | 'GAME_MASTER'
+export type AuctionPriceKind = 'CREDITS' | 'REAL_MONEY'
+/** Ordenes de `GET /v1/auctions`; priceAsc/priceDesc exigen `priceKind=CREDITS`. */
+export type ActiveAuctionSort = 'closingSoon' | 'newest' | 'priceAsc' | 'priceDesc' | 'mostBids'
+
+/** Criterios del marketplace; un campo ausente significa "sin filtro". */
+export interface ActiveAuctionQuery {
+  readonly page: number
+  readonly pageSize: number
+  readonly search?: string
+  readonly publisherType?: AuctionPublisherType
+  readonly priceKind?: AuctionPriceKind
+  readonly hasBuyNow?: boolean
+  readonly sort?: ActiveAuctionSort
+}
+
+/** Una coincidencia de `GET /v1/auctions/suggestions`. */
+export interface AuctionSuggestion {
+  readonly productId: string
+  readonly name: string
+  readonly type: string
+}
+
+export interface AuctionSuggestionsResponse {
+  readonly items: readonly AuctionSuggestion[]
+}
+
+/** Criterios de `GET /v1/auctions/suggestions`; no admite `sort`, `page` ni `pageSize`. */
+export interface AuctionSuggestionsQuery {
+  readonly q: string
+  readonly limit?: number
+  readonly publisherType?: AuctionPublisherType
+  readonly priceKind?: AuctionPriceKind
+  readonly hasBuyNow?: boolean
+}
+
 interface AuctionErrorBody {
   readonly code?: unknown
 }
@@ -164,12 +206,65 @@ export const publishOfficialAuction = (
     'Idempotency-Key': operationId,
   })
 
+/**
+ * `GET /v1/auctions`. Siempre envia `page` y `pageSize`, y el resto solo si
+ * esta definido, en orden fijo: sin filtros la URL sigue siendo exactamente
+ * `?page=N&pageSize=M`. El filtrado y el orden los resuelve Auction.
+ */
 export const listActiveAuctions = (
-  page: number,
-  pageSize: number = AUCTION_PAGE_SIZE,
+  query: ActiveAuctionQuery,
   signal?: AbortSignal,
-): Promise<ActiveAuctionPage> =>
-  httpClient.get<ActiveAuctionPage>(
-    `/v1/auctions?page=${String(page)}&pageSize=${String(pageSize)}`,
+): Promise<ActiveAuctionPage> => {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    pageSize: String(query.pageSize),
+  })
+
+  if (query.publisherType !== undefined) {
+    params.set('publisherType', query.publisherType)
+  }
+  if (query.search !== undefined && query.search !== '') {
+    params.set('search', query.search)
+  }
+  if (query.priceKind !== undefined) {
+    params.set('priceKind', query.priceKind)
+  }
+  if (query.hasBuyNow !== undefined) {
+    params.set('hasBuyNow', String(query.hasBuyNow))
+  }
+  if (query.sort !== undefined) {
+    params.set('sort', query.sort)
+  }
+
+  return httpClient.get<ActiveAuctionPage>(`/v1/auctions?${params.toString()}`, signal)
+}
+
+/**
+ * `GET /v1/auctions/suggestions`. Siempre envia `q`, y el resto -incluido
+ * `limit`- solo si esta definido. Nunca envia `sort`, `page` ni `pageSize`:
+ * Auction no los admite en este endpoint.
+ */
+export const listAuctionSuggestions = (
+  query: AuctionSuggestionsQuery,
+  signal?: AbortSignal,
+): Promise<AuctionSuggestionsResponse> => {
+  const params = new URLSearchParams({ q: query.q })
+
+  if (query.limit !== undefined) {
+    params.set('limit', String(query.limit))
+  }
+  if (query.publisherType !== undefined) {
+    params.set('publisherType', query.publisherType)
+  }
+  if (query.priceKind !== undefined) {
+    params.set('priceKind', query.priceKind)
+  }
+  if (query.hasBuyNow !== undefined) {
+    params.set('hasBuyNow', String(query.hasBuyNow))
+  }
+
+  return httpClient.get<AuctionSuggestionsResponse>(
+    `/v1/auctions/suggestions?${params.toString()}`,
     signal,
   )
+}

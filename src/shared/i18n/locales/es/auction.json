@@ -36,10 +36,59 @@
     "unavailable": "La subasta no está disponible para seguimiento.",
     "failed": "No se pudo seguir la subasta. Inténtalo de nuevo."
   },
+  "activity": {
+    "title": "Mi actividad de subastas",
+    "subtitle": "Consulta tus publicaciones, pujas y operaciones desde un único lugar.",
+    "related": "Accesos relacionados",
+    "watchlist": "Lista de seguimiento",
+    "pendingClaims": "Productos por reclamar",
+    "pageOf": "Página {{page}} de {{pages}}",
+    "minimumBid": "Puja mínima",
+    "currentBid": "Oferta vigente",
+    "bidCount": "Cantidad de pujas",
+    "closes": "Cierre",
+    "noBids": "Sin pujas",
+    "owned": {
+      "title": "Mis subastas",
+      "description": "Publicaciones asociadas a tu cuenta y las acciones autorizadas por Auction.",
+      "empty": "No has publicado subastas.",
+      "pagination": "Paginación de mis subastas",
+      "cancel": "Cancelar en el detalle"
+    },
+    "bids": {
+      "title": "Mis pujas",
+      "description": "Subastas en las que participaste, sin información privada de otros jugadores.",
+      "empty": "Todavía no has participado en subastas.",
+      "pagination": "Paginación de mis pujas",
+      "mine": "Mi última puja",
+      "status": { "LEADING": "Liderando", "OUTBID": "Superada", "WON": "Ganada", "LOST": "Perdida" }
+    },
+    "transactions": {
+      "title": "Historial",
+      "description": "Operaciones registradas por Auction sin reconstrucciones en el navegador.",
+      "empty": "No hay operaciones de subasta registradas.",
+      "pagination": "Paginación del historial",
+      "types": {
+        "PUBLICATION_FEE": "Comisión de publicación",
+        "BID_RESERVATION": "Reserva de puja",
+        "BUY_NOW_PURCHASE": "Compra inmediata",
+        "SETTLEMENT_SALE": "Liquidación de venta",
+        "SETTLEMENT_WIN": "Liquidación ganadora",
+        "CANCELLATION_REFUND": "Reembolso de cancelación",
+        "PRODUCT_CLAIM": "Reclamo de producto"
+      }
+    },
+    "statistics": {
+      "title": "Estadísticas disponibles",
+      "description": "Solo se presentan métricas respaldadas por una fuente autoritativa.",
+      "unavailable": "Las estadísticas de visualización todavía no están disponibles."
+    }
+  },
   "market": {
     "title": "Subastas activas",
-    "subtitle": "Las publicaciones oficiales aparecen primero según el orden definido por Auction.",
+    "subtitle": "Por defecto, las publicaciones oficiales aparecen primero según el orden definido por Auction.",
     "otherViews": "Otras vistas de subastas",
+    "myActivity": "Mi actividad",
     "myFollowed": "Mis subastas seguidas",
     "publishMine": "Publicar mi subasta",
     "publishOfficial": "Publicar producto oficial",
@@ -55,7 +104,36 @@
     "timeRemaining": "Tiempo restante",
     "buyNow": "Compra inmediata",
     "buyNowNone": "No disponible",
-    "buyNowAction": "Comprar ahora"
+    "buyNowAction": "Comprar ahora",
+    "filters": "Filtros de subastas",
+    "searchLabel": "Buscar subastas",
+    "searchPlaceholder": "Buscar por nombre de producto",
+    "clearSearch": "Limpiar búsqueda",
+    "suggestionsLoading": "Buscando sugerencias...",
+    "suggestionsEmpty": "Sin sugerencias para esta búsqueda.",
+    "suggestionsError": "No se pudieron cargar las sugerencias.",
+    "publisherFilter": "Publicador",
+    "publisherAll": "Todos",
+    "publisherPlayer": "Jugadores",
+    "publisherOfficial": "Oficiales",
+    "priceKindFilter": "Tipo de precio",
+    "priceKindAll": "Todos",
+    "priceKindCredits": "Créditos",
+    "priceKindRealMoney": "Dinero real",
+    "buyNowFilter": "Compra inmediata",
+    "buyNowAll": "Todas",
+    "buyNowWith": "Con compra inmediata",
+    "buyNowWithout": "Sin compra inmediata",
+    "sortLabel": "Ordenar por",
+    "sortDefault": "Orden por defecto",
+    "sortClosingSoon": "Próximas a cerrar",
+    "sortNewest": "Más recientes",
+    "sortMostBids": "Más pujas",
+    "sortPriceAsc": "Precio menor",
+    "sortPriceDesc": "Precio mayor",
+    "sortPriceHint": "Ordenar por precio muestra solo subastas en créditos.",
+    "clearFilters": "Limpiar filtros",
+    "emptyFiltered": "Ninguna subasta activa coincide con los filtros."
   },
   "validation": {
     "productRequired": "Selecciona un producto de tu inventario.",
@@ -92,13 +170,64 @@
     "DEPENDENCY_UNAVAILABLE": "El servicio de créditos no está disponible en este momento. Inténtalo más tarde.",
     "unauthorized": "Tu sesión no es válida o venció. Vuelve a iniciar sesión."
   },
+  "cancellation": {
+    "title": "Cancelar subasta",
+    "description": "El servicio de subastas valida la disponibilidad definitiva.",
+    "action": "Cancelar subasta",
+    "hasBids": "No puedes cancelar una subasta que ya tiene pujas.",
+    "confirmTitle": "Confirmar cancelación",
+    "confirmBody": "La subasta quedará cancelada, el producto volverá a tu inventario, se aplica una penalización del 50 % de la comisión pagada y se reembolsa el otro 50 %.",
+    "penalty": "Penalización (50 %)",
+    "refund": "Reembolso (50 %)",
+    "confirmAction": "Sí, cancelar subasta",
+    "completed": "Subasta cancelada. El producto fue devuelto y se procesó el reembolso correspondiente.",
+    "processing": "La subasta fue cancelada. La devolución del producto o el reembolso todavía se está procesando.",
+    "terminal": "La subasta fue cancelada, pero una operación asociada requiere revisión.",
+    "cancelledOn": "Cancelada el {{date}}.",
+    "network": "No se pudo completar la cancelación por un problema de conexión. Se reintentará automáticamente.",
+    "errors": {
+      "AUCTION_HAS_BIDS": "No puedes cancelar una subasta que ya tiene pujas.",
+      "AUCTION_CANCELLATION_WINDOW_CLOSED": "No puedes cancelar la subasta durante las últimas 6 horas.",
+      "AUCTION_NOT_OWNER": "No tienes permiso para cancelar esta subasta.",
+      "AUCTION_NOT_ACTIVE": "Esta subasta ya no está activa.",
+      "AUCTION_NOT_FOUND": "No encontramos esta subasta.",
+      "IDEMPOTENCY_CONFLICT": "No se pudo repetir la operación de forma segura. Inténtalo nuevamente.",
+      "INVALID_IDEMPOTENCY_KEY": "No se pudo preparar la operación. Inténtalo nuevamente.",
+      "DEPENDENCY_UNAVAILABLE": "No pudimos completar una operación asociada. Inténtalo nuevamente.",
+      "unauthorized": "Tu sesión no es válida o venció. Vuelve a iniciar sesión."
+    }
+  },
   "detail": {
     "notActive": "Esta subasta ya no esta activa",
     "currentStatus": "Estado actual: {{status}}.",
     "ownTitle": "Es tu propia subasta",
     "ownDescription": "No puedes ejecutar la compra inmediata de un producto que tu mismo publicaste.",
     "bids": "Número de pujas",
-    "timeRemaining": "Tiempo restante"
+    "timeRemaining": "Tiempo restante",
+    "share": "Compartir",
+    "shareTitle": "Compartir subasta",
+    "shareText": "Mira esta subasta en Nexus Battle.",
+    "shareCopied": "Enlace copiado",
+    "shareError": "No se pudo compartir la subasta",
+    "seller": {
+      "title": "Vendedor",
+      "unavailable": "Vendedor no disponible"
+    },
+    "notFound": {
+      "title": "Subasta no encontrada",
+      "description": "Esta subasta no existe o ya no está disponible.",
+      "backToMarketplace": "Volver al marketplace"
+    },
+    "forbidden": {
+      "title": "Acceso no permitido",
+      "description": "No tienes permisos para consultar esta subasta."
+    },
+    "bidHistory": {
+      "title": "Historial de pujas",
+      "empty": "No hay pujas registradas.",
+      "error": "No se pudo cargar el historial de pujas.",
+      "pagination": "Paginación del historial de pujas"
+    }
   },
   "countdown": {
     "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",

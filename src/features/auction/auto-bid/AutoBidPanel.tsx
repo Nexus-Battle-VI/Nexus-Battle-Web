@@ -2,14 +2,15 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { HttpError } from '@/lib/http'
-import type { AuctionDetail } from '../detail-api'
+import type { PlayerAuctionDetail } from '../detail-api'
 import { configureAutoBid, type AutoBidConfig } from './api'
 import { AutoBidConfigCard, type AutoBidConfigStage } from './AutoBidConfigCard'
 import { i18n } from '@/shared/i18n/i18n'
 import { currentLanguage } from '@/shared/i18n/language'
 
 interface AutoBidPanelProps {
-  readonly auction: AuctionDetail
+  /** Solo PLAYER/CREDITS: una subasta oficial (HU-88) no admite pujas. */
+  readonly auction: PlayerAuctionDetail
   readonly subject: string | null
   readonly availableCredits?: number
 }
@@ -121,7 +122,7 @@ export const AutoBidPanel = ({
 }
 
 const useStateStage = (
-  auction: AuctionDetail,
+  auction: PlayerAuctionDetail,
   subject: string | null,
 ): [AutoBidConfigStage, (stage: AutoBidConfigStage) => void] => {
   const [stage, setStage] = useState<AutoBidConfigStage>(

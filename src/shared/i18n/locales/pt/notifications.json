@@ -35,7 +35,9 @@
     "AUCTION_SETTLED_SELLER": "Leilão vendido",
     "AUCTION_SETTLED_WINNER": "Você venceu o leilão",
     "AUCTION_SETTLED_LOSER": "Leilão encerrado",
-    "AUCTION_SETTLED_WITHOUT_BIDS": "Leilão sem lances"
+    "AUCTION_SETTLED_WITHOUT_BIDS": "Leilão sem lances",
+    "BATTLE_DROP_GAINED": "Item obtido",
+    "BATTLE_DROP_LOST": "Item perdido"
   },
   "admin": {
     "crumb": "Banner informativo",

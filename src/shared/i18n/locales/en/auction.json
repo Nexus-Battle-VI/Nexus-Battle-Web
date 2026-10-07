@@ -35,10 +35,59 @@
     "unavailable": "The auction is not available to follow.",
     "failed": "The auction could not be followed. Try again."
   },
+  "activity": {
+    "title": "My auction activity",
+    "subtitle": "Review your listings, bids and operations in one place.",
+    "related": "Related shortcuts",
+    "watchlist": "Watchlist",
+    "pendingClaims": "Products to claim",
+    "pageOf": "Page {{page}} of {{pages}}",
+    "minimumBid": "Minimum bid",
+    "currentBid": "Current offer",
+    "bidCount": "Number of bids",
+    "closes": "Closes",
+    "noBids": "No bids",
+    "owned": {
+      "title": "My auctions",
+      "description": "Listings associated with your account and actions authorized by Auction.",
+      "empty": "You have not published any auctions.",
+      "pagination": "My auctions pagination",
+      "cancel": "Cancel from details"
+    },
+    "bids": {
+      "title": "My bids",
+      "description": "Auctions you joined, without private information from other players.",
+      "empty": "You have not participated in any auctions yet.",
+      "pagination": "My bids pagination",
+      "mine": "My latest bid",
+      "status": { "LEADING": "Leading", "OUTBID": "Outbid", "WON": "Won", "LOST": "Lost" }
+    },
+    "transactions": {
+      "title": "History",
+      "description": "Operations recorded by Auction without browser-side reconstruction.",
+      "empty": "There are no recorded auction operations.",
+      "pagination": "History pagination",
+      "types": {
+        "PUBLICATION_FEE": "Publication fee",
+        "BID_RESERVATION": "Bid reservation",
+        "BUY_NOW_PURCHASE": "Buy-now purchase",
+        "SETTLEMENT_SALE": "Sale settlement",
+        "SETTLEMENT_WIN": "Winning settlement",
+        "CANCELLATION_REFUND": "Cancellation refund",
+        "PRODUCT_CLAIM": "Product claim"
+      }
+    },
+    "statistics": {
+      "title": "Available statistics",
+      "description": "Only metrics backed by an authoritative source are shown.",
+      "unavailable": "View statistics are not available yet."
+    }
+  },
   "market": {
     "title": "Active auctions",
-    "subtitle": "Official listings appear first, in the order defined by Auction.",
+    "subtitle": "By default, official listings appear first, in the order defined by Auction.",
     "otherViews": "Other auction views",
+    "myActivity": "My activity",
     "myFollowed": "My followed auctions",
     "publishMine": "Publish my auction",
     "publishOfficial": "Publish official product",
@@ -54,7 +103,36 @@
     "timeRemaining": "Time left",
     "buyNow": "Buy now price",
     "buyNowNone": "Not available",
-    "buyNowAction": "Buy now"
+    "buyNowAction": "Buy now",
+    "filters": "Auction filters",
+    "searchLabel": "Search auctions",
+    "searchPlaceholder": "Search by product name",
+    "clearSearch": "Clear search",
+    "suggestionsLoading": "Searching suggestions...",
+    "suggestionsEmpty": "No suggestions for this search.",
+    "suggestionsError": "Suggestions could not be loaded.",
+    "publisherFilter": "Publisher",
+    "publisherAll": "All",
+    "publisherPlayer": "Players",
+    "publisherOfficial": "Official",
+    "priceKindFilter": "Price type",
+    "priceKindAll": "All",
+    "priceKindCredits": "Credits",
+    "priceKindRealMoney": "Real money",
+    "buyNowFilter": "Buy now",
+    "buyNowAll": "All",
+    "buyNowWith": "With buy now",
+    "buyNowWithout": "Without buy now",
+    "sortLabel": "Sort by",
+    "sortDefault": "Default order",
+    "sortClosingSoon": "Closing soon",
+    "sortNewest": "Newest",
+    "sortMostBids": "Most bids",
+    "sortPriceAsc": "Lowest price",
+    "sortPriceDesc": "Highest price",
+    "sortPriceHint": "Sorting by price shows only credit auctions.",
+    "clearFilters": "Clear filters",
+    "emptyFiltered": "No active auctions match the filters."
   },
   "validation": {
     "productRequired": "Select a product from your inventory.",
@@ -91,13 +169,64 @@
     "DEPENDENCY_UNAVAILABLE": "The credits service is not available right now. Try again later.",
     "unauthorized": "Your session is invalid or has expired. Sign in again."
   },
+  "cancellation": {
+    "title": "Cancel auction",
+    "description": "The auction service makes the final eligibility decision.",
+    "action": "Cancel auction",
+    "hasBids": "You cannot cancel an auction that already has bids.",
+    "confirmTitle": "Confirm cancellation",
+    "confirmBody": "The auction will be cancelled, the product will return to your inventory, a 50% fee penalty applies, and the other 50% will be refunded.",
+    "penalty": "Penalty (50%)",
+    "refund": "Refund (50%)",
+    "confirmAction": "Yes, cancel auction",
+    "completed": "Auction cancelled. The product was returned and the applicable refund was processed.",
+    "processing": "The auction was cancelled. The product return or refund is still being processed.",
+    "terminal": "The auction was cancelled, but an associated operation requires review.",
+    "cancelledOn": "Cancelled on {{date}}.",
+    "network": "The cancellation could not be completed due to a connection problem. It will be retried automatically.",
+    "errors": {
+      "AUCTION_HAS_BIDS": "You cannot cancel an auction that already has bids.",
+      "AUCTION_CANCELLATION_WINDOW_CLOSED": "You cannot cancel the auction during its last 6 hours.",
+      "AUCTION_NOT_OWNER": "You do not have permission to cancel this auction.",
+      "AUCTION_NOT_ACTIVE": "This auction is no longer active.",
+      "AUCTION_NOT_FOUND": "We could not find this auction.",
+      "IDEMPOTENCY_CONFLICT": "The operation could not be safely repeated. Try again.",
+      "INVALID_IDEMPOTENCY_KEY": "The operation could not be prepared. Try again.",
+      "DEPENDENCY_UNAVAILABLE": "We could not complete an associated operation. Try again.",
+      "unauthorized": "Your session is invalid or has expired. Sign in again."
+    }
+  },
   "detail": {
     "notActive": "This auction is no longer active",
     "currentStatus": "Current status: {{status}}.",
     "ownTitle": "This is your own auction",
     "ownDescription": "You can't buy now a product you published yourself.",
     "bids": "Number of bids",
-    "timeRemaining": "Time left"
+    "timeRemaining": "Time left",
+    "share": "Share",
+    "shareTitle": "Share auction",
+    "shareText": "Check out this auction on Nexus Battle.",
+    "shareCopied": "Link copied",
+    "shareError": "The auction could not be shared",
+    "seller": {
+      "title": "Seller",
+      "unavailable": "Seller unavailable"
+    },
+    "notFound": {
+      "title": "Auction not found",
+      "description": "This auction doesn't exist or is no longer available.",
+      "backToMarketplace": "Back to marketplace"
+    },
+    "forbidden": {
+      "title": "Access not allowed",
+      "description": "You don't have permission to view this auction."
+    },
+    "bidHistory": {
+      "title": "Bid history",
+      "empty": "No bids recorded yet.",
+      "error": "The bid history could not be loaded.",
+      "pagination": "Bid history pagination"
+    }
   },
   "countdown": {
     "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",

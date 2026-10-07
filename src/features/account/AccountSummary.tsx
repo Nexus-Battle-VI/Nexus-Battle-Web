@@ -44,7 +44,10 @@ export const AccountSummary = ({ account }: AccountSummaryProps): React.JSX.Elem
       />
 
       <div className="min-w-0">
-        <p className="truncate text-base font-semibold text-ink" title={account.displayName}>
+        <p
+          className="account-summary-name truncate text-base font-semibold"
+          title={account.displayName}
+        >
           {account.displayName}
         </p>
         <p className="truncate text-sm text-muted" title={account.email}>
@@ -57,10 +60,7 @@ export const AccountSummary = ({ account }: AccountSummaryProps): React.JSX.Elem
       {account.roles.length > 0 && (
         <ul className="flex flex-wrap justify-center gap-1.5">
           {account.roles.map((role) => (
-            <li
-              key={role}
-              className="rounded-full border border-border px-2 py-0.5 text-xs text-muted"
-            >
+            <li key={role} className="account-role-badge rounded-full px-2 py-0.5 text-xs">
               {roleLabel(role)}
             </li>
           ))}

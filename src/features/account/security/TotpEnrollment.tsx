@@ -140,7 +140,11 @@ export const TotpEnrollment = ({
       {association === null ? (
         <div className="space-y-3">
           <p className="text-sm text-muted">{t('account:totp.intro')}</p>
-          <Button onClick={() => void handleEnroll()} loading={associating}>
+          <Button
+            variant="account-primary"
+            onClick={() => void handleEnroll()}
+            loading={associating}
+          >
             {t('account:totp.setup')}
           </Button>
         </div>
@@ -183,7 +187,11 @@ export const TotpEnrollment = ({
             />
           </div>
 
-          <Button onClick={() => void handleConfirm()} loading={confirming}>
+          <Button
+            variant="account-primary"
+            onClick={() => void handleConfirm()}
+            loading={confirming}
+          >
             {t('account:totp.confirm')}
           </Button>
         </div>

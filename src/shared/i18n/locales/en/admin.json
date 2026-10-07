@@ -243,6 +243,8 @@
       "setCodeHint": "In UPPERCASE, or empty if it doesn't belong to a set.",
       "compatibleSubtype": "Compatible hero subtype",
       "specificEffect": "Specific effect",
+      "specificEffects": "Specific effects",
+      "specificEffectN": "Specific effect {{index}}",
       "addGeneral": "Add optional general effect",
       "addGeneralHint": "It applies to any hero using the Epic; the specific one only to the compatible subtype.",
       "generalEffect": "General effect",

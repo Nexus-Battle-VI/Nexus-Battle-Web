@@ -36,10 +36,59 @@
     "unavailable": "O leilão não está disponível para seguir.",
     "failed": "Não foi possível seguir o leilão. Tente novamente."
   },
+  "activity": {
+    "title": "Minha atividade de leilões",
+    "subtitle": "Consulte suas publicações, lances e operações em um só lugar.",
+    "related": "Acessos relacionados",
+    "watchlist": "Lista de acompanhamento",
+    "pendingClaims": "Produtos para resgatar",
+    "pageOf": "Página {{page}} de {{pages}}",
+    "minimumBid": "Lance mínimo",
+    "currentBid": "Oferta atual",
+    "bidCount": "Quantidade de lances",
+    "closes": "Encerramento",
+    "noBids": "Sem lances",
+    "owned": {
+      "title": "Meus leilões",
+      "description": "Publicações associadas à sua conta e ações autorizadas pelo Auction.",
+      "empty": "Você não publicou leilões.",
+      "pagination": "Paginação dos meus leilões",
+      "cancel": "Cancelar nos detalhes"
+    },
+    "bids": {
+      "title": "Meus lances",
+      "description": "Leilões dos quais você participou, sem informações privadas de outros jogadores.",
+      "empty": "Você ainda não participou de leilões.",
+      "pagination": "Paginação dos meus lances",
+      "mine": "Meu último lance",
+      "status": { "LEADING": "Liderando", "OUTBID": "Superado", "WON": "Ganho", "LOST": "Perdido" }
+    },
+    "transactions": {
+      "title": "Histórico",
+      "description": "Operações registradas pelo Auction sem reconstrução no navegador.",
+      "empty": "Não há operações de leilão registradas.",
+      "pagination": "Paginação do histórico",
+      "types": {
+        "PUBLICATION_FEE": "Comissão de publicação",
+        "BID_RESERVATION": "Reserva de lance",
+        "BUY_NOW_PURCHASE": "Compra imediata",
+        "SETTLEMENT_SALE": "Liquidação da venda",
+        "SETTLEMENT_WIN": "Liquidação vencedora",
+        "CANCELLATION_REFUND": "Reembolso de cancelamento",
+        "PRODUCT_CLAIM": "Resgate de produto"
+      }
+    },
+    "statistics": {
+      "title": "Estatísticas disponíveis",
+      "description": "Somente métricas respaldadas por uma fonte autoritativa são exibidas.",
+      "unavailable": "As estatísticas de visualização ainda não estão disponíveis."
+    }
+  },
   "market": {
     "title": "Leilões ativos",
-    "subtitle": "As publicações oficiais aparecem primeiro, na ordem definida pelo Auction.",
+    "subtitle": "Por padrão, as publicações oficiais aparecem primeiro, na ordem definida pelo Auction.",
     "otherViews": "Outras visões de leilões",
+    "myActivity": "Minha atividade",
     "myFollowed": "Meus leilões seguidos",
     "publishMine": "Publicar meu leilão",
     "publishOfficial": "Publicar produto oficial",
@@ -55,7 +104,36 @@
     "timeRemaining": "Tempo restante",
     "buyNow": "Compra imediata",
     "buyNowNone": "Não disponível",
-    "buyNowAction": "Comprar agora"
+    "buyNowAction": "Comprar agora",
+    "filters": "Filtros de leilões",
+    "searchLabel": "Pesquisar leilões",
+    "searchPlaceholder": "Pesquisar por nome do produto",
+    "clearSearch": "Limpar pesquisa",
+    "suggestionsLoading": "Buscando sugestões...",
+    "suggestionsEmpty": "Nenhuma sugestão para esta busca.",
+    "suggestionsError": "Não foi possível carregar as sugestões.",
+    "publisherFilter": "Publicador",
+    "publisherAll": "Todos",
+    "publisherPlayer": "Jogadores",
+    "publisherOfficial": "Oficiais",
+    "priceKindFilter": "Tipo de preço",
+    "priceKindAll": "Todos",
+    "priceKindCredits": "Créditos",
+    "priceKindRealMoney": "Dinheiro real",
+    "buyNowFilter": "Compra imediata",
+    "buyNowAll": "Todas",
+    "buyNowWith": "Com compra imediata",
+    "buyNowWithout": "Sem compra imediata",
+    "sortLabel": "Ordenar por",
+    "sortDefault": "Ordem padrão",
+    "sortClosingSoon": "Encerrando em breve",
+    "sortNewest": "Mais recentes",
+    "sortMostBids": "Mais lances",
+    "sortPriceAsc": "Menor preço",
+    "sortPriceDesc": "Maior preço",
+    "sortPriceHint": "Ordenar por preço mostra apenas leilões em créditos.",
+    "clearFilters": "Limpar filtros",
+    "emptyFiltered": "Nenhum leilão ativo corresponde aos filtros."
   },
   "validation": {
     "productRequired": "Selecione um produto do seu inventário.",
@@ -92,13 +170,64 @@
     "DEPENDENCY_UNAVAILABLE": "O serviço de créditos não está disponível no momento. Tente mais tarde.",
     "unauthorized": "Sua sessão é inválida ou expirou. Entre novamente."
   },
+  "cancellation": {
+    "title": "Cancelar leilão",
+    "description": "O serviço de leilões toma a decisão final de elegibilidade.",
+    "action": "Cancelar leilão",
+    "hasBids": "Você não pode cancelar um leilão que já tem lances.",
+    "confirmTitle": "Confirmar cancelamento",
+    "confirmBody": "O leilão será cancelado, o produto voltará ao seu inventário, será aplicada uma penalidade de 50 % da taxa paga e os outros 50 % serão reembolsados.",
+    "penalty": "Penalidade (50 %)",
+    "refund": "Reembolso (50 %)",
+    "confirmAction": "Sim, cancelar leilão",
+    "completed": "Leilão cancelado. O produto foi devolvido e o reembolso aplicável foi processado.",
+    "processing": "O leilão foi cancelado. A devolução do produto ou o reembolso ainda está sendo processado.",
+    "terminal": "O leilão foi cancelado, mas uma operação associada requer revisão.",
+    "cancelledOn": "Cancelado em {{date}}.",
+    "network": "Não foi possível concluir o cancelamento devido a um problema de conexão. Ele será repetido automaticamente.",
+    "errors": {
+      "AUCTION_HAS_BIDS": "Você não pode cancelar um leilão que já tem lances.",
+      "AUCTION_CANCELLATION_WINDOW_CLOSED": "Você não pode cancelar o leilão nas últimas 6 horas.",
+      "AUCTION_NOT_OWNER": "Você não tem permissão para cancelar este leilão.",
+      "AUCTION_NOT_ACTIVE": "Este leilão não está mais ativo.",
+      "AUCTION_NOT_FOUND": "Não encontramos este leilão.",
+      "IDEMPOTENCY_CONFLICT": "Não foi possível repetir a operação com segurança. Tente novamente.",
+      "INVALID_IDEMPOTENCY_KEY": "Não foi possível preparar a operação. Tente novamente.",
+      "DEPENDENCY_UNAVAILABLE": "Não foi possível concluir uma operação associada. Tente novamente.",
+      "unauthorized": "Sua sessão é inválida ou expirou. Entre novamente."
+    }
+  },
   "detail": {
     "notActive": "Este leilão não está mais ativo",
     "currentStatus": "Status atual: {{status}}.",
     "ownTitle": "Este é o seu próprio leilão",
     "ownDescription": "Você não pode fazer a compra imediata de um produto que você mesmo publicou.",
     "bids": "Número de lances",
-    "timeRemaining": "Tempo restante"
+    "timeRemaining": "Tempo restante",
+    "share": "Compartilhar",
+    "shareTitle": "Compartilhar leilão",
+    "shareText": "Confira este leilão no Nexus Battle.",
+    "shareCopied": "Link copiado",
+    "shareError": "Não foi possível compartilhar o leilão",
+    "seller": {
+      "title": "Vendedor",
+      "unavailable": "Vendedor não disponível"
+    },
+    "notFound": {
+      "title": "Leilão não encontrado",
+      "description": "Este leilão não existe ou não está mais disponível.",
+      "backToMarketplace": "Voltar ao marketplace"
+    },
+    "forbidden": {
+      "title": "Acesso não permitido",
+      "description": "Você não tem permissão para consultar este leilão."
+    },
+    "bidHistory": {
+      "title": "Histórico de lances",
+      "empty": "Nenhum lance registrado.",
+      "error": "Não foi possível carregar o histórico de lances.",
+      "pagination": "Paginação do histórico de lances"
+    }
   },
   "countdown": {
     "days": "{{days}}d {{hours}}h {{minutes}}m {{seconds}}s",

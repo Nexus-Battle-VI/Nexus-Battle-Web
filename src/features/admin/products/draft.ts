@@ -70,7 +70,11 @@ export interface ProductDraft {
   readonly compatibleHeroSubtype: string
   readonly generalEffectEnabled: boolean
   readonly generalEffect: EffectDraft
-  readonly specificEffect: EffectDraft
+  /**
+   * Minimo 1 (GAP-HU31-CATALOG-MULTI-EFFECT): una epica puede combinar varios
+   * efectos especificos simultaneos (ej. +4 dano Y +2% critico, Tabla 20).
+   */
+  readonly specificEffects: readonly EffectDraft[]
 
   /**
    * Modalidad del tiraje, ELEGIDA y no deducida de un numero.
@@ -136,7 +140,7 @@ export const emptyDraft = (): ProductDraft => ({
   compatibleHeroSubtype: '',
   generalEffectEnabled: false,
   generalEffect: emptyEffect(),
-  specificEffect: emptyEffect(),
+  specificEffects: [emptyEffect()],
 
   printRunMode: 'LIMITED',
   printRun: '',

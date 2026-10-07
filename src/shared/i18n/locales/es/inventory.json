@@ -65,7 +65,32 @@
     "equip": "Equipar",
     "equipping": "Equipando…",
     "equipFailed": "No se pudo equipar el producto. Inténtalo de nuevo.",
-    "pickSlotHint": "Elige una ranura para ver qué objetos encajan."
+    "pickSlotHint": "Elige una ranura para ver qué objetos encajan.",
+    "battleLock": {
+      "message": "El equipamiento no se puede modificar: el héroe está participando en una batalla activa. Podrás volver a cambiarlo cuando termine."
+    }
+  },
+  "epic": {
+    "title": "Épica",
+    "chooseHero": "Elige un héroe para ver su épica equipada.",
+    "none": "Sin épica equipada.",
+    "equipped": "Equipada: {{name}}",
+    "compatible": "Compatible con {{subtype}}: se aplica el efecto específico.",
+    "incompatible": "No coincide con el subtipo del héroe: solo se aplica el efecto general.",
+    "generalEffect": "Efecto general",
+    "specificEffect": "Efecto específico",
+    "specificEffectN": "Efecto específico {{index}}",
+    "notApplicable": "No aplica",
+    "select": "Seleccionar épica",
+    "cancelSelect": "Cancelar selección",
+    "selectHint": "Elige una épica de tu inventario para equiparla.",
+    "selectedItem": "Seleccionado: {{item}}",
+    "equip": "Equipar épica",
+    "equipping": "Equipando…",
+    "equipFailed": "No se pudo equipar la épica. Inténtalo de nuevo.",
+    "battleLock": {
+      "message": "La épica no se puede cambiar: el héroe está participando en una batalla activa. Podrás volver a cambiarla cuando termine."
+    }
   },
   "slots": {
     "WEAPON_1": "Arma 1",

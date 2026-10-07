@@ -20,29 +20,92 @@ export interface AuctionDetailBid {
   readonly placedAt: string
 }
 
-export interface AuctionDetail {
+interface AuctionDetailBase {
   readonly id: string
   readonly sellerId: string
+  /** HU-88: perfil publico del vendedor (Account); `null` si no se pudo resolver. */
+  readonly sellerDisplayName: string | null
+  readonly sellerAvatarUrl: string | null
   readonly productId: string
   readonly durationHours: 24 | 48
   readonly publicationFeeCredits: number
-  readonly minimumBidCredits: number
-  readonly buyNowCredits: number | null
-  readonly status: string
+  readonly status: 'ACTIVE' | 'FINISHED' | 'SOLD' | 'CANCELLED'
   readonly publishedAt: string
   readonly closesAt: string
+  /** Fecha de cancelacion manual; solo existe para `CANCELLED` (HU-90). */
+  readonly cancelledAt?: string | null
   /** `null` si nadie ha pujado todavia. */
   readonly currentBid: AuctionDetailBid | null
   /** Total de pujas persistidas; no se deriva de `currentBid`. */
   readonly bidCount: number
 }
 
-/** `GET /api/v1/auctions/:auctionId` (HU-63.6). */
+/** Mismo vocabulario que `ActiveAuction` de `./api.ts` (listado): no se inventan nombres nuevos. */
+export interface PlayerAuctionDetail extends AuctionDetailBase {
+  readonly publisherType: 'PLAYER'
+  readonly priceKind: 'CREDITS'
+  readonly minimumBidCredits: number
+  readonly buyNowCredits: number | null
+  readonly currency: null
+  readonly minimumBidAmountMinor: null
+  readonly buyNowAmountMinor: null
+  readonly officialMark: null
+}
+
+export interface OfficialAuctionDetail extends AuctionDetailBase {
+  readonly publisherType: 'GAME_MASTER'
+  readonly priceKind: 'REAL_MONEY'
+  readonly minimumBidCredits: null
+  readonly buyNowCredits: null
+  readonly currency: string
+  readonly minimumBidAmountMinor: number
+  readonly buyNowAmountMinor: number | null
+  readonly officialMark: 'OFFICIAL' | 'PREMIUM'
+}
+
+export type AuctionDetail = PlayerAuctionDetail | OfficialAuctionDetail
+
+/** `GET /api/v1/auctions/:auctionId` (HU-63.6, extendido por HU-88). */
 export const fetchAuctionDetail = (
   auctionId: string,
   signal?: AbortSignal,
 ): Promise<AuctionDetail> =>
   httpClient.get<AuctionDetail>(`/v1/auctions/${encodeURIComponent(auctionId)}`, signal)
+
+/** Item publico del historial de pujas (HU-88): nunca trae identidad del postor. */
+export interface AuctionBidHistoryItem {
+  readonly id: string
+  readonly amountCredits: number
+  readonly placedAt: string
+}
+
+export interface AuctionBidHistoryPage {
+  readonly items: readonly AuctionBidHistoryItem[]
+  readonly total: number
+  readonly page: number
+  readonly pageSize: number
+}
+
+/** Mismo default que Auction (`GET /v1/auctions/:auctionId/bids`). */
+export const AUCTION_BID_HISTORY_PAGE_SIZE = 20
+
+/**
+ * `GET /v1/auctions/:auctionId/bids` (HU-88). Solo envia `page`/`pageSize`:
+ * Auction no admite ningun otro parametro en este endpoint.
+ */
+export const fetchAuctionBidHistory = (
+  auctionId: string,
+  page: number,
+  pageSize: number = AUCTION_BID_HISTORY_PAGE_SIZE,
+  signal?: AbortSignal,
+): Promise<AuctionBidHistoryPage> => {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
+
+  return httpClient.get<AuctionBidHistoryPage>(
+    `/v1/auctions/${encodeURIComponent(auctionId)}/bids?${params.toString()}`,
+    signal,
+  )
+}
 
 export interface BuyerCreditsSnapshot {
   readonly balance: number
@@ -127,6 +190,67 @@ export const executeBuyNow = (
  * HU-64.6.
  */
 export const isRetryableBuyNowError = (error: unknown): boolean => !(error instanceof HttpError)
+
+export type AuctionCancellationEffectStatus =
+  'PENDING' | 'CONFIRMED' | 'RETRYABLE' | 'TERMINAL_ERROR'
+
+/** Respuesta real de `POST /v1/auctions/:auctionId/cancel` (HU-90). */
+export interface AuctionCancellationConfirmation {
+  readonly auctionId: string
+  readonly status: 'CANCELLED'
+  readonly cancelledAt: string
+  readonly refundAmountCredits: number
+  readonly walletRefundStatus: AuctionCancellationEffectStatus
+  readonly inventoryReleaseStatus: AuctionCancellationEffectStatus
+  readonly replayed: boolean
+}
+
+export type AuctionCancellationErrorCode =
+  | 'AUCTION_NOT_FOUND'
+  | 'AUCTION_NOT_OWNER'
+  | 'AUCTION_NOT_ACTIVE'
+  | 'AUCTION_HAS_BIDS'
+  | 'AUCTION_CANCELLATION_WINDOW_CLOSED'
+  | 'IDEMPOTENCY_CONFLICT'
+  | 'INVALID_IDEMPOTENCY_KEY'
+  | 'DEPENDENCY_UNAVAILABLE'
+
+interface AuctionCancellationErrorBody {
+  readonly code?: AuctionCancellationErrorCode
+}
+
+/** El endpoint no recibe body: la identidad viene del token y la key del header. */
+export const cancelAuction = (
+  auctionId: string,
+  idempotencyKey: string,
+): Promise<AuctionCancellationConfirmation> =>
+  httpClient.post<AuctionCancellationConfirmation>(
+    `/v1/auctions/${encodeURIComponent(auctionId)}/cancel`,
+    undefined,
+    { 'Idempotency-Key': idempotencyKey },
+  )
+
+/** Solo fallos de red se reintentan; un rechazo de negocio es definitivo. */
+export const isRetryableAuctionCancellationError = (error: unknown): boolean =>
+  !(error instanceof HttpError)
+
+const cancellationErrorCode = (error: HttpError): AuctionCancellationErrorCode | undefined => {
+  const body = error.body
+
+  return typeof body === 'object' && body !== null && 'code' in body
+    ? (body as AuctionCancellationErrorBody).code
+    : undefined
+}
+
+export const describeAuctionCancellationFailure = (error: unknown): string => {
+  if (!(error instanceof HttpError)) return i18n.t('auction:cancellation.network')
+
+  const code = cancellationErrorCode(error)
+  if (code !== undefined) return i18n.t(`auction:cancellation.errors.${code}`)
+  if (error.isUnauthorized) return i18n.t('auction:cancellation.errors.unauthorized')
+
+  return describeFailure(error, i18n.t, currentLanguage())
+}
 
 const buyNowErrorCode = (error: HttpError): BuyNowErrorCode | undefined => {
   const body = error.body

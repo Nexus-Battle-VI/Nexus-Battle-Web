@@ -239,7 +239,13 @@ export const validateAttributes = (draft: ProductDraft): FieldErrors => {
       errors.compatibleHeroSubtype = i18n.t('admin:products.errors.codeFormat')
     }
 
-    validateEffect(draft.specificEffect, 'specificEffect', errors)
+    if (draft.specificEffects.length === 0) {
+      errors.specificEffects = i18n.t('admin:products.errors.effectRequired')
+    }
+
+    draft.specificEffects.forEach((effect, index) => {
+      validateEffect(effect, `specificEffects.${String(index)}`, errors)
+    })
 
     if (draft.generalEffectEnabled) {
       validateEffect(draft.generalEffect, 'generalEffect', errors)

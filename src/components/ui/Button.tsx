@@ -10,6 +10,9 @@ export type ButtonVariant =
   | 'battle-secondary'
   | 'battle-danger'
   | 'battle-compact'
+  | 'account-primary'
+  | 'account-secondary'
+  | 'account-danger'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant
@@ -41,6 +44,15 @@ const VARIANTS: Readonly<Record<ButtonVariant, string>> = {
   'battle-secondary': 'br-btn-secondary text-ink',
   'battle-danger': 'br-btn-danger text-ink',
   'battle-compact': 'br-btn-compact text-ink text-xs',
+  /*
+   * Remaster visual "Mi cuenta" (Sprint 3), mismo criterio que `battle-*`
+   * arriba: el aspecto real (gradiente CSS, SIN raster -leccion de
+   * `br-btn-*`, seccion 55/58 del brief- vive en
+   * `features/account/account.css` (`account-btn-*`); aqui solo el gancho.
+   */
+  'account-primary': 'account-btn-primary text-ink',
+  'account-secondary': 'account-btn-secondary text-ink',
+  'account-danger': 'account-btn-danger text-ink',
 }
 
 export const Button = ({

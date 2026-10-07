@@ -155,7 +155,9 @@ const attributeValuesOf = (draft: ProductDraft, type: ProductType): Record<strin
         kind: 'EPICA',
         compatibleHeroSubtype: draft.compatibleHeroSubtype.trim(),
         ...(draft.generalEffectEnabled ? { generalEffect: effectOf(draft.generalEffect) } : {}),
-        specificEffect: effectOf(draft.specificEffect),
+        // GAP-HU31-CATALOG-MULTI-EFFECT: Catalog admite varios efectos especificos
+        // simultaneos (lista, minimo 1), ya no un unico objeto.
+        specificEffects: draft.specificEffects.map(effectOf),
         powerCost: 0,
         cooldownTurns: 2,
       }

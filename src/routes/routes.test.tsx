@@ -75,7 +75,7 @@ describe('NAVIGATION', () => {
 })
 
 describe('ADMIN_NAVIGATION', () => {
-  it('declara los cinco accesos administrativos agrupados, sin duplicados', () => {
+  it('declara los accesos administrativos agrupados, sin duplicados', () => {
     const paths = ADMIN_NAVIGATION.map((item) => item.path)
 
     expect(paths).toEqual([
@@ -85,6 +85,9 @@ describe('ADMIN_NAVIGATION', () => {
       // que a su vez enlaza a `/admin/products/new` sin tocar ese path.
       '/admin/products',
       '/admin/banners',
+      '/admin/chatbot',
+      '/admin/chatbot/knowledge',
+      '/admin/chatbot/analytics',
       '/admin/roles',
       '/admin/comments/moderation',
     ])
@@ -309,12 +312,21 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('los modulos aun no implementados se muestran deshabilitados, no simulados', async () => {
+  it('/tournament abre el producto autenticado en DEV y conserva el alias de inscripción', async () => {
     useSession.setState(AUTHENTICATED_STATE)
-    renderRoute('/tournament')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(new Response('[]', { headers: { 'content-type': 'application/json' } })),
+      ),
+    )
+    const { router } = renderRoute('/tournament/registration')
 
     expect(await screen.findByRole('heading', { name: 'Torneo' })).toBeInTheDocument()
-    expect(screen.getByText('Módulo no disponible.')).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/tournament')
+    expect(screen.getByLabelText('Tu código de jugador')).toHaveValue(AUTHENTICATED_STATE.subject)
+    expect(await screen.findByText('No hay torneos disponibles todavía.')).toBeInTheDocument()
+    expect(screen.queryByText(/demo histórica/u)).not.toBeInTheDocument()
   })
 
   it('/missions muestra el tablón real en lugar del marcador', async () => {
@@ -385,6 +397,39 @@ describe('Proteccion visual de rutas (HU-02)', () => {
 
     expect(
       await screen.findByRole('heading', { name: 'Subastas en seguimiento' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
+  })
+
+  /** HU-89: el panel personal es una ruta protegida y distinta de HU-68/HU-69. */
+  it('/auction/activity renderiza el panel personal', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+        const body = url.includes('/me/view-statistics')
+          ? {
+              availability: 'UNAVAILABLE',
+              reason: 'AUTHORITATIVE_SOURCE_NOT_CONFIGURED',
+              metrics: [],
+            }
+          : url.includes('/me/pending-claims')
+            ? []
+            : { items: [], page: 1, pageSize: 16, total: 0 }
+        return Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          }),
+        )
+      }),
+    )
+    renderRoute('/auction/activity')
+
+    expect(
+      await screen.findByRole('heading', { name: 'Mi actividad de subastas' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Módulo no disponible.')).not.toBeInTheDocument()
   })

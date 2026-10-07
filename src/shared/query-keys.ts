@@ -25,6 +25,9 @@ export const queryKeys = {
       readonly type: string | null
       readonly lifecycleStatus: string | null
     }) => ['admin', 'products', params] as const,
+    chatbotModels: ['admin', 'chatbot', 'models'] as const,
+    chatbotAnalytics: ['admin', 'chatbot', 'analytics'] as const,
+    chatbotKnowledge: ['admin', 'chatbot', 'knowledge'] as const,
   },
   inventory: {
     byOwner: (ownerId: string) => ['inventory', ownerId] as const,
@@ -47,6 +50,14 @@ export const queryKeys = {
      */
     heroEquipment: (heroReference: string) =>
       ['inventory', 'me', 'hero-equipment', heroReference] as const,
+    /**
+     * Epica equipada de un heroe propio (HU-31,
+     * `GET /api/inventories/me/heroes/:heroId/epic`). Clave distinta de
+     * `heroEquipment`: agregado hermano de HeroLoadout, con su propio
+     * recurso y version -- mismo criterio que `heroSelection` frente a
+     * `heroEquipment`.
+     */
+    heroEpic: (heroReference: string) => ['inventory', 'me', 'hero-epic', heroReference] as const,
     /**
      * Heroes que el jugador puede preparar (HU-07,
      * `GET /api/inventories/me/heroes`). Sin parametros: el servicio deduce el
@@ -117,6 +128,15 @@ export const queryKeys = {
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
     detail: (auctionId: string) => ['auction', 'detail', auctionId] as const,
+    /**
+     * Historial publico y paginado de pujas (HU-88,
+     * `GET /v1/auctions/:auctionId/bids`). Clave propia, distinta de
+     * `detail`: son dos consultas distintas y no deben compartir cache.
+     */
+    bidHistory: (auctionId: string, page: number, pageSize: number) =>
+      ['auction', 'bidHistory', auctionId, page, pageSize] as const,
+    /** Prefijo de `bidHistory` para invalidar todas sus paginas tras una puja exitosa. */
+    bidHistoryAll: (auctionId: string) => ['auction', 'bidHistory', auctionId] as const,
     /** Lista privada del jugador autenticado (HU-68). */
     watchlist: ['auction', 'watchlist'] as const,
     /**
@@ -129,6 +149,16 @@ export const queryKeys = {
      * refrescan.
      */
     pendingClaims: ['auction', 'pending-claims'] as const,
+    /** Consultas privadas de HU-89; Auction deduce siempre al titular del JWT. */
+    activity: {
+      owned: (page: number, pageSize: number) =>
+        ['auction', 'activity', 'owned', page, pageSize] as const,
+      bids: (page: number, pageSize: number) =>
+        ['auction', 'activity', 'bids', page, pageSize] as const,
+      transactions: (page: number, pageSize: number) =>
+        ['auction', 'activity', 'transactions', page, pageSize] as const,
+      viewStatistics: ['auction', 'activity', 'view-statistics'] as const,
+    },
   },
   battleRooms: {
     /**
@@ -219,6 +249,33 @@ export const queryKeys = {
   },
   auctions: {
     active: ['auctions', 'active'] as const,
-    activePage: (page: number, pageSize: number) => ['auctions', 'active', page, pageSize] as const,
+    /**
+     * Una entrada por combinacion de pagina, tamano, filtros y orden. Todos los
+     * campos estan siempre presentes (`null` = sin filtro) para que la clave
+     * sea deterministica; el prefijo `active` sigue sirviendo para invalidar.
+     */
+    activePage: (params: {
+      readonly page: number
+      readonly pageSize: number
+      readonly search: string | null
+      readonly publisherType: string | null
+      readonly priceKind: string | null
+      readonly hasBuyNow: boolean | null
+      readonly sort: string | null
+    }) => ['auctions', 'active', params] as const,
+    /**
+     * Sugerencias de autocompletado (`GET /v1/auctions/suggestions`).
+     * Prefijo propio, distinto de `active`: no es la misma consulta ni
+     * invalida igual. Sin `sort`/`page`/`pageSize`, que ese endpoint no
+     * admite; `q` siempre presente para que una respuesta vieja nunca
+     * reemplace a la de una busqueda mas reciente.
+     */
+    suggestions: (params: {
+      readonly q: string
+      readonly limit: number
+      readonly publisherType: string | null
+      readonly priceKind: string | null
+      readonly hasBuyNow: boolean | null
+    }) => ['auctions', 'suggestions', params] as const,
   },
 } as const

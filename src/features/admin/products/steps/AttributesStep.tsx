@@ -292,15 +292,55 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
             />
           </div>
 
-          <EffectEditor
-            title={t('admin:products.attrs.specificEffect')}
-            value={draft.specificEffect}
-            errors={errors}
-            prefix="specificEffect"
-            onChange={(specificEffect) => {
-              onChange({ specificEffect })
-            }}
-          />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-ink">
+                {t('admin:products.attrs.specificEffects')}
+              </h3>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  onChange({ specificEffects: [...draft.specificEffects, emptyEffect()] })
+                }}
+              >
+                {t('admin:products.attrs.addEffect')}
+              </Button>
+            </div>
+
+            {errors.specificEffects !== undefined && (
+              <p role="alert" className="text-xs text-danger">
+                {errors.specificEffects}
+              </p>
+            )}
+
+            {draft.specificEffects.map((effect, index) => (
+              <EffectEditor
+                key={`specific-effect-${String(index)}`}
+                title={t('admin:products.attrs.specificEffectN', { index: String(index + 1) })}
+                value={effect}
+                errors={errors}
+                prefix={`specificEffects.${String(index)}`}
+                onChange={(next) => {
+                  onChange({
+                    specificEffects: draft.specificEffects.map((current, position) =>
+                      position === index ? next : current,
+                    ),
+                  })
+                }}
+                {...(draft.specificEffects.length > 1
+                  ? {
+                      onRemove: (): void => {
+                        onChange({
+                          specificEffects: draft.specificEffects.filter(
+                            (_, position) => position !== index,
+                          ),
+                        })
+                      },
+                    }
+                  : {})}
+              />
+            ))}
+          </div>
 
           <CheckboxField
             label={t('admin:products.attrs.addGeneral')}

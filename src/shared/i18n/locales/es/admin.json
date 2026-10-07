@@ -245,6 +245,8 @@
       "setCodeHint": "En MAYÚSCULAS, o vacío si no pertenece a un conjunto.",
       "compatibleSubtype": "Subtipo de héroe compatible",
       "specificEffect": "Efecto específico",
+      "specificEffects": "Efectos específicos",
+      "specificEffectN": "Efecto específico {{index}}",
       "addGeneral": "Agregar efecto general opcional",
       "addGeneralHint": "Se aplica a cualquier héroe que use la Épica; el específico solo al subtipo compatible.",
       "generalEffect": "Efecto general",

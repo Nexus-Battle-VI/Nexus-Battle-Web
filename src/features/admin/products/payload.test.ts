@@ -159,7 +159,7 @@ describe('Construccion de la peticion', () => {
 
   it('una epica sin efecto general no lo envia', () => {
     const request = buildCreateRequest(
-      base({ type: 'EPICA', compatibleHeroSubtype: 'GUERRERO', specificEffect: fixedEffect() }),
+      base({ type: 'EPICA', compatibleHeroSubtype: 'GUERRERO', specificEffects: [fixedEffect()] }),
     )
 
     const values = request.attributes.values
@@ -167,5 +167,23 @@ describe('Construccion de la peticion', () => {
     expect(values).not.toHaveProperty('generalEffect')
     expect(values.powerCost).toBe(0)
     expect(values.cooldownTurns).toBe(2)
+  })
+
+  it('una epica con varios efectos especificos los envia TODOS, en orden (GAP-HU31-CATALOG-MULTI-EFFECT)', () => {
+    const second: ProductDraft['effects'][number] = {
+      ...fixedEffect(),
+      statistic: 'CRITICAL_CHANCE',
+    }
+    const request = buildCreateRequest(
+      base({
+        type: 'EPICA',
+        compatibleHeroSubtype: 'GUERRERO',
+        specificEffects: [fixedEffect(), second],
+      }),
+    )
+
+    const values = request.attributes.values as { specificEffects: readonly unknown[] }
+
+    expect(values.specificEffects).toHaveLength(2)
   })
 })

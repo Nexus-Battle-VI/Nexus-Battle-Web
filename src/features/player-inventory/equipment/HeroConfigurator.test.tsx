@@ -52,11 +52,16 @@ const OWNED = [ownedHero('guerrero-tanque', 'Guerrero Tanque', 'GUERRERO_TANQUE'
  * seleccion preparada (`/heroes/selection`) y el equipamiento. Un mock ciego le
  * daria a una respuesta la forma de otra y el test pasaria por casualidad.
  */
+/** HU-31: sin epica equipada, sin bloqueo -- el estado por defecto de la mayoria de las pruebas de HU-28/HU-29, que no la ejercitan. */
+const NO_EPIC = (): Response =>
+  json({ heroId: 'pid-guerrero-tanque', epic: null, version: 0, locked: false })
+
 const routedFetch =
   (
     onEquipment: (url: string, init?: RequestInit) => Response,
     onSelection: (url: string, init?: RequestInit) => Response = NO_SELECTION,
     heroes: () => Response = () => json(OWNED),
+    onEpic: (url: string, init?: RequestInit) => Response = NO_EPIC,
   ): ((input: string, init?: RequestInit) => Promise<Response>) =>
   (input: string, init?: RequestInit) =>
     Promise.resolve(
@@ -64,7 +69,9 @@ const routedFetch =
         ? heroes()
         : input.includes('/selection')
           ? onSelection(input, init)
-          : onEquipment(input, init),
+          : input.includes('/epic')
+            ? onEpic(input, init)
+            : onEquipment(input, init),
     )
 
 const EMPTY_EQUIPMENT = {
@@ -80,6 +87,7 @@ const EMPTY_EQUIPMENT = {
   effectiveStats: BASE_STATS,
   deltas: [],
   activeEffects: [],
+  locked: false,
 }
 
 const EQUIPPED = {
@@ -155,6 +163,7 @@ const Harness = ({
   productType = null,
 }: HarnessProps): React.JSX.Element => {
   const [slot, setSlot] = useState<EquipmentSlotId | null>(null)
+  const [selectingEpic, setSelectingEpic] = useState(false)
   return (
     <HeroConfigurator
       selectedProductReference={productReference}
@@ -162,6 +171,10 @@ const Harness = ({
       selectedProductType={productType}
       selectedSlot={slot}
       onSelectSlot={setSlot}
+      selectingEpic={selectingEpic}
+      onToggleSelectingEpic={() => {
+        setSelectingEpic((active) => !active)
+      }}
     />
   )
 }
@@ -544,5 +557,453 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Catalog no disponible.')
+  })
+})
+
+const NO_EPIC_EQUIPPED = { heroId: 'pid-guerrero-tanque', epic: null, version: 0, locked: false }
+
+const GOLPE_DE_DEFENSA_EPIC = {
+  epicProductId: 'pid-golpe-de-defensa',
+  epicReference: 'golpe-de-defensa',
+  name: 'Golpe de defensa',
+  imageUrl: '',
+  compatibleHeroSubtype: 'GUERRERO_TANQUE',
+  baseEffect: {
+    kind: 'STAT_MODIFIER',
+    target: 'SELF',
+    statistic: 'DEFENSE',
+    operation: 'INCREASE',
+    magnitude: { mode: 'FIXED', amount: 4 },
+  },
+  specificEffects: [
+    {
+      kind: 'STAT_MODIFIER',
+      target: 'SELF',
+      statistic: 'ATTACK',
+      operation: 'INCREASE',
+      magnitude: { mode: 'FIXED', amount: 2 },
+    },
+  ],
+}
+
+const EPIC_EQUIPPED = (
+  overrides: {
+    readonly applied?: { readonly baseApplied: unknown; readonly additionalApplied: unknown }
+    readonly locked?: boolean
+  } = {},
+): Record<string, unknown> => ({
+  heroId: 'pid-guerrero-tanque',
+  epic: {
+    ...GOLPE_DE_DEFENSA_EPIC,
+    applied: overrides.applied ?? {
+      baseApplied: GOLPE_DE_DEFENSA_EPIC.baseEffect,
+      additionalApplied: GOLPE_DE_DEFENSA_EPIC.specificEffects,
+    },
+  },
+  version: 1,
+  locked: overrides.locked ?? false,
+})
+
+/**
+ * HU-31 (contrato `hu-31-equipped-epic-v1`): Web presenta la epica equipada
+ * y permite seleccionar una nueva del inventario, SIN calcular compatibilidad
+ * ni efectos -- solo lee `applied.baseApplied`/`applied.additionalApplied`,
+ * ya resueltos por Player-Inventory. Reutiliza la misma rejilla de
+ * seleccion y el mismo mecanismo de bloqueo de batalla que HU-28/HU-29.
+ */
+describe('HeroConfigurator (HU-31) — epica equipada', () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockReset()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('sin epica equipada, el panel lo dice y no hay boton de Equipar visible', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(NO_EPIC_EQUIPPED),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByText('Sin épica equipada.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Equipar épica$/u })).toBeNull()
+  })
+
+  it('con una epica equipada y subtipo coincidente, muestra ambos efectos aplicados', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(EPIC_EQUIPPED()),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
+    expect(
+      screen.getByText('Compatible con GUERRERO_TANQUE: se aplica el efecto específico.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('+4 Defensa')).toBeInTheDocument()
+    expect(screen.getByText('+2 Ataque')).toBeInTheDocument()
+  })
+
+  it('GAP-HU31-CATALOG-MULTI-EFFECT: con varios efectos especificos simultaneos, muestra TODOS', async () => {
+    const user = userEvent.setup()
+    const critico = {
+      kind: 'STAT_MODIFIER',
+      target: 'SELF',
+      statistic: 'CRITICAL_CHANCE',
+      operation: 'INCREASE',
+      magnitude: { mode: 'FIXED', amount: 2 },
+    }
+    const epicConDosEspecificos = {
+      ...GOLPE_DE_DEFENSA_EPIC,
+      specificEffects: [...GOLPE_DE_DEFENSA_EPIC.specificEffects, critico],
+    }
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () =>
+          json({
+            heroId: 'pid-guerrero-tanque',
+            epic: {
+              ...epicConDosEspecificos,
+              applied: {
+                baseApplied: epicConDosEspecificos.baseEffect,
+                additionalApplied: epicConDosEspecificos.specificEffects,
+              },
+            },
+            version: 1,
+            locked: false,
+          }),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
+    expect(screen.getByText('+4 Defensa')).toBeInTheDocument()
+    expect(screen.getByText('Efecto específico 1')).toBeInTheDocument()
+    expect(screen.getByText('+2 Ataque')).toBeInTheDocument()
+    expect(screen.getByText('Efecto específico 2')).toBeInTheDocument()
+    expect(screen.getByText('+2 Probabilidad de crítico')).toBeInTheDocument()
+  })
+
+  it('con subtipo NO coincidente, el efecto especifico se muestra sin aplicar', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () =>
+          json(
+            EPIC_EQUIPPED({
+              applied: { baseApplied: GOLPE_DE_DEFENSA_EPIC.baseEffect, additionalApplied: [] },
+            }),
+          ),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(
+      await screen.findByText(
+        'No coincide con el subtipo del héroe: solo se aplica el efecto general.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('seleccionar una epica del inventario y equiparla persiste el nuevo estado', async () => {
+    const user = userEvent.setup()
+    let putBody: unknown = null
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        (url, init) => {
+          if (init?.method === 'PUT') {
+            putBody = JSON.parse(init.body as string)
+            return json(EPIC_EQUIPPED())
+          }
+          return json(NO_EPIC_EQUIPPED)
+        },
+      ),
+    )
+
+    renderWithProviders(
+      <Harness
+        productReference="golpe-de-defensa"
+        productName="Golpe de defensa"
+        productType="EPICA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await screen.findByText('Sin épica equipada.')
+
+    await user.click(screen.getByRole('button', { name: 'Seleccionar épica' }))
+    expect(screen.getByText('Seleccionado: Golpe de defensa')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Equipar épica' }))
+
+    expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
+    expect(putBody).toEqual({ productReference: 'golpe-de-defensa' })
+  })
+
+  it('elegir una ranura de equipamiento cancela el modo de seleccion de epica', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(NO_EPIC_EQUIPPED),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    await user.click(screen.getByRole('button', { name: 'Seleccionar épica' }))
+    expect(screen.getByRole('button', { name: 'Cancelar selección' })).toBeInTheDocument()
+
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+
+    expect(screen.queryByRole('button', { name: 'Cancelar selección' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Seleccionar épica' })).toBeInTheDocument()
+  })
+
+  it('con locked:true, avisa de forma visible y oculta el boton de seleccionar', async () => {
+    fetchMock.mockImplementation(
+      routedFetch(
+        () => json(EMPTY_EQUIPMENT),
+        undefined,
+        undefined,
+        () => json(EPIC_EQUIPPED({ locked: true })),
+      ),
+    )
+
+    renderWithProviders(<Harness />)
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(
+      await screen.findByText(
+        'La épica no se puede cambiar: el héroe está participando en una batalla activa. Podrás volver a cambiarla cuando termine.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Seleccionar épica' })).toBeDisabled()
+  })
+})
+
+/**
+ * HU-29.6 (sobre Player-Inventory #26, ya en `develop`): consumir `locked` y
+ * el 409 `reason: 'battle_lock'` del contrato de equipamiento, SIN que Web
+ * decida nada por su cuenta -- ni calcula si hay batalla, ni mira la URL, ni
+ * guarda el estado en `localStorage`. Lo unico que cambia aqui es como se
+ * PRESENTA lo que Player/Inventory ya decidio.
+ */
+describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock)
+    fetchMock.mockReset()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const BATTLE_LOCK_BODY = {
+    reason: 'battle_lock',
+    message:
+      'No se puede modificar el equipamiento porque el heroe participa en una batalla activa.',
+  }
+
+  // W-01
+  it('con locked:false, los controles de equipar funcionan con normalidad', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EMPTY_EQUIPMENT, locked: false })))
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+
+    expect(await screen.findByRole('button', { name: 'Equipar' })).toBeEnabled()
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  // W-02
+  it('con locked:true, avisa de forma visible y deshabilita Equipar', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EMPTY_EQUIPMENT, locked: true })))
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    const notice = await screen.findByRole('status')
+    expect(notice).toHaveTextContent('El equipamiento no se puede modificar')
+    expect(notice).toHaveTextContent('batalla activa')
+    // La ranura esta deshabilitada: `data-testid` esta en el propio boton.
+    expect(await screen.findByTestId('slot-WEAPON_1')).toBeDisabled()
+  })
+
+  // W-03, W-07
+  it('con equipo existente y locked:true, ninguna pieza desaparece de pantalla', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EQUIPPED, locked: true })))
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(
+      await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
+    ).toBeInTheDocument()
+    expect(await screen.findByRole('status')).toBeInTheDocument()
+  })
+
+  // W-04
+  it('si locked:false al leer pero el PUT responde 409 battle_lock, muestra el motivo y no simula el cambio', async () => {
+    const user = userEvent.setup()
+    let getCount = 0
+    fetchMock.mockImplementation(
+      routedFetch((_url, init) => {
+        if (init?.method === 'PUT') {
+          return json(BATTLE_LOCK_BODY, 409)
+        }
+        getCount += 1
+        // Tras el 409 se vuelve a pedir el estado real: la batalla SIGUE activa.
+        return json({ ...EMPTY_EQUIPMENT, locked: getCount > 1 })
+      }),
+    )
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+    await user.click(await screen.findByRole('button', { name: 'Equipar' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('batalla activa')
+    // No se pinta ningun arma equipada: el PUT fallo, nada se escribio en cache.
+    expect(within(screen.getByTestId('slot-WEAPON_1')).queryByText('Espada de Fuego')).toBeNull()
+    // El rechazo invalida la consulta: se repite el GET con el estado real.
+    await waitFor(() => {
+      expect(getCount).toBeGreaterThan(1)
+    })
+    expect(await screen.findByRole('status')).toBeInTheDocument()
+  })
+
+  // W-06: la MISMA invalidacion de W-04, pero la batalla termino justo antes de
+  // que el GET repetido llegara -- el flujo normal vuelve solo, sin un segundo
+  // mecanismo de sondeo propio de HU-29, y sin que el jugador repita nada.
+  it('si para cuando se repite el GET la batalla ya termino, Equipar se vuelve a habilitar solo', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch((_url, init) => {
+        if (init?.method === 'PUT') {
+          return json(BATTLE_LOCK_BODY, 409)
+        }
+        // La lectura inicial decia locked:false (por eso se pudo intentar);
+        // el GET repetido tras el rechazo confirma que ya no hay bloqueo.
+        return json({ ...EMPTY_EQUIPMENT, locked: false })
+      }),
+    )
+
+    renderWithProviders(
+      <Harness
+        productReference="espada-de-fuego"
+        productName="Espada de Fuego"
+        productType="ARMA"
+      />,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+    await user.click(await screen.findByRole('button', { name: 'Equipar' }))
+
+    await screen.findByRole('alert')
+    expect(screen.queryByRole('status')).toBeNull()
+    // Sin re-seleccionar nada: el GET invalidado ya trae locked:false, y
+    // `canEquip` se recalcula con el estado fresco.
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Equipar' })).toBeEnabled()
+    })
+  })
+
+  // W-05 (regresion): un 409 que NO es battle_lock conserva su tratamiento anterior
+  it('un 409 de otra regla de HU-28 no se etiqueta como battle_lock', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(
+      routedFetch((_url, init) => {
+        if (init?.method === 'PUT') {
+          return json({ message: 'La ranura WEAPON_1 ya esta ocupada.' }, 409)
+        }
+        return json({ ...EMPTY_EQUIPMENT, locked: false })
+      }),
+    )
+
+    renderWithProviders(<Harness productReference="espada-de-fuego" productType="ARMA" />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.click(await screen.findByTestId('slot-WEAPON_1'))
+    await user.click(await screen.findByRole('button', { name: 'Equipar' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('ya esta ocupada')
+    expect(alert).not.toHaveTextContent('batalla activa')
+  })
+
+  // W-08, W-09: la ranura de armadura y de item tambien quedan cubiertas por
+  // el mismo `disabled` uniforme que ya probo W-02 para WEAPON_1 -- no hay un
+  // guard distinto por categoria en la UI (la autoridad de categoria vive en
+  // Player/Inventory). Se confirma explicitamente para armadura e item.
+  it('con locked:true, las ranuras de armadura y de item tambien quedan deshabilitadas', async () => {
+    const user = userEvent.setup()
+    fetchMock.mockImplementation(routedFetch(() => json({ ...EMPTY_EQUIPMENT, locked: true })))
+
+    renderWithProviders(<Harness />)
+    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+
+    expect(await screen.findByTestId('slot-HELMET')).toBeDisabled()
+    expect(screen.getByTestId('slot-ITEM_1')).toBeDisabled()
   })
 })

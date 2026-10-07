@@ -7,8 +7,11 @@ import { useLanguage } from '@/shared/i18n/language'
 import { HERO_IDS, type HeroId } from '@/shared/visual-library/heroes'
 
 import { describeSelectionFailure } from '../heroSelectionApi'
+import { useEquipEpic, useHeroEpic } from './useHeroEpic'
 import { useAvailableHeroes, useHeroSelection, useSelectHero } from '../useHeroSelection'
 import type { EquipmentSlotId } from './api'
+import { battleLockMessage, isBattleLockError } from './battleLockPresentation'
+import { EpicManagerPanel } from './EpicManagerPanel'
 import { EquipmentManagerPanel } from './EquipmentManagerPanel'
 import { HeroManagerPanel } from './HeroManagerPanel'
 import { heroIdFromReference } from './heroSubtype'
@@ -22,6 +25,9 @@ export interface HeroConfiguratorProps {
   readonly selectedProductType: string | null
   readonly selectedSlot: EquipmentSlotId | null
   readonly onSelectSlot: (slot: EquipmentSlotId | null) => void
+  /** HU-31: `true` mientras el jugador elige una epica del inventario para equiparla. */
+  readonly selectingEpic: boolean
+  readonly onToggleSelectingEpic: () => void
 }
 
 const heroModelId = (subtype: string, reference: string): HeroId => {
@@ -50,6 +56,8 @@ export const HeroConfigurator = ({
   selectedProductType,
   selectedSlot,
   onSelectSlot,
+  selectingEpic,
+  onToggleSelectingEpic,
 }: HeroConfiguratorProps): React.JSX.Element => {
   const { t } = useTranslation()
   const language = useLanguage((state) => state.language)
@@ -68,6 +76,10 @@ export const HeroConfigurator = ({
   const equipMutation = useEquipItem(heroRef)
   const equipment = equipmentQuery.data
   const activeHero = heroes.find((hero) => hero.reference === heroRef)
+
+  const epicQuery = useHeroEpic(heroRef)
+  const epicMutation = useEquipEpic(heroRef)
+  const epic = epicQuery.data
 
   const activeModel: HeroId =
     equipment !== undefined
@@ -91,23 +103,52 @@ export const HeroConfigurator = ({
     setChosenRef(reference)
     onSelectSlot(null)
     equipMutation.reset()
+    epicMutation.reset()
+    if (selectingEpic) onToggleSelectingEpic()
     selectMutation.reset()
   }
 
   const slotMeta = selectedSlot === null ? null : (SLOT_META_BY_ID.get(selectedSlot) ?? null)
+  // HU-29: `locked` manda sobre la compatibilidad de ranura/producto. El
+  // backend sigue siendo quien rechaza de verdad (ver `useEquipItem`); esto
+  // solo evita ofrecer un boton que ya se sabe que va a fallar.
   const canEquip =
     heroRef !== null &&
     slotMeta !== null &&
     selectedProductReference !== null &&
     selectedProductType === slotMeta.productType &&
+    equipment?.locked !== true &&
     !equipMutation.isPending
 
   const equipError = equipMutation.error
   const equipErrorMessage =
     equipError instanceof HttpError
-      ? describeFailure(equipError, t, language)
+      ? isBattleLockError(equipError)
+        ? battleLockMessage()
+        : describeFailure(equipError, t, language)
       : equipError != null
         ? t('inventory:equipment.equipFailed')
+        : null
+
+  // HU-31: misma logica que `canEquip`, sin ranura -la epica es un recurso
+  // propio, no una de las 2/6/2 de HU-28-. El backend sigue siendo quien
+  // rechaza de verdad (ver `useEquipEpic`).
+  const canEquipEpic =
+    heroRef !== null &&
+    selectingEpic &&
+    selectedProductReference !== null &&
+    selectedProductType === 'EPICA' &&
+    epic?.locked !== true &&
+    !epicMutation.isPending
+
+  const epicError = epicMutation.error
+  const epicErrorMessage =
+    epicError instanceof HttpError
+      ? isBattleLockError(epicError)
+        ? t('inventory:epic.battleLock.message')
+        : describeFailure(epicError, t, language)
+      : epicError != null
+        ? t('inventory:epic.equipFailed')
         : null
 
   return (
@@ -146,6 +187,7 @@ export const HeroConfigurator = ({
         onSelectSlot={(slot) => {
           onSelectSlot(slot === selectedSlot ? null : slot)
           equipMutation.reset()
+          if (selectingEpic) onToggleSelectingEpic()
         }}
         selectedProductName={selectedProductName}
         selectedProductType={selectedProductType}
@@ -153,12 +195,37 @@ export const HeroConfigurator = ({
         canEquip={canEquip}
         equipping={equipMutation.isPending}
         equipError={equipErrorMessage}
+        locked={equipment?.locked ?? false}
         onEquip={() => {
           if (canEquip) {
             equipMutation.mutate({
               slot: slotMeta.id,
               productReference: selectedProductReference,
             })
+          }
+        }}
+      />
+
+      <EpicManagerPanel
+        heroName={activeName}
+        hasHero={heroRef !== null}
+        epic={epic}
+        epicLoading={epicQuery.isLoading}
+        epicError={epicQuery.error}
+        selecting={selectingEpic}
+        onToggleSelecting={() => {
+          onToggleSelectingEpic()
+          epicMutation.reset()
+        }}
+        selectedProductName={selectedProductName}
+        selectedProductType={selectedProductType}
+        canEquip={canEquipEpic}
+        equipping={epicMutation.isPending}
+        equipError={epicErrorMessage}
+        locked={epic?.locked ?? false}
+        onEquip={() => {
+          if (canEquipEpic) {
+            epicMutation.mutate({ productReference: selectedProductReference })
           }
         }}
       />

@@ -2,15 +2,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { HttpError } from '@/lib/http'
+import { queryKeys } from '@/shared/query-keys'
 import { invalidateWallet } from '@/shared/wallet'
-import type { AuctionDetail } from '../detail-api'
+import type { PlayerAuctionDetail } from '../detail-api'
 import { registerBid, type RegisteredBid } from './api'
 import { BidRegistrationCard, type BidRegistrationStage } from './BidRegistrationCard'
 import { i18n } from '@/shared/i18n/i18n'
 import { currentLanguage } from '@/shared/i18n/language'
 
 interface AuctionBidPanelProps {
-  readonly auction: AuctionDetail
+  /** Solo PLAYER/CREDITS: una subasta oficial (HU-88) no admite pujas. */
+  readonly auction: PlayerAuctionDetail
   readonly product: {
     readonly name: string
     readonly description?: string
@@ -101,6 +103,11 @@ export const AuctionBidPanel = ({
       setStage('leading')
       // La puja reserva creditos: el saldo disponible (cabecera incluida) cambia.
       invalidateWallet(queryClient)
+      // HU-88: bidCount/currentBid (detalle) y el historial de pujas tambien
+      // cambiaron con esta puja; cada uno se invalida por separado -ninguno
+      // es un refetch global- para que ambos reflejen el nuevo estado real.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auction.detail(auction.id) })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.auction.bidHistoryAll(auction.id) })
     },
     onError: (error) => {
       setLastError(error)
@@ -146,7 +153,7 @@ export const AuctionBidPanel = ({
 }
 
 const useStateStage = (
-  auction: AuctionDetail,
+  auction: PlayerAuctionDetail,
   subject: string | null,
 ): [BidRegistrationStage, (stage: BidRegistrationStage) => void] => {
   const [stage, setStage] = useState<BidRegistrationStage>(
