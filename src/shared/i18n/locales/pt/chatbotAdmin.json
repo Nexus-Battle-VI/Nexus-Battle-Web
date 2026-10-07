@@ -51,5 +51,11 @@
   "imported": "Entradas novas: {{created}}. Já existentes: {{skipped}}.",
   "fileFailed": "Não foi possível ler o arquivo.",
   "ratings": "Úteis {{useful}} · Não úteis {{notUseful}}",
-  "singleExamples": "Classes com um só exemplo: {{labels}}"
+  "singleExamples": "Classes com um só exemplo: {{labels}}",
+  "ticketsTitle": "Tickets de suporte",
+  "emptyTickets": "Ainda não há tickets.",
+  "askedBy": "Quem perguntou",
+  "perIntent": "F1 por intenção",
+  "confused": "{{actual}} foi lido como {{predicted}} ({{count}})",
+  "noConfusion": "A validação não confundiu classes."
 }
