@@ -77,7 +77,7 @@
   fill: var(--color-muted);
 }
 .bracket-connectors:has(g[data-highlight='true']) g:not([data-highlight='true']) {
-  opacity: 0.28;
+  opacity: 0.55;
 }
 .bracket-connectors g[data-highlight='true'] .bracket-edge {
   stroke-width: 3.5;
@@ -87,7 +87,7 @@
   top: 15px;
   font-weight: 700;
   text-align: center;
-  padding: 8px;
+  padding: 4px;
   border-bottom: 2px solid var(--color-border);
 }
 .bracket-track-heading {

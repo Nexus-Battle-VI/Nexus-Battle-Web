@@ -58,7 +58,7 @@ export const AppHeader = (): React.JSX.Element => {
 
         <PrimaryNav className="order-3 w-full min-w-0 sm:order-none sm:w-auto sm:flex-1" />
 
-        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2 sm:flex-nowrap sm:gap-3">
           <SessionControl />
           <PendingClaimsBadge />
           <CreditsBadge />

@@ -32,6 +32,12 @@ export const BracketTree = ({
   const viewport = useRef<HTMLDivElement>(null)
   const marker = useId()
   const layout = layoutBracket(bracket.matches)
+  const finalMatch = bracket.matches.find((match) => match.track === 'FINAL')
+  const finalPosition = finalMatch ? layout.positions.get(finalMatch.id) : undefined
+  const roundTime = (round: number): string => {
+    const match = bracket.matches.find((entry) => entry.round === round)
+    return match ? timeLabel(match) : ''
+  }
   const teamLabel = (match: GraphMatch, side: 0 | 1): string =>
     bracket.seeds.find((seed) => seed.teamId === match.teamIds[side])?.name ??
     sourceLabel(match.sources[side])
@@ -177,6 +183,20 @@ export const BracketTree = ({
             >
               Ir a perdedores
             </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!finalMatch || !finalPosition) return
+                choose(finalMatch.id)
+                viewport.current?.scrollTo({
+                  left: finalPosition.x * zoom - 28,
+                  top: (finalPosition.y - 65) * zoom,
+                  behavior: 'auto',
+                })
+              }}
+            >
+              Ir a final
+            </Button>
           </>
         )}
       </div>
@@ -315,6 +335,7 @@ export const BracketTree = ({
                       style={{ left: 28 + (round - 1) * COLUMN_STEP, width: NODE_WIDTH }}
                     >
                       Ronda {round}
+                      <span className="block text-xs font-normal">{roundTime(round)}</span>
                     </div>
                   ))}
                 {(
@@ -329,7 +350,12 @@ export const BracketTree = ({
                       className="bracket-track-heading"
                       style={{
                         left: track === 'FINAL' ? layout.width - NODE_WIDTH - 28 : 28,
-                        top: track === 'SECONDARY' ? layout.lowerTop - 45 : 55,
+                        top:
+                          track === 'SECONDARY'
+                            ? layout.lowerTop - 45
+                            : track === 'FINAL'
+                              ? (finalPosition?.y ?? 100) - 45
+                              : 75,
                       }}
                     >
                       {title}
