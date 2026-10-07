@@ -34,6 +34,11 @@ if (import.meta.env.DEV) {
       default: module.TournamentRegistrationPreview,
     })),
   )
+  const TournamentAdminPreviewLazy = lazy(() =>
+    import('@/features/tournament/dev/TournamentAdminPreview').then((module) => ({
+      default: module.TournamentAdminPreview,
+    })),
+  )
   const [
     { HeroesDevPreviewLazy },
     { ProductsDevPreviewLazy },
@@ -185,7 +190,21 @@ if (import.meta.env.DEV) {
     },
   ]
 
+  const AdminRemasterPreviewLazy = lazy(() =>
+    import('@/features/admin/chatbot/dev/AdminRemasterPreview').then((module) => ({
+      default: module.AdminRemasterPreview,
+    })),
+  )
+
   resolvedPublicDevRoutes = [
+    {
+      path: '__dev/chatbot-admin',
+      element: (
+        <Suspense fallback={null}>
+          <AdminRemasterPreviewLazy />
+        </Suspense>
+      ),
+    },
     // Remaster visual E-commerce Sprint 3 (4a pasada): ver comentario junto a
     // `MarketplacePreviewLazy` arriba.
     {
@@ -451,6 +470,14 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <TournamentRegistrationPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/tournament/admin',
+      element: (
+        <Suspense fallback={null}>
+          <TournamentAdminPreviewLazy />
         </Suspense>
       ),
     },

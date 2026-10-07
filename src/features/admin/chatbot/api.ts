@@ -9,6 +9,12 @@ export interface ModelVersionRow {
   readonly useful: number
   readonly notUseful: number
   readonly precision: number | null
+  readonly perIntentF1: readonly { readonly label: string; readonly score: number }[]
+  readonly confusion: readonly {
+    readonly actual: string
+    readonly predicted: string
+    readonly count: number
+  }[]
 }
 
 export interface TrainingResult {
@@ -87,3 +93,38 @@ export const updateKnowledge = (id: string, draft: KnowledgeDraft): Promise<Know
 
 export const deleteKnowledge = (id: string): Promise<null> =>
   httpClient.delete(`/v1/chatbot/admin/knowledge/${encodeURIComponent(id)}`)
+
+export interface KnowledgeDocument {
+  readonly schemaVersion: number
+  readonly entries: readonly {
+    readonly intent: string
+    readonly language: string
+    readonly priority: number
+    readonly question?: string
+    readonly variations: readonly string[]
+    readonly answer: string
+    readonly view?: string | null
+  }[]
+}
+
+export interface ImportResult {
+  readonly created: number
+  readonly skipped: number
+}
+
+export const exportKnowledge = (signal?: AbortSignal): Promise<KnowledgeDocument> =>
+  httpClient.get('/v1/chatbot/admin/knowledge/export', signal)
+
+export const importKnowledge = (document: KnowledgeDocument): Promise<ImportResult> =>
+  httpClient.post('/v1/chatbot/admin/knowledge/import', document)
+
+export interface SupportTicketRow {
+  readonly id: string
+  readonly actor: string
+  readonly question: string
+  readonly view: string | null
+  readonly createdAt: string
+}
+
+export const fetchSupportTickets = (signal?: AbortSignal): Promise<readonly SupportTicketRow[]> =>
+  httpClient.get('/v1/chatbot/admin/tickets', signal)

@@ -9,10 +9,12 @@ import { invalidateWallet, useRefreshWalletOn } from '@/shared/wallet'
 import { registrationApi, type RegistrationApi, type EntryTeam, type EntryView } from './api'
 import type { BracketApi } from './bracketApi'
 import type { EncounterApi } from './encounterApi'
+import type { EncounterAdminApi } from './encounterAdminApi'
 import type { AvatarDownload } from './TeamAvatar'
 import { CreateTournamentPanel } from './CreateTournamentPanel'
 import { TournamentBracketPanel } from './TournamentBracketPanel'
 import { TournamentEncountersPanel } from './TournamentEncountersPanel'
+import { TournamentEncounterAdminPanel } from './TournamentEncounterAdminPanel'
 import { RegisterTeamForm } from './RegisterTeamForm'
 import { TeamRegistrationCard } from './TeamRegistrationCard'
 import { dateLabel, priceLabel } from './presentation'
@@ -22,6 +24,7 @@ interface Props {
   readonly api?: RegistrationApi
   readonly brackets?: BracketApi
   readonly encounters?: EncounterApi
+  readonly encounterAdmin?: EncounterAdminApi
   readonly avatarDownload?: AvatarDownload
   /** Injection for isolated component previews/tests; routes always use the real session. */
   readonly identity?: { readonly subject: string | null; readonly roles: readonly string[] }
@@ -47,6 +50,7 @@ const RegistrationContent = ({
   api = registrationApi,
   brackets,
   encounters,
+  encounterAdmin,
   avatarDownload,
 }: Props & { readonly subject: string; readonly roles: readonly string[] }): React.JSX.Element => {
   const client = useQueryClient()
@@ -114,6 +118,7 @@ const RegistrationContent = ({
           api={api}
           {...(brackets ? { brackets } : {})}
           {...(encounters ? { encounters } : {})}
+          {...(encounterAdmin ? { encounterAdmin } : {})}
           {...(avatarDownload ? { avatarDownload } : {})}
         />
       )}
@@ -127,6 +132,7 @@ const TournamentContent = ({
   api,
   brackets,
   encounters,
+  encounterAdmin,
   avatarDownload,
 }: {
   readonly id: string
@@ -267,6 +273,14 @@ const TournamentContent = ({
             {...(brackets ? { api: brackets } : {})}
           />
         </>
+      )}
+      {roles.some((r) => r === 'ADMINISTRATOR' || r === 'SUPER_ADMINISTRATOR') && (
+        <TournamentEncounterAdminPanel
+          id={id}
+          subject={subject}
+          {...(encounters ? { encounters } : {})}
+          {...(encounterAdmin ? { admin: encounterAdmin } : {})}
+        />
       )}
       <TournamentEncountersPanel
         id={id}

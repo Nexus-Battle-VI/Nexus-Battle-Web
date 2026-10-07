@@ -45,5 +45,17 @@
   "emptyDictionary": "Todavía no hay entradas.",
   "requiredEntry": "La intención, la respuesta y al menos una pregunta son obligatorias.",
   "spanish": "Español",
-  "english": "Inglés"
+  "english": "Inglés",
+  "exportFile": "Exportar",
+  "importFile": "Importar",
+  "imported": "Entradas nuevas: {{created}}. Ya existentes: {{skipped}}.",
+  "fileFailed": "No se pudo leer el archivo.",
+  "ratings": "Útiles {{useful}} · No útiles {{notUseful}}",
+  "singleExamples": "Clases con un solo ejemplo: {{labels}}",
+  "ticketsTitle": "Tickets de soporte",
+  "emptyTickets": "Todavía no hay tickets.",
+  "askedBy": "Quién preguntó",
+  "perIntent": "F1 por intención",
+  "confused": "{{actual}} se leyó como {{predicted}} ({{count}})",
+  "noConfusion": "La validación no confundió clases."
 }

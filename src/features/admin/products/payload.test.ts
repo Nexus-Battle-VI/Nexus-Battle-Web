@@ -10,6 +10,7 @@ const base = (patch: Partial<ProductDraft>): ProductDraft => ({
   imageUrl: 'https://assets.example.test/catalog/espada.webp',
   printRun: '150',
   creditsPrice: '40',
+  dropChancePercent: '3',
   ...patch,
 })
 
@@ -185,5 +186,60 @@ describe('Construccion de la peticion', () => {
     const values = request.attributes.values as { specificEffects: readonly unknown[] }
 
     expect(values.specificEffects).toHaveLength(2)
+  })
+
+  // HU-30 (correccion post-incidente): el porcentaje que escribe la persona
+  // (0..100) se convierte a basis points (0..10000) al construir la peticion.
+  describe('HU-30: probabilidad de caida', () => {
+    it('WEB-07: convierte 3 % a 300 basis points para un ARMA', () => {
+      const request = buildCreateRequest(
+        base({ type: 'ARMA', effects: [fixedEffect()], dropChancePercent: '3' }),
+      )
+
+      const values = request.attributes.values as { dropChanceBasisPoints: number }
+
+      expect(values.dropChanceBasisPoints).toBe(300)
+    })
+
+    it('convierte 0 % a 0 basis points para una ARMADURA (valor explicito valido)', () => {
+      const request = buildCreateRequest(
+        base({
+          type: 'ARMADURA',
+          effects: [fixedEffect()],
+          dropChancePercent: '0',
+        }),
+      )
+
+      const values = request.attributes.values as { dropChanceBasisPoints: number }
+
+      expect(values.dropChanceBasisPoints).toBe(0)
+    })
+
+    it('convierte 100 % a 10000 basis points para un ITEM', () => {
+      const request = buildCreateRequest(
+        base({ type: 'ITEM', effects: [fixedEffect()], dropChancePercent: '100' }),
+      )
+
+      const values = request.attributes.values as { dropChanceBasisPoints: number }
+
+      expect(values.dropChanceBasisPoints).toBe(10_000)
+    })
+
+    it('un HEROE no lleva dropChanceBasisPoints', () => {
+      const request = buildCreateRequest(
+        base({
+          type: 'HEROE',
+          heroSubtype: 'GUERRERO',
+          basePower: '3',
+          baseHealth: '12',
+          baseDefense: '4',
+          baseAttack: { ...emptyDraft().baseAttack, mode: 'FIXED', amount: '3' },
+          baseDamage: { ...emptyDraft().baseDamage, mode: 'DICE', diceCount: '2', diceSides: '6' },
+          abilities: ['11111111-1111-4111-8111-111111111111', '', ''],
+        }),
+      )
+
+      expect(request.attributes.values).not.toHaveProperty('dropChanceBasisPoints')
+    })
   })
 })

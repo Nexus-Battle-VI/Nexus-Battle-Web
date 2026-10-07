@@ -52,6 +52,9 @@ const completeBasics = async (): Promise<void> => {
 
 const completeAttributes = async (): Promise<void> => {
   await userEvent.type(screen.getByLabelText(/^cantidad$/i), '7')
+  // HU-30 (correccion post-incidente): ARMA/ARMADURA/ITEM exigen declarar la
+  // probabilidad de caida desde que nacen.
+  await userEvent.type(screen.getByLabelText(/probabilidad de caída/i), '3')
   await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
 }
 

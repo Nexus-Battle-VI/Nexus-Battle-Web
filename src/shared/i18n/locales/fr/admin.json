@@ -164,8 +164,10 @@
       "duplicate": "Un produit actif de ce type portant le même nom existe déjà.",
       "create": "Le produit n'a pas pu être créé.",
       "adjustNetwork": "Le tirage n'a pas pu être ajusté. Vérifiez votre connexion et réessayez.",
+      "dropChanceNetwork": "La probabilité de chute n'a pas pu être configurée. Vérifiez votre connexion et réessayez.",
       "concurrent": "Un autre ajustement a modifié le produit pendant votre édition. Rechargez-le et refaites le changement.",
       "adjust": "Le tirage n'a pas pu être ajusté.",
+      "dropChance": "La probabilité de chute n'a pas pu être configurée.",
       "statusNetwork": "Le statut du produit n'a pas pu être mis à jour. Vérifiez votre connexion et réessayez.",
       "status": "Le statut du produit n'a pas pu être mis à jour.",
       "upload": "L'image n'a pas pu être téléversée.",
@@ -243,6 +245,8 @@
       "slot": "Emplacement",
       "setCode": "Code d'ensemble (facultatif)",
       "setCodeHint": "En MAJUSCULES, ou vide s'il n'appartient à aucun ensemble.",
+      "dropChancePercent": "Probabilité de chute (%)",
+      "dropChancePercentHint": "Entier entre 0 et 100. 0 % est valide si vous décidez explicitement qu'il ne tombe pas en Versus.",
       "compatibleSubtype": "Sous-type de héros compatible",
       "specificEffect": "Effet spécifique",
       "specificEffects": "Effets spécifiques",
@@ -315,6 +319,8 @@
       "premium": "Premium",
       "realMoney": "Prix en argent réel",
       "initialStatus": "Statut initial",
+      "dropChance": "Probabilité de chute",
+      "dropChanceValue": "{{value}} %",
       "note": "À la confirmation, Catalog valide les attributs selon le schéma du type, enregistre le produit et consigne l'événement d'audit. En cas d'échec, rien n'est créé."
     },
     "badge": {
@@ -409,7 +415,15 @@
       "editSave": "Enregistrer les modifications",
       "editSaving": "Enregistrement…",
       "editSaved": "« {{name}} » mis à jour.",
-      "editCancel": "Annuler"
+      "editCancel": "Annuler",
+      "dropChance": "Probabilité de chute",
+      "dropChanceMissing": "Aucune probabilité de chute configurée",
+      "dropChanceCurrent": "Probabilité de chute actuelle : {{value}} %",
+      "dropChanceTitle": "Probabilité de chute de « {{name}} »",
+      "dropChanceSave": "Enregistrer le taux",
+      "dropChanceSaving": "Enregistrement…",
+      "dropChanceSaved": "Probabilité de chute de « {{name}} » mise à jour.",
+      "dropChanceCancel": "Annuler"
     }
   },
   "missions": {

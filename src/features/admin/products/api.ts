@@ -186,6 +186,58 @@ export const describeLifecycleStatusFailure = (error: unknown): string => {
 }
 
 /**
+ * Configura la tasa de caida Versus de un ARMA/ARMADURA/ITEM ya existente
+ * (HU-30, correccion post-incidente): `PATCH
+ * /v1/admin/products/{id}/drop-chance`. Via MINIMA para que un producto
+ * creado antes de esta correccion -sin la tasa que ahora exige la
+ * creacion- pueda volver a equiparse en Versus sin bloquear el inicio de
+ * partida.
+ */
+export const configureProductDropChance = (
+  productId: string,
+  dropChanceBasisPoints: number,
+): Promise<AdministeredProduct> =>
+  httpClient.patch<AdministeredProduct>(`/v1/admin/products/${productId}/drop-chance`, {
+    dropChanceBasisPoints,
+  })
+
+/**
+ * Traduce el fallo de la configuracion de tasa.
+ *
+ * Misma taxonomia que `describeAdjustmentFailure`: 401 sesion, 403 permisos o
+ * segundo factor, 404 el producto ya no existe, 400 la tasa esta fuera de
+ * 0..10000 o el producto no es ARMA/ARMADURA/ITEM, 503 no se pudo comprobar
+ * el segundo factor.
+ */
+export const describeDropChanceFailure = (error: unknown): string => {
+  if (!(error instanceof HttpError)) {
+    return i18n.t('admin:products.failures.dropChanceNetwork')
+  }
+
+  if (error.status === 401) {
+    return i18n.t('admin:products.failures.session')
+  }
+
+  if (error.status === 403) {
+    return i18n.t('admin:products.failures.forbidden')
+  }
+
+  if (error.status === 404) {
+    return i18n.t('admin:products.failures.notFound')
+  }
+
+  if (error.status === 400 || error.status === 422) {
+    return describeFailure(error, i18n.t, currentLanguage())
+  }
+
+  if (error.status === 503) {
+    return i18n.t('admin:products.failures.mfaUnavailable')
+  }
+
+  return i18n.t('admin:products.failures.dropChance')
+}
+
+/**
  * Fila del catalogo tal y como la ve la administracion (Gestion de
  * productos, pedido del profesor 2026-09-26): `GET /v1/admin/products`.
  *
@@ -205,6 +257,20 @@ export interface AdminProductSummary {
   readonly premium: boolean
   readonly realMoneyPrice: RealMoneyPrice | null
   readonly availableUnits: number | null
+  /**
+   * Atributos crudos del producto (HU-30, correccion post-incidente): el
+   * listado administrativo ya los trae -`CanonicalProductDto` siempre los
+   * incluye-, solo faltaba declararlos aqui. Se usan UNICAMENTE para leer
+   * `dropChanceBasisPoints` en ARMA/ARMADURA/ITEM; esta pantalla no
+   * interpreta ningun otro atributo.
+   */
+  readonly attributes: { readonly values: Record<string, unknown> }
+}
+
+/** `dropChanceBasisPoints` de un producto equipable, o `null` si aun no la tiene (historico). */
+export const dropChanceOf = (product: AdminProductSummary): number | null => {
+  const raw = product.attributes.values.dropChanceBasisPoints
+  return typeof raw === 'number' ? raw : null
 }
 
 export interface AdminProductPage {

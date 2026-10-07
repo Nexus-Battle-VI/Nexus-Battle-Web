@@ -93,12 +93,22 @@ export const effectOf = (draft: EffectDraft): ProductEffect => {
   }
 }
 
+/**
+ * Porcentaje escrito por la persona (0..100) a basis points (0..10000) que
+ * espera Catalog. `100 bp = 1 %` (HU-30): la conversion ocurre en un solo
+ * sitio, igual que `-1` para tiraje infinito.
+ */
+const dropChanceBasisPointsOf = (percent: string): number => toInteger(percent) * 100
+
 const compatibilityOf = (draft: ProductDraft): Record<string, unknown> => ({
   compatibilityScope: draft.compatibilityScope,
   ...(draft.compatibilityScope === 'SELECTED_SUBTYPES'
     ? { compatibleHeroSubtypes: parseSubtypeList(draft.compatibleHeroSubtypes) }
     : {}),
   effects: draft.effects.map(effectOf),
+  // HU-30 (correccion post-incidente): obligatorio para ARMA/ARMADURA/ITEM,
+  // ausente para el resto -- `compatibilityOf` solo lo llaman esos tres tipos.
+  dropChanceBasisPoints: dropChanceBasisPointsOf(draft.dropChancePercent),
 })
 
 const attributeValuesOf = (draft: ProductDraft, type: ProductType): Record<string, unknown> => {
