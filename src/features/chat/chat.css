@@ -24,7 +24,8 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  border: 2px solid color-mix(in oklab, var(--color-accent-gold, var(--color-brand)) 55%, var(--color-brand));
+  border: 2px solid
+    color-mix(in oklab, var(--color-accent-gold, var(--color-brand)) 55%, var(--color-brand));
   background: color-mix(in oklab, var(--color-surface-raised) 92%, transparent);
   box-shadow: 0 10px 28px color-mix(in srgb, var(--color-brand) 35%, transparent);
   cursor: pointer;
@@ -124,7 +125,8 @@
   min-width: 0;
   flex: 1;
   border-radius: 8px;
-  border: 1px solid color-mix(in oklab, var(--color-brand) 45%, var(--color-accent-gold, var(--color-border)));
+  border: 1px solid
+    color-mix(in oklab, var(--color-brand) 45%, var(--color-accent-gold, var(--color-border)));
   background: transparent;
   color: inherit;
   padding: 8px 10px;
