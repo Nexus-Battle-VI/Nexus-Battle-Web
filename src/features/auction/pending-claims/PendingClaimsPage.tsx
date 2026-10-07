@@ -23,6 +23,7 @@ import { currentLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
 import { countLabel } from '@/shared/i18n/format'
 import { localizedMessages } from '@/shared/i18n/messages'
+import '../auction-remaster.css'
 
 const AUCTION_PATH = '/auction'
 
@@ -164,7 +165,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
   }, [batchResult])
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6">
+    <div className="auction-shell auction-page auction-claims-page">
       <Breadcrumb
         items={[
           { label: t('auction:crumbs.home'), to: ECOMMERCE_PATH },
@@ -173,9 +174,12 @@ export const PendingClaimsPage = (): React.JSX.Element => {
         ]}
       />
 
-      <div>
-        <h1 className="text-xl font-semibold text-ink">{t('auction:claims.title')}</h1>
-        <p className="mt-1 text-sm text-muted">{t('auction:claims.intro')}</p>
+      <div className="auction-hero">
+        <div>
+          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
+          <h1 className="auction-title">{t('auction:claims.title')}</h1>
+          <p className="mt-1 text-sm text-muted">{t('auction:claims.intro')}</p>
+        </div>
       </div>
 
       {claimMutation.isError && (
@@ -239,7 +243,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
         emptyMessage={t('auction:claims.empty')}
       >
         {pendingClaims.length > 0 && (
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
+          <div className="auction-status-strip mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
             <label className="flex items-center gap-2 text-sm text-ink">
               <input
                 type="checkbox"
@@ -302,7 +306,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
           </p>
         )}
 
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <ul className="auction-claims-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {claims.map((claim) => (
             <PendingClaimCard
               key={claim.auctionId}

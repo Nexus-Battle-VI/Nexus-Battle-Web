@@ -1,4 +1,5 @@
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import '@/features/auction/auction-remaster.css'
 
 import { BidRegistrationCard } from '../BidRegistrationCard'
 
@@ -11,7 +12,7 @@ const PRODUCT = {
 const noop = (): void => undefined
 
 export const BiddingDevPreview = (): React.JSX.Element => (
-  <main className="mx-auto flex max-w-[1560px] flex-col gap-6 p-6">
+  <main className="auction-shell auction-page mx-auto flex max-w-[1560px] flex-col gap-6 p-6">
     <header className="flex items-center justify-between gap-4">
       <div>
         <p className="text-sm text-muted">HU-63.8</p>

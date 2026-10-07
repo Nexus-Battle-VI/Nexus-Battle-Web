@@ -12,6 +12,7 @@ import { validateAuctionForm, type AuctionFormValues } from './validation'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel } from '@/shared/i18n/format'
 import { useAuctionPublishableInventory } from './useAuctionPublishableInventory'
+import './auction-remaster.css'
 
 const newOperationId = (): string => globalThis.crypto.randomUUID()
 
@@ -131,16 +132,19 @@ export const PublishAuctionPage = (): React.JSX.Element => {
   return (
     <section
       aria-labelledby="auction-title"
-      className="mx-auto flex w-full max-w-6xl flex-col gap-4"
+      className="auction-shell auction-page auction-publish-page"
     >
-      <header className="rounded-xl border border-border bg-surface-raised p-5">
-        <div className="flex items-center gap-3">
-          <Gavel aria-hidden="true" className="size-6 text-brand" />
-          <h1 id="auction-title" className="text-xl font-semibold text-ink">
-            {t('auction:publish.title')}
-          </h1>
+      <header className="auction-hero">
+        <div>
+          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
+          <div className="flex items-center gap-3">
+            <Gavel aria-hidden="true" className="size-6 text-brand" />
+            <h1 id="auction-title" className="auction-title">
+              {t('auction:publish.title')}
+            </h1>
+          </div>
+          <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:publish.subtitle')}</p>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:publish.subtitle')}</p>
       </header>
 
       {created !== null && (
@@ -155,7 +159,7 @@ export const PublishAuctionPage = (): React.JSX.Element => {
       {created === null && (
         <form
           noValidate
-          className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] lg:items-start"
+          className="auction-form grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] lg:items-start"
           onSubmit={(event) => {
             event.preventDefault()
             setSubmitted(true)
