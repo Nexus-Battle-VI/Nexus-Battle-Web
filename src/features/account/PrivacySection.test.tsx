@@ -156,6 +156,24 @@ describe('PrivacySection', () => {
     },
   )
 
+  it('invoca el transporte de exportación solo con el formato, sin filtrar el contexto interno de la mutación', async () => {
+    // TanStack Query invoca `mutationFn(variables, context)`. Si `exportPersonalData`
+    // se pasara directo como `mutationFn`, ese `context` (MutationFunctionContext,
+    // no un AbortSignal) llegaria como segundo argumento a un transporte cuya firma
+    // real es `(format, signal?)` -como `downloadOwnPersonalData`- y rompería `fetch`.
+    const user = userEvent.setup()
+    const file = fileFor('json')
+    const exportPersonalData = vi.fn().mockResolvedValue(file)
+    renderPrivacySection(undefined, { exportPersonalData, saveExport: vi.fn() })
+    await screen.findByText('Cuenta: Valeria Privacidad (titular autenticado)')
+
+    await user.click(screen.getByRole('button', { name: 'Solicitar exportación JSON' }))
+
+    await screen.findByText(/JSON se descargó correctamente/iu)
+    expect(exportPersonalData).toHaveBeenCalledOnce()
+    expect(exportPersonalData.mock.calls[0]).toEqual(['json'])
+  })
+
   it('muestra procesamiento y no guarda antes de recibir el Blob', async () => {
     const user = userEvent.setup()
     const exportPersonalData = vi.fn().mockReturnValue(new Promise<HttpDownload>(() => undefined))
