@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { TournamentButton as Button, TournamentCard as Card } from '../TournamentVisuals'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
-import type { EntryTeam, RegistrationApi } from './api'
+import type { EntryTeam, RegistrationApi, TournamentMode } from './api'
+import { modalities } from './modalities'
 import { TeamAvatar, type AvatarDownload } from './TeamAvatar'
 import { useOperation } from './useOperation'
 
@@ -15,6 +15,8 @@ export const RegisterTeamForm = ({
   canMutate,
   generation,
   avatarDownload,
+  mode = 'DUO',
+  contractVersion = 'torneos-hu77-84-78-hu83-v2.0.0',
 }: {
   readonly subject: string
   readonly id: string
@@ -23,36 +25,48 @@ export const RegisterTeamForm = ({
   readonly canMutate: boolean
   readonly onResult: (team: EntryTeam) => Promise<void>
   readonly avatarDownload?: AvatarDownload | undefined
+  readonly mode?: TournamentMode
+  readonly contractVersion?: string
 }): React.JSX.Element => {
-  const operation = useOperation(JSON.stringify([subject, id, 'register', generation]))
+  const operation = useOperation(
+    JSON.stringify([subject, id, 'register', contractVersion, mode, generation]),
+  )
   const draft = (() => {
-    if (operation.intent === null) return null
     try {
-      const value: unknown = JSON.parse(operation.intent.fingerprint)
-      return Array.isArray(value) && value.length === 3 && value.every((v) => typeof v === 'string')
-        ? (value as [string, string, string])
+      const value: unknown = JSON.parse(operation.intent?.fingerprint ?? 'null')
+      return Array.isArray(value) && value.length === 4 && value.every((v) => typeof v === 'string')
+        ? (value as [string, string, string, string])
         : null
     } catch {
       return null
     }
   })()
   const [name, setName] = useState(draft?.[0] ?? '')
-  const [companionId, setCompanionId] = useState(draft?.[1] ?? '')
-  const [avatarOwner, setAvatarOwner] = useState(
-    draft?.[2] === subject || draft === null ? 'self' : 'companion',
-  )
-  const avatarSubject = avatarOwner === 'self' ? subject : companionId.trim()
+  const [invites, setInvites] = useState([draft?.[1] ?? '', draft?.[2] ?? ''])
+  const [avatarOwner, setAvatarOwner] = useState(draft?.[3] ?? 'self')
+  const needed = modalities[mode].size - 1
+  const invited = invites.slice(0, needed).map((value) => value.trim())
+  const avatarSubject =
+    avatarOwner === 'self'
+      ? subject
+      : (invited[avatarOwner === 'companion' ? 0 : Number(avatarOwner)] ?? '')
   const fingerprint = JSON.stringify([
     name.trim().replace(/\s+/gu, ' '),
-    companionId.trim(),
-    avatarSubject,
+    invites[0],
+    invites[1],
+    avatarOwner,
   ])
+  const duplicate =
+    new Set([subject, ...invited.filter(Boolean)]).size !== 1 + invited.filter(Boolean).length
   const submit = async (): Promise<void> => {
+    if (duplicate || !canMutate) return
     const result = await operation.run(fingerprint, fingerprint, (operationId) =>
       api.register(id, {
         operationId,
         name,
-        companionId: companionId.trim(),
+        ...(contractVersion === 'torneos-hu77-84-78-hu83-v2.0.0' && mode === 'DUO'
+          ? { companionId: invited[0] ?? '' }
+          : { invitedMemberIds: invited }),
         avatar: { kind: 'ACCOUNT_AVATAR', subject: avatarSubject },
       }),
     )
@@ -62,16 +76,21 @@ export const RegisterTeamForm = ({
   return (
     <Card>
       <form
-        className="grid gap-4"
+        className="tournament-registration-form grid gap-4"
         aria-label="Registro del equipo"
         onSubmit={(event) => {
           event.preventDefault()
           void submit()
         }}
       >
-        <h2 className="font-game-display text-xl">Registra tu equipo</h2>
+        <h2 className="font-game-display text-xl">
+          {mode === 'SOLO' ? 'Registra tu participación' : 'Registra tu equipo'}
+        </h2>
+        <p>
+          {modalities[mode].label} · {modalities[mode].summary}
+        </p>
         <TextField
-          label="Nombre del equipo"
+          label={mode === 'SOLO' ? 'Nombre de tu participación' : 'Nombre del equipo'}
           value={name}
           required
           minLength={3}
@@ -82,28 +101,53 @@ export const RegisterTeamForm = ({
             setName(event.target.value)
           }}
         />
-        <TextField
-          label="Código de tu compañero"
-          value={companionId}
-          required
-          disabled={locked || !canMutate}
-          error={
-            companionId.trim() === subject
-              ? 'Elige otro jugador; los dos integrantes deben ser distintos.'
-              : undefined
-          }
-          hint="Pídele el código que aparece al abrir Torneo desde su cuenta."
-          onChange={(event) => {
-            setCompanionId(event.target.value)
-          }}
-        />
+        {needed > 0 && (
+          <div className="tournament-member-fields">
+            {invited.map((value, index) => (
+              <TextField
+                key={index}
+                label={
+                  mode === 'DUO'
+                    ? 'Código de tu compañero'
+                    : `Código del integrante ${String(index + 2)}`
+                }
+                value={value}
+                required
+                disabled={locked || !canMutate}
+                error={
+                  value !== '' &&
+                  (value === subject ||
+                    invited.some((other, position) => position !== index && other === value))
+                    ? mode === 'DUO'
+                      ? 'Elige otro jugador; los dos integrantes deben ser distintos.'
+                      : 'Cada integrante debe ser una persona distinta.'
+                    : undefined
+                }
+                hint="Pídele su código de jugador. Aceptará desde su propia cuenta."
+                onChange={(event) => {
+                  setInvites((current) =>
+                    current.map((previous, position) =>
+                      position === index ? event.target.value : previous,
+                    ),
+                  )
+                }}
+              />
+            ))}
+          </div>
+        )}
         <SelectField
-          label="Avatar del equipo"
+          label={mode === 'SOLO' ? 'Avatar de tu participación' : 'Avatar del equipo'}
           value={avatarOwner}
           disabled={locked || !canMutate}
           options={[
             { value: 'self', label: 'Mi avatar de cuenta' },
-            { value: 'companion', label: 'Avatar de cuenta del compañero' },
+            ...invited.map((_, index) => ({
+              value: mode === 'DUO' ? 'companion' : String(index),
+              label:
+                mode === 'DUO'
+                  ? 'Avatar de cuenta del compañero'
+                  : `Avatar del integrante ${String(index + 2)}`,
+            })),
           ]}
           onChange={(event) => {
             setAvatarOwner(event.target.value)
@@ -118,8 +162,11 @@ export const RegisterTeamForm = ({
           />
         )}
         <p className="text-sm text-muted">
-          Al registrar aceptas este nombre, avatar e integrantes. Tu compañero acepta desde su
-          cuenta. Este registro aún no reserva un cupo.
+          {mode === 'SOLO'
+            ? 'Al registrar aceptas tu participación.'
+            : 'Al registrar aceptas este nombre, avatar e integrantes. Cada compañero acepta desde su propia cuenta.'}{' '}
+          La inscripción aún no reserva un cupo. Aceptar cada justa es un paso distinto, durante su
+          ventana de dos minutos.
         </p>
         {operation.intent?.phase === 'UNCERTAIN' && (
           <p role="status">Registro pendiente de comprobar. Reintenta con los mismos datos.</p>
@@ -133,13 +180,13 @@ export const RegisterTeamForm = ({
         <Button
           type="submit"
           loading={operation.busy}
-          disabled={
-            !canMutate || companionId.trim() === subject || operation.intent?.phase === 'REJECTED'
-          }
+          disabled={!canMutate || duplicate || operation.intent?.phase === 'REJECTED'}
         >
           {operation.intent?.phase === 'UNCERTAIN'
             ? 'Comprobar el mismo registro'
-            : 'Registrar equipo'}
+            : mode === 'SOLO'
+              ? 'Registrar participación'
+              : 'Registrar equipo'}
         </Button>
       </form>
     </Card>

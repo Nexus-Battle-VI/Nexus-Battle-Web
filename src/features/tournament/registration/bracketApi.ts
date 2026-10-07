@@ -1,11 +1,13 @@
 import { httpClient } from '@/lib/http'
-import type { TeamAvatar } from './api'
+import type { TeamAvatar, TeamSize, TournamentMode } from './api'
 
 export type BracketSource =
   | { readonly kind: 'SEED'; readonly position: number }
   | { readonly kind: 'WINNER' | 'LOSER'; readonly matchId: string }
 export interface PublishedBracket {
-  readonly version: 2
+  readonly version: 2 | 3
+  readonly tournamentMode?: TournamentMode
+  readonly teamSize?: TeamSize
   readonly contractVersion: string
   readonly tournamentId: string
   readonly operationId: string
@@ -17,7 +19,7 @@ export interface PublishedBracket {
     readonly teamId: string
     readonly name: string
     readonly avatar: TeamAvatar
-    readonly memberIds: readonly [string, string]
+    readonly memberIds: readonly string[]
   }[]
   readonly matches: readonly {
     readonly id: string

@@ -2,6 +2,8 @@
 
 .tournament-page {
   overflow-wrap: anywhere;
+  max-width: 1120px;
+  margin-inline: auto;
 }
 .tournament-page h1,
 .tournament-page h2 {
@@ -11,4 +13,158 @@
 .tournament-page h1 {
   border-inline-start: 3px solid var(--color-accent-gold, var(--color-brand));
   padding-inline-start: 0.75rem;
+}
+.tournament-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tournament-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  border: 16px solid transparent;
+  border-image: var(--tournament-frame) 22 stretch;
+  background: var(--color-surface-raised);
+  background-clip: padding-box;
+}
+.tournament-hero svg {
+  color: var(--color-accent-gold);
+  flex-shrink: 0;
+}
+.tournament-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--color-muted);
+  margin-bottom: 6px;
+}
+.tournament-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+.tournament-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 48px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-raised);
+  color: var(--color-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.tournament-tabs button[aria-current='page'] {
+  background: var(--color-ink);
+  color: var(--color-surface);
+  border-color: var(--color-accent-gold);
+}
+.tournament-tabs button:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+.tournament-technical {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.tournament-technical summary {
+  cursor: pointer;
+  min-height: 30px;
+}
+.tournament-history {
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+}
+.tournament-history [aria-label='Eventos del combate'] {
+  max-height: 300px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  margin-top: 12px;
+}
+.tournament-create > section > details > summary {
+  display: none;
+}
+.tournament-create > .tournament-assets > section > details > summary {
+  display: none;
+}
+.tournament-member-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.tournament-member-fields > :only-child {
+  grid-column: 1 / -1;
+}
+.tournament-team-members {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+.tournament-team-members > li {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.tournament-team-members > li > :first-child {
+  flex-shrink: 0;
+}
+.tournament-calendar-scroll {
+  overflow: auto;
+  max-width: 100%;
+  overscroll-behavior: contain;
+}
+.tournament-calendar {
+  width: 100%;
+  min-width: 600px;
+  text-align: left;
+  font-size: 13px;
+}
+.tournament-calendar caption {
+  text-align: left;
+  margin-bottom: 10px;
+}
+.tournament-calendar :is(th, td) {
+  padding: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+.tournament-registration-form {
+  min-width: 0;
+}
+@media (max-width: 760px) {
+  .tournament-tabs button { flex-direction: column; padding: 6px; }
+  .tournament-member-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tournament-page {
+    gap: 12px;
+  }
+  .tournament-hero {
+    padding: 12px;
+    border-width: 12px;
+  }
+  .tournament-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .tournament-tabs button {
+    font-size: 12px;
+    min-height: 44px;
+  }
+  .tournament-history [aria-label='Eventos del combate'] {
+    max-height: 250px;
+  }
 }
