@@ -162,8 +162,10 @@
       "duplicate": "An active product of this type with the same name already exists.",
       "create": "The product could not be created.",
       "adjustNetwork": "The print run could not be adjusted. Check your connection and try again.",
+      "dropChanceNetwork": "The drop chance could not be configured. Check your connection and try again.",
       "concurrent": "Another adjustment changed the product while you were editing. Reload it and repeat the change.",
       "adjust": "The print run could not be adjusted.",
+      "dropChance": "The drop chance could not be configured.",
       "statusNetwork": "The product status could not be updated. Check your connection and try again.",
       "status": "The product status could not be updated.",
       "upload": "The image could not be uploaded.",
@@ -241,6 +243,8 @@
       "slot": "Slot",
       "setCode": "Set code (optional)",
       "setCodeHint": "In UPPERCASE, or empty if it doesn't belong to a set.",
+      "dropChancePercent": "Drop chance (%)",
+      "dropChancePercentHint": "Integer between 0 and 100. 0% is valid if you explicitly decide it doesn't drop in Versus.",
       "compatibleSubtype": "Compatible hero subtype",
       "specificEffect": "Specific effect",
       "specificEffects": "Specific effects",
@@ -311,6 +315,8 @@
       "premium": "Premium",
       "realMoney": "Real-money price",
       "initialStatus": "Initial status",
+      "dropChance": "Drop chance",
+      "dropChanceValue": "{{value}}%",
       "note": "On confirming, Catalog validates the attributes against the type's schema, stores the product and records the audit event. If anything fails, nothing is created."
     },
     "badge": {
@@ -404,7 +410,15 @@
       "editSave": "Save changes",
       "editSaving": "Saving…",
       "editSaved": "“{{name}}” updated.",
-      "editCancel": "Cancel"
+      "editCancel": "Cancel",
+      "dropChance": "Drop chance",
+      "dropChanceMissing": "No drop chance configured",
+      "dropChanceCurrent": "Current drop chance: {{value}}%",
+      "dropChanceTitle": "Drop chance for \"{{name}}\"",
+      "dropChanceSave": "Save rate",
+      "dropChanceSaving": "Saving…",
+      "dropChanceSaved": "Drop chance for \"{{name}}\" updated.",
+      "dropChanceCancel": "Cancel"
     }
   },
   "missions": {
