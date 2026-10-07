@@ -34,6 +34,11 @@ if (import.meta.env.DEV) {
       default: module.TournamentRegistrationPreview,
     })),
   )
+  const TournamentAdminPreviewLazy = lazy(() =>
+    import('@/features/tournament/dev/TournamentAdminPreview').then((module) => ({
+      default: module.TournamentAdminPreview,
+    })),
+  )
   const [
     { HeroesDevPreviewLazy },
     { ProductsDevPreviewLazy },
@@ -465,6 +470,14 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <TournamentRegistrationPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/tournament/admin',
+      element: (
+        <Suspense fallback={null}>
+          <TournamentAdminPreviewLazy />
         </Suspense>
       ),
     },
