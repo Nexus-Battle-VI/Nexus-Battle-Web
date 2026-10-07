@@ -145,7 +145,10 @@
   min-width: 0;
 }
 @media (max-width: 760px) {
-  .tournament-tabs button { flex-direction: column; padding: 6px; }
+  .tournament-tabs button {
+    flex-direction: column;
+    padding: 6px;
+  }
   .tournament-member-fields {
     grid-template-columns: minmax(0, 1fr);
   }
