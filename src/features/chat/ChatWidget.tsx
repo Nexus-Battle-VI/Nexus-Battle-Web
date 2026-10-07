@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link } from 'react-router'
 
-import { BattlePixelIcon } from '@/features/battle-rooms/BattlePixelIcon'
-
 import './chat.css'
 
 import {
@@ -204,7 +202,12 @@ export const ChatWidget = (): React.JSX.Element => {
             setOpen(true)
           }}
         >
-          <BattlePixelIcon icon="chat" size="lg" />
+          <img
+            src="/assets/chat/ayuda-mascota.png"
+            alt=""
+            aria-hidden="true"
+            className="help-launcher-face"
+          />
         </button>
       </div>
     )
