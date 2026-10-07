@@ -88,6 +88,7 @@ describe('ADMIN_NAVIGATION', () => {
       '/admin/chatbot',
       '/admin/chatbot/knowledge',
       '/admin/chatbot/analytics',
+      '/admin/chatbot/tickets',
       '/admin/roles',
       '/admin/comments/moderation',
     ])

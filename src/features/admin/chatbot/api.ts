@@ -111,3 +111,14 @@ export const exportKnowledge = (signal?: AbortSignal): Promise<KnowledgeDocument
 
 export const importKnowledge = (document: KnowledgeDocument): Promise<ImportResult> =>
   httpClient.post('/v1/chatbot/admin/knowledge/import', document)
+
+export interface SupportTicketRow {
+  readonly id: string
+  readonly actor: string
+  readonly question: string
+  readonly view: string | null
+  readonly createdAt: string
+}
+
+export const fetchSupportTickets = (signal?: AbortSignal): Promise<readonly SupportTicketRow[]> =>
+  httpClient.get('/v1/chatbot/admin/tickets', signal)
