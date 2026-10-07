@@ -48,7 +48,7 @@
   "english": "Inglês",
   "exportFile": "Exportar",
   "importFile": "Importar",
-  "imported": "Entradas novas: {{created}}. Já existentes: {{skipped}}.",
+  "imported": "Entradas novas: {{created}}. Já existentes: {{skipped}}. Frases acrescentadas: {{reinforced}}.",
   "fileFailed": "Não foi possível ler o arquivo.",
   "ratings": "Úteis {{useful}} · Não úteis {{notUseful}}",
   "singleExamples": "Classes com um só exemplo: {{labels}}",
