@@ -5,6 +5,7 @@ import { formatDateTime } from '@/lib/format'
 import { countLabel } from '@/shared/i18n/format'
 import { AuctionProductSummary } from './AuctionProductSummary'
 import { useWatchlist } from './useWatchlist'
+import './auction-remaster.css'
 
 /** Pantalla del jugador para administrar su lista privada de subastas (HU-68). */
 export const AuctionPage = (): React.JSX.Element => {
@@ -12,7 +13,7 @@ export const AuctionPage = (): React.JSX.Element => {
   const { t } = useTranslation()
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10">
+    <div className="auction-shell auction-page flex flex-col gap-4">
       <Breadcrumb
         items={[
           { label: t('auction:crumbs.home'), to: '/ecommerce' },
@@ -20,14 +21,15 @@ export const AuctionPage = (): React.JSX.Element => {
           { label: t('auction:crumbs.watchlist') },
         ]}
       />
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="auction-hero">
         <div>
-          <h1 className="text-2xl font-semibold text-ink">{t('auction:watchlist.title')}</h1>
+          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
+          <h1 className="auction-title font-semibold text-ink">{t('auction:watchlist.title')}</h1>
           <p className="mt-1 text-sm text-muted">{t('auction:watchlist.subtitle')}</p>
         </div>
         <Link
           to="/auction"
-          className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
+          className="auction-link inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
         >
           {t('auction:watchlist.viewActive')}
         </Link>
@@ -47,9 +49,12 @@ export const AuctionPage = (): React.JSX.Element => {
         <p className="text-sm text-muted">{t('auction:watchlist.empty')}</p>
       )}
       {!isLoading && loadError === null && items.length > 0 && (
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="auction-collection-grid grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {items.map(({ auction, followedAt }) => (
-            <li key={auction.id} className="rounded-lg border border-border bg-surface-raised p-4">
+            <li
+              key={auction.id}
+              className="auction-card rounded-lg border border-border bg-surface-raised p-4"
+            >
               <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between sm:gap-3">
                 <div className="min-w-0">
                   <AuctionProductSummary productId={auction.productId} />

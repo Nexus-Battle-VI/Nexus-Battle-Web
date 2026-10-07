@@ -1,12 +1,12 @@
 .auto-bid-card {
-  --auto-bid-card: #f1f5f9;
-  --auto-bid-border: #e2e8f0;
-  --auto-bid-text: #0f172a;
-  --auto-bid-muted: #475569;
+  --auto-bid-card: #f8f1e3;
+  --auto-bid-border: #c7a768;
+  --auto-bid-text: #2b2119;
+  --auto-bid-muted: #6e5b48;
   --auto-bid-disabled-text: #475569;
-  --auto-bid-brand: #7c3aed;
+  --auto-bid-brand: #76486f;
   --auto-bid-brand-ink: #f8fafc;
-  --auto-bid-info: #60a5fa;
+  --auto-bid-info: #9a6817;
   --auto-bid-success: #4ade80;
   --auto-bid-warning: #fbbf24;
   --auto-bid-danger: #f87171;
@@ -22,36 +22,46 @@
   padding: 24px;
   border: 1px solid var(--auto-bid-border);
   border-radius: 12px;
-  background-color: var(--auto-bid-card);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--auto-bid-card) 92%, #d8bd7a 8%),
+    var(--auto-bid-card)
+  );
   color: var(--auto-bid-text);
+  box-shadow: 0 10px 26px rgb(83 56 17 / 12%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .auto-bid-card {
-    --auto-bid-card: #1e293b;
-    --auto-bid-border: #334155;
-    --auto-bid-text: #f8fafc;
-    --auto-bid-muted: #94a3b8;
+    --auto-bid-card: #1d171b;
+    --auto-bid-border: #765a37;
+    --auto-bid-text: #f3e8cf;
+    --auto-bid-muted: #baa98f;
+    --auto-bid-brand: #9b638f;
+    --auto-bid-info: #c79a4b;
     --auto-bid-disabled-text: #475569;
-    --auto-bid-alert-info-bg: #020617;
-    --auto-bid-alert-warning-bg: #020617;
+    --auto-bid-alert-info-bg: rgb(199 154 75 / 10%);
+    --auto-bid-alert-warning-bg: rgb(118 72 111 / 14%);
   }
 }
 
 :root[data-theme='dark'] .auto-bid-card {
-  --auto-bid-card: #1e293b;
-  --auto-bid-border: #334155;
-  --auto-bid-text: #f8fafc;
-  --auto-bid-muted: #94a3b8;
+  --auto-bid-card: #1d171b;
+  --auto-bid-border: #765a37;
+  --auto-bid-text: #f3e8cf;
+  --auto-bid-muted: #baa98f;
+  --auto-bid-brand: #9b638f;
+  --auto-bid-info: #c79a4b;
   --auto-bid-disabled-text: #475569;
-  --auto-bid-alert-info-bg: #020617;
-  --auto-bid-alert-warning-bg: #020617;
+  --auto-bid-alert-info-bg: rgb(199 154 75 / 10%);
+  --auto-bid-alert-warning-bg: rgb(118 72 111 / 14%);
 }
 
 .auto-bid-card[data-emphasis='true'] {
-  border: 2px solid var(--auto-bid-brand);
-  padding: 23px;
-  box-shadow: 0 0 20px rgb(124 58 237 / 30%);
+  border-color: var(--auto-bid-border);
+  box-shadow:
+    0 12px 30px rgb(83 56 17 / 16%),
+    inset 0 1px rgb(255 255 255 / 8%);
 }
 
 .auto-bid-header-row {
@@ -289,7 +299,7 @@
   }
 
   .auto-bid-card[data-emphasis='true'] {
-    padding: 19px;
+    padding: 20px;
   }
 
   .auto-bid-header-row {

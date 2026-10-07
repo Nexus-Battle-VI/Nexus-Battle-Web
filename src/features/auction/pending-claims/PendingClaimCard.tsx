@@ -100,7 +100,7 @@ export const PendingClaimCard = ({
   return (
     <li>
       <article
-        className="flex h-full flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
+        className="auction-claim-card flex h-full flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
         aria-labelledby={`pending-claim-${claim.auctionId}-name`}
       >
         <div className="flex items-start gap-3">
