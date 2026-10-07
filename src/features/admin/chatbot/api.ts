@@ -87,3 +87,27 @@ export const updateKnowledge = (id: string, draft: KnowledgeDraft): Promise<Know
 
 export const deleteKnowledge = (id: string): Promise<null> =>
   httpClient.delete(`/v1/chatbot/admin/knowledge/${encodeURIComponent(id)}`)
+
+export interface KnowledgeDocument {
+  readonly schemaVersion: number
+  readonly entries: readonly {
+    readonly intent: string
+    readonly language: string
+    readonly priority: number
+    readonly question?: string
+    readonly variations: readonly string[]
+    readonly answer: string
+    readonly view?: string | null
+  }[]
+}
+
+export interface ImportResult {
+  readonly created: number
+  readonly skipped: number
+}
+
+export const exportKnowledge = (signal?: AbortSignal): Promise<KnowledgeDocument> =>
+  httpClient.get('/v1/chatbot/admin/knowledge/export', signal)
+
+export const importKnowledge = (document: KnowledgeDocument): Promise<ImportResult> =>
+  httpClient.post('/v1/chatbot/admin/knowledge/import', document)

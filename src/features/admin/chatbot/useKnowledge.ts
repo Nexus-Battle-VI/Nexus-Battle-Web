@@ -20,6 +20,9 @@ export const useKnowledgeEntries = () => {
     entries: query.data ?? [],
     isLoading: query.isLoading,
     error: query.error,
+    reload: () => {
+      void query.refetch()
+    },
   }
 }
 
