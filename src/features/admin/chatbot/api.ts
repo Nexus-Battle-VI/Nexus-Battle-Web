@@ -9,6 +9,12 @@ export interface ModelVersionRow {
   readonly useful: number
   readonly notUseful: number
   readonly precision: number | null
+  readonly perIntentF1: readonly { readonly label: string; readonly score: number }[]
+  readonly confusion: readonly {
+    readonly actual: string
+    readonly predicted: string
+    readonly count: number
+  }[]
 }
 
 export interface TrainingResult {

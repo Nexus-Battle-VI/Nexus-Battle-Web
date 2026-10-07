@@ -24,6 +24,14 @@ const versions = [
     useful: 2,
     notUseful: 1,
     precision: 2 / 3,
+    perIntentF1: [
+      { label: 'es:regla', score: 0.5 },
+      { label: 'es:turno', score: 1 },
+    ],
+    confusion: [
+      { actual: 'es:regla', predicted: 'es:turno', count: 1 },
+      { actual: 'es:turno', predicted: 'es:turno', count: 2 },
+    ],
   },
   {
     versionId: 'candidata',
@@ -34,6 +42,8 @@ const versions = [
     useful: 0,
     notUseful: 0,
     precision: null,
+    perIntentF1: [],
+    confusion: [],
   },
 ]
 
@@ -51,6 +61,8 @@ describe('ModelAdminPage', () => {
     expect(await screen.findByRole('heading', { name: 'Versión activa' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Versión candidata' })).toBeInTheDocument()
     expect(screen.getByText(/66\.7%/)).toBeInTheDocument()
+    expect(screen.getByText(/es:turno 100%/)).toBeInTheDocument()
+    expect(screen.getByText(/es:regla se leyó como es:turno \(1\)/)).toBeInTheDocument()
     expect(screen.getByText(/Ninguna candidata está en prueba/)).toBeInTheDocument()
   })
 
