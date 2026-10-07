@@ -85,9 +85,15 @@ export const MatchSchedule = ({
       {match.acceptanceStatus === 'SCHEDULED' && (
         <p>Ventana programada; el servidor aún no confirma su apertura.</p>
       )}
-      {match.acceptanceStatus === 'CLOSED' && !match.resolution && (
-        <p>Aceptación cerrada. Esperando la operación de Combat.</p>
-      )}
+      {match.acceptanceStatus === 'CLOSED' &&
+        !match.resolution &&
+        !match.blockReason &&
+        match.status !== 'IN_PROGRESS' &&
+        match.status !== 'FINISHED' &&
+        (match.operationalStatus === 'PREPARE_PENDING' ||
+          match.operationalStatus === 'START_PENDING') && (
+          <p>Aceptación cerrada. Esperando la operación de Combat.</p>
+        )}
     </div>
   )
 }

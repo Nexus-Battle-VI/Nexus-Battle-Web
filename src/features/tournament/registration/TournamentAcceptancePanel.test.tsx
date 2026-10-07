@@ -21,7 +21,7 @@ import { TournamentAcceptancePanel } from './TournamentAcceptancePanel'
 import { TournamentEncounterAdminPanel } from './TournamentEncounterAdminPanel'
 import { TournamentEncountersPanel } from './TournamentEncountersPanel'
 import { sampleMatches, useEncounterClock } from './encounterClock'
-import { AbsenceResolution } from './MatchSchedule'
+import { AbsenceResolution, MatchSchedule } from './MatchSchedule'
 import { TournamentRegistrationPage } from './TournamentRegistrationPage'
 import { dateLabel } from './presentation'
 import {
@@ -438,5 +438,49 @@ describe('resoluciones y administración · datos del servidor', () => {
     const participants = within(region).getAllByRole('list', { name: /^Participantes de Combat/u })
     expect(participants).toHaveLength(2)
     expect(participants.map((list) => within(list).getAllByRole('listitem').length)).toEqual([3, 3])
+  })
+})
+
+describe('mensajes operativos del calendario', () => {
+  it('muestra la espera de Combat solo durante preparación o inicio pendientes', () => {
+    renderWithProviders(
+      <MatchSchedule
+        match={calendarMatchFixture({
+          acceptanceStatus: 'CLOSED',
+          operationalStatus: 'PREPARE_PENDING',
+        })}
+      />,
+    )
+    expect(screen.getByText('Aceptación cerrada. Esperando la operación de Combat.')).toBeVisible()
+  })
+  it.each(['IN_PROGRESS', 'FINISHED'] as const)('no anuncia espera para una justa %s', (status) => {
+    renderWithProviders(
+      <MatchSchedule
+        match={calendarMatchFixture({
+          status,
+          acceptanceStatus: 'CLOSED',
+          operationalStatus: 'IN_BATTLE',
+        })}
+      />,
+    )
+    expect(screen.queryByText(/Esperando la operación de Combat/u)).not.toBeInTheDocument()
+  })
+  it('un bloqueo muestra su motivo sin anunciar otra espera contradictoria', () => {
+    renderWithProviders(
+      <MatchSchedule
+        match={calendarMatchFixture({
+          acceptanceStatus: 'CLOSED',
+          operationalStatus: 'PREPARE_PENDING',
+          blockReason: {
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Combat desconectado',
+            responsible: 'COMBAT_OPERATIONS',
+            since: '2026-10-07T19:02:00Z',
+          },
+        })}
+      />,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Combat desconectado')
+    expect(screen.queryByText(/Esperando la operación de Combat/u)).not.toBeInTheDocument()
   })
 })
