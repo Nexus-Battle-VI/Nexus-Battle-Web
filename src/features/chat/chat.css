@@ -10,8 +10,14 @@
 .help-dock {
   position: fixed;
   z-index: 40;
-  right: 20px;
-  bottom: 84px;
+  /*
+   * Misma distancia al borde que el carrito de Ecommerce, pero por encima
+   * de la pastilla (52px + 16px de margen). Si comparten el borde derecho,
+   * el lanzador tapa el texto "CARRITO", y en Subasta queda encima del
+   * contenido de la esquina.
+   */
+  right: max(20px, calc((100vw - 1408px) / 2));
+  bottom: 112px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
