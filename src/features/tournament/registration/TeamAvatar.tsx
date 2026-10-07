@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/Button'
+import { TournamentButton as Button } from '../TournamentVisuals'
 import { httpClient, type HttpDownload } from '@/lib/http'
 import { avatarPathForSubject } from '@/shared/avatar'
 

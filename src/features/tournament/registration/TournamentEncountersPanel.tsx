@@ -1,7 +1,9 @@
+import { TournamentHeading } from '../TournamentVisuals'
 import { useState } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { TournamentButton as Button } from '../TournamentVisuals'
+import { TournamentCard as Card } from '../TournamentVisuals'
+import { SelectField } from '@/components/ui/form/SelectField'
 import { encounterApi, type EncounterApi } from './encounterApi'
 import { dateLabel, matchStatus } from './presentation'
 
@@ -17,12 +19,17 @@ export const TournamentEncountersPanel = ({
   id,
   subject,
   api = encounterApi,
+  selectedMatchId,
+  onChooseMatch,
 }: {
   readonly id: string
   readonly subject: string
   readonly api?: EncounterApi
+  readonly selectedMatchId?: string
+  readonly onChooseMatch?: (matchId: string) => void
 }): React.JSX.Element => {
-  const [matchId, setMatchId] = useState('')
+  const [localMatchId, setMatchId] = useState('')
+  const matchId = selectedMatchId ?? localMatchId
   const list = useQuery({
     queryKey: ['tournament-encounters', subject, id],
     queryFn: () => api.list(id),
@@ -59,8 +66,12 @@ export const TournamentEncountersPanel = ({
   }
   return (
     <Card>
-      <section aria-label="Registro de justas" className="grid min-w-0 gap-4">
-        <h2 className="font-game-display text-xl">Justas y registro de combates</h2>
+      <section
+        id="tournament-record"
+        aria-label="Registro de justas"
+        className="grid min-w-0 gap-4"
+      >
+        <TournamentHeading icon="encounters">Justas y registro de combates</TournamentHeading>
         <p className="text-sm text-muted">
           Cada justa conserva su propio registro, aunque no se haya transmitido.
         </p>
@@ -72,26 +83,23 @@ export const TournamentEncountersPanel = ({
           </Button>
         </div>
         {list.data?.length === 0 && <p>Todavía no hay justas registradas en este torneo.</p>}
-        <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {list.data
-            ?.filter((m) => m.tournamentId === id)
-            .map((match) => (
-              <button
-                key={match.matchId}
-                type="button"
-                aria-pressed={matchId === match.matchId}
-                onClick={() => {
-                  setMatchId(match.matchId)
-                }}
-                className="min-w-0 rounded-lg border border-border p-3 text-left hover:bg-surface focus-visible:outline-2 focus-visible:outline-brand"
-              >
-                <span className="block font-semibold">
-                  {match.bracketLabel} · Ronda {String(match.round)}
-                </span>
-                <span className="block text-sm">{matchStatus(match)}</span>
-              </button>
-            ))}
-        </div>
+        {list.data !== undefined && list.data.length > 0 && (
+          <SelectField
+            label="Elegir justa"
+            value={matchId}
+            placeholder="Elige el encuentro"
+            options={list.data
+              .filter((match) => match.tournamentId === id)
+              .map((match) => ({
+                value: match.matchId,
+                label: `${match.bracketLabel} · Ronda ${String(match.round)} · ${matchStatus(match)}`,
+              }))}
+            onChange={(event) => {
+              setMatchId(event.target.value)
+              onChooseMatch?.(event.target.value)
+            }}
+          />
+        )}
         {matchId !== '' && detail.isPending && <p role="status">Consultando el combate…</p>}
         {matchId !== '' && detail.isError && (
           <div role="alert">
@@ -122,10 +130,27 @@ export const TournamentEncountersPanel = ({
                     : view.bracketLabel}{' '}
               · Ronda {String(view.round)}
             </p>
-            <p className="break-all text-sm">Identidad del encuentro: {view.matchId}</p>
-            {view.combatRoomId && (
-              <p className="break-all text-sm">Sala de Combat: {view.combatRoomId}</p>
-            )}
+            <details className="tournament-technical">
+              <summary>Referencias del encuentro y sus integrantes</summary>
+              <p className="break-all text-sm">Identidad del encuentro: {view.matchId}</p>
+              {view.combatRoomId && (
+                <p className="break-all text-sm">Sala de Combat: {view.combatRoomId}</p>
+              )}
+              {view.teams
+                .flatMap((team) => team.participants)
+                .map((participant) => (
+                  <p key={participant.playerId} className="break-all text-sm">
+                    Jugador {participant.playerId} · Héroe {participant.heroId}
+                  </p>
+                ))}
+              {view.registeredTeams
+                ?.flatMap((team) => team?.memberIds ?? [])
+                .map((member) => (
+                  <p key={member} className="break-all text-sm">
+                    Jugador: {member}
+                  </p>
+                ))}
+            </details>
             {view.registeredTeams?.map((team, index) =>
               team === null ? (
                 <p key={index}>Equipo pendiente de resolver.</p>
@@ -133,9 +158,11 @@ export const TournamentEncountersPanel = ({
                 <div key={team.teamId}>
                   <p className="font-semibold">{team.name}</p>
                   <ul className="grid gap-1 text-sm">
-                    {team.memberIds.map((member) => (
+                    {team.memberIds.map((member, memberIndex) => (
                       <li key={member} className="break-all">
-                        Jugador: {member}
+                        {member === subject
+                          ? 'Tu cuenta'
+                          : `Nombre del jugador ${String(memberIndex + 1)} pendiente`}
                       </li>
                     ))}
                   </ul>
@@ -146,9 +173,12 @@ export const TournamentEncountersPanel = ({
               <div key={team.teamId}>
                 <p className="font-semibold">Equipo {team.teamLabel}</p>
                 <ul className="grid gap-1 text-sm">
-                  {team.participants.map((participant) => (
+                  {team.participants.map((participant, participantIndex) => (
                     <li key={participant.playerId} className="break-all">
-                      Jugador {participant.playerId} · Héroe {participant.heroId}
+                      {participant.playerId === subject
+                        ? 'Tu héroe'
+                        : `Héroe del jugador ${String(participantIndex + 1)}`}{' '}
+                      · Metadatos pendientes
                     </li>
                   ))}
                 </ul>
@@ -184,33 +214,39 @@ export const TournamentEncountersPanel = ({
                   El archivo todavía no ha alcanzado todos los eventos conocidos de Combat.
                 </p>
               )}
-            <h4 className="font-semibold">Turnos y eventos</h4>
-            {uniqueEvents.length === 0 && <p>Todavía no hay eventos conservados.</p>}
-            <ol className="grid min-w-0 gap-2" aria-label="Eventos del combate">
-              {uniqueEvents.map((event) => (
-                <li key={event.seq} className="min-w-0 rounded border border-border p-3">
-                  <p>
-                    {String(event.seq)}. {eventLabel[event.type] ?? event.type} ·{' '}
-                    {dateLabel(event.occurredAt)}
-                  </p>
-                  <details>
-                    <summary className="cursor-pointer text-sm">Ver registro de la acción</summary>
-                    <pre className="mt-2 overflow-auto whitespace-pre-wrap break-all text-xs">
-                      {JSON.stringify(event.payload, null, 2)}
-                    </pre>
-                  </details>
-                </li>
-              ))}
-            </ol>
-            {detail.hasNextPage && (
-              <Button
-                variant="secondary"
-                loading={detail.isFetchingNextPage}
-                onClick={() => void detail.fetchNextPage()}
-              >
-                Ver siguientes eventos
-              </Button>
-            )}
+            <details className="tournament-history">
+              <summary className="cursor-pointer font-semibold">
+                Historial de acciones ({String(uniqueEvents.length)})
+              </summary>
+              {uniqueEvents.length === 0 && <p>Todavía no hay eventos conservados.</p>}
+              <ol className="grid min-w-0 gap-2" aria-label="Eventos del combate">
+                {uniqueEvents.map((event) => (
+                  <li key={event.seq} className="min-w-0 rounded border border-border p-3">
+                    <p>
+                      {String(event.seq)}. {eventLabel[event.type] ?? event.type} ·{' '}
+                      {dateLabel(event.occurredAt)}
+                    </p>
+                    <details>
+                      <summary className="cursor-pointer text-sm">
+                        Ver registro de la acción
+                      </summary>
+                      <pre className="mt-2 overflow-auto whitespace-pre-wrap break-all text-xs">
+                        {JSON.stringify(event.payload, null, 2)}
+                      </pre>
+                    </details>
+                  </li>
+                ))}
+              </ol>
+              {detail.hasNextPage && (
+                <Button
+                  variant="secondary"
+                  loading={detail.isFetchingNextPage}
+                  onClick={() => void detail.fetchNextPage()}
+                >
+                  Ver siguientes eventos
+                </Button>
+              )}
+            </details>
           </section>
         )}
       </section>

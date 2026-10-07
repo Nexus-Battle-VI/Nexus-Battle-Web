@@ -2,7 +2,7 @@ import type { EntryPayment, EntryTeam, PaidMethod } from './api'
 import type { MatchSummary } from './encounterApi'
 
 export const teamStatus: Record<EntryTeam['status'], string> = {
-  AWAITING_CONSENT: 'Esperando aceptación del compañero',
+  AWAITING_CONSENT: 'Esperando aceptación de integrantes',
   PENDING_PAYMENT: 'Pendiente de confirmar el cupo',
   PAYMENT_PENDING: 'Comprobando el pago · cupo aún sin confirmar',
   COMPENSATING: 'Comprobando la devolución · cupo sin confirmar',

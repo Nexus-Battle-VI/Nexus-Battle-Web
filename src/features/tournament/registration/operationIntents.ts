@@ -1,4 +1,5 @@
 import { HttpError } from '@/lib/http'
+import { useSession } from '@/shared/session'
 
 export interface OperationIntent {
   readonly operationId: string
@@ -9,6 +10,23 @@ const prefix = 'nexus:tournament:intent:v2:'
 // Only IDs and non-sensitive business fingerprints. Never cards or credentials.
 const memory = new Map<string, OperationIntent>()
 const memoryOnly = new Set<string>()
+export const clearTournamentIntents = (): void => {
+  memory.clear()
+  memoryOnly.clear()
+  try {
+    const keys = Array.from({ length: sessionStorage.length }, (_, i) => sessionStorage.key(i))
+    keys.forEach((key) => {
+      if (key?.startsWith(prefix)) sessionStorage.removeItem(key)
+    })
+  } catch {
+    /* No storage is required to clear the in-memory session. */
+  }
+}
+// Tokens live in memory: intents from a previous page load belong to an expired session.
+if (useSession.getState().subject === null) clearTournamentIntents()
+useSession.subscribe((session, previous) => {
+  if (session.subject !== previous.subject) clearTournamentIntents()
+})
 export const readIntent = (scope: string): OperationIntent | null => {
   if (memoryOnly.has(scope)) return memory.get(scope) ?? null
   try {

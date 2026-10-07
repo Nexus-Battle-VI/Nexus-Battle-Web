@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor, cleanup, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HttpError } from '@/lib/http'
@@ -8,6 +8,7 @@ import {
   DEV_REGISTRATION_TOURNAMENT,
   registrationTeamFixture,
   devAvatarDownload,
+  createRegistrationPreviewApis,
 } from '@/features/tournament/dev/registrationFixtures'
 import { TournamentRegistrationPage } from './TournamentRegistrationPage'
 import type { EntryTeam, EntryView, RegistrationApi } from './api'
@@ -65,7 +66,7 @@ const setup = (team: EntryTeam | null = null) => {
           ...registrationTeamFixture('AWAITING_CONSENT'),
           name: input.name,
           avatar: input.avatar,
-          companionId: input.companionId,
+          companionId: input.companionId ?? null,
         }),
       ),
     ),
@@ -81,7 +82,35 @@ const setup = (team: EntryTeam | null = null) => {
   } satisfies RegistrationApi
   const brackets = { view: vi.fn().mockResolvedValue(null), publish: vi.fn() }
   const encounters = { list: vi.fn().mockResolvedValue([]), detail: vi.fn() }
-  const props = { api, brackets, encounters, avatarDownload: devAvatarDownload }
+  const links = {
+    view: vi.fn((id: string) =>
+      Promise.resolve({
+        tournamentId: id,
+        liveUrl: null,
+        youtubeArchiveUrl: null,
+        revision: 0,
+        updatedAt: null,
+      }),
+    ),
+    save: vi.fn(),
+  }
+  const progress = {
+    view: vi.fn().mockResolvedValue({ bracket: null, champion: null, eliminatedTeamIds: [] }),
+  }
+  const prizes = {
+    view: vi.fn().mockResolvedValue({ configuration: null, champion: null, delivery: null }),
+    approve: vi.fn(),
+    deliver: vi.fn(),
+  }
+  const props = {
+    api,
+    brackets,
+    encounters,
+    links,
+    progress,
+    prizes,
+    avatarDownload: devAvatarDownload,
+  }
   const renderPage = () => renderWithProviders(<TournamentRegistrationPage {...props} />)
   return {
     api,
@@ -98,17 +127,103 @@ beforeEach(() => {
   sessionStorage.clear()
   useSession.setState({
     subject: A,
+    displayName: null,
     roles: ['PLAYER'],
     accessToken: 'unit-test-token',
     expiresAt: Date.now() + 60000,
   })
 })
 afterEach(() => {
+  cleanup()
   sessionStorage.clear()
-  useSession.setState({ subject: null, roles: [], accessToken: null, expiresAt: null })
+  useSession.setState({
+    subject: null,
+    displayName: null,
+    roles: [],
+    accessToken: null,
+    expiresAt: null,
+  })
   vi.restoreAllMocks()
 })
 describe('recorrido de Torneo v2: pruebas de componentes con dobles, sin Cognito real', () => {
+  it('separa vistas y consulta premio/enlaces solo al abrir la sección pertinente', async () => {
+    const test = setup(confirmed())
+    test.renderPage()
+    await screen.findByText('Cupo 8 confirmado')
+    expect(test.props.prizes.view).not.toHaveBeenCalled()
+    expect(test.props.links.view).not.toHaveBeenCalled()
+    await userEvent.click(screen.getByRole('button', { name: 'Premio' }))
+    await waitFor(() => {
+      expect(test.props.prizes.view).toHaveBeenCalledWith(T, expect.any(AbortSignal))
+    })
+    expect(screen.queryByRole('region', { name: 'Inscripción del equipo' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Mi equipo' }))
+    expect(await screen.findByText('Cupo 8 confirmado')).toBeInTheDocument()
+  })
+  it('obtiene el nombre propio de sesión y declara el nombre ajeno pendiente', async () => {
+    useSession.setState({ displayName: 'Sofía' })
+    setup(confirmed()).renderPage()
+    expect(await screen.findByText('Sofía (tú)')).toBeVisible()
+    expect(screen.getByText('Nombre del compañero pendiente')).toBeVisible()
+    expect(screen.getByText(`Creador: ${A}`)).not.toBeVisible()
+    expect(
+      screen.getByText('Comprobantes de inscripción y pago').closest('details'),
+    ).not.toHaveAttribute('open')
+  })
+  it('crear torneo abre el formulario separado únicamente para administración', async () => {
+    const test = setup()
+    const player = test.renderPage()
+    await screen.findByLabelText(/^Nombre del equipo/u)
+    expect(screen.queryByRole('button', { name: 'Crear torneo' })).not.toBeInTheDocument()
+    player.unmount()
+    useSession.setState({ roles: ['ADMINISTRATOR'] })
+    test.renderPage()
+    await userEvent.click(screen.getByRole('button', { name: 'Crear torneo' }))
+    expect(screen.getByRole('form', { name: 'Creación de torneo' })).toBeVisible()
+    expect(
+      screen.queryByRole('navigation', { name: 'Secciones del torneo' }),
+    ).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Volver al torneo' }))
+    expect(await screen.findByRole('navigation', { name: 'Secciones del torneo' })).toBeVisible()
+  })
+  it('desde las llaves publicadas abre el historial de la justa por su ID recibido', async () => {
+    const fixture = createRegistrationPreviewApis()
+    const snapshot = await fixture.brackets.publish(T, 'qa-publish')
+    const test = setup()
+    test.setView({
+      ...test.view(),
+      tournament: { ...test.view().tournament, open: false, bracketPublished: true },
+      capacity: { confirmed: 8, reserved: 0, available: 0 },
+    })
+    renderWithProviders(
+      <TournamentRegistrationPage
+        {...test.props}
+        brackets={fixture.brackets}
+        encounters={fixture.encounters}
+      />,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Llaves' }))
+    await userEvent.click(
+      await within(await screen.findByRole('region', { name: 'Llaves del torneo' })).findByRole(
+        'button',
+        {
+          name: /^E1 · Ronda/u,
+        },
+      ),
+    )
+    await userEvent.click(screen.getByRole('link', { name: 'Ver registro de E1' }))
+    expect(await screen.findByText('Todavía no hay eventos conservados.')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Registro del combate E1' })).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('region', { name: 'Registro de justas' })).getByRole('combobox', {
+        name: 'Elegir justa',
+      }),
+    ).toHaveValue(snapshot.matches[0]!.encounterId)
+    expect(snapshot.matches[0]!.encounterId).not.toBe('E1')
+    expect(
+      screen.queryByRole('button', { name: /Preparar|Iniciar combate|Elegir ganador/u }),
+    ).not.toBeInTheDocument()
+  })
   it('registra dos miembros con avatar de cuenta y comprobante distinto del cupo', async () => {
     const test = setup()
     test.renderPage()
