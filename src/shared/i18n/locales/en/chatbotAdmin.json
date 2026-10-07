@@ -49,5 +49,7 @@
   "exportFile": "Export",
   "importFile": "Import",
   "imported": "New entries: {{created}}. Already stored: {{skipped}}.",
-  "fileFailed": "The file could not be read."
+  "fileFailed": "The file could not be read.",
+  "ratings": "Useful {{useful}} · Not useful {{notUseful}}",
+  "singleExamples": "Classes with a single example: {{labels}}"
 }

@@ -62,7 +62,7 @@ describe('ModelAdminPage', () => {
       versionId: 'candidata',
       accuracy: 0.4,
       macroF1: 0.3,
-      singleExampleLabels: [],
+      singleExampleLabels: ['es:rara'],
     })
     const user = userEvent.setup()
     renderWithProviders(<ModelAdminPage />)
@@ -71,6 +71,8 @@ describe('ModelAdminPage', () => {
 
     expect(startModelTraining).toHaveBeenCalledOnce()
     expect(await screen.findByText(/La validación no autorizó la promoción/)).toBeInTheDocument()
+    expect(screen.getByText(/Clases con un solo ejemplo: es:rara/)).toBeInTheDocument()
+    expect(screen.getByText(/Útiles 2/)).toBeInTheDocument()
   })
 
   it('un jugador no entra al panel', () => {

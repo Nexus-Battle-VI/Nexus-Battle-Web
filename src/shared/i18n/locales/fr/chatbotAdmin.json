@@ -49,5 +49,7 @@
   "exportFile": "Exporter",
   "importFile": "Importer",
   "imported": "Nouvelles entrées : {{created}}. Déjà présentes : {{skipped}}.",
-  "fileFailed": "Le fichier n'a pas pu être lu."
+  "fileFailed": "Le fichier n'a pas pu être lu.",
+  "ratings": "Utiles {{useful}} · Pas utiles {{notUseful}}",
+  "singleExamples": "Classes avec un seul exemple : {{labels}}"
 }

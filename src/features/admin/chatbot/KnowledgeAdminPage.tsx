@@ -14,6 +14,8 @@ import type { KnowledgeDocument, KnowledgeEntry } from './api'
 import { exportKnowledge, importKnowledge } from './api'
 import { useDeleteKnowledge, useKnowledgeEntries, useSaveKnowledge } from './useKnowledge'
 
+import './chatbot-admin.css'
+
 interface FormState {
   readonly intent: string
   readonly language: string
@@ -103,11 +105,12 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-6">
+    <section className="cb-page flex flex-col gap-4">
       <h1 className="text-xl font-semibold">{t('chatbotAdmin:dictionaryTitle')}</h1>
       <div className="flex flex-wrap gap-2">
         <Button
           variant="secondary"
+          className="cb-btn"
           onClick={() => {
             void exportKnowledge()
               .then((document) => {
@@ -130,6 +133,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
         </Button>
         <Button
           variant="secondary"
+          className="cb-btn"
           onClick={() => {
             fileRef.current?.click()
           }}
@@ -222,11 +226,11 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
             <p role="alert">{describeFailure(save.error, t, language)}</p>
           ) : null}
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" loading={save.isPending}>
+            <Button type="submit" className="cb-btn cb-btn-primary" loading={save.isPending}>
               {editingId === null ? t('chatbotAdmin:createEntry') : t('chatbotAdmin:saveEntry')}
             </Button>
             {editingId !== null ? (
-              <Button variant="secondary" onClick={reset}>
+              <Button variant="secondary" className="cb-btn" onClick={reset}>
                 {t('chatbotAdmin:newEntry')}
               </Button>
             ) : null}
@@ -260,6 +264,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     variant="secondary"
+                    className="cb-btn"
                     onClick={() => {
                       edit(entry)
                     }}

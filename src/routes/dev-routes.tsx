@@ -185,7 +185,21 @@ if (import.meta.env.DEV) {
     },
   ]
 
+  const AdminRemasterPreviewLazy = lazy(() =>
+    import('@/features/admin/chatbot/dev/AdminRemasterPreview').then((module) => ({
+      default: module.AdminRemasterPreview,
+    })),
+  )
+
   resolvedPublicDevRoutes = [
+    {
+      path: '__dev/chatbot-admin',
+      element: (
+        <Suspense fallback={null}>
+          <AdminRemasterPreviewLazy />
+        </Suspense>
+      ),
+    },
     // Remaster visual E-commerce Sprint 3 (4a pasada): ver comentario junto a
     // `MarketplacePreviewLazy` arriba.
     {
