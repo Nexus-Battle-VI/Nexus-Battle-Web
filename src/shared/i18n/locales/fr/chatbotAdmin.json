@@ -45,5 +45,9 @@
   "emptyDictionary": "Il n'y a pas encore d'entrées.",
   "requiredEntry": "L'intention, la réponse et au moins une question sont obligatoires.",
   "spanish": "Espagnol",
-  "english": "Anglais"
+  "english": "Anglais",
+  "exportFile": "Exporter",
+  "importFile": "Importer",
+  "imported": "Nouvelles entrées : {{created}}. Déjà présentes : {{skipped}}.",
+  "fileFailed": "Le fichier n'a pas pu être lu."
 }

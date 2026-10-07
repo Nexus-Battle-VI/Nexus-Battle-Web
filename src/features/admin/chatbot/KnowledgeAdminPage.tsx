@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
@@ -10,7 +10,8 @@ import { TextareaField } from '@/components/ui/form/TextareaField'
 import { describeFailure } from '@/shared/i18n/errors'
 import { useLanguage } from '@/shared/i18n/language'
 
-import type { KnowledgeEntry } from './api'
+import type { KnowledgeDocument, KnowledgeEntry } from './api'
+import { exportKnowledge, importKnowledge } from './api'
 import { useDeleteKnowledge, useKnowledgeEntries, useSaveKnowledge } from './useKnowledge'
 
 interface FormState {
@@ -40,12 +41,14 @@ const lines = (value: string): readonly string[] =>
 export const KnowledgeAdminPage = (): React.JSX.Element => {
   const { t } = useTranslation()
   const language = useLanguage((state) => state.language)
-  const { entries, isLoading, error } = useKnowledgeEntries()
+  const { entries, isLoading, error, reload } = useKnowledgeEntries()
   const save = useSaveKnowledge()
   const remove = useDeleteKnowledge()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
   const [invalid, setInvalid] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const patch = (changes: Partial<FormState>): void => {
     setForm((current) => ({ ...current, ...changes }))
@@ -102,6 +105,67 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-4 p-6">
       <h1 className="text-xl font-semibold">{t('chatbotAdmin:dictionaryTitle')}</h1>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          onClick={() => {
+            void exportKnowledge()
+              .then((document) => {
+                const blob = new Blob([JSON.stringify(document, null, 2)], {
+                  type: 'application/json',
+                })
+                const url = URL.createObjectURL(blob)
+                const anchor = globalThis.document.createElement('a')
+                anchor.href = url
+                anchor.download = 'diccionario.json'
+                anchor.click()
+                URL.revokeObjectURL(url)
+              })
+              .catch(() => {
+                setNotice(t('chatbotAdmin:fileFailed'))
+              })
+          }}
+        >
+          {t('chatbotAdmin:exportFile')}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            fileRef.current?.click()
+          }}
+        >
+          {t('chatbotAdmin:importFile')}
+        </Button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json"
+          aria-label={t('chatbotAdmin:importFile')}
+          className="sr-only"
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            if (file === undefined) {
+              return
+            }
+            void file
+              .text()
+              .then((text) => importKnowledge(JSON.parse(text) as KnowledgeDocument))
+              .then((result) => {
+                setNotice(
+                  t('chatbotAdmin:imported', {
+                    created: String(result.created),
+                    skipped: String(result.skipped),
+                  }),
+                )
+                reload()
+              })
+              .catch(() => {
+                setNotice(t('chatbotAdmin:fileFailed'))
+              })
+          }}
+        />
+      </div>
+      {notice !== null ? <p role="status">{notice}</p> : null}
       <Card title={editingId === null ? t('chatbotAdmin:newEntry') : t('chatbotAdmin:edit')}>
         <form className="flex flex-col gap-3" onSubmit={submit}>
           <TextField

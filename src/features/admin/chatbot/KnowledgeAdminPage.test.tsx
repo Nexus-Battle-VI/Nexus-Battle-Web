@@ -6,7 +6,7 @@ import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
 
-import { createKnowledge, fetchKnowledge } from './api'
+import { createKnowledge, exportKnowledge, fetchKnowledge, importKnowledge } from './api'
 import { KnowledgeAdminPage } from './KnowledgeAdminPage'
 
 vi.mock('./api', () => ({
@@ -14,6 +14,8 @@ vi.mock('./api', () => ({
   createKnowledge: vi.fn(),
   updateKnowledge: vi.fn(),
   deleteKnowledge: vi.fn(),
+  exportKnowledge: vi.fn(),
+  importKnowledge: vi.fn(),
 }))
 
 const entry = {
@@ -70,5 +72,24 @@ describe('KnowledgeAdminPage', () => {
       </RequireAdministrator>,
     )
     expect(screen.getByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+  })
+
+  it('importa un documento y avisa cuántas entradas eran nuevas', async () => {
+    vi.mocked(fetchKnowledge).mockResolvedValue([])
+    vi.mocked(importKnowledge).mockResolvedValue({ created: 1, skipped: 0 })
+    vi.mocked(exportKnowledge).mockResolvedValue({ schemaVersion: 1, entries: [] })
+    const user = userEvent.setup()
+    renderWithProviders(<KnowledgeAdminPage />)
+    expect(await screen.findByText('Todavía no hay entradas.')).toBeInTheDocument()
+
+    const file = new File([JSON.stringify({ schemaVersion: 1, entries: [] })], 'diccionario.json', {
+      type: 'application/json',
+    })
+    await user.upload(screen.getByLabelText('Importar'), file)
+    expect(importKnowledge).toHaveBeenCalledWith({ schemaVersion: 1, entries: [] })
+    expect(await screen.findByText('Entradas nuevas: 1. Ya existentes: 0.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Exportar' }))
+    expect(exportKnowledge).toHaveBeenCalledOnce()
   })
 })
