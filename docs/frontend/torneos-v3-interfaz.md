@@ -106,3 +106,13 @@ y nuevos recursos PixelLab siguen fuera de esta entrega.
 
 La tarea de comprensión con Carlos no fue ejecutada. Una captura no acredita que
 pueda explicar el origen de su rival o el recorrido tras una derrota.
+
+## Vista capturable por modalidad
+
+La captura utiliza `BattleScreen`, la misma arena remasterizada de Jugar Online, con modelos `Hero3D`, HUD de Vida/Poder y turno autoritativo. La ruta compone `SpectatorArena` con la captura de Tournament mediante un contrato visible compartido; no se duplica la arena. Tournament conserva `startedAt`, `seat` y `heroSubtype` publicados por Combat. Un ID opaco de inventario nunca decide el modelo visual. Un subtipo ausente o desconocido usa el marcador seguro de la biblioteca.
+
+El espectador no recibe controles de ataque/habilidades, selección de objetivos, apuestas ni consultas de premios propios. El final procede de `snapshot.status/result`; no se calculan ganador, daño, turnos ni temporizadores que el snapshot no publica. La acción resumida se muestra tal como llega; la retransmisión por consultas no reproduce cada animación o evento intermedio del WebSocket del jugador.
+
+La observación acepta dos lados completos de 1, 2 o 3 jugadores: 2/4/6 combatientes únicos. Rechaza tamaños impares, lados mezclados o incompletos, jugadores duplicados y etiquetas ajenas; conserva la última vista válida al recibir un estado incoherente. Se cubre la ruta productiva mediante HTTP para SOLO/DUO/TRIO y el cambio E1→E2 sin controles de jugador.
+
+La vista del administrador designado sigue siendo una consulta para capturar con OBS. La aplicación publica los enlaces externos; no inicia ni graba un directo en YouTube por sí misma. Las pruebas de captura con datos de QA no acreditan un torneo completo con cuentas operativas ni una emisión recibida por YouTube.
