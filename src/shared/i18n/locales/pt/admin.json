@@ -164,8 +164,10 @@
       "duplicate": "Já existe um produto ativo deste tipo com o mesmo nome.",
       "create": "Não foi possível criar o produto.",
       "adjustNetwork": "Não foi possível ajustar a tiragem. Verifique sua conexão e tente novamente.",
+      "dropChanceNetwork": "Não foi possível configurar a probabilidade de queda. Verifique sua conexão e tente novamente.",
       "concurrent": "Outro ajuste modificou o produto enquanto você editava. Recarregue-o e repita a alteração.",
       "adjust": "Não foi possível ajustar a tiragem.",
+      "dropChance": "Não foi possível configurar a probabilidade de queda.",
       "statusNetwork": "Não foi possível atualizar o status do produto. Verifique sua conexão e tente novamente.",
       "status": "Não foi possível atualizar o status do produto.",
       "upload": "Não foi possível enviar a imagem.",
@@ -243,6 +245,8 @@
       "slot": "Espaço",
       "setCode": "Código de conjunto (opcional)",
       "setCodeHint": "Em MAIÚSCULAS, ou vazio se não pertencer a um conjunto.",
+      "dropChancePercent": "Probabilidade de queda (%)",
+      "dropChancePercentHint": "Inteiro entre 0 e 100. 0% é válido se você decidir explicitamente que não cai no Versus.",
       "compatibleSubtype": "Subtipo de herói compatível",
       "specificEffect": "Efeito específico",
       "specificEffects": "Efeitos específicos",
@@ -315,6 +319,8 @@
       "premium": "Premium",
       "realMoney": "Preço em moeda real",
       "initialStatus": "Estado inicial",
+      "dropChance": "Probabilidade de queda",
+      "dropChanceValue": "{{value}}%",
       "note": "Ao confirmar, o Catalog valida os atributos contra o esquema do tipo, persiste o produto e registra o evento de auditoria. Se algo falhar, nada é criado."
     },
     "badge": {
@@ -409,7 +415,15 @@
       "editSave": "Salvar alterações",
       "editSaving": "Salvando…",
       "editSaved": "“{{name}}” atualizado.",
-      "editCancel": "Cancelar"
+      "editCancel": "Cancelar",
+      "dropChance": "Probabilidade de queda",
+      "dropChanceMissing": "Sem probabilidade de queda configurada",
+      "dropChanceCurrent": "Probabilidade de queda atual: {{value}}%",
+      "dropChanceTitle": "Probabilidade de queda de «{{name}}»",
+      "dropChanceSave": "Salvar taxa",
+      "dropChanceSaving": "Salvando…",
+      "dropChanceSaved": "Probabilidade de queda de «{{name}}» atualizada.",
+      "dropChanceCancel": "Cancelar"
     }
   },
   "missions": {

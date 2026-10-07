@@ -164,8 +164,10 @@
       "duplicate": "Ya existe un producto activo de este tipo con el mismo nombre.",
       "create": "No se pudo crear el producto.",
       "adjustNetwork": "No se pudo ajustar el tiraje. Revisa tu conexión e inténtalo de nuevo.",
+      "dropChanceNetwork": "No se pudo configurar la probabilidad de caída. Revisa tu conexión e inténtalo de nuevo.",
       "concurrent": "Otro ajuste modificó el producto mientras editabas. Vuelve a cargarlo y repite el cambio.",
       "adjust": "No se pudo ajustar el tiraje.",
+      "dropChance": "No se pudo configurar la probabilidad de caída.",
       "statusNetwork": "No se pudo actualizar el estado del producto. Revisa tu conexión e inténtalo de nuevo.",
       "status": "No se pudo actualizar el estado del producto.",
       "upload": "No se pudo cargar la imagen.",
@@ -243,6 +245,8 @@
       "slot": "Ranura",
       "setCode": "Código de conjunto (opcional)",
       "setCodeHint": "En MAYÚSCULAS, o vacío si no pertenece a un conjunto.",
+      "dropChancePercent": "Probabilidad de caída (%)",
+      "dropChancePercentHint": "Entero entre 0 y 100. 0 % es válido si decides explícitamente que no cae en Versus.",
       "compatibleSubtype": "Subtipo de héroe compatible",
       "specificEffect": "Efecto específico",
       "specificEffects": "Efectos específicos",
@@ -315,6 +319,8 @@
       "premium": "Premium",
       "realMoney": "Precio en moneda real",
       "initialStatus": "Estado inicial",
+      "dropChance": "Probabilidad de caída",
+      "dropChanceValue": "{{value}} %",
       "note": "Al confirmar, Catalog valida los atributos contra el esquema del tipo, persiste el producto y registra el evento de auditoría. Si algo falla, no se crea nada."
     },
     "badge": {
@@ -409,7 +415,15 @@
       "editSave": "Guardar cambios",
       "editSaving": "Guardando…",
       "editSaved": "«{{name}}» actualizado.",
-      "editCancel": "Cancelar"
+      "editCancel": "Cancelar",
+      "dropChance": "Tasa de caída",
+      "dropChanceMissing": "Sin probabilidad de caída configurada",
+      "dropChanceCurrent": "Probabilidad de caída actual: {{value}} %",
+      "dropChanceTitle": "Probabilidad de caída de «{{name}}»",
+      "dropChanceSave": "Guardar tasa",
+      "dropChanceSaving": "Guardando…",
+      "dropChanceSaved": "Tasa de caída de «{{name}}» actualizada.",
+      "dropChanceCancel": "Cancelar"
     }
   },
   "missions": {

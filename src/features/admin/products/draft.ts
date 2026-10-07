@@ -64,6 +64,15 @@ export interface ProductDraft {
   readonly compatibilityScope: CompatibilityScope
   readonly armorSlot: ArmorSlot
   readonly setCode: string
+  /**
+   * Probabilidad de caida Versus, en PORCENTAJE (0..100) tal como la escribe
+   * la persona. Solo aplica a ARMA/ARMADURA/ITEM (HU-30, correccion
+   * post-incidente): sin ella, Catalog rechaza la creacion del producto. Se
+   * guarda como texto, mismo criterio que el resto de numeros del formulario
+   * (`MagnitudeDraft`): la conversion a basis points ocurre una sola vez, al
+   * construir la peticion.
+   */
+  readonly dropChancePercent: string
 
   readonly effects: readonly EffectDraft[]
 
@@ -134,6 +143,7 @@ export const emptyDraft = (): ProductDraft => ({
   compatibilityScope: 'ALL_HEROES',
   armorSlot: 'CHEST',
   setCode: '',
+  dropChancePercent: '',
 
   effects: [emptyEffect()],
 
@@ -152,6 +162,14 @@ export const emptyDraft = (): ProductDraft => ({
 
 /** Tipos que se describen con una lista de efectos y un ambito de compatibilidad. */
 export const USES_EFFECT_LIST = new Set<ProductType>(['HABILIDAD', 'ARMA', 'ARMADURA', 'ITEM'])
+
+/**
+ * Tipos equipables que HU-30 puede hacer caer en Versus. Son estos tres, y
+ * solo estos, los que exigen `dropChanceBasisPoints` al nacer (correccion
+ * post-incidente, seccion 15): HEROE/HABILIDAD/EPICA quedan fuera a
+ * proposito, sin ampliar el alcance por intuicion.
+ */
+export const REQUIRES_DROP_CHANCE = new Set<ProductType>(['ARMA', 'ARMADURA', 'ITEM'])
 
 /**
  * Lista de subtipos escrita como texto separado por comas.

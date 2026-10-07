@@ -1,4 +1,10 @@
-import { parseSubtypeList, USES_EFFECT_LIST, type EffectDraft, type ProductDraft } from './draft'
+import {
+  parseSubtypeList,
+  REQUIRES_DROP_CHANCE,
+  USES_EFFECT_LIST,
+  type EffectDraft,
+  type ProductDraft,
+} from './draft'
 import type { MagnitudeDraft } from './draft'
 import { i18n } from '@/shared/i18n/i18n'
 
@@ -270,6 +276,18 @@ export const validateAttributes = (draft: ProductDraft): FieldErrors => {
     if (setCode !== '' && !CODE.test(setCode)) {
       errors.setCode = i18n.t('admin:products.errors.setCode')
     }
+  }
+
+  // HU-30 (correccion post-incidente): ARMA/ARMADURA/ITEM nuevos deben
+  // declarar su probabilidad de caida DESDE que nacen. 0 % es un valor valido
+  // -una decision explicita de que no cae-, asi que el minimo exigido es 0,
+  // nunca 1: solo se rechaza si el campo quedo vacio o fuera de 0..100.
+  if (REQUIRES_DROP_CHANCE.has(draft.type)) {
+    assign(
+      errors,
+      'dropChancePercent',
+      integerError(draft.dropChancePercent, { minimum: 0, maximum: 100 }),
+    )
   }
 
   if (USES_EFFECT_LIST.has(draft.type)) {
