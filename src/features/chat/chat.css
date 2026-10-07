@@ -1,7 +1,7 @@
 /*
  * Ayuda flotante. Mismo lenguaje que el remaster de Ecommerce, Jugar Online
- * y Mi Cuenta: marco con border-image, botones de sprite y el icono de chat
- * de PixelLab. No usa el boton plano morado.
+ * y Mi Cuenta: marco con border-image y botones de sprite. La cara del
+ * lanzador es la mascota de ayuda.
  *
  * La esquina inferior derecha ya la ocupan el carrito y la burbuja de la
  * sala. Este lanzador queda por encima de esa franja.
@@ -10,8 +10,14 @@
 .help-dock {
   position: fixed;
   z-index: 40;
-  right: 20px;
-  bottom: 84px;
+  /*
+   * Misma distancia al borde que el carrito de Ecommerce, pero por encima
+   * de la pastilla (52px + 16px de margen). Si comparten el borde derecho,
+   * el lanzador tapa el texto "CARRITO", y en Subasta queda encima del
+   * contenido de la esquina.
+   */
+  right: max(20px, calc((100vw - 1408px) / 2));
+  bottom: 112px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -19,16 +25,24 @@
 }
 
 .help-launcher {
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
+  padding: 0;
   display: grid;
   place-items: center;
+  border: 0;
   border-radius: 999px;
-  border: 2px solid
-    color-mix(in oklab, var(--color-accent-gold, var(--color-brand)) 55%, var(--color-brand));
-  background: color-mix(in oklab, var(--color-surface-raised) 92%, transparent);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--color-brand) 35%, transparent);
+  background: transparent;
+  box-shadow: 0 8px 20px color-mix(in srgb, black 35%, transparent);
   cursor: pointer;
+  overflow: hidden;
+}
+.help-launcher-face {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 999px;
 }
 .help-launcher:hover {
   filter: brightness(1.08);
@@ -157,6 +171,11 @@
   padding: 0 4px;
   font-size: 0.75rem;
   cursor: pointer;
+}
+a.help-btn {
+  display: inline-block;
+  margin-top: 6px;
+  text-decoration: none;
 }
 .help-btn-primary {
   border-image-slice: 32% 38% fill;

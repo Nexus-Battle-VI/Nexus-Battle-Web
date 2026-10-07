@@ -1,16 +1,60 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, cleanup } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HttpError } from '@/lib/http'
-import { readIntent, saveIntent } from './operationIntents'
+import { useSession } from '@/shared/session'
+import { clearTournamentIntents, readIntent, saveIntent } from './operationIntents'
 import { useOperation } from './useOperation'
 import { amountInMinorUnits } from './money'
 import { priceLabel, matchStatus } from './presentation'
 
 afterEach(() => {
-  sessionStorage.clear()
+  cleanup()
   vi.restoreAllMocks()
+  clearTournamentIntents()
+  useSession.setState({ subject: null, accessToken: null, roles: [] })
 })
 describe('intenciones duraderas del cliente', () => {
+  it('salir o cambiar identidad borra intenciones y conserva otras claves de almacenamiento', () => {
+    useSession.setState({ subject: 'A', accessToken: 'token-A' })
+    sessionStorage.setItem('unrelated-preference', 'keep')
+    saveIntent('A:T', { operationId: 'id-A', fingerprint: 'publish', phase: 'UNCERTAIN' })
+    useSession.setState({ subject: 'B', accessToken: 'token-B' })
+    expect(readIntent('A:T')).toBeNull()
+    expect(sessionStorage.getItem('unrelated-preference')).toBe('keep')
+    saveIntent('B:T', { operationId: 'id-B', fingerprint: 'publish', phase: 'UNCERTAIN' })
+    useSession.setState({ subject: null, accessToken: null })
+    expect(readIntent('B:T')).toBeNull()
+  })
+  it('renovar el token de la misma cuenta conserva el ID de una respuesta perdida', () => {
+    useSession.setState({ subject: 'A', accessToken: 'token-A' })
+    saveIntent('A:T', { operationId: 'id-A', fingerprint: 'publish', phase: 'UNCERTAIN' })
+    useSession.setState({ accessToken: 'token-A-renewed' })
+    expect(readIntent('A:T')?.operationId).toBe('id-A')
+  })
+  it('una mutación tardía de otra sesión no restaura intenciones ni comunica un éxito', async () => {
+    useSession.setState({ subject: 'A', accessToken: 'token-A' })
+    let resolve: (value: string) => void = () => undefined
+    const command = vi.fn(
+      () =>
+        new Promise<string>((done) => {
+          resolve = done
+        }),
+    )
+    const { result } = renderHook(() => useOperation('A:T:late'))
+    let completion: Promise<string | null> | undefined
+    act(() => {
+      completion = result.current.run('publish', 'pending', command)
+    })
+    act(() => {
+      useSession.setState({ subject: 'B', accessToken: 'token-B' })
+    })
+    await act(async () => {
+      resolve('CONFIRMED')
+      expect(await completion).toBeNull()
+    })
+    expect(readIntent('A:T:late')).toBeNull()
+    expect(result.current.error).toBeNull()
+  })
   it('reutiliza operationId tras timeout y remontaje; impide cambiar método incierto', async () => {
     const command = vi.fn().mockRejectedValue(new TypeError('Respuesta perdida'))
     const first = renderHook(() => useOperation('A:T:team'))

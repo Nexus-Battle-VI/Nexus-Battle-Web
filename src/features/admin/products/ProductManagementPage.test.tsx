@@ -41,6 +41,7 @@ const summary = (overrides: Partial<AdminProductSummary> = {}): AdminProductSumm
   premium: false,
   realMoneyPrice: null,
   availableUnits: 10,
+  attributes: { values: { dropChanceBasisPoints: 200 } },
   ...overrides,
 })
 

@@ -78,7 +78,7 @@ export const createRegistrationPreviewApis = () => {
       team = {
         ...registrationTeamFixture('AWAITING_CONSENT'),
         name: input.name,
-        companionId: input.companionId,
+        companionId: input.companionId ?? null,
         avatar: input.avatar,
       }
       saved.set(input.operationId, team)

@@ -147,6 +147,71 @@ describe('Paso 2: atributos por tipo', () => {
     expect(errors).toHaveProperty('compatibleHeroSubtypes')
   })
 
+  // HU-30 (correccion post-incidente): ARMA/ARMADURA/ITEM exigen declarar su
+  // probabilidad de caida desde que nacen; HEROE/HABILIDAD/EPICA no se tocan.
+  describe('HU-30: probabilidad de caida', () => {
+    const equipable = (
+      type: 'ARMA' | 'ARMADURA' | 'ITEM',
+      dropChancePercent: string,
+    ): ProductDraft =>
+      withBasics({
+        type,
+        armorSlot: 'CHEST',
+        effects: [
+          {
+            ...emptyDraft().effects[0]!,
+            magnitude: { ...emptyDraft().effects[0]!.magnitude, amount: '5' },
+          },
+        ],
+        dropChancePercent,
+      })
+
+    it('WEB-05: un equipable sin probabilidad de caida no permite avanzar', () => {
+      const errors = validateAttributes(equipable('ARMA', ''))
+
+      expect(errors).toHaveProperty('dropChancePercent')
+    })
+
+    it('WEB-06: 0 % es un valor valido (decision explicita de que no cae)', () => {
+      const errors = validateAttributes(equipable('ARMADURA', '0'))
+
+      expect(errors).not.toHaveProperty('dropChancePercent')
+    })
+
+    it('100 % es valido (el maximo permitido)', () => {
+      const errors = validateAttributes(equipable('ITEM', '100'))
+
+      expect(errors).not.toHaveProperty('dropChancePercent')
+    })
+
+    it('rechaza un valor fuera de 0..100', () => {
+      const errors = validateAttributes(equipable('ARMA', '101'))
+
+      expect(errors).toHaveProperty('dropChancePercent')
+    })
+
+    it('un HEROE no exige probabilidad de caida', () => {
+      const errors = validateAttributes(
+        withBasics({
+          type: 'HEROE',
+          heroSubtype: 'GUERRERO',
+          basePower: '3',
+          baseHealth: '12',
+          baseDefense: '4',
+          baseAttack: { ...emptyDraft().baseAttack, mode: 'FIXED', amount: '3' },
+          baseDamage: { ...emptyDraft().baseDamage, mode: 'DICE', diceCount: '2', diceSides: '6' },
+          abilities: [
+            '11111111-1111-4111-8111-111111111111',
+            '22222222-2222-4222-8222-222222222222',
+            '33333333-3333-4333-8333-333333333333',
+          ],
+        }),
+      )
+
+      expect(errors).not.toHaveProperty('dropChancePercent')
+    })
+  })
+
   it('una habilidad con coste fijo exige el poder consumido', () => {
     const errors = validateAttributes(
       withBasics({

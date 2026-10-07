@@ -325,7 +325,7 @@ describe('Proteccion visual de rutas (HU-02)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Torneo' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/tournament')
-    expect(screen.getByLabelText('Tu código de jugador')).toHaveValue(AUTHENTICATED_STATE.subject)
+    expect(screen.queryByLabelText('Tu código de jugador')).not.toBeInTheDocument()
     expect(await screen.findByText('No hay torneos disponibles todavía.')).toBeInTheDocument()
     expect(screen.queryByText(/demo histórica/u)).not.toBeInTheDocument()
   })

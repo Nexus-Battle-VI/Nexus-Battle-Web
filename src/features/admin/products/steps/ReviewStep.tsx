@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { PRODUCT_TYPE_LABELS, initialFunctionalStatusLabel } from '../contract'
-import type { ProductDraft } from '../draft'
+import { REQUIRES_DROP_CHANCE, type ProductDraft } from '../draft'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel } from '@/shared/i18n/format'
 
@@ -69,6 +69,18 @@ export const ReviewStep = ({ draft }: ReviewStepProps): React.JSX.Element => {
       label: t('admin:products.review.initialStatus'),
       value: initialFunctionalStatusLabel(printRun),
     },
+    // HU-30 (correccion post-incidente): quien confirma ve EXACTAMENTE que
+    // probabilidad va a persistirse, nunca un porcentaje adivinado de cabeza.
+    ...(draft.type !== '' && REQUIRES_DROP_CHANCE.has(draft.type)
+      ? [
+          {
+            label: t('admin:products.review.dropChance'),
+            value: t('admin:products.review.dropChanceValue', {
+              value: draft.dropChancePercent.trim(),
+            }),
+          },
+        ]
+      : []),
   ]
 
   return (

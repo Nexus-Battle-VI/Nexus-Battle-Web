@@ -274,6 +274,20 @@ export const AttributesStep = ({ draft, onChange, errors }: StepProps): React.JS
               }}
             />
           )}
+
+          <TextField
+            label={t('admin:products.attrs.dropChancePercent')}
+            required
+            type="number"
+            min={0}
+            max={100}
+            value={draft.dropChancePercent}
+            error={errors.dropChancePercent}
+            hint={t('admin:products.attrs.dropChancePercentHint')}
+            onChange={(event) => {
+              onChange({ dropChancePercent: event.target.value })
+            }}
+          />
         </div>
       )}
 

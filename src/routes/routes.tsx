@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router'
 import { TournamentRegistrationPage } from '@/features/tournament/registration/TournamentRegistrationPage'
+import { TournamentBroadcastPage } from '@/features/tournament/broadcast/TournamentBroadcastPanel'
 
 import { AppLayout } from '@/app/AppLayout'
 import { ChatWidget } from '@/features/chat/ChatWidget'
@@ -223,6 +224,16 @@ export const adminNavigationForPrimaryRole = (role: string | null): readonly Nav
   ADMIN_NAVIGATION.filter((item) => passesPrimaryRole(item, role))
 
 export const routes: RouteObject[] = [
+  {
+    path: '/tournament/:id/broadcast',
+    element: (
+      <RequireSession>
+        <RequireAdministrator>
+          <TournamentBroadcastPage />
+        </RequireAdministrator>
+      </RequireSession>
+    ),
+  },
   // La raiz ya no es un menu propio de "elige iniciar sesion o crear cuenta":
   // E-commerce ES el punto de entrada, con o sin cuenta (ver la ruta
   // `ecommerce` mas abajo). Redirige ahi directo, con o sin sesion, en vez de

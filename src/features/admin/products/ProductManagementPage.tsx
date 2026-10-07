@@ -16,8 +16,10 @@ import { countLabel, formatInteger } from '@/shared/i18n/format'
 import { queryKeys } from '@/shared/query-keys'
 
 import {
+  configureProductDropChance,
   describeLifecycleStatusFailure,
   describeSearchFailure,
+  dropChanceOf,
   searchAdministeredProducts,
   updateProductDetails,
   updateProductLifecycleStatus,
@@ -26,6 +28,8 @@ import {
 } from './api'
 import { AvailabilityBadge } from './AvailabilityBadge'
 import { PRODUCT_TYPES, PRODUCT_TYPE_LABELS, type ProductType } from './contract'
+import { REQUIRES_DROP_CHANCE } from './draft'
+import { DropChanceForm } from './DropChanceForm'
 import { EditProductForm } from './EditProductForm'
 
 const PAGE_SIZE = 20
@@ -43,6 +47,7 @@ export interface ProductManagementPageProps {
   readonly onSearch?: typeof searchAdministeredProducts
   readonly onUpdateStatus?: typeof updateProductLifecycleStatus
   readonly onUpdateDetails?: typeof updateProductDetails
+  readonly onConfigureDropChance?: typeof configureProductDropChance
 }
 
 /**
@@ -72,6 +77,7 @@ export const ProductManagementPage = ({
   onSearch = searchAdministeredProducts,
   onUpdateStatus = updateProductLifecycleStatus,
   onUpdateDetails = updateProductDetails,
+  onConfigureDropChance = configureProductDropChance,
 }: ProductManagementPageProps = {}): React.JSX.Element => {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
@@ -129,6 +135,7 @@ export const ProductManagementPage = ({
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
 
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [dropChanceEditingId, setDropChanceEditingId] = useState<string | null>(null)
   const [statusAction, setStatusAction] = useState<StatusAction | null>(null)
   const [reason, setReason] = useState('')
   const [reasonError, setReasonError] = useState<string | undefined>(undefined)
@@ -153,6 +160,7 @@ export const ProductManagementPage = ({
   const openStatusAction = (product: AdminProductSummary): void => {
     setBanner(null)
     setEditingId(null)
+    setDropChanceEditingId(null)
     statusMutation.reset()
     setReason('')
     setReasonError(undefined)
@@ -189,6 +197,7 @@ export const ProductManagementPage = ({
   const openEdit = (productId: string): void => {
     setBanner(null)
     setStatusAction(null)
+    setDropChanceEditingId(null)
     setEditingId((current) => (current === productId ? null : productId))
   }
 
@@ -199,6 +208,22 @@ export const ProductManagementPage = ({
       message: t('admin:products.manage.editSaved', { name: updated.name }),
     })
     setEditingId(null)
+  }
+
+  const openDropChance = (productId: string): void => {
+    setBanner(null)
+    setStatusAction(null)
+    setEditingId(null)
+    setDropChanceEditingId((current) => (current === productId ? null : productId))
+  }
+
+  const handleDropChanceSuccess = (updated: AdministeredProduct): void => {
+    invalidateList()
+    setBanner({
+      kind: 'success',
+      message: t('admin:products.manage.dropChanceSaved', { name: updated.name }),
+    })
+    setDropChanceEditingId(null)
   }
 
   return (
@@ -386,6 +411,18 @@ export const ProductManagementPage = ({
                           {t('admin:products.manage.adjustInventory')}
                         </Button>
                       </Link>
+                      {REQUIRES_DROP_CHANCE.has(product.type) && (
+                        <Button
+                          type="button"
+                          variant={dropChanceOf(product) === null ? 'danger' : 'secondary'}
+                          aria-expanded={dropChanceEditingId === product.productId}
+                          onClick={() => {
+                            openDropChance(product.productId)
+                          }}
+                        >
+                          {t('admin:products.manage.dropChance')}
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         variant={product.lifecycleStatus === 'ACTIVE' ? 'danger' : 'primary'}
@@ -409,6 +446,19 @@ export const ProductManagementPage = ({
                       onSuccess={handleEditSuccess}
                       onCancel={() => {
                         setEditingId(null)
+                      }}
+                    />
+                  )}
+
+                  {dropChanceEditingId === product.productId && (
+                    <DropChanceForm
+                      productId={product.productId}
+                      productName={product.name}
+                      initialDropChanceBasisPoints={dropChanceOf(product)}
+                      onSubmit={onConfigureDropChance}
+                      onSuccess={handleDropChanceSuccess}
+                      onCancel={() => {
+                        setDropChanceEditingId(null)
                       }}
                     />
                   )}

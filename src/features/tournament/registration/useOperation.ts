@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTournamentRequestScope } from '../requestScope'
 import {
   clearIntent,
   isDefinitiveRejection,
@@ -11,6 +12,7 @@ export const useOperation = (
   scope: string,
   isSettled: (intent: OperationIntent) => boolean = () => false,
 ) => {
+  const isCurrent = useTournamentRequestScope(scope)
   const [storedIntent, setIntent] = useState<OperationIntent | null>(() => readIntent(scope))
   const intent = storedIntent !== null && isSettled(storedIntent) ? null : storedIntent
   const [busy, setBusy] = useState(false)
@@ -45,6 +47,7 @@ export const useOperation = (
     setError(null)
     try {
       const result = await command(next.operationId)
+      if (!isCurrent()) return null
       if (isPending(result)) {
         const pending = { ...next, phase: 'UNCERTAIN' } as const
         saveIntent(scope, pending)
@@ -55,6 +58,7 @@ export const useOperation = (
       }
       return result
     } catch (failure: unknown) {
+      if (!isCurrent()) return null
       if (isDefinitiveRejection(failure)) {
         const rejected = { ...next, phase: 'REJECTED' } as const
         saveIntent(scope, rejected)

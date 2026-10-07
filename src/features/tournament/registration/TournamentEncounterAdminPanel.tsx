@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { TournamentButton as Button } from '../TournamentVisuals'
+import { TournamentCard as Card } from '../TournamentVisuals'
 import '@/features/battle-rooms/battle-rooms.css'
 import { BattlePixelIcon } from '@/features/battle-rooms/BattlePixelIcon'
 import { encounterApi, type EncounterApi, type MatchSummary } from './encounterApi'
