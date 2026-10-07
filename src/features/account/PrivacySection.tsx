@@ -105,7 +105,9 @@ const ExportOptions = ({
 }: Required<Pick<PrivacySectionProps, 'exportPersonalData' | 'saveExport'>>): React.JSX.Element => {
   // `message` guarda la CLAVE del aviso; se traduce al pintar (cambia con el idioma).
   const [feedback, setFeedback] = useState<ExportFeedback | null>(null)
-  const exportMutation = useMutation({ mutationFn: exportPersonalData })
+  const exportMutation = useMutation({
+    mutationFn: (format: PrivacyExportFormat) => exportPersonalData(format),
+  })
   const { t } = useTranslation()
   const theme = useTheme((state) => state.theme)
 
