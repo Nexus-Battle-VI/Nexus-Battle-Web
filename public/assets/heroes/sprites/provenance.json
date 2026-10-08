@@ -1,0 +1,84 @@
+{
+  "retained": [
+    {
+      "archive": "Full-body_heavy_male_tan-Idle-spritesheet.zip",
+      "hero": "tank",
+      "character_id": "004d5e40-cbd7-4498-9c99-51de961930ff",
+      "png_sha256": "4bed79861266e76a507ecf1701e90be6e4129b0bd7142d08e27b7e345d931134",
+      "json_sha256": "47cc8894892fbc09d4e918a2fcb9fae1e7d7e27a4395c29a6b24333f33c37827"
+    },
+    {
+      "archive": "Full-body_female_two-han-Idle-spritesheet.zip",
+      "hero": "weapons",
+      "character_id": "e7cdad28-5731-4aca-a058-072c4d6ac5c0",
+      "png_sha256": "5a93dd43c6750378d1aa3607abdbba4f2626accec2f6da6330eb7ad5471d9518",
+      "json_sha256": "5c2ae177377e9df3dd4db2eb9cf020583f7e7395fe9119f3d60546834cc1df82"
+    },
+    {
+      "archive": "Full-body_young_male_Fir-Idle-spritesheet.zip",
+      "hero": "fire",
+      "character_id": "b7321641-32a0-46d2-8677-6c38b9aedce3",
+      "png_sha256": "2d6e8e6666368c81c72f6d838d68c58929bcbbc727e1f2f39f73dcb16fc49bcf",
+      "json_sha256": "1614012c0d9258bdfa81b333742bed44d802687e844e1d4b4ac03d05e6c5598b"
+    },
+    {
+      "archive": "Full-body_adult_female_I-Idle-spritesheet.zip",
+      "hero": "ice",
+      "character_id": "e979b0e7-30cc-420b-8a69-695b7ec37638",
+      "png_sha256": "044b7505ff9a968b5014e3d9c6654277cb3785e4f7557086e1db885bf1d7e4a8",
+      "json_sha256": "047aef6caa6e254946531d08070339f98b6ae522a8f0e58051c4fb87d5202a19"
+    },
+    {
+      "archive": "Full-body_young_female_P-Idle-spritesheet.zip",
+      "hero": "poison",
+      "character_id": "0bfd0697-8e0a-44d7-8292-82416b04901f",
+      "png_sha256": "5b5c8b054e4a70d7ced0825cfafe3cfab4775f22cd108e0013c1db133524b9da",
+      "json_sha256": "d2a1db6ef21f0a0c6d1645cb9de6445f2db44acc95953e3efcb8a59726484626"
+    },
+    {
+      "archive": "Full-body_adult_male_Mac-Idle-spritesheet.zip",
+      "hero": "machete",
+      "character_id": "2c3539a5-5d75-4b3c-a9a9-f06ca47f980f",
+      "png_sha256": "adcaab6e5c9f93d0e8f760810dd306544ad8abe210b892c977a3b824c793f91c",
+      "json_sha256": "83e0695ddb1f98fe89c26dc268d28d02de943fd19dd649f02ff76fe5ad9cc5ac"
+    },
+    {
+      "archive": "Full-body_elder_male_Sha-Idle-spritesheet.zip",
+      "hero": "shaman",
+      "character_id": "6a4f348b-bd0d-448e-ac0d-9a110a6cc5ab",
+      "png_sha256": "1d16853cdb787b43779d8cc1f824a1eb383e3e65e51092dc47e68900cc10c3ce",
+      "json_sha256": "74e38e2b3f61d4db0b967c1a4863775ed9eb7bdf854eed16aff027a6645036c6"
+    },
+    {
+      "archive": "Full-body_adult_female_F-Idle-spritesheet.zip",
+      "hero": "medic",
+      "character_id": "ff09a46a-b3df-4d27-b976-35edfa5f1bc1",
+      "png_sha256": "0767a59101d11d2c4da9fcdd732c239bbfb7a1fbfec676e584463f350332dbaf",
+      "json_sha256": "0e9be61f76b96490ef8a8a46d14c3f1a0a280a2ce4f1e1e0e6dcc5c59d17ccbc"
+    }
+  ],
+  "discarded": [
+    {
+      "archive": "Full-body_heavy_male_tank-2.zip",
+      "hero": "tank",
+      "reason": "Mismo personaje y secuencias ya incluidas en el spritesheet conservado."
+    },
+    {
+      "archive": "Full-body_female_two-handed_weapon_master-2.zip",
+      "hero": "weapons",
+      "reason": "Mismo personaje y secuencias ya incluidas en el spritesheet conservado."
+    },
+    {
+      "archive": "Full-body_young_male_Fire-2.zip",
+      "hero": "fire",
+      "reason": "Mismo personaje y secuencias ya incluidas en el spritesheet conservado."
+    }
+  ],
+  "stats": {
+    "heroes": 8,
+    "animations": 13,
+    "sequences": 38,
+    "frames": 338,
+    "duplicates": 3
+  }
+}

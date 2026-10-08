@@ -1,0 +1,109 @@
+{
+  "character": {
+    "id": "b7321641-32a0-46d2-8677-6c38b9aedce3",
+    "name": "Idle",
+    "prompt": "> Full-body young male Fire Mage with a slim ascending silhouette, expressive visible face and dark hair rising in uneven flame-like points. A short vermilion casting coat (#c4512d) dominates his torso and split hem; charcoal underlayers (#403634) cover the legs, with ember-orange (#e98732) only on narrow curved seams and the inner cuffs. Small old-gold fasteners punctuate the collar. One empty hand rises slightly, making his asymmetrical pose feel restless and magical. His costume reads cloth and heat, not metal and machinery. No tan or brown outfit, copper knuckle guards, orb, floating flame or heavy armor.",
+    "size": {
+      "width": 48,
+      "height": 48
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Full-body_young_male_Fir-Idle.png",
+    "cell_size": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet_size": {
+      "width": 512,
+      "height": 576
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "bead0a07-7b41-4c34-b480-0f211946fe6e",
+        "direction": "south-east"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "bead0a07-7b41-4c34-b480-0f211946fe6e",
+        "direction": "north-east"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "bead0a07-7b41-4c34-b480-0f211946fe6e",
+        "direction": "north-west"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "bead0a07-7b41-4c34-b480-0f211946fe6e",
+        "direction": "south-west"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "f582e547-cf00-4386-b191-aed52eea3364",
+        "direction": "south-east"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "f582e547-cf00-4386-b191-aed52eea3364",
+        "direction": "north-east"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "f582e547-cf00-4386-b191-aed52eea3364",
+        "direction": "north-west"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "f582e547-cf00-4386-b191-aed52eea3364",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-07T15:02:54.106355+00:00"
+}

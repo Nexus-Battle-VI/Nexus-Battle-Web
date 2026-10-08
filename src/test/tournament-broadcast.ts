@@ -7,13 +7,17 @@ import type {
 } from '@/features/tournament/broadcast/api'
 
 /** DEV_BROADCAST_FIXTURE: explicit examples, never a combat engine or a production API. */
-export const previewSnapshot = (matchId = 'encounter-01'): BroadcastSnapshot => ({
+export const previewSnapshot = (
+  matchId = 'encounter-01',
+  teamSize: 1 | 2 | 3 = 2,
+): BroadcastSnapshot => ({
   tournamentId: 'DEMO',
   tournamentName: 'Torneo de prueba · HU-79/81',
   matchId,
   encounterId: matchId,
   bracketLabel: matchId === 'encounter-01' ? 'E1' : 'E2',
   combatRoomId: `demo-room:${matchId}`,
+  startedAt: '2026-10-07T12:00:00.000Z',
   track: 'MAIN',
   round: 1,
   status: 'IN_PROGRESS',
@@ -34,15 +38,29 @@ export const previewSnapshot = (matchId = 'encounter-01'): BroadcastSnapshot => 
   battleRound: 1,
   turnsCompleted: 0,
   currentPlayerId: `${matchId}-p1`,
-  combatants: ['Aster', 'Nova', 'Orion', 'Vega'].map((name, i) => ({
-    playerId: `${matchId}-p${String(i + 1)}`,
-    heroId: ['Guerrero', 'Mago', 'Paladín', 'Exploradora'][i] ?? 'Héroe',
-    teamLabel: i < 2 ? 'A' : 'B',
-    displayName: `${name} ${matchId === 'encounter-01' ? 'E1' : 'E2'}`,
-    position: i,
-    health: { current: 100, max: 100 },
-    power: { current: 20, max: 30 },
-  })),
+  combatants: ['Aster', 'Nova', 'Orion', 'Vega', 'Lyra', 'Atlas']
+    .slice(0, teamSize * 2)
+    .map((name, i) => ({
+      playerId: `${matchId}-p${String(i + 1)}`,
+      heroId: `qa-owned-hero-${String(i + 1)}`,
+      seat: i % teamSize,
+      heroSubtype:
+        [
+          'guerrero-tanque',
+          'guerrero-armas',
+          'mago-fuego',
+          'mago-hielo',
+          'picaro-veneno',
+          'picaro-machete',
+        ][i]
+          ?.replaceAll('-', '_')
+          .toUpperCase() ?? null,
+      teamLabel: i < teamSize ? 'A' : 'B',
+      displayName: `${name} ${matchId === 'encounter-01' ? 'E1' : 'E2'}`,
+      position: i,
+      health: { current: 100, max: 100 },
+      power: { current: 20, max: 30 },
+    })),
   lastAction: { type: 'battleStarted', occurredAt: new Date().toISOString() },
   result: null,
 })
@@ -53,10 +71,13 @@ export class BroadcastPreviewApi implements BroadcastApi {
     selectedMatchId: 'encounter-01',
     revision: 2,
   }
-  readonly snapshots = new Map([
-    ['encounter-01', previewSnapshot()],
-    ['encounter-02', previewSnapshot('encounter-02')],
-  ])
+  readonly snapshots: Map<string, BroadcastSnapshot>
+  constructor(teamSize: 1 | 2 | 3 = 2) {
+    this.snapshots = new Map([
+      ['encounter-01', previewSnapshot('encounter-01', teamSize)],
+      ['encounter-02', previewSnapshot('encounter-02', teamSize)],
+    ])
+  }
   disconnected = false
   revoked = false
   setDisconnected(value: boolean): void {
@@ -126,9 +147,10 @@ export class BroadcastPreviewApi implements BroadcastApi {
     if (!s || s.status === 'FINISHED') return
     s.seq++
     s.turnsCompleted++
-    s.battleRound = 1 + Math.floor(s.turnsCompleted / 4)
-    s.currentPlayerId = s.combatants[s.turnsCompleted % 4]?.playerId ?? s.currentPlayerId
-    const target = s.combatants[3]
+    s.battleRound = 1 + Math.floor(s.turnsCompleted / s.combatants.length)
+    s.currentPlayerId =
+      s.combatants[s.turnsCompleted % s.combatants.length]?.playerId ?? s.currentPlayerId
+    const target = s.combatants.at(-1)
     if (target) target.health = { current: Math.max(0, 100 - s.turnsCompleted * 8), max: 100 }
     s.lastAction = { type: 'basicAttackResolved', occurredAt: new Date().toISOString() }
   }

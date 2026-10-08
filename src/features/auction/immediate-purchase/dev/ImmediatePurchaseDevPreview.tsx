@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import '@/features/auction/auction-remaster.css'
 
 import { ImmediatePurchaseCard, type ImmediatePurchaseTransaction } from '../ImmediatePurchaseCard'
 
@@ -46,7 +47,7 @@ const InteractiveCard = (): React.JSX.Element => {
 }
 
 export const ImmediatePurchaseDevPreview = (): React.JSX.Element => (
-  <main className="mx-auto flex max-w-[1560px] flex-col gap-6 p-6">
+  <main className="auction-shell auction-page mx-auto flex max-w-[1560px] flex-col gap-6 p-6">
     <header className="flex items-center justify-between gap-4">
       <h1 className="text-xl font-semibold">Compra inmediata (vista previa)</h1>
       <ThemeToggle />

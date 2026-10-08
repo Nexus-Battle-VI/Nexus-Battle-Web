@@ -20,8 +20,19 @@ export const priceLabel = (method: PaidMethod | EntryPayment): string => {
   return `${whole}${fraction} ${method.currency} · pago simulado`
 }
 export const matchStatus = (match: MatchSummary): string => {
+  if (match.resolution?.resultType === 'ABSENCE') return 'Victoria por ausencia'
+  if (match.resolution?.resultType === 'PLAYED' && match.resolution.winnerTeamId === null)
+    return 'Finalizó sin ganador; avance detenido'
+  if (match.acceptanceStatus === 'BLOCKED_DELAY')
+    return 'Bloqueada por dependencia o ventana agotada'
+  if (match.blockReason?.responsible === 'COMBAT_OPERATIONS')
+    return 'Operación de Combat pendiente de recuperar'
   if (match.status === 'IN_PROGRESS') return 'En curso'
   if (match.status === 'FINISHED') return 'Finalizada'
+  if (match.acceptanceStatus === 'OPEN') return 'Aceptación abierta'
+  if (match.acceptanceStatus === 'SCHEDULED') return 'Aceptación programada'
+  if (match.operationalStatus === 'RESOLUTION_PENDING')
+    return 'Aceptación cerrada; resolución pendiente'
   if (match.preparationStatus === 'TEAMS_RESOLVED')
     return 'Equipos definidos; preparación pendiente'
   if (match.preparationStatus === 'PREPARING') return 'Preparación pendiente de confirmar'

@@ -4,6 +4,12 @@ export const TOURNAMENT_CONTRACT_VERSION = 'torneos-hu77-84-78-hu83-v2.0.0'
 export const MODALITIES_CONTRACT_VERSION = 'torneos-v3.0.0'
 export type TournamentMode = 'SOLO' | 'DUO' | 'TRIO'
 export type TeamSize = 1 | 2 | 3
+export interface RoundSchedule {
+  readonly round: number
+  readonly acceptanceOpensAt: string
+  readonly acceptanceClosesAt: string
+  readonly scheduledStartAt: string
+}
 export interface RegistrationMember {
   readonly subject: string
   readonly position: number
@@ -30,6 +36,9 @@ export interface EntryTournament {
   readonly contractVersion?: string
   readonly tournamentMode?: TournamentMode
   readonly teamSize?: TeamSize
+  readonly acceptancePolicy?: 'ROUND_ACCEPTANCE_V1' | null
+  readonly roundSchedule?: readonly RoundSchedule[]
+  readonly serverNow?: string
   readonly id: string
   readonly name: string
   readonly entryPolicy: EntryPolicy

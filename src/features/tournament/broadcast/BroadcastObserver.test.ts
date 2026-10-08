@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HttpError } from '@/lib/http'
 import { BroadcastObserver } from './BroadcastObserver'
 import type { BroadcastApi, BroadcastObservation } from './api'
-import { BroadcastPreviewApi } from '@/test/tournament-broadcast'
+import { BroadcastPreviewApi, previewSnapshot } from '@/test/tournament-broadcast'
 const deferred = <T>() => {
   let resolve!: (value: T) => void
   const promise = new Promise<T>((r) => {
@@ -26,6 +26,56 @@ describe('HU-79/81: respuestas tardías, reconexión y eliminación de datos al 
     observer.start()
     await vi.advanceTimersByTimeAsync(0)
   }
+  it.each([1, 2, 3] as const)(
+    'observa y cambia una justa con %i integrante(s) por lado sin truncarlos',
+    async (teamSize) => {
+      api = new BroadcastPreviewApi(teamSize)
+      observer = new BroadcastObserver(api, 'DEMO')
+      await start()
+      expect(observer.getSnapshot().connection).toBe('connected')
+      expect(observer.getSnapshot().view?.snapshot?.combatants).toHaveLength(teamSize * 2)
+      await observer.select('encounter-02')
+      expect(observer.getSnapshot().connection).toBe('connected')
+      expect(observer.getSnapshot().view?.snapshot?.matchId).toBe('encounter-02')
+      api.advance('encounter-02')
+      observer.refresh()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(observer.getSnapshot().view?.snapshot?.lastAction.type).toBe('basicAttackResolved')
+      expect(observer.getSnapshot().view?.snapshot?.combatants.at(-1)?.health?.current).toBe(92)
+    },
+  )
+  it.each([
+    'mixto',
+    'duplicado',
+    'parcial',
+    'etiqueta ajena',
+    'lado duplicado',
+    'asiento duplicado',
+    'posición inválida',
+    'subtipo inválido',
+    'inicio inválido',
+  ])('rechaza un roster %s y conserva la vista anterior', async (invalid) => {
+    await start()
+    const before = structuredClone(observer.getSnapshot().view!)
+    const bad = structuredClone(before)
+    bad.snapshot = previewSnapshot('encounter-01', 3)
+    if (invalid === 'mixto') bad.snapshot.combatants[2]!.teamLabel = 'B'
+    if (invalid === 'duplicado')
+      bad.snapshot.combatants[5]!.playerId = bad.snapshot.combatants[0]!.playerId
+    if (invalid === 'parcial') bad.snapshot.combatants.pop()
+    if (invalid === 'etiqueta ajena') bad.snapshot.combatants[5]!.teamLabel = 'C'
+    if (invalid === 'lado duplicado') bad.snapshot.teams[1]!.teamLabel = 'A'
+    if (invalid === 'asiento duplicado') bad.snapshot.combatants[1]!.seat = 0
+    if (invalid === 'posición inválida') bad.snapshot.combatants[1]!.position = 99
+    if (invalid === 'subtipo inválido') bad.snapshot.combatants[1]!.heroSubtype = {} as string
+    if (invalid === 'inicio inválido') bad.snapshot.startedAt = 'sin fecha'
+    vi.spyOn(api, 'observe').mockResolvedValueOnce(bad)
+    observer.refresh()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(observer.getSnapshot().view).toEqual(before)
+    expect(observer.getSnapshot().connection).toBe('disconnected')
+    expect(observer.getSnapshot().error).toContain('vista completa y coherente')
+  })
   it('un poll de E1 que llega después de seleccionar E2 no cambia equipos, turno ni resultado', async () => {
     await start()
     const old = await api.observe()

@@ -34,12 +34,12 @@ export const AuctionProductSummary = ({
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="auction-product-summary flex min-w-0 items-center gap-3">
       {product.imageUrl !== '' && (
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="size-12 shrink-0 rounded-md object-cover"
+          className="auction-product-image size-12 shrink-0 rounded-md object-cover"
         />
       )}
       <div className="min-w-0">

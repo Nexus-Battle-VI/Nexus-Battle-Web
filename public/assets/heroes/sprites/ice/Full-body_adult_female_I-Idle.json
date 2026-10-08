@@ -1,0 +1,109 @@
+{
+  "character": {
+    "id": "e979b0e7-30cc-420b-8a69-695b7ec37638",
+    "name": "Idle",
+    "prompt": "Full-body adult female Ice Mage with a tall diamond-shaped silhouette, angular visible face, white-blue jaw-length hair and focused cool eyes. A structured deep-blue traveling coat (#356b8c) dominates the torso and tapered lower panels; pale cyan (#8fcbd2) outlines one faceted collar and two clean geometric chest seams. Silver (#aeb8c2) is limited to small closures and wrist trim. Dark blue-gray trousers and boots keep the palette cool. She stands upright with empty hands and visible hair, calm and precise. No brown robe, gray-dominant outfit, crown, staff, floating crystal or active snowstorm.",
+    "size": {
+      "width": 48,
+      "height": 48
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Full-body_adult_female_I-Idle.png",
+    "cell_size": {
+      "width": 80,
+      "height": 80
+    },
+    "sheet_size": {
+      "width": 640,
+      "height": 720
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "2aeb8bbc-1e4f-4e74-9a9e-3a4f905ef499",
+        "direction": "south-east"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "2aeb8bbc-1e4f-4e74-9a9e-3a4f905ef499",
+        "direction": "north-east"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "2aeb8bbc-1e4f-4e74-9a9e-3a4f905ef499",
+        "direction": "north-west"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "2aeb8bbc-1e4f-4e74-9a9e-3a4f905ef499",
+        "direction": "south-west"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "4b2932a1-99e9-491f-9c3b-b3bce47f210e",
+        "direction": "south-east"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "4b2932a1-99e9-491f-9c3b-b3bce47f210e",
+        "direction": "north-east"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "4b2932a1-99e9-491f-9c3b-b3bce47f210e",
+        "direction": "north-west"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "4b2932a1-99e9-491f-9c3b-b3bce47f210e",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-07T15:03:01.591078+00:00"
+}
