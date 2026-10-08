@@ -4,6 +4,10 @@ import { SelectField } from '@/components/ui/form/SelectField'
 import { useTheme } from '@/shared/theme'
 import { TournamentRegistrationPage } from '@/features/tournament/registration/TournamentRegistrationPage'
 import { TournamentBracketPanel } from '@/features/tournament/registration/TournamentBracketPanel'
+import { TournamentAcceptancePanel } from '@/features/tournament/registration/TournamentAcceptancePanel'
+import { TournamentEncounterAdminPanel } from '@/features/tournament/registration/TournamentEncounterAdminPanel'
+import { TournamentEncountersPanel } from '@/features/tournament/registration/TournamentEncountersPanel'
+import { calendarPreviewApis } from './calendarPreviewApis'
 import { useTournamentAssets } from '@/features/tournament/tournamentAssets'
 import {
   MODALITIES_CONTRACT_VERSION,
@@ -21,6 +25,7 @@ import {
 export const TournamentModesPreview = (): React.JSX.Element => {
   const [mode, setMode] = useState<TournamentMode>('TRIO')
   const [scene, setScene] = useState('llaves')
+  const [state, setState] = useState('open')
   const theme = useTheme((state) => state.theme)
   const setTheme = useTheme((state) => state.setTheme)
   const assets = useTournamentAssets()
@@ -32,7 +37,7 @@ export const TournamentModesPreview = (): React.JSX.Element => {
   const size = modalities[mode].size
   const tournament = {
     ...DEV_REGISTRATION_TOURNAMENT,
-    id: `qa-formats-${mode}`,
+    id: `qa-formats-${mode}-${state}`,
     name: 'Copa Nexus · octavos de la arena',
     contractVersion: MODALITIES_CONTRACT_VERSION,
     tournamentMode: mode,
@@ -65,6 +70,8 @@ export const TournamentModesPreview = (): React.JSX.Element => {
         })),
       }
     : null
+  const calendar = bracket ? calendarPreviewApis(bracket, mode, state) : null
+  const qaSubject = bracket?.seeds[0]?.memberIds[0] ?? 'qa-0-0'
   const api: RegistrationApi = {
     ...baseline.api,
     list: () => Promise.resolve([tournament]),
@@ -93,7 +100,7 @@ export const TournamentModesPreview = (): React.JSX.Element => {
           Monta componentes del producto. No valida cuentas, pagos ni combates reales. Recursos
           existentes de Cuenta, Comercio y Jugar Online; PixelLab y OBS pendientes.
         </p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SelectField
             label="Modalidad de revisión"
             value={mode}
@@ -112,9 +119,29 @@ export const TournamentModesPreview = (): React.JSX.Element => {
               { value: 'llaves', label: 'Árbol de llaves' },
               { value: 'inscripcion', label: 'Inscripción' },
               { value: 'administrador', label: 'Producto · administrador' },
+              { value: 'convocatoria', label: 'Aceptación personal' },
+              { value: 'operacion', label: 'Administración de justas' },
+              { value: 'consulta', label: 'Consulta de justa' },
             ]}
             onChange={(event) => {
               setScene(event.target.value)
+            }}
+          />
+          <SelectField
+            label="Estado de revisión"
+            value={state}
+            options={[
+              { value: 'open', label: 'Aceptación abierta' },
+              { value: 'ready', label: 'Lista para iniciar' },
+              { value: 'running', label: 'E1 y E2 en curso' },
+              { value: 'blocked', label: 'Dependencia retrasada' },
+              { value: 'absence-count', label: 'Ausencia · mayor conteo' },
+              { value: 'absence-tie', label: 'Ausencia · empate sorteado' },
+              { value: 'absence-full', label: 'Ausencia · un lado completo' },
+              { value: 'final', label: 'Final y campeón' },
+            ]}
+            onChange={(event) => {
+              setState(event.target.value)
             }}
           />
           <SelectField
@@ -131,20 +158,46 @@ export const TournamentModesPreview = (): React.JSX.Element => {
         </div>
       </aside>
       <div style={assets} className="tournament-skin min-w-0">
-        {scene === 'llaves' && bracket ? (
+        {scene === 'llaves' && bracket && calendar ? (
           <TournamentBracketPanel
-            key={mode}
+            key={`${mode}:${state}`}
             id={tournament.id}
-            subject="qa-player"
+            subject={`qa-player-${state}`}
             roles={['PLAYER']}
             confirmed={8}
             api={{ view: () => Promise.resolve(bracket), publish: baseline.brackets.publish }}
-            progress={{
-              view: () => Promise.resolve({ bracket: null, champion: null, eliminatedTeamIds: [] }),
-            }}
-            encounters={{ ...baseline.encounters, list: () => Promise.resolve([]) }}
+            progress={calendar.progress}
+            encounters={calendar.encounters}
           />
-        ) : scene !== 'llaves' ? (
+        ) : scene === 'convocatoria' && calendar ? (
+          <TournamentAcceptancePanel
+            key={`${mode}:${state}`}
+            id={tournament.id}
+            subject={qaSubject}
+            encounters={calendar.encounters}
+            api={calendar.acceptance}
+          />
+        ) : scene === 'operacion' && calendar ? (
+          <TournamentEncounterAdminPanel
+            key={`${mode}:${state}`}
+            id={tournament.id}
+            subject={`qa-admin-${state}`}
+            encounters={calendar.encounters}
+            admin={calendar.admin}
+          />
+        ) : scene === 'consulta' && calendar && bracket ? (
+          <TournamentEncountersPanel
+            key={`${mode}:${state}`}
+            id={tournament.id}
+            subject={qaSubject}
+            api={calendar.encounters}
+            selectedMatchId={
+              bracket.matches.find(
+                (m) => m.id === (state === 'blocked' ? 'E9' : state === 'final' ? 'Final' : 'E1'),
+              )?.encounterId ?? ''
+            }
+          />
+        ) : ['inscripcion', 'administrador'].includes(scene) ? (
           <TournamentRegistrationPage
             key={`${mode}:${scene}`}
             api={api}

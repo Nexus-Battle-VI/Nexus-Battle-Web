@@ -1,0 +1,45 @@
+{
+  "character": {
+    "id": "ff09a46a-b3df-4d27-b976-35edfa5f1bc1",
+    "name": "Idle",
+    "prompt": "Full-body adult female Field Medic with a clean compact silhouette, alert kind face and dark hair in a practical low bun. A short structured ivory field coat (#d8d0bc) dominates the torso and ends above the knees; muted clinical-blue panels (#517f91) shape the shoulders, side seams and reinforced knees over dark-slate trousers. Tiny signal-red tabs (#a84d48) mark only the collar and one pocket. Dark practical boots and empty hands keep her ready for movement. The costume reads precise and medical, not gray or brown. No brown uniform, large red cross, kit, reanimation device, visor or long surgical gown.",
+    "size": {
+      "width": 48,
+      "height": 48
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Full-body_adult_female_F-Idle.png",
+    "cell_size": {
+      "width": 48,
+      "height": 48
+    },
+    "sheet_size": {
+      "width": 384,
+      "height": 48
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-07T15:03:18.954087+00:00"
+}

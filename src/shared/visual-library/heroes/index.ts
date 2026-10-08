@@ -15,5 +15,8 @@ export type { HeroAccent, HeroSilhouette, HeroVisualSpec } from './hero-definiti
 
 export { Hero3D } from './Hero3D'
 export type { Hero3DProps } from './Hero3D'
+export { HeroSprite } from './HeroSprite'
+export type { HeroSpriteProps } from './HeroSprite'
+export type { SpriteDirection } from './hero-sprite'
 
 export { heroIdOfProduct } from './hero-product-visual'

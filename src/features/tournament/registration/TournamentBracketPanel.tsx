@@ -11,6 +11,7 @@ import { BracketTree } from './BracketTree'
 import { sourceLabel, type GraphMatch } from './bracketLayout'
 import { encounterApi, type EncounterApi } from './encounterApi'
 import { matchStatus } from './presentation'
+import { MatchSchedule, AbsenceResolution } from './MatchSchedule'
 
 export const TournamentBracketPanel = ({
   id,
@@ -64,6 +65,7 @@ export const TournamentBracketPanel = ({
   }
   const operation = useOperation(JSON.stringify([subject, id, 'bracket']), () => view.data != null)
   const selected = bracket?.matches.find((m) => m.id === selection)
+  const selectedSummary = selected ? summaryFor(selected) : undefined
   const state = JSON.stringify([confirmed, bracket?.publishedAt])
   const publish = async (): Promise<void> => {
     const result = await operation.run('publish', state, (operationId) =>
@@ -149,16 +151,27 @@ export const TournamentBracketPanel = ({
               <p>La final todavía no confirma un campeón.</p>
             ) : null}
             <p className="text-sm text-muted">
-              Inicio programado: {dateLabel(bracket.startsAt)} · Una sola final.
+              {bracket.version === 3 ? 'Primera aceptación' : 'Inicio programado'}:{' '}
+              {dateLabel(bracket.startsAt)} · Una sola final.
             </p>
             <BracketTree
               bracket={bracket}
               selection={selection}
               onSelect={setSelection}
               statusLabel={statusLabel}
-              timeLabel={() => 'Horario pendiente del servidor'}
+              timeLabel={(match) => {
+                const scheduled =
+                  summaryFor(match)?.scheduledStartAt ??
+                  bracket.roundSchedule?.find((round) => round.round === match.round)
+                    ?.scheduledStartAt
+                return scheduled
+                  ? `Inicio ${new Date(scheduled).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Horario pendiente del servidor'
+              }}
               winnerLabel={(match) =>
-                bracket.seeds.find((seed) => seed.teamId === match.winnerTeamId)?.name ?? null
+                bracket.seeds.find(
+                  (seed) => seed.teamId === (summaryFor(match)?.winnerTeamId ?? match.winnerTeamId),
+                )?.name ?? null
               }
             />
             {selected && (
@@ -168,6 +181,12 @@ export const TournamentBracketPanel = ({
               >
                 <h3 className="font-semibold">{selected.id}</h3>
                 <p>{statusLabel(selected)}</p>
+                {selectedSummary && (
+                  <>
+                    <MatchSchedule match={selectedSummary} />
+                    <AbsenceResolution match={selectedSummary} />
+                  </>
+                )}
                 <p>
                   {sourceLabel(selected.sources[0])} vs. {sourceLabel(selected.sources[1])}
                 </p>

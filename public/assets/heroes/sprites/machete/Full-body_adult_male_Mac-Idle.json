@@ -1,0 +1,109 @@
+{
+  "character": {
+    "id": "2c3539a5-5d75-4b3c-a9a9-f06ca47f980f",
+    "name": "Idle",
+    "prompt": "Full-body adult male Machete Rogue with a low forward silhouette, short wiry strength, a square visible face, one cheek scar and messy dark hair bound by a brick-red cloth band (#8a4036). A jungle-green reinforced sleeveless jacket (#496148) covers the torso and short hip flaps; charcoal trousers, steel-gray forearm guards and dark boots balance the strong green mass. Brick red returns only as one diagonal cloth strip, while toasted leather (#79563a) is limited to narrow fastening straps. Bent knees and empty hands make him look ready to lunge. No tan pants, broad brown vest, machete, blood effect or heavy plate armor.",
+    "size": {
+      "width": 48,
+      "height": 48
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Full-body_adult_male_Mac-Idle.png",
+    "cell_size": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet_size": {
+      "width": 512,
+      "height": 576
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "923c0185-041f-4d88-ae41-b0467c6340b4",
+        "direction": "south-east"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "923c0185-041f-4d88-ae41-b0467c6340b4",
+        "direction": "north-east"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "923c0185-041f-4d88-ae41-b0467c6340b4",
+        "direction": "north-west"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "923c0185-041f-4d88-ae41-b0467c6340b4",
+        "direction": "south-west"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "a931e5aa-f6f8-4ccb-8731-e62242434b3b",
+        "direction": "south-east"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "a931e5aa-f6f8-4ccb-8731-e62242434b3b",
+        "direction": "north-east"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "a931e5aa-f6f8-4ccb-8731-e62242434b3b",
+        "direction": "north-west"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "a931e5aa-f6f8-4ccb-8731-e62242434b3b",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-07T15:03:10.074144+00:00"
+}

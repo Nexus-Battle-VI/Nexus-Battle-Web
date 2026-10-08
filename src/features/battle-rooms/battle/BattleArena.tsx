@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Avatar } from '@/components/ui/Avatar'
 import { heroIdFromSubtype } from '@/features/player-inventory/equipment/heroSubtype'
 import { avatarPathForSubject } from '@/shared/avatar'
-import { Hero3D } from '@/shared/visual-library/heroes'
+import { HeroSprite, type SpriteDirection } from '@/shared/visual-library/heroes'
 
 import '../battle-rooms.css'
 import { combatantName } from './presentation'
@@ -17,6 +17,8 @@ interface CombatantCardProps {
   readonly isActive: boolean
   /** Cuantos participantes hay en su lado: decide el tamano del heroe, sin casos por nombre. */
   readonly sideSize: number
+  readonly direction: SpriteDirection
+  readonly health?: number | undefined
   /** `true` si este combatiente es un objetivo valido para el ataque actual (HU-18/21). */
   readonly isTargetable: boolean
   readonly isTargetSelected: boolean
@@ -44,7 +46,7 @@ const sideColumns = (sideSize: number): string =>
       : 'grid-cols-1 sm:grid-cols-3'
 
 /**
- * Un combatiente SOBRE el campo de batalla: su heroe (modelo real de la biblioteca visual, o un
+ * Un combatiente SOBRE el campo de batalla: su heroe (sprite original de la biblioteca visual, o un
  * marcador cuando no hay heroe conocido -- p. ej. un oponente IA), un nameplate compacto (nombre +
  * insignias minimas) debajo. SIN caja opaca detras -- el heroe se ve sobre el fondo de la arena
  * (remaster visual Sprint 3, 2a pasada, seccion 20 del brief: "el modelo debe respirar
@@ -63,6 +65,8 @@ const CombatantCard = ({
   isSelf,
   isActive,
   sideSize,
+  direction,
+  health,
   isTargetable,
   isTargetSelected,
   onSelectTarget,
@@ -82,7 +86,7 @@ const CombatantCard = ({
           {name.charAt(0).toUpperCase()}
         </div>
       ) : (
-        <Hero3D heroId={modelId} className="text-center" />
+        <HeroSprite heroId={modelId} direction={direction} health={health} />
       )}
     </div>
   )
@@ -151,6 +155,8 @@ export interface ArenaSideProps {
   readonly entries: readonly TurnOrderEntry[]
   readonly isSelf: (entry: TurnOrderEntry) => boolean
   readonly isCurrent: (entry: TurnOrderEntry) => boolean
+  readonly direction?: SpriteDirection
+  readonly healthOf?: (entry: TurnOrderEntry) => number | undefined
   /** HU-18/21 (remaster 2a pasada): objetivo seleccionable directamente sobre el heroe. */
   readonly isTargetable?: (entry: TurnOrderEntry) => boolean
   readonly isTargetSelected?: (entry: TurnOrderEntry) => boolean
@@ -166,6 +172,8 @@ export const ArenaSide = ({
   entries,
   isSelf,
   isCurrent,
+  direction = 'south-east',
+  healthOf,
   isTargetable,
   isTargetSelected,
   onSelectTarget,
@@ -221,6 +229,8 @@ export const ArenaSide = ({
             isSelf={isSelf(entry)}
             isActive={isCurrent(entry)}
             sideSize={entries.length}
+            direction={direction}
+            health={healthOf?.(entry)}
             isTargetable={isTargetable?.(entry) ?? false}
             isTargetSelected={isTargetSelected?.(entry) ?? false}
             onSelectTarget={onSelectTarget}

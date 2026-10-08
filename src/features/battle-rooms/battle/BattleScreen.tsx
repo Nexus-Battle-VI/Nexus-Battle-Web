@@ -55,6 +55,11 @@ export interface BattleScreenProps {
   readonly lastTurnTimeout?: LastTurnTimeout | null
   /** HU-21: reloj de visualizacion; sin el no se muestran cuentas atras. */
   readonly serverClock?: ServerClock | null
+  /** Observación: nombres de ambos equipos y fin autoritativo, sin acciones ni premios propios. */
+  readonly spectator?: {
+    readonly ended: boolean
+    readonly teamNames: Readonly<Record<string, string>>
+  }
 }
 
 const keyOf = (ref: TargetRef): string => `${ref.teamLabel}#${String(ref.seat)}`
@@ -94,8 +99,9 @@ export const BattleScreen = ({
   result = null,
   lastTurnTimeout = null,
   serverClock = null,
+  spectator,
 }: BattleScreenProps): React.JSX.Element => {
-  const finished = result !== null
+  const finished = result !== null || spectator?.ended === true
   const { t } = useTranslation()
   const turn = finished
     ? {
@@ -106,8 +112,11 @@ export const BattleScreen = ({
     : describeTurn(battle, subject)
   const self = findSelf(battle, subject)
   const { allies, opponents } = groupCombatants(battle, subject)
+  const allyTitle = spectator?.teamNames[allies[0]?.teamLabel ?? ''] ?? t('battle:battle.yourTeam')
+  const opponentTitle =
+    spectator?.teamNames[opponents[0]?.teamLabel ?? ''] ?? t('battle:battle.rival')
   const isCurrent = (entry: TurnOrderEntry): boolean =>
-    entry.position === battle.currentTurn.position
+    !finished && entry.position === battle.currentTurn.position
   const isSelf = (entry: TurnOrderEntry): boolean =>
     self !== null && entry.position === self.position
   const reconnecting = connection === 'reconnecting' || (connection === 'open' && !synced)
@@ -131,7 +140,9 @@ export const BattleScreen = ({
   // Sin `combat` la pantalla es de solo lectura (HU-18): NINGUN boton se ofrece, tampoco el
   // clic sobre el heroe rival -- mismo criterio que el resto de la pantalla.
   const isTargetableEntry = (entry: TurnOrderEntry): boolean =>
-    combat !== undefined && targets.some((candidate) => candidate.position === entry.position)
+    spectator === undefined &&
+    combat !== undefined &&
+    targets.some((candidate) => candidate.position === entry.position)
   const isTargetSelectedEntry = (entry: TurnOrderEntry): boolean =>
     selectedTarget !== null && entry.position === selectedTarget.position
   const onSelectTarget = (entry: TurnOrderEntry): void => {
@@ -239,7 +250,7 @@ export const BattleScreen = ({
           <div className="br-hud-corner br-hud-corner--left">
             <ul
               className={clsx('br-hud-row', `br-hud-row--${String(1 + myCompanions.length)}`)}
-              aria-label={t('battle:battle.yourTeam')}
+              aria-label={allyTitle}
             >
               {[myPrimary, ...myCompanions].map((entry) => {
                 const health = healthOf(entry)
@@ -292,10 +303,12 @@ export const BattleScreen = ({
             ancho. */}
         {enemyFocus !== undefined && (
           <div className="br-hud-corner br-hud-corner--right">
-            <p className="br-hud-corner-sub">{t('battle:battle.enemyLabel')}</p>
+            <p className="br-hud-corner-sub">
+              {spectator === undefined ? t('battle:battle.enemyLabel') : opponentTitle}
+            </p>
             <ul
               className={clsx('br-hud-row', `br-hud-row--${String(1 + enemyCompanions.length)}`)}
-              aria-label={t('battle:battle.rival')}
+              aria-label={opponentTitle}
             >
               {[enemyFocus, ...enemyCompanions].map((entry) => {
                 const health = healthOf(entry)
@@ -322,10 +335,16 @@ export const BattleScreen = ({
         <div className="br-arena-field">
           <div className="br-arena-side br-arena-side--mine">
             <ArenaSide
-              title={allies.length > 1 ? t('battle:battle.yourTeam') : t('battle:battle.yourHero')}
+              title={
+                spectator === undefined && allies.length === 1
+                  ? t('battle:battle.yourHero')
+                  : allyTitle
+              }
               entries={allies}
               isSelf={isSelf}
               isCurrent={isCurrent}
+              direction="south-east"
+              healthOf={(entry) => healthOf(entry)?.current}
             />
           </div>
 
@@ -339,10 +358,12 @@ export const BattleScreen = ({
 
           <div className="br-arena-side br-arena-side--enemy">
             <ArenaSide
-              title={t('battle:battle.rival')}
+              title={opponentTitle}
               entries={opponents}
               isSelf={isSelf}
               isCurrent={isCurrent}
+              direction="north-west"
+              healthOf={(entry) => healthOf(entry)?.current}
               isTargetable={isTargetableEntry}
               isTargetSelected={isTargetSelectedEntry}
               onSelectTarget={onSelectTarget}
@@ -355,7 +376,7 @@ export const BattleScreen = ({
             la arena (`position: absolute` dentro de `.br-battle-scene`, que es
             `position: relative`) sin destruir lo que hay detras. HU-22: el panel de recompensa es
             ADITIVO -- BattleResultView nunca muestra creditos (D4). */}
-        {finished && (
+        {result !== null && (
           <div className="br-result-overlay">
             {/* 5a pasada (secciones 61/64 del brief): gap reducido (mas
                 densidad vertical); el ANCHO (`max-w-[820px]`) no se toca. */}
@@ -415,7 +436,7 @@ export const BattleScreen = ({
             arriba, abajo-izquierda) -- juntos forman un HUD inferior de una sola fila, sin
             "segunda pagina" ni scroll para atacar. HU-21: tras el final las acciones NO existen
             (no se muestran deshabilitadas). */}
-        {!finished && (
+        {!finished && spectator === undefined && (
           <div className="br-bottom-actions">
             {combat === undefined ? (
               <p

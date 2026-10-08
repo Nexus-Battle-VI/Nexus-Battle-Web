@@ -6,6 +6,7 @@ import { TournamentCard as Card } from '../TournamentVisuals'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { encounterApi, type EncounterApi } from './encounterApi'
 import { dateLabel, matchStatus } from './presentation'
+import { MatchSchedule, AbsenceResolution } from './MatchSchedule'
 
 const eventLabel: Record<string, string> = {
   battleStarted: 'Comienza el combate',
@@ -43,12 +44,15 @@ export const TournamentEncountersPanel = ({
       page.hasMore && page.nextSeq > page.afterSeq ? page.nextSeq : undefined,
     enabled: matchId !== '',
     refetchInterval: (query) =>
-      query.state.data?.pages[0]?.status === 'FINISHED' && query.state.data.pages[0].logComplete
+      query.state.data?.pages[0]?.resolution?.resultType === 'ABSENCE' ||
+      (query.state.data?.pages[0]?.status === 'FINISHED' && query.state.data.pages[0].logComplete)
         ? false
         : 5000,
   })
   const first = detail.data?.pages[0]
   const view = first?.tournamentId === id && first.matchId === matchId ? first : undefined
+  const result =
+    view?.resolution?.resultType === 'PLAYED' ? view.resolution.combatResult : view?.result
   const events =
     detail.data?.pages.flatMap((page) =>
       page.tournamentId === id && page.matchId === matchId ? page.events : [],
@@ -120,6 +124,8 @@ export const TournamentEncountersPanel = ({
             <h3 className="font-semibold">
               {view.bracketLabel} · {matchStatus(view)}
             </h3>
+            <MatchSchedule match={view} />
+            <AbsenceResolution match={view} />
             <p>
               {view.bracketTrack === 'MAIN'
                 ? 'Árbol de ganadores'
@@ -157,7 +163,10 @@ export const TournamentEncountersPanel = ({
               ) : (
                 <div key={team.teamId}>
                   <p className="font-semibold">{team.name}</p>
-                  <ul className="grid gap-1 text-sm">
+                  <ul
+                    className="grid gap-1 text-sm"
+                    aria-label={`Integrantes inscritos de ${team.name}`}
+                  >
                     {team.memberIds.map((member, memberIndex) => (
                       <li key={member} className="break-all">
                         {member === subject
@@ -169,37 +178,44 @@ export const TournamentEncountersPanel = ({
                 </div>
               ),
             )}
-            {view.teams.map((team) => (
-              <div key={team.teamId}>
-                <p className="font-semibold">Equipo {team.teamLabel}</p>
-                <ul className="grid gap-1 text-sm">
-                  {team.participants.map((participant, participantIndex) => (
-                    <li key={participant.playerId} className="break-all">
-                      {participant.playerId === subject
-                        ? 'Tu héroe'
-                        : `Héroe del jugador ${String(participantIndex + 1)}`}{' '}
-                      · Metadatos pendientes
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-            {view.startedAt && <p>Inicio: {dateLabel(view.startedAt)}</p>}
-            {view.status === 'FINISHED' && view.result !== null ? (
-              <>
-                <p>Cierre: {dateLabel(view.closedAt ?? view.result.finishedAt)}</p>
-                <p>
-                  {view.result.outcome === 'WIN' && view.result.winnerTeamLabel !== null
-                    ? `Ganador informado por Combat: ${view.result.winnerTeamLabel}`
-                    : view.result.outcome === 'NO_WINNER'
-                      ? 'Combat finalizó sin ganador.'
-                      : `Resultado informado por Combat: ${view.result.outcome}`}
-                </p>
-                <p className="text-sm">Motivo: {view.result.reason}</p>
-              </>
-            ) : (
-              <p>Sin resultado final confirmado.</p>
+            {view.resolution?.resultType !== 'ABSENCE' &&
+              view.teams.map((team) => (
+                <div key={team.teamId}>
+                  <p className="font-semibold">Equipo {team.teamLabel}</p>
+                  <ul
+                    className="grid gap-1 text-sm"
+                    aria-label={`Participantes de Combat del lado ${team.teamLabel}`}
+                  >
+                    {team.participants.map((participant, participantIndex) => (
+                      <li key={participant.playerId} className="break-all">
+                        {participant.playerId === subject
+                          ? 'Tu héroe'
+                          : `Héroe del jugador ${String(participantIndex + 1)}`}{' '}
+                        · Metadatos pendientes
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            {view.resolution?.resultType !== 'ABSENCE' && view.startedAt && (
+              <p>Inicio: {dateLabel(view.startedAt)}</p>
             )}
+            {view.resolution?.resultType !== 'ABSENCE' &&
+              (view.status === 'FINISHED' && result != null ? (
+                <>
+                  <p>Cierre: {dateLabel(view.closedAt ?? result.finishedAt)}</p>
+                  <p>
+                    {result.outcome === 'WIN' && result.winnerTeamLabel !== null
+                      ? `Ganador informado por Combat: ${result.winnerTeamLabel}`
+                      : result.outcome === 'NO_WINNER'
+                        ? 'Combat finalizó sin ganador.'
+                        : `Resultado informado por Combat: ${result.outcome}`}
+                  </p>
+                  <p className="text-sm">Motivo: {result.reason}</p>
+                </>
+              ) : (
+                <p>Sin resultado final confirmado.</p>
+              ))}
             {view.syncedAt && (
               <p className="text-sm text-muted">
                 Última sincronización del archivo: {dateLabel(view.syncedAt)}.
@@ -214,39 +230,41 @@ export const TournamentEncountersPanel = ({
                   El archivo todavía no ha alcanzado todos los eventos conocidos de Combat.
                 </p>
               )}
-            <details className="tournament-history">
-              <summary className="cursor-pointer font-semibold">
-                Historial de acciones ({String(uniqueEvents.length)})
-              </summary>
-              {uniqueEvents.length === 0 && <p>Todavía no hay eventos conservados.</p>}
-              <ol className="grid min-w-0 gap-2" aria-label="Eventos del combate">
-                {uniqueEvents.map((event) => (
-                  <li key={event.seq} className="min-w-0 rounded border border-border p-3">
-                    <p>
-                      {String(event.seq)}. {eventLabel[event.type] ?? event.type} ·{' '}
-                      {dateLabel(event.occurredAt)}
-                    </p>
-                    <details>
-                      <summary className="cursor-pointer text-sm">
-                        Ver registro de la acción
-                      </summary>
-                      <pre className="mt-2 overflow-auto whitespace-pre-wrap break-all text-xs">
-                        {JSON.stringify(event.payload, null, 2)}
-                      </pre>
-                    </details>
-                  </li>
-                ))}
-              </ol>
-              {detail.hasNextPage && (
-                <Button
-                  variant="secondary"
-                  loading={detail.isFetchingNextPage}
-                  onClick={() => void detail.fetchNextPage()}
-                >
-                  Ver siguientes eventos
-                </Button>
-              )}
-            </details>
+            {view.resolution?.resultType !== 'ABSENCE' && (
+              <details className="tournament-history">
+                <summary className="cursor-pointer font-semibold">
+                  Historial de acciones ({String(uniqueEvents.length)})
+                </summary>
+                {uniqueEvents.length === 0 && <p>Todavía no hay eventos conservados.</p>}
+                <ol className="grid min-w-0 gap-2" aria-label="Eventos del combate">
+                  {uniqueEvents.map((event) => (
+                    <li key={event.seq} className="min-w-0 rounded border border-border p-3">
+                      <p>
+                        {String(event.seq)}. {eventLabel[event.type] ?? event.type} ·{' '}
+                        {dateLabel(event.occurredAt)}
+                      </p>
+                      <details>
+                        <summary className="cursor-pointer text-sm">
+                          Ver registro de la acción
+                        </summary>
+                        <pre className="mt-2 overflow-auto whitespace-pre-wrap break-all text-xs">
+                          {JSON.stringify(event.payload, null, 2)}
+                        </pre>
+                      </details>
+                    </li>
+                  ))}
+                </ol>
+                {detail.hasNextPage && (
+                  <Button
+                    variant="secondary"
+                    loading={detail.isFetchingNextPage}
+                    onClick={() => void detail.fetchNextPage()}
+                  >
+                    Ver siguientes eventos
+                  </Button>
+                )}
+              </details>
+            )}
           </section>
         )}
       </section>
