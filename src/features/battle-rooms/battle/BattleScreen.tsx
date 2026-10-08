@@ -343,6 +343,8 @@ export const BattleScreen = ({
               entries={allies}
               isSelf={isSelf}
               isCurrent={isCurrent}
+              direction="south-east"
+              healthOf={(entry) => healthOf(entry)?.current}
             />
           </div>
 
@@ -360,6 +362,8 @@ export const BattleScreen = ({
               entries={opponents}
               isSelf={isSelf}
               isCurrent={isCurrent}
+              direction="north-west"
+              healthOf={(entry) => healthOf(entry)?.current}
               isTargetable={isTargetableEntry}
               isTargetSelected={isTargetSelectedEntry}
               onSelectTarget={onSelectTarget}
