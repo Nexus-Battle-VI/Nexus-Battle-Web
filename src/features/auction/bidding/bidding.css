@@ -1,12 +1,12 @@
 .bid-card {
-  --bid-card: #f1f5f9;
-  --bid-border: #e2e8f0;
-  --bid-text: #0f172a;
-  --bid-muted: #475569;
+  --bid-card: #f8f1e3;
+  --bid-border: #c7a768;
+  --bid-text: #2b2119;
+  --bid-muted: #6e5b48;
   --bid-disabled-text: #475569;
-  --bid-brand: #7c3aed;
+  --bid-brand: #76486f;
   --bid-brand-ink: #f8fafc;
-  --bid-info: #60a5fa;
+  --bid-info: #9a6817;
   --bid-success: #4ade80;
   --bid-warning: #fbbf24;
   --bid-danger: #f87171;
@@ -22,36 +22,46 @@
   padding: 24px;
   border: 1px solid var(--bid-border);
   border-radius: 12px;
-  background-color: var(--bid-card);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--bid-card) 92%, #d8bd7a 8%),
+    var(--bid-card)
+  );
   color: var(--bid-text);
+  box-shadow: 0 10px 26px rgb(83 56 17 / 12%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .bid-card {
-    --bid-card: #1e293b;
-    --bid-border: #334155;
-    --bid-text: #f8fafc;
-    --bid-muted: #94a3b8;
+    --bid-card: #1d171b;
+    --bid-border: #765a37;
+    --bid-text: #f3e8cf;
+    --bid-muted: #baa98f;
+    --bid-brand: #9b638f;
+    --bid-info: #c79a4b;
     --bid-disabled-text: #475569;
-    --bid-alert-info-bg: #020617;
-    --bid-alert-warning-bg: #020617;
+    --bid-alert-info-bg: rgb(199 154 75 / 10%);
+    --bid-alert-warning-bg: rgb(118 72 111 / 14%);
   }
 }
 
 :root[data-theme='dark'] .bid-card {
-  --bid-card: #1e293b;
-  --bid-border: #334155;
-  --bid-text: #f8fafc;
-  --bid-muted: #94a3b8;
+  --bid-card: #1d171b;
+  --bid-border: #765a37;
+  --bid-text: #f3e8cf;
+  --bid-muted: #baa98f;
+  --bid-brand: #9b638f;
+  --bid-info: #c79a4b;
   --bid-disabled-text: #475569;
-  --bid-alert-info-bg: #020617;
-  --bid-alert-warning-bg: #020617;
+  --bid-alert-info-bg: rgb(199 154 75 / 10%);
+  --bid-alert-warning-bg: rgb(118 72 111 / 14%);
 }
 
 .bid-card[data-emphasis='true'] {
-  border: 2px solid var(--bid-brand);
-  padding: 23px;
-  box-shadow: 0 0 20px rgb(124 58 237 / 30%);
+  border-color: var(--bid-border);
+  box-shadow:
+    0 12px 30px rgb(83 56 17 / 16%),
+    inset 0 1px rgb(255 255 255 / 8%);
 }
 
 .bid-product-row {
@@ -316,7 +326,7 @@
   }
 
   .bid-card[data-emphasis='true'] {
-    padding: 19px;
+    padding: 20px;
   }
 
   .bid-header-row {

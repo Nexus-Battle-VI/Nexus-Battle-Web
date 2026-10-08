@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/form/CheckboxField'
 import { countLabel } from '@/shared/i18n/format'
 import { formatCredits } from './formatCredits'
+import './immediate-purchase.css'
 
 /**
  * Tarjeta de compra inmediata (HU-64.1).
@@ -14,10 +15,10 @@ import { formatCredits } from './formatCredits'
  * por callbacks. La orquestacion con la API (`POST /auctions/{auctionId}/buy-now`)
  * la aporta HU-64.6.
  *
- * Usa los tokens del producto (`src/index.css`: `--color-brand`, `--color-surface-raised`,
- * `--color-danger`...) y los componentes compartidos (`Card`, `Button`, `CheckboxField`),
- * NO una paleta propia: Figma fue la guia de contenido y disposicion, no una licencia
- * para que este componente se viera distinto al resto de Nexus Battles VI.
+ * Usa una superficie local y los tokens semanticos del producto junto con los
+ * componentes compartidos (`Button`, `CheckboxField`). La capa local solo
+ * ajusta la identidad visual de Auction; estados y comportamiento permanecen
+ * expresados por los tokens compartidos.
  *
  * Criterios de aceptacion que la interfaz hace visibles:
  * - CA-01 `success` / `pending-pickup`: compra completada y producto por recoger.
@@ -179,8 +180,15 @@ export const ImmediatePurchaseCard = ({
         {product.name}
       </h3>
       <span
+        data-tone={
+          stage === 'available' || stage === 'success'
+            ? 'success'
+            : stage === 'insufficient-credits'
+              ? 'danger'
+              : 'warning'
+        }
         className={clsx(
-          'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+          'auction-state-badge inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
           BADGE_TONE[stage],
         )}
       >
@@ -192,7 +200,7 @@ export const ImmediatePurchaseCard = ({
   if (stage === 'processing') {
     return (
       <article
-        className="flex w-full max-w-[480px] flex-col gap-5 rounded-lg border border-border bg-surface-raised p-6"
+        className="auction-flow-card immediate-purchase-card flex w-full max-w-[480px] flex-col gap-5 rounded-lg border border-border bg-surface-raised p-6"
         aria-labelledby={titleId}
         aria-busy="true"
       >
@@ -217,7 +225,7 @@ export const ImmediatePurchaseCard = ({
   return (
     <article
       className={clsx(
-        'flex w-full max-w-[480px] flex-col gap-5 rounded-lg border bg-surface-raised p-6',
+        'auction-flow-card immediate-purchase-card flex w-full max-w-[480px] flex-col gap-5 rounded-lg border bg-surface-raised p-6',
         stage === 'available' && !confirmationMissing
           ? 'border-2 border-brand p-[23px] shadow-[0_0_20px_0_var(--color-brand)]/30'
           : 'border-border',

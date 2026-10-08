@@ -10,6 +10,7 @@ import { formatDateTime } from '@/lib/format'
 import { countLabel, formatInteger } from '@/shared/i18n/format'
 import { queryKeys } from '@/shared/query-keys'
 import { AuctionProductSummary } from '../AuctionProductSummary'
+import '../auction-remaster.css'
 import {
   fetchMyAuctions,
   fetchMyBids,
@@ -32,7 +33,7 @@ interface SectionProps {
 const ActivitySection = ({ title, description, children }: SectionProps): React.JSX.Element => (
   <section
     aria-label={title}
-    className="space-y-4 rounded-xl border border-border bg-surface p-4 sm:p-5"
+    className="auction-activity-section space-y-4 rounded-xl border border-border bg-surface p-4 sm:p-5"
   >
     <header>
       <h2 className="text-lg font-semibold text-ink">{title}</h2>
@@ -122,7 +123,7 @@ export const AuctionActivityPage = (): React.JSX.Element => {
   })
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6">
+    <main className="auction-shell auction-page space-y-4">
       <Breadcrumb
         items={[
           { label: t('auction:crumbs.home'), to: '/ecommerce' },
@@ -130,16 +131,20 @@ export const AuctionActivityPage = (): React.JSX.Element => {
           { label: t('auction:activity.title') },
         ]}
       />
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="auction-hero flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-ink">{t('auction:activity.title')}</h1>
+          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
+          <h1 className="auction-title">{t('auction:activity.title')}</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted">{t('auction:activity.subtitle')}</p>
         </div>
-        <nav aria-label={t('auction:activity.related')} className="flex flex-wrap gap-2">
-          <Link className={linkClass} to="/auction/watchlist">
+        <nav
+          aria-label={t('auction:activity.related')}
+          className="auction-nav flex flex-wrap gap-2"
+        >
+          <Link className={`${linkClass} auction-link`} to="/auction/watchlist">
             {t('auction:activity.watchlist')}
           </Link>
-          <Link className={linkClass} to="/auction/pending-claims">
+          <Link className={`${linkClass} auction-link`} to="/auction/pending-claims">
             {t('auction:activity.pendingClaims')}
           </Link>
         </nav>

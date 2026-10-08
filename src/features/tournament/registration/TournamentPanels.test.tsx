@@ -89,6 +89,8 @@ describe('llaves del servidor, permisos y ocho humanos', () => {
     expect(
       await screen.findByText('Llaves publicadas · ocho equipos humanos · inscripción cerrada.'),
     ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^Todas/u }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ver árbol' }))
     for (const name of ['Árbol de ganadores', 'Árbol de perdedores', 'Final'])
       expect(screen.getByRole('region', { name })).toBeInTheDocument()
     expect(

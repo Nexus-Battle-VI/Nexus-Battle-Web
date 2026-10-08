@@ -231,7 +231,7 @@ describe('árbol generado desde fuentes y destinos', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Todas/u }))
     await userEvent.click(screen.getByRole('button', { name: 'Ver árbol' }))
     expect(screen.getAllByRole('button', { name: / · Ronda /u })).toHaveLength(14)
-    await userEvent.click(screen.getByRole('button', { name: 'Final · 1', exact: true }))
+    await userEvent.click(screen.getByRole('button', { name: 'Final · 1' }))
     expect(screen.getAllByRole('button', { name: / · Ronda /u })).toHaveLength(1)
     expect(screen.getByRole('button', { name: /^Final · Ronda/u })).toBeInTheDocument()
   })
