@@ -63,8 +63,15 @@ A/B de la fuente recibida. Ganadores y perdedores se distinguen también por G/P
 línea continua/discontinua y texto. Hay 14 nodos, ocho seeds, 20 aristas y una final.
 No hay grafo alternativo de eliminación simple ni reset de la final.
 
-La vista mantiene desplazamiento dentro del diagrama, controles y selección por
-teclado, búsqueda de equipo y consulta por rondas. El detalle enlaza por el
+La vista comienza por ganadores; los controles permiten elegir perdedores, final
+o todas las 14 justas. El ancho se mide en el panel, incluso cuando este es más
+estrecho que el navegador. Si la rama no cabe con texto legible, se consulta una
+ronda a la vez, con selector y botones anterior/siguiente; «Ver árbol» permite
+recorrer el diagrama completo con desplazamiento contenido y zoom. «Ajustar»
+recupera la adaptación automática. La geometría de los nodos compactos y sus
+puertos coincide con los estilos y conectores; no cambia el grafo del servidor.
+
+La vista mantiene selección por teclado y búsqueda de equipo. El detalle enlaza por el
 `encounterId` real a HU-83. El cliente solicita publicar el bracket; Tournament
 valida cupos, consentimiento y elegibilidad. Un conteo en Web no autoriza publicar.
 

@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import type { PublishedBracket } from './bracketApi'
 import { TournamentButton as Button } from '../TournamentVisuals'
 import {
@@ -9,7 +9,15 @@ import {
   sourceLabel,
   type GraphMatch,
 } from './bracketLayout'
+import { useBracketWidth } from './useBracketWidth'
 import './bracket-tree.css'
+
+const tracks = [
+  { key: 'MAIN', title: 'Árbol de ganadores', label: 'Ganadores' },
+  { key: 'SECONDARY', title: 'Árbol de perdedores', label: 'Perdedores' },
+  { key: 'FINAL', title: 'Final', label: 'Final' },
+] as const
+type Track = GraphMatch['track'] | 'ALL'
 
 export const BracketTree = ({
   bracket,
@@ -26,16 +34,25 @@ export const BracketTree = ({
   readonly timeLabel: (match: GraphMatch) => string
   readonly winnerLabel: (match: GraphMatch) => string | null
 }): React.JSX.Element => {
-  const [alternative, setAlternative] = useState(false)
+  const [track, setTrack] = useState<Track>('MAIN')
+  const [view, setView] = useState<'auto' | 'tree' | 'rounds'>('auto')
   const [zoom, setZoom] = useState(1)
+  const [round, setRound] = useState(1)
   const [team, setTeam] = useState('')
-  const viewport = useRef<HTMLDivElement>(null)
+  const { container, width } = useBracketWidth()
   const marker = useId()
-  const layout = layoutBracket(bracket.matches)
-  const finalMatch = bracket.matches.find((match) => match.track === 'FINAL')
-  const finalPosition = finalMatch ? layout.positions.get(finalMatch.id) : undefined
-  const roundTime = (round: number): string => {
-    const match = bracket.matches.find((entry) => entry.round === round)
+  const selected = bracket.matches.find((m) => m.id === selection)
+  const activeTrack = track === 'ALL' ? track : (selected?.track ?? track)
+  const layout = layoutBracket(bracket.matches, activeTrack === 'ALL' ? undefined : activeTrack)
+  const validation = layoutBracket(bracket.matches)
+  const matches = bracket.matches.filter((m) => activeTrack === 'ALL' || m.track === activeTrack)
+  const currentRound =
+    selected?.round ?? (layout.rounds.includes(round) ? round : (layout.rounds[0] ?? 1))
+  const roundIndex = layout.rounds.indexOf(currentRound)
+  const byRounds = view === 'rounds' || (view === 'auto' && width < layout.width * 0.9)
+  const scale = view === 'auto' ? Math.min(1, width / layout.width) : zoom
+  const roundTime = (value: number): string => {
+    const match = matches.find((entry) => entry.round === value)
     return match ? timeLabel(match) : ''
   }
   const teamLabel = (match: GraphMatch, side: 0 | 1): string =>
@@ -50,6 +67,16 @@ export const BracketTree = ({
     setTeam('')
     onSelect(id)
   }
+  const chooseTrack = (next: Track): void => {
+    setTrack(next)
+    setRound(1)
+    setTeam('')
+    onSelect('')
+  }
+  const chooseRound = (next: number): void => {
+    setRound(next)
+    onSelect('')
+  }
   const card = (match: GraphMatch, diagram: boolean) => {
     const winner = winnerLabel(match)
     const position = layout.positions.get(match.id)
@@ -57,7 +84,7 @@ export const BracketTree = ({
       <button
         key={match.id}
         type="button"
-        className={`bracket-node${diagram ? ' bracket-node--diagram' : ''}`}
+        className={'bracket-node' + (diagram ? ' bracket-node--diagram' : '')}
         style={
           diagram && position
             ? { left: position.x, top: position.y, width: NODE_WIDTH, height: NODE_HEIGHT }
@@ -66,7 +93,17 @@ export const BracketTree = ({
         data-match={match.id}
         data-highlight={selectedNodes.has(match.id)}
         aria-pressed={selection === match.id}
-        aria-label={`${match.id} · Ronda ${String(match.round)} · ${teamLabel(match, 0)} contra ${teamLabel(match, 1)} · ${statusLabel(match)}`}
+        aria-label={
+          match.id +
+          ' · Ronda ' +
+          String(match.round) +
+          ' · ' +
+          teamLabel(match, 0) +
+          ' contra ' +
+          teamLabel(match, 1) +
+          ' · ' +
+          statusLabel(match)
+        }
         onClick={() => {
           choose(match.id)
         }}
@@ -87,11 +124,11 @@ export const BracketTree = ({
         ))}
         <span
           className="bracket-node-state"
-          title={winner ? `${statusLabel(match)} · Ganador: ${winner}` : statusLabel(match)}
+          title={winner ? statusLabel(match) + ' · Ganador: ' + winner : statusLabel(match)}
         >
-          {winner ? `Ganador: ${winner}` : statusLabel(match)}
+          {winner ? 'Ganador: ' + winner : statusLabel(match)}
         </span>
-        <span className="bracket-node-time">{timeLabel(match)}</span>
+        {!diagram && <span className="bracket-node-time">{timeLabel(match)}</span>}
         {diagram && (
           <>
             <span className="bracket-port bracket-port--winner" title="Salida del ganador">
@@ -106,107 +143,102 @@ export const BracketTree = ({
     )
   }
   return (
-    <div className="bracket-tree">
-      <p className="text-sm text-muted">
-        Sigue las ramas: cada línea llega al lado A o B de la próxima justa. Selecciona una justa
-        para consultar su recorrido y detalle.
-      </p>
+    <div className="bracket-tree" ref={container}>
       <div className="bracket-controls">
-        <Button
-          variant="secondary"
-          aria-pressed={!alternative}
-          onClick={() => {
-            setAlternative(false)
-          }}
-        >
-          Ver árbol
-        </Button>
-        <Button
-          variant="secondary"
-          aria-pressed={alternative}
-          onClick={() => {
-            setAlternative(true)
-          }}
-        >
-          Ver por rondas
-        </Button>
-        {!alternative && (
-          <>
+        <div className="bracket-track-controls" role="group" aria-label="Ramas de las llaves">
+          {tracks.map(({ key, label }) => (
+            <Button
+              key={key}
+              variant="secondary"
+              aria-pressed={activeTrack === key}
+              onClick={() => {
+                chooseTrack(key)
+              }}
+            >
+              {label}{' '}
+              <span className="bracket-track-count">
+                · {bracket.matches.filter((m) => m.track === key).length}
+              </span>
+            </Button>
+          ))}
+          <Button
+            variant="secondary"
+            aria-pressed={activeTrack === 'ALL'}
+            onClick={() => {
+              chooseTrack('ALL')
+            }}
+          >
+            Todas <span className="bracket-track-count">· {bracket.matches.length}</span>
+          </Button>
+        </div>
+        <div className="bracket-view-controls" role="group" aria-label="Presentación de las llaves">
+          <Button
+            variant="secondary"
+            aria-pressed={!byRounds}
+            onClick={() => {
+              setView('tree')
+            }}
+          >
+            Ver árbol
+          </Button>
+          <Button
+            variant="secondary"
+            aria-pressed={byRounds}
+            onClick={() => {
+              setView('rounds')
+            }}
+          >
+            Ver por rondas
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setView('auto')
+              setZoom(1)
+            }}
+          >
+            Ajustar
+          </Button>
+        </div>
+        {!byRounds && (
+          <div className="bracket-zoom-controls">
             <Button
               variant="secondary"
               aria-label="Reducir árbol"
-              disabled={zoom <= 0.75}
+              disabled={scale <= 0.75}
               onClick={() => {
-                setZoom((value) => Math.max(0.75, value - 0.25))
+                setZoom(Math.max(0.75, scale - 0.15))
+                setView('tree')
               }}
             >
               −
             </Button>
-            <span>{Math.round(zoom * 100)} %</span>
+            <span>{Math.round(scale * 100)} %</span>
             <Button
               variant="secondary"
               aria-label="Ampliar árbol"
-              disabled={zoom >= 1.25}
+              disabled={scale >= 1.5}
               onClick={() => {
-                setZoom((value) => Math.min(1.25, value + 0.25))
+                setZoom(Math.min(1.5, scale + 0.15))
+                setView('tree')
               }}
             >
               +
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                viewport.current?.scrollBy({ left: -COLUMN_STEP * zoom, behavior: 'auto' })
-              }
-            >
-              Ronda anterior
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                viewport.current?.scrollBy({ left: COLUMN_STEP * zoom, behavior: 'auto' })
-              }
-            >
-              Ronda siguiente
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => viewport.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })}
-            >
-              Inicio del árbol
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                viewport.current?.scrollTo({ top: (layout.lowerTop - 45) * zoom, behavior: 'auto' })
-              }
-            >
-              Ir a perdedores
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (!finalMatch || !finalPosition) return
-                choose(finalMatch.id)
-                viewport.current?.scrollTo({
-                  left: finalPosition.x * zoom - 28,
-                  top: (finalPosition.y - 65) * zoom,
-                  behavior: 'auto',
-                })
-              }}
-            >
-              Ir a final
-            </Button>
-          </>
+          </div>
         )}
       </div>
-      <p className="bracket-legend">
-        <span>━ G · Ganador</span>
-        <span>┄ P · Perdedor</span>
-        <span>A / B · Lado del encuentro</span>
-      </p>
-      <details>
-        <summary className="cursor-pointer">Localizar un equipo · ocho cupos</summary>
+      <details className="bracket-guide">
+        <summary>Cómo leer las llaves y localizar un equipo</summary>
+        <p className="text-sm text-muted">
+          Selecciona una justa para ver sus equipos completos, su origen y su siguiente encuentro.
+          En pantallas estrechas se muestra una ronda a la vez.
+        </p>
+        <p className="bracket-legend">
+          <span>━ G · Ganador</span>
+          <span>┄ P · Perdedor</span>
+          <span>A / B · Lado del encuentro</span>
+        </p>
         <ol className="bracket-seeds" aria-label="Posiciones de equipos">
           {bracket.seeds.map((seed) => (
             <li key={seed.teamId}>
@@ -230,58 +262,83 @@ export const BracketTree = ({
           resueltas.
         </p>
       )}
-      {(layout.missingSources.length > 0 || layout.edges.some((edge) => !edge.consistent)) && (
+      {(validation.missingSources.length > 0 ||
+        validation.edges.some((edge) => !edge.consistent)) && (
         <p role="alert">
           Las fuentes y destinos recibidos no coinciden. Actualiza las llaves; el recorrido requiere
           revisión del servidor.
         </p>
       )}
-      {alternative ? (
+      {byRounds ? (
         <div className="bracket-round-list">
-          {[...new Set(bracket.matches.map((m) => m.round))]
-            .sort((a, b) => a - b)
-            .map((round) => (
-              <section key={round} aria-label={`Ronda ${String(round)}`}>
-                <h3 className="font-semibold">Ronda {round}</h3>
-                <div className="bracket-round-cards">
-                  {bracket.matches
-                    .filter((m) => m.round === round)
-                    .map((m) => (
-                      <div key={m.id}>
-                        {card(m, false)}
-                        <p className="text-sm">
-                          A: {sourceLabel(m.sources[0])} · B: {sourceLabel(m.sources[1])}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              </section>
-            ))}
+          <div className="bracket-round-navigation">
+            <Button
+              variant="secondary"
+              aria-label="Ronda anterior"
+              disabled={roundIndex <= 0}
+              onClick={() => {
+                chooseRound(layout.rounds[roundIndex - 1] ?? currentRound)
+              }}
+            >
+              ←
+            </Button>
+            <label>
+              <span className="sr-only">Ronda de las llaves</span>
+              <select
+                value={currentRound}
+                onChange={(event) => {
+                  chooseRound(Number(event.target.value))
+                }}
+              >
+                {layout.rounds.map((value) => (
+                  <option key={value} value={value}>
+                    Ronda {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button
+              variant="secondary"
+              aria-label="Ronda siguiente"
+              disabled={roundIndex >= layout.rounds.length - 1}
+              onClick={() => {
+                chooseRound(layout.rounds[roundIndex + 1] ?? currentRound)
+              }}
+            >
+              →
+            </Button>
+            <span className="text-xs text-muted">{roundTime(currentRound)}</span>
+          </div>
+          <section aria-label={'Ronda ' + String(currentRound)}>
+            <div className="bracket-round-cards">
+              {matches.filter((m) => m.round === currentRound).map((m) => card(m, false))}
+            </div>
+          </section>
         </div>
       ) : (
         <>
-          <p id={`${marker}-hint`} className="text-sm text-muted">
-            Desplaza el diagrama horizontal y verticalmente. Con teclado, enfoca esta área y usa las
-            flechas; Tab selecciona cada justa.
+          <p id={marker + '-hint'} className="text-xs text-muted">
+            Enfoca el árbol y usa las flechas para desplazarte; Tab y Enter permiten elegir una
+            justa. Puedes consultar las otras ramas con Ganadores, Perdedores, Final o Todas.
           </p>
           <div
-            ref={viewport}
             className="bracket-viewport"
             tabIndex={0}
             role="region"
             aria-label="Árbol desplazable de llaves"
-            aria-describedby={`${marker}-hint`}
+            aria-describedby={marker + '-hint'}
+            style={{ height: layout.height * scale + 2 }}
           >
             <div
               className="bracket-sizer"
-              style={{ width: layout.width * zoom, height: layout.height * zoom }}
+              style={{ width: layout.width * scale, height: layout.height * scale }}
             >
               <div
                 className="bracket-plane"
                 style={{
                   width: layout.width,
                   height: layout.height,
-                  transform: `scale(${String(zoom)})`,
+                  transform: 'scale(' + String(scale) + ')',
                 }}
               >
                 <svg
@@ -294,7 +351,7 @@ export const BracketTree = ({
                     {(['WINNER', 'LOSER'] as const).map((kind) => (
                       <marker
                         key={kind}
-                        id={`${marker}-${kind}`}
+                        id={marker + '-' + kind}
                         markerWidth="6"
                         markerHeight="6"
                         refX="5"
@@ -303,14 +360,14 @@ export const BracketTree = ({
                       >
                         <path
                           d="M0 0 L6 3 L0 6 Z"
-                          className={`bracket-arrow bracket-arrow--${kind.toLowerCase()}`}
+                          className={'bracket-arrow bracket-arrow--' + kind.toLowerCase()}
                         />
                       </marker>
                     ))}
                   </defs>
                   {layout.edges.map((edge) => (
                     <g
-                      key={`${edge.to}-${String(edge.side)}`}
+                      key={edge.to + '-' + String(edge.side)}
                       data-from={edge.from}
                       data-to={edge.to}
                       data-side={edge.side}
@@ -320,49 +377,48 @@ export const BracketTree = ({
                       <path d={edge.path} className="bracket-edge-underlay" />
                       <path
                         d={edge.path}
-                        className={`bracket-edge bracket-edge--${edge.kind.toLowerCase()}`}
-                        markerEnd={`url(#${marker}-${edge.kind})`}
+                        className={'bracket-edge bracket-edge--' + edge.kind.toLowerCase()}
+                        markerEnd={'url(#' + marker + '-' + edge.kind + ')'}
                       />
                     </g>
                   ))}
                 </svg>
-                {[...new Set(bracket.matches.map((m) => m.round))]
-                  .sort((a, b) => a - b)
-                  .map((round) => (
-                    <div
-                      key={round}
-                      className="bracket-round-heading"
-                      style={{ left: 28 + (round - 1) * COLUMN_STEP, width: NODE_WIDTH }}
-                    >
-                      Ronda {round}
-                      <span className="block text-xs font-normal">{roundTime(round)}</span>
-                    </div>
-                  ))}
-                {(
-                  [
-                    ['MAIN', 'Árbol de ganadores'],
-                    ['SECONDARY', 'Árbol de perdedores'],
-                    ['FINAL', 'Final'],
-                  ] as const
-                ).map(([track, title]) => (
-                  <section key={track} aria-label={title}>
-                    <h3
-                      className="bracket-track-heading"
-                      style={{
-                        left: track === 'FINAL' ? layout.width - NODE_WIDTH - 28 : 28,
-                        top:
-                          track === 'SECONDARY'
-                            ? layout.lowerTop - 45
-                            : track === 'FINAL'
-                              ? (finalPosition?.y ?? 100) - 45
-                              : 75,
-                      }}
-                    >
-                      {title}
-                    </h3>
-                    {bracket.matches.filter((m) => m.track === track).map((m) => card(m, true))}
-                  </section>
+                {layout.rounds.map((value, column) => (
+                  <div
+                    key={value}
+                    className="bracket-round-heading"
+                    style={{ left: 16 + column * COLUMN_STEP, width: NODE_WIDTH }}
+                  >
+                    Ronda {value}
+                    {activeTrack !== 'ALL' && <span>{roundTime(value)}</span>}
+                  </div>
                 ))}
+                {tracks
+                  .filter(({ key }) => activeTrack === 'ALL' || activeTrack === key)
+                  .map(({ key, title }) => {
+                    const entries = matches.filter((m) => m.track === key)
+                    const firstPosition = entries[0]
+                      ? layout.positions.get(entries[0].id)
+                      : undefined
+                    return (
+                      <section key={key} aria-label={title}>
+                        <h3
+                          className={activeTrack === 'ALL' ? 'bracket-track-heading' : 'sr-only'}
+                          style={
+                            activeTrack === 'ALL'
+                              ? {
+                                  left: key === 'FINAL' ? firstPosition?.x : 16,
+                                  top: (firstPosition?.y ?? 52) - 20,
+                                }
+                              : undefined
+                          }
+                        >
+                          {title}
+                        </h3>
+                        {entries.map((m) => card(m, true))}
+                      </section>
+                    )
+                  })}
               </div>
             </div>
           </div>
