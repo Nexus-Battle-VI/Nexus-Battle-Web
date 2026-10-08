@@ -38,3 +38,23 @@ export const heroRoleLabel = (subtype: string): string => {
 
   return first === undefined || first.length === 0 ? '—' : capitalize(first)
 }
+
+/**
+ * Slug del emblema decorativo de rol (remaster visual Sprint 3, Family
+ * 05-Hero-Selector): el kit trae 5 emblemas reales -uno por rol, no uno por
+ * subtipo-, asi que los 8 subtipos reales se agrupan por el MISMO rol que ya
+ * resuelve `heroRoleLabel` arriba (Chaman/Medico -> "soporte", Mago
+ * Fuego/Hielo -> "mago", Picaro Veneno/Machete -> "picaro"). Presentacion
+ * pura: un subtipo sin emblema conocido cae en `null` (sin icono, nunca un
+ * icono inventado).
+ */
+const EMBLEM_SLUG_BY_ROLE: Readonly<Record<string, string>> = {
+  Tanque: 'tanque',
+  Guerrero: 'guerrero',
+  Mago: 'mago',
+  Pícaro: 'picaro',
+  Soporte: 'soporte',
+}
+
+export const heroRoleEmblemSlug = (subtype: string): string | null =>
+  EMBLEM_SLUG_BY_ROLE[heroRoleLabel(subtype)] ?? null

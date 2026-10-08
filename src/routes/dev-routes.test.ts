@@ -54,6 +54,7 @@ describe('devRoutes', () => {
       '__dev/account',
       '__dev/admin/products/new',
       '__dev/heroes',
+      '__dev/inventory',
       '__dev/admin/comments/moderation',
       '__dev/hu38/notifications',
       '__dev/hu38/admin-banners',

@@ -89,13 +89,14 @@ export const EpicManagerPanel = ({
   return (
     <section
       aria-labelledby="epic-manager-title"
-      className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
+      className="inventory-panel flex min-w-0 flex-col gap-3 p-4"
     >
       <h2 id="epic-manager-title" className="text-sm font-semibold text-ink">
         {heroName === null
           ? t('inventory:epic.title')
           : t('inventory:epic.title') + ' — ' + heroName}
       </h2>
+      <span className="inventory-panel-divider" aria-hidden="true" />
 
       {!hasHero ? (
         <p className="text-xs text-muted">{t('inventory:epic.chooseHero')}</p>
@@ -106,8 +107,14 @@ export const EpicManagerPanel = ({
               {locked && (
                 <p
                   role="status"
-                  className="rounded-md border border-warning bg-warning/10 p-2 text-xs text-ink"
+                  className="flex items-center gap-2 rounded-md border border-warning bg-warning/10 p-2 text-xs text-ink"
                 >
+                  <img
+                    src="/assets/inventory/status-decorations/locked-badge-light.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="inventory-status-icon inventory-status-icon--locked"
+                  />
                   {t('inventory:epic.battleLock.message')}
                 </p>
               )}
@@ -140,12 +147,9 @@ export const EpicManagerPanel = ({
                   aria-pressed={selecting}
                   onClick={onToggleSelecting}
                   className={clsx(
-                    'min-h-11 shrink-0 rounded-md border px-3 py-2 text-xs font-semibold transition-colors',
+                    'inventory-chip shrink-0 px-3 py-2 text-xs font-semibold',
                     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
                     'disabled:cursor-not-allowed disabled:opacity-50',
-                    selecting
-                      ? 'border-brand bg-brand/10 text-brand'
-                      : 'border-border text-ink hover:border-brand',
                   )}
                 >
                   {selecting ? t('inventory:epic.cancelSelect') : t('inventory:epic.select')}
@@ -195,9 +199,8 @@ export const EpicManagerPanel = ({
                     disabled={!canEquip}
                     onClick={onEquip}
                     className={clsx(
-                      'mt-2 min-h-11 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white',
+                      'inventory-btn-primary mt-2 min-h-11 px-4 py-2 text-sm font-semibold',
                       'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                      'disabled:cursor-not-allowed disabled:opacity-50',
                     )}
                   >
                     {equipping ? t('inventory:epic.equipping') : t('inventory:epic.equip')}

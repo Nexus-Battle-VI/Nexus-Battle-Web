@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { setLanguage } from '@/shared/i18n/language'
@@ -238,15 +238,24 @@ describe('PlayerInventoryPage', () => {
     )
   })
 
-  it('pagina: hay controles cuando el servicio reporta más de una página', async () => {
+  it('pagina (RF-27 servidor=16, UI=8): 20 objetos se presentan en 3 páginas de 8/8/4, sin pedir al servidor un tamaño que no soporta', async () => {
     const user = userEvent.setup()
+    // Player-Inventory devuelve SIEMPRE paginas de 16 (RF-27, no configurable
+    // desde el cliente): 20 objetos -> pagina 1 real con 16, pagina 2 real
+    // con 4. Web vuelve a paginar esto del lado del cliente en bloques de 8
+    // (decision de producto), sin pedirle nunca al servidor un tamano de
+    // pagina de 8 que no existe en su contrato.
+    const allItems = Array.from({ length: 20 }, (_, index) =>
+      summary(`item-${String(index + 1).padStart(2, '0')}`, `Objeto ${String(index + 1)}`),
+    )
     fetchMock.mockImplementation((input) => {
       const url = urlOf(input)
-      const current = url.includes('page=2') ? 2 : 1
+      const serverPage = url.includes('page=2') ? 2 : 1
+      const start = (serverPage - 1) * 16
       return Promise.resolve(
         jsonResponse(
-          page([summary(`item-p${String(current)}`, `Objeto página ${String(current)}`)], {
-            page: current,
+          page(allItems.slice(start, start + 16), {
+            page: serverPage,
             totalItems: 20,
             totalPages: 2,
           }),
@@ -255,11 +264,33 @@ describe('PlayerInventoryPage', () => {
     })
 
     render()
-    await screen.findByText('Objeto página 1')
+    // UI pagina 1 de 8: los primeros 8 objetos (del servidor pagina 1), y
+    // NINGUNO de los siguientes.
+    await screen.findByText('Objeto 1')
+    expect(screen.getByText('Objeto 8')).toBeInTheDocument()
+    expect(screen.queryByText('Objeto 9')).toBeNull()
+    expect(screen.getByText(/20 objetos/u)).toBeInTheDocument()
+    expect(screen.getByText(/página 1 de 3/u)).toBeInTheDocument()
+    // Solo se pidio la pagina REAL 1 al servidor hasta ahora.
+    expect(fetchMock.mock.calls.every((call) => !urlOf(call[0]).includes('page=2'))).toBe(true)
 
+    // UI pagina 2 de 8: objetos 9-16, TODAVIA dentro de la misma pagina real
+    // del servidor (1) -no dispara una nueva peticion-.
     await user.click(screen.getByRole('button', { name: 'Página 2' }))
+    await screen.findByText('Objeto 9')
+    expect(screen.getByText('Objeto 16')).toBeInTheDocument()
+    expect(screen.queryByText('Objeto 1')).toBeNull()
+    expect(screen.queryByText('Objeto 17')).toBeNull()
+    expect(screen.getByText(/página 2 de 3/u)).toBeInTheDocument()
+    expect(fetchMock.mock.calls.every((call) => !urlOf(call[0]).includes('page=2'))).toBe(true)
 
-    expect(await screen.findByText('Objeto página 2')).toBeInTheDocument()
+    // UI pagina 3 de 8: objetos 17-20 (solo 4), que SI vive en la pagina real
+    // 2 del servidor -aqui si se dispara la peticion real `page=2`-.
+    await user.click(screen.getByRole('button', { name: 'Página 3' }))
+    await screen.findByText('Objeto 17')
+    expect(screen.getByText('Objeto 20')).toBeInTheDocument()
+    expect(screen.queryByText('Objeto 16')).toBeNull()
+    expect(screen.getByText(/página 3 de 3/u)).toBeInTheDocument()
     expect(fetchMock.mock.calls.some((call) => urlOf(call[0]).includes('page=2'))).toBe(true)
   })
 
@@ -344,7 +375,10 @@ describe('PlayerInventoryPage', () => {
     render()
     await screen.findByText('Espada de Fuego')
 
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
     await user.click(screen.getByTestId('inventory-item-espada-de-fuego'))
 
@@ -359,6 +393,273 @@ describe('PlayerInventoryPage', () => {
       await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
     ).toBeInTheDocument()
     expect(screen.getByTestId('delta-ATTACK')).toHaveTextContent('+2')
+  })
+
+  /**
+   * Mock minimo de `DataTransfer`: jsdom no implementa la API nativa
+   * completa, pero el componente SOLO llama `setData`/`getData`/
+   * `dropEffect`/`effectAllowed` -un objeto plano con esos miembros basta
+   * para ejercitar el codigo real sin inventar un polyfill completo-.
+   */
+  const fakeDataTransfer = (): DataTransfer => {
+    const store = new Map<string, string>()
+    return {
+      setData: (format: string, data: string) => {
+        store.set(format, data)
+      },
+      getData: (format: string) => store.get(format) ?? '',
+      dropEffect: 'none',
+      effectAllowed: 'none',
+    } as unknown as DataTransfer
+  }
+
+  it('HU-28 Drag & Drop: arrastrar un arma compatible a una ranura vacía la equipa (mismo flujo real que el click)', async () => {
+    const heroEmpty = {
+      hero: {
+        heroId: 'pid-guerrero-tanque',
+        reference: 'guerrero-tanque',
+        subtype: 'GUERRERO_TANQUE',
+        name: 'Guerrero Tanque',
+        imageUrl: '',
+      },
+      equipment: { weapons: [], armor: {}, items: [] },
+      baseStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      effectiveStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      deltas: [],
+      activeEffects: [],
+    }
+    const heroEquipped = {
+      ...heroEmpty,
+      equipment: {
+        weapons: [
+          {
+            slot: 'WEAPON_1',
+            itemId: 'espada-de-fuego',
+            productId: 'pid-espada-de-fuego',
+            name: 'Espada de Fuego',
+            imageUrl: '',
+            type: 'ARMA',
+            lifecycleStatus: 'ACTIVE',
+          },
+        ],
+        armor: {},
+        items: [],
+      },
+    }
+    let equipCalls = 0
+    ownedHeroes = [GUERRERO]
+    fetchMock.mockImplementation((input, init) => {
+      const url = urlOf(input)
+      if (url.includes('/heroes/guerrero-tanque/equipment') && init?.method === 'PUT') {
+        equipCalls += 1
+        return Promise.resolve(jsonResponse(heroEquipped))
+      }
+      if (url.includes('/heroes/guerrero-tanque/equipment')) {
+        return Promise.resolve(jsonResponse(equipCalls > 0 ? heroEquipped : heroEmpty))
+      }
+      if (url.includes('/items/espada-de-fuego')) {
+        return Promise.resolve(jsonResponse(detail('espada-de-fuego', 'Espada de Fuego')))
+      }
+      return Promise.resolve(
+        jsonResponse(
+          page([
+            summary('guerrero-tanque', 'Guerrero Tanque', 'HEROE'),
+            summary('espada-de-fuego', 'Espada de Fuego', 'ARMA'),
+          ]),
+        ),
+      )
+    })
+
+    render()
+    await screen.findByText('Espada de Fuego')
+    await userEvent
+      .setup()
+      .selectOptions(await screen.findByRole('combobox', { name: 'Tus héroes' }), 'guerrero-tanque')
+
+    const card = screen.getByTestId('inventory-item-espada-de-fuego')
+    const slot = await screen.findByTestId('slot-WEAPON_1')
+    const dataTransfer = fakeDataTransfer()
+
+    fireEvent.dragStart(card, { dataTransfer })
+    fireEvent.dragOver(slot, { dataTransfer })
+    fireEvent.drop(slot, { dataTransfer })
+    fireEvent.dragEnd(card, { dataTransfer })
+
+    await waitFor(() => {
+      expect(equipCalls).toBe(1)
+    })
+    expect(
+      await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
+    ).toBeInTheDocument()
+  })
+
+  it('HU-28 Drag & Drop: soltar sobre una ranura incompatible NO muta nada', async () => {
+    ownedHeroes = [GUERRERO]
+    let putCalls = 0
+    fetchMock.mockImplementation((input, init) => {
+      const url = urlOf(input)
+      if (url.includes('/heroes/guerrero-tanque/equipment') && init?.method === 'PUT') {
+        putCalls += 1
+      }
+      if (url.includes('/heroes/guerrero-tanque/equipment')) {
+        return Promise.resolve(
+          jsonResponse({
+            hero: {
+              heroId: 'pid-guerrero-tanque',
+              reference: 'guerrero-tanque',
+              subtype: 'GUERRERO_TANQUE',
+              name: 'Guerrero Tanque',
+              imageUrl: '',
+            },
+            equipment: { weapons: [], armor: {}, items: [] },
+            baseStats: {
+              power: 5,
+              health: 40,
+              defense: 8,
+              attack: 10,
+              damage: null,
+              healing: null,
+            },
+            effectiveStats: {
+              power: 5,
+              health: 40,
+              defense: 8,
+              attack: 10,
+              damage: null,
+              healing: null,
+            },
+            deltas: [],
+            activeEffects: [],
+          }),
+        )
+      }
+      return Promise.resolve(
+        jsonResponse(
+          page([
+            summary('guerrero-tanque', 'Guerrero Tanque', 'HEROE'),
+            summary('espada-de-fuego', 'Espada de Fuego', 'ARMA'),
+          ]),
+        ),
+      )
+    })
+
+    render()
+    await screen.findByText('Espada de Fuego')
+    await userEvent
+      .setup()
+      .selectOptions(await screen.findByRole('combobox', { name: 'Tus héroes' }), 'guerrero-tanque')
+
+    const card = screen.getByTestId('inventory-item-espada-de-fuego')
+    // HELMET admite ARMADURA, no ARMA: soltar un arma ahi debe ser un no-op.
+    const incompatibleSlot = await screen.findByTestId('slot-HELMET')
+    const dataTransfer = fakeDataTransfer()
+
+    fireEvent.dragStart(card, { dataTransfer })
+    fireEvent.dragOver(incompatibleSlot, { dataTransfer })
+    fireEvent.drop(incompatibleSlot, { dataTransfer })
+    fireEvent.dragEnd(card, { dataTransfer })
+
+    // Nada que esperar con `waitFor` porque NO deberia pasar nada: se
+    // confirma que, tras dar tiempo a cualquier microtask pendiente, sigue
+    // en cero.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(putCalls).toBe(0)
+    expect(incompatibleSlot).not.toHaveAttribute('data-filled')
+  })
+
+  it('HU-28 Drag & Drop: reemplazo -- arrastrar B sobre una ranura ocupada por A equipa B (misma regla real que el click)', async () => {
+    const withA = {
+      hero: {
+        heroId: 'pid-guerrero-tanque',
+        reference: 'guerrero-tanque',
+        subtype: 'GUERRERO_TANQUE',
+        name: 'Guerrero Tanque',
+        imageUrl: '',
+      },
+      equipment: {
+        weapons: [
+          {
+            slot: 'WEAPON_1',
+            itemId: 'espada-a',
+            productId: 'pid-espada-a',
+            name: 'Espada A',
+            imageUrl: '',
+            type: 'ARMA',
+            lifecycleStatus: 'ACTIVE',
+          },
+        ],
+        armor: {},
+        items: [],
+      },
+      baseStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      effectiveStats: { power: 5, health: 40, defense: 8, attack: 10, damage: null, healing: null },
+      deltas: [],
+      activeEffects: [],
+    }
+    const withB = {
+      ...withA,
+      equipment: {
+        weapons: [
+          { ...withA.equipment.weapons[0], slot: 'WEAPON_1', itemId: 'espada-b', name: 'Espada B' },
+        ],
+        armor: {},
+        items: [],
+      },
+    }
+
+    ownedHeroes = [GUERRERO]
+    let replaced = false
+    fetchMock.mockImplementation((input, init) => {
+      const url = urlOf(input)
+      if (url.includes('/heroes/guerrero-tanque/equipment') && init?.method === 'PUT') {
+        // Backend real (HU-28): ranura ocupada responde 409 salvo que el
+        // caso de uso REAL de Equip la reemplace -se simula la respuesta
+        // de exito tal como la devuelve el backend tras la mutacion-.
+        replaced = true
+        return Promise.resolve(jsonResponse(withB))
+      }
+      if (url.includes('/heroes/guerrero-tanque/equipment')) {
+        return Promise.resolve(jsonResponse(replaced ? withB : withA))
+      }
+      if (url.includes('/items/espada-b')) {
+        return Promise.resolve(jsonResponse(detail('espada-b', 'Espada B')))
+      }
+      if (url.includes('/items/espada-a')) {
+        return Promise.resolve(jsonResponse(detail('espada-a', 'Espada A')))
+      }
+      return Promise.resolve(
+        jsonResponse(
+          page([
+            summary('guerrero-tanque', 'Guerrero Tanque', 'HEROE'),
+            summary('espada-a', 'Espada A', 'ARMA'),
+            summary('espada-b', 'Espada B', 'ARMA'),
+          ]),
+        ),
+      )
+    })
+
+    render()
+    await screen.findByText('Espada A')
+    await userEvent
+      .setup()
+      .selectOptions(await screen.findByRole('combobox', { name: 'Tus héroes' }), 'guerrero-tanque')
+    await within(await screen.findByTestId('slot-WEAPON_1')).findByText('Espada A')
+
+    const cardB = screen.getByTestId('inventory-item-espada-b')
+    const slot = screen.getByTestId('slot-WEAPON_1')
+    const dataTransfer = fakeDataTransfer()
+
+    fireEvent.dragStart(cardB, { dataTransfer })
+    fireEvent.dragOver(slot, { dataTransfer })
+    fireEvent.drop(slot, { dataTransfer })
+    fireEvent.dragEnd(cardB, { dataTransfer })
+
+    await waitFor(() => {
+      expect(replaced).toBe(true)
+    })
+    expect(
+      await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada B'),
+    ).toBeInTheDocument()
   })
 
   /**
@@ -416,7 +717,10 @@ describe('PlayerInventoryPage', () => {
     render()
 
     expect(await screen.findByText('Héroe preparado:')).toBeInTheDocument()
-    expect(screen.getByText('Guerrero Tanque ✓')).toBeInTheDocument()
+    // `getAllByText` porque "Guerrero Tanque ✓" tambien aparece como texto de
+    // la opcion seleccionada en el `<select>` de heroes (mismo sufijo real de
+    // "preparado", en dos lugares distintos de la misma pantalla).
+    expect(screen.getAllByText('Guerrero Tanque ✓').length).toBeGreaterThan(0)
   })
   /**
    * Regresion del defecto del rediseño: antes los heroes del configurador se
@@ -436,9 +740,7 @@ describe('PlayerInventoryPage', () => {
       await screen.findByText('Espada Larga')
       await user.click(screen.getByRole('button', { name: 'Armas' }))
 
-      expect(
-        await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }),
-      ).toBeInTheDocument()
+      expect(await screen.findByRole('option', { name: 'Guerrero Tanque' })).toBeInTheDocument()
     })
 
     it('con una busqueda que no lo incluye, el heroe propio sigue disponible', async () => {
@@ -453,35 +755,32 @@ describe('PlayerInventoryPage', () => {
       await waitFor(() => {
         expect(fetchMock.mock.calls.some(([input]) => urlOf(input).includes('q=espada'))).toBe(true)
       })
-      expect(
-        screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }),
-      ).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Guerrero Tanque' })).toBeInTheDocument()
     })
 
-    it('en la pagina 2 del inventario, el heroe propio sigue disponible', async () => {
+    it('en la pagina real 2 del servidor (RF-27, 16 por pagina), el heroe propio sigue disponible', async () => {
       const user = userEvent.setup()
       ownedHeroes = [GUERRERO]
+      // 17 objetos: servidor pagina 1 trae 16, servidor pagina 2 trae 1 solo
+      // ("Objeto 17"). La UI, repaginada en bloques de 8, llega a esa pagina
+      // real 2 en su propia "Página 3" (objetos 17 en adelante).
+      const allItems = Array.from({ length: 17 }, (_, index) =>
+        summary(`objeto-${String(index + 1)}`, `Objeto ${String(index + 1)}`),
+      )
       fetchMock.mockImplementation((input) => {
         const second = urlOf(input).includes('page=2')
+        const items = second ? allItems.slice(16) : allItems.slice(0, 16)
         return Promise.resolve(
-          jsonResponse(
-            page([summary(second ? 'objeto-2' : 'objeto-1', second ? 'Objeto 2' : 'Objeto 1')], {
-              page: second ? 2 : 1,
-              totalItems: 17,
-              totalPages: 2,
-            }),
-          ),
+          jsonResponse(page(items, { page: second ? 2 : 1, totalItems: 17, totalPages: 2 })),
         )
       })
 
       render()
       await screen.findByText('Objeto 1')
-      await user.click(screen.getByRole('button', { name: 'Página 2' }))
-      await screen.findByText('Objeto 2')
+      await user.click(screen.getByRole('button', { name: 'Página 3' }))
+      await screen.findByText('Objeto 17')
 
-      expect(
-        screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }),
-      ).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Guerrero Tanque' })).toBeInTheDocument()
     })
   })
 

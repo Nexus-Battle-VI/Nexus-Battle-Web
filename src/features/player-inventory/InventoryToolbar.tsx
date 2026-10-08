@@ -32,17 +32,25 @@ export const InventoryToolbar = ({
   return (
     <div className="flex flex-col gap-3">
       <label className="flex flex-col gap-1 text-xs text-muted">
-        {t('inventory:catalog.search')}
-        <input
-          type="search"
-          value={term}
-          placeholder={t('inventory:catalog.searchPlaceholder')}
-          onChange={(event) => {
-            onTermChange(event.target.value)
-          }}
-          aria-describedby={showHint ? 'inventory-search-hint' : undefined}
-          className="min-h-11 rounded border border-border bg-surface px-3 py-2 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        />
+        <span className="inventory-search-label">{t('inventory:catalog.search')}</span>
+        <span className="relative flex items-center">
+          <img
+            src="/assets/inventory/filters-pagination/search-icon-light.png"
+            alt=""
+            aria-hidden="true"
+            className="inventory-search-icon pointer-events-none absolute left-2"
+          />
+          <input
+            type="search"
+            value={term}
+            placeholder={t('inventory:catalog.searchPlaceholder')}
+            onChange={(event) => {
+              onTermChange(event.target.value)
+            }}
+            aria-describedby={showHint ? 'inventory-search-hint' : undefined}
+            className="min-h-11 w-full rounded border border-border bg-surface py-2 pl-8 pr-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          />
+        </span>
         {showHint && (
           <span id="inventory-search-hint" role="status" className="text-xs text-muted">
             {t('inventory:catalog.searchHint', { min: String(MIN_SEARCH_LENGTH) })}
@@ -53,10 +61,21 @@ export const InventoryToolbar = ({
       <div
         role="group"
         aria-label={t('inventory:catalog.filterLabel')}
-        className="flex flex-wrap gap-2"
+        className="inventory-filter-grid"
       >
-        {TYPE_FILTERS.map((option) => {
+        {/*
+         * Geometria DETERMINISTA (nunca `flex-wrap` esperando que "se
+         * acomode solo"): rejilla de 6 columnas virtuales. Fila 1 ("Todos",
+         * "Héroes", "Armas") ocupa 2 columnas cada uno -mismo ancho entre
+         * si, sea cual sea el idioma-; fila 2 ("Armaduras", "Ítems") se
+         * centra tomando las columnas 2-4 y 4-6, quedando bajo el hueco
+         * entre los 3 de arriba. Misma `min-height` para los 5 vía
+         * `.inventory-chip`, asi que comparten alto real en pantalla.
+         */}
+        {TYPE_FILTERS.map((option, index) => {
           const active = option.value === type
+          const isSecondRow = index >= 3
+          const columnStart = isSecondRow ? (index - 3) * 2 + 2 : index * 2 + 1
 
           return (
             <button
@@ -66,12 +85,10 @@ export const InventoryToolbar = ({
                 onTypeChange(option.value)
               }}
               aria-pressed={active}
+              style={{ gridColumn: `${String(columnStart)} / span 2` }}
               className={clsx(
-                'min-h-9 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                'inventory-chip px-3 py-1.5 text-xs font-medium',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                active
-                  ? 'border-brand bg-brand text-brand-ink'
-                  : 'border-border text-ink hover:bg-surface',
               )}
             >
               {t(option.labelKey)}

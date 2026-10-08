@@ -94,8 +94,17 @@ export const ProductThumb = ({ src, alt, className }: ProductThumbProps): React.
     direct ??
     (loaded !== null && loaded.src === src && loaded.subject === subject ? loaded.url : null)
 
+  // `product-thumb` es un gancho ESTABLE (no `role="img"`, que solo existe en
+  // la rama de respaldo mas abajo): deja que un consumidor concreto anule el
+  // `bg-surface` de este componente COMPARTIDO sin tocar su comportamiento
+  // por defecto en ningun otro lado (nada mas lo selecciona todavia). Inventory
+  // lo usa (`inventory.css`, `.inventory-card-art .product-thumb` /
+  // `.inventory-slot-media .product-thumb`) para que una imagen REAL cargada
+  // nunca se vea detras de una placa solida -- antes `bg-surface` seguia
+  // aplicado incluso con la imagen ya cargada, ese era el origen real de la
+  // "placa blanca/negra" reportada, no el bitmap de origen.
   const box = clsx(
-    'flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-surface',
+    'product-thumb flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-surface',
     className,
   )
 

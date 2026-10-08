@@ -47,6 +47,7 @@
   },
   "equipment": {
     "title": "Equipamento",
+    "loading": "Carregando equipamento…",
     "of": "Equipamento de {{name}}",
     "chooseHero": "Escolha um herói para ver os espaços e as estatísticas dele.",
     "groups": {
@@ -65,6 +66,9 @@
     "equip": "Equipar",
     "equipping": "Equipando…",
     "equipFailed": "Não foi possível equipar o item. Tente novamente.",
+    "unequip": "Desequipar",
+    "unequipping": "Desequipando…",
+    "unequipFailed": "Não foi possível desequipar o item. Tente novamente.",
     "pickSlotHint": "Escolha um espaço para ver quais itens se encaixam.",
     "battleLock": {
       "message": "O equipamento não pode ser alterado: o herói está participando de uma batalha ativa. Você poderá alterá-lo novamente quando ela terminar."
@@ -181,6 +185,7 @@
     "emptyFiltered": "Nenhum item do seu inventário corresponde à busca ou ao filtro.",
     "empty": "Seu inventário está vazio.",
     "unavailableProduct": "Item indisponível",
+    "equippedBadge": "Equipado",
     "viewDetail": "Ver ficha",
     "pagination": "Paginação do inventário",
     "previousPage": "Página anterior",
