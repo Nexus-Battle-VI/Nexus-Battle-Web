@@ -46,10 +46,10 @@ export const HeroProgressionBar = ({ progression }: HeroProgressionBarProps): Re
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={presentation.percent}
-        className="h-2 w-full overflow-hidden rounded-full bg-border"
+        className="inventory-xp-track w-full"
       >
         <div
-          className="h-full rounded-full bg-brand motion-safe:transition-[width] motion-safe:duration-700"
+          className="inventory-xp-fill motion-safe:transition-[width] motion-safe:duration-700"
           style={{ width: `${String(presentation.percent)}%` }}
         />
       </div>

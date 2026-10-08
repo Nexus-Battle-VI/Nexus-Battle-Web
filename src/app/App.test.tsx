@@ -71,12 +71,13 @@ describe('AppLayout', () => {
   })
 
   /**
-   * Remaster visual de Mi Cuenta (Sprint 3): `/account*` pasa a usar el mismo
-   * shell ancho sin `max-w-6xl` que ya tenian Commerce/Play/Inventory, para
-   * que el escenario a sangre completa (Guardian's Lodge / Royal Archive)
-   * cubra todo el ancho disponible. Esta prueba demuestra, por comportamiento
-   * observable (la clase real que decide el ancho), que SOLO cambio Account:
-   * las otras rutas conservan exactamente su tratamiento previo.
+   * Remaster visual de Mi Cuenta y Mi Inventario (Sprint 3): `/account*` y
+   * `/inventory` pasan a usar un shell ancho a sangre completa propio
+   * (`account-main`/`inventory-main`), igual criterio que Commerce/Play, para
+   * que su escenario (Guardian's Lodge / Royal Archive; Warforge Armory /
+   * Royal Arsenal) cubra todo el ancho disponible. Esta prueba demuestra, por
+   * comportamiento observable (la clase real que decide el ancho), que las
+   * demas rutas conservan exactamente su tratamiento previo.
    */
   it.each([
     ['/account', 'account-main'],
@@ -84,7 +85,7 @@ describe('AppLayout', () => {
     ['/ecommerce', 'commerce-main'],
     ['/play', 'br-main'],
     ['/play/rooms/42', 'br-main'],
-    ['/inventory', 'max-w-7xl'],
+    ['/inventory', 'inventory-main'],
     ['/catalog', 'max-w-6xl'],
   ])('asigna el shell esperado para %s', (path, expectedClass) => {
     renderWithProviders(

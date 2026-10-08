@@ -1,0 +1,1329 @@
+/*
+ * ============================================================
+ * MI INVENTARIO — remaster visual Sprint 3
+ * Dark: "Warforge Armory" (hierro oscuro, bronce, burdeos, amatista)
+ * Light: "Royal Arsenal" (marfil, oro, zafiro/cian)
+ * ============================================================
+ * Fuente de los assets: `public/assets/inventory/**`, copiados tal cual
+ * desde `Sprint-3-Remaster-Visual/Mi inventario/{01-Dark,02-Light}` (kit
+ * fuente NUNCA tocado). Mismo criterio que `account.css`/`commerce.css`/
+ * `battle-rooms.css`: todo vive en ESTE archivo, que solo
+ * `PlayerInventoryPage` importa — no toca ningun otro modulo ni el navbar
+ * global. Todo selector queda bajo `.inventory-page` para no contaminar el
+ * resto de la aplicacion.
+ *
+ * Las familias que llegaron como "hojas de contacto" (varios elementos en un
+ * mismo PNG: 02-Panel-Frames, 03-Inventory-Cards, 04-Equipment-Slots,
+ * 05-Hero-Selector, 06-Stats-Level-XP, 07-Filters-Pagination, 08-Item-Detail,
+ * 09-Buttons, 10-Status-Scrollbars-Decorations) se recortaron PIEZA POR
+ * PIEZA con inspeccion visual manual de cada crop (no solo deteccion
+ * automatica de alpha) y se guardaron con nombre semantico en
+ * `public/assets/inventory/<familia>/<pieza>-<tema>-<estado>.png`. El kit
+ * fuente (`Sprint-3-Remaster-Visual/Mi inventario/**`) nunca se modifico.
+ *
+ * Tecnica de integracion -nunca `background-size: 100% 100%`, que deformaria
+ * gemas/esquinas/halos-:
+ * - Fondo de pantalla completa y escenario del heroe (Family 01, imagenes
+ *   completas y legitimas para usar enteras): `background-size: cover`.
+ * - Botones (09), fichas de inventario (03), marco del heroe activo (05),
+ *   chips de filtro y botones de pagina (07): `border-image` con las
+ *   esquinas/gemas fijas via `border-image-slice`/`border-image-width` y el
+ *   tramo recto estirado SOLO en el eje que corresponde -nunca ambos ejes a
+ *   la vez-, igual tecnica que ya usa `.account-nav-item` en `account.css`.
+ * - Ranuras de equipamiento (04): `background-size: contain` (la pieza es un
+ *   marco cuadrado completo por estado; se conserva su proporcion real, sin
+ *   recortar ni estirar).
+ * - Barra de XP (06): el marco es `border-image` fijo; el relleno es la
+ *   textura real tileada (`background-repeat: repeat-x`) bajo un ancho
+ *   dinamico 100% HTML/CSS (`width` en linea, calculado por
+ *   `HeroProgressionBar.tsx` igual que antes) — nunca una imagen con
+ *   progreso horneado.
+ * - Scrollbar (10): el navegador NO soporta 9-slice en
+ *   `::-webkit-scrollbar-thumb`; se usa la pieza real como
+ *   `background-image` con `background-size` ACOTADO (no 100%) sobre el
+ *   color solido de `scrollbar-color` como base, mismo patron ya usado en
+ *   `account.css` -el PNG decora, nunca reemplaza la usabilidad nativa-.
+ * - Iconos pequeños (emblemas de rol, moneda, estado ok/peligro, candado):
+ *   `<img>` real junto a texto HTML, nunca solos ni como unica fuente de
+ *   significado.
+ */
+
+.inventory-page {
+  --inv-ink: #2a1f14;
+  --inv-muted: #6b5a42;
+  --inv-accent: #0b3d91;
+  --inv-accent-2: #b8860b;
+  --inv-danger: #7a1f1f;
+  --inv-success: #1f6b3a;
+  --inv-panel-bg: color-mix(in oklab, #fbf4e2 94%, transparent);
+  --inv-panel-bg-strong: color-mix(in oklab, #fdf8ec 97%, transparent);
+  --inv-overlay-top: color-mix(in oklab, #faf6ec 55%, transparent);
+  --inv-overlay-fade: color-mix(in oklab, #faf6ec 8%, transparent);
+  --inv-frame-shadow: 0 10px 30px -12px color-mix(in oklab, black 45%, transparent);
+  --inv-gold: var(--color-accent-gold);
+  --inv-glow: color-mix(in oklab, var(--inv-accent) 35%, transparent);
+  /*
+   * CORRECCION (7a pasada, verificado con JS en la pagina real): `--inv-
+   * accent`/`--inv-accent-2` CAMBIAN DE ROL entre temas (en Light `--inv-
+   * accent` es el azul real y `--inv-accent-2` es dorado; en Dark es al
+   * reves). Un comentario de la 6a pasada afirmaba que `--inv-accent-2`
+   * daba "zafiro en Light", pero medido en el DOM real resultaba dorado
+   * puro -gate "Light selected: sapphire/gold" incumplido-. `--inv-
+   * selected` resuelve SIEMPRE al tono de seleccion correcto del tema
+   * (zafiro en Light, violeta en Dark), para que el anillo de "seleccionado"
+   * de las cards lo use sin repetir el condicional en cada regla.
+   */
+  --inv-selected: var(--inv-accent);
+
+  position: relative;
+  isolation: isolate;
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 16px clamp(12px, 2vw, 24px) 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--inv-ink);
+}
+:root[data-theme='dark'] .inventory-page {
+  --inv-ink: #f1e6cf;
+  --inv-muted: #c9b8a0;
+  --inv-accent: #c9a646;
+  --inv-accent-2: #9b6bd6;
+  --inv-danger: #e2847d;
+  --inv-success: #6fd79a;
+  --inv-panel-bg: color-mix(in oklab, #1d140d 62%, transparent);
+  --inv-panel-bg-strong: color-mix(in oklab, #1a110b 72%, transparent);
+  --inv-overlay-top: color-mix(in oklab, #0c0a08 62%, transparent);
+  --inv-overlay-fade: color-mix(in oklab, #0c0a08 14%, transparent);
+  --inv-glow: color-mix(in oklab, var(--inv-accent-2) 45%, transparent);
+  --inv-selected: var(--inv-accent-2);
+}
+
+.inventory-main {
+  max-width: 1680px;
+}
+
+/* Escenario a sangre completa (Warforge Armory / Royal Arsenal), mismo
+ * criterio que `.account-page::before`: `cover` nunca deforma, un degradado
+ * superior mejora la legibilidad de la cabecera. */
+.inventory-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: url('/assets/inventory/backgrounds/bg-inventory-light.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+}
+.inventory-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+    180deg,
+    var(--inv-overlay-top) 0%,
+    var(--inv-overlay-fade) 220px,
+    transparent 440px
+  );
+}
+:root[data-theme='dark'] .inventory-page::before {
+  background-image: url('/assets/inventory/backgrounds/bg-inventory-dark.png');
+}
+
+/* Scrollbar de pagina -mismo patron que `.account-main`-, solo mientras
+ * `/inventory` esta montado. */
+html:has(.inventory-main) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-brand) 55%, var(--color-accent-gold))
+    var(--color-surface);
+}
+html:has(.inventory-main) ::-webkit-scrollbar {
+  width: 12px;
+}
+html:has(.inventory-main) ::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+html:has(.inventory-main) ::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--color-brand) 55%, var(--color-accent-gold));
+  border-radius: 8px;
+  border: 2px solid var(--color-surface);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Cabecera compacta — reemplaza el bloque "Mi Inventario / descripcion".
+ * ------------------------------------------------------------------
+ */
+.inventory-topbar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+.inventory-topbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 14px;
+  background-image: url('/assets/inventory/panel-frames/divider-light.png');
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  background-size: contain;
+  pointer-events: none;
+}
+:root[data-theme='dark'] .inventory-topbar::after {
+  background-image: url('/assets/inventory/panel-frames/divider-dark.png');
+}
+.inventory-title {
+  font-family: var(--font-game-display);
+  color: var(--inv-accent);
+  letter-spacing: 0.02em;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-shadow: 0 0 14px var(--inv-glow);
+}
+/*
+ * Tipografia premium puntual (gate 4a pasada): "Buscar por nombre" y
+ * "Héroe preparado:" dejan de ser texto gris generico. Light = "royal
+ * archive" (navy + dorado); Dark = "forged/stone" (metal calido + sombra
+ * sutil). Mismo token de fuente ya usado en titulos (`--font-game-display`),
+ * SIN instalar nada nuevo.
+ */
+.inventory-search-label,
+.inventory-prepared-label {
+  font-family: var(--font-game-display);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--inv-accent);
+}
+:root[data-theme='dark'] .inventory-search-label,
+:root[data-theme='dark'] .inventory-prepared-label {
+  color: color-mix(in oklab, var(--inv-gold) 55%, var(--inv-ink));
+  text-shadow: 0 1px 1px black;
+}
+.inventory-prepared-badge {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--inv-success) 20%, var(--inv-panel-bg-strong)),
+    color-mix(in oklab, var(--inv-success) 40%, var(--inv-panel-bg-strong))
+  );
+  color: var(--inv-ink);
+  border: 1px solid color-mix(in oklab, var(--inv-success) 55%, transparent);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Panel generico — usado por las 5 secciones (Heroe, Equipo, Epica,
+ * Inventario, Ficha). Reemplaza `rounded-lg border border-border
+ * bg-surface-raised` generico por el lenguaje "Warforge Armory"/"Royal
+ * Arsenal": gradiente + borde ornamental fino + sombra -nunca una textura
+ * estirada-.
+ * ------------------------------------------------------------------
+ */
+.inventory-panel {
+  position: relative;
+  border-radius: 14px;
+  background: linear-gradient(
+    165deg,
+    var(--inv-panel-bg-strong),
+    color-mix(in oklab, var(--inv-accent-2) 6%, var(--inv-panel-bg))
+  );
+  border: 1px solid color-mix(in oklab, var(--inv-accent-2) 35%, transparent);
+  box-shadow:
+    var(--inv-frame-shadow),
+    inset 0 1px 0 color-mix(in oklab, white 12%, transparent);
+}
+/*
+ * CORRECCION (4a pasada): el combinador de hijo directo (`>`) nunca
+ * alcanzaba el `<h2>` real de "Configurar héroe" (vive dentro de un `<div>`
+ * envoltorio por el `<span>` divisor que lo acompaña) -- la jerarquia
+ * premium quedaba escrita en CSS pero invisible en pantalla. Combinador de
+ * descendiente: alcanza cualquier `<h2>` dentro del panel sin importar
+ * cuantos envoltorios de presentacion haya en medio.
+ */
+.inventory-panel h2,
+.inventory-panel-title {
+  font-family: var(--font-game-display);
+  color: var(--inv-accent);
+  letter-spacing: 0.01em;
+}
+/* Acento de esquina (Family 02, pieza real recortada) -tamaño fijo, nunca
+ * estirado, puramente decorativo (`pointer-events: none`), no interfiere con
+ * el contenido ni con capas interactivas por debajo. */
+.inventory-panel::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 34px;
+  height: 34px;
+  background-image: url('/assets/inventory/panel-frames/corner-light.png');
+  background-repeat: no-repeat;
+  background-size: contain;
+  pointer-events: none;
+  opacity: 0.9;
+}
+:root[data-theme='dark'] .inventory-panel::before {
+  background-image: url('/assets/inventory/panel-frames/corner-dark.png');
+}
+/* Divisor ornamental real bajo el titulo de cada panel (Family 02). */
+.inventory-panel-divider {
+  display: block;
+  width: 100%;
+  height: 14px;
+  margin: 2px 0 4px;
+  background-image: url('/assets/inventory/panel-frames/divider-light.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  pointer-events: none;
+}
+:root[data-theme='dark'] .inventory-panel-divider {
+  background-image: url('/assets/inventory/panel-frames/divider-dark.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Columnas — Inventario | Heroe+Equipo+Epica | Ficha.
+ * ------------------------------------------------------------------
+ * Desktop (>=1024px, `lg`): 3 columnas reales, proporciones ~28/44/28.
+ * Tablet (640-1023px): Inventario | Heroe+Equipo+Epica lado a lado, Ficha a
+ * ancho completo debajo (2 columnas, reflujo, nunca 3 columnas forzadas).
+ * Movil (<640px): una sola columna, orden logico (inventario toolbar ->
+ * heroe/equipo/epica -> ficha con ancla de salto), sin scroll interno
+ * forzado.
+ */
+.inventory-columns {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 40rem) {
+  .inventory-columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  }
+  .inventory-col--left {
+    grid-column: 1;
+  }
+  .inventory-col--center {
+    grid-column: 2;
+  }
+  .inventory-col--right {
+    grid-column: 1 / span 2;
+  }
+}
+@media (min-width: 64rem) {
+  .inventory-columns {
+    /* Gate 8a pasada: columna izquierda ligeramente mas ancha (4fr->4.4fr)
+     * para cards menos estrechas, SIN robarle proporcion real a Hero Stage
+     * (centro) ni a la Ficha (derecha) -ajuste modesto, probado en Chrome-. */
+    grid-template-columns: minmax(0, 4.4fr) minmax(0, 5fr) minmax(0, 3fr);
+    align-items: start;
+  }
+  .inventory-col--left {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .inventory-col--center {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .inventory-col--right {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+.inventory-col {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* UN SOLO scroll principal de pagina (brief: "elimina scrolls internos
+ * innecesarios"): ninguna columna recorta su propia altura ni gestiona su
+ * propio scroll vertical -- las 3 columnas crecen libremente y es la pagina
+ * completa (`html`/`body`) la que scrollea, igual que cualquier otra pantalla
+ * del sitio. `align-items: start` (arriba) ya garantiza que las 3 columnas
+ * arranquen en la MISMA linea superior sin necesitar alturas iguales. */
+
+/*
+ * ------------------------------------------------------------------
+ * Botones — CORRECCION (el `border-image` de Family 09 sobre un boton con
+ * texto se veia como "boton dentro de boton", doble capa CSS+PNG: el mismo
+ * problema que ya encontro y resolvio E-commerce, ver `commerce.css`
+ * `.ec-btn-compact`/`.ec-btn-pill`). Se abandona `border-image` por
+ * COMPLETO para botones con texto: superficie de color solida + borde fino
+ * + anillo interior fijo de 1px + brillo en hover, SIN sprite, SIN
+ * rasterizar texto -EXACTAMENTE la misma tecnica ya aprobada en Commerce/
+ * Battle Rooms, con los tokens de Mi Inventario-. CERO `transform` en
+ * cualquier estado (ni hover, ni active): la geometria exterior (alto,
+ * ancho, radio, padding) es IDENTICA en default/hover/focus-visible/
+ * active/disabled/selected -solo cambian `filter`/`box-shadow`/color de
+ * fondo-. Crece con el contenido (`min-height`, nunca `height` fija):
+ * soporta 1-2 lineas de texto real sin recortar ni deformar.
+ * ------------------------------------------------------------------
+ */
+.inventory-btn-primary {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  color: var(--inv-ink);
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid var(--inv-accent-2);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--inv-accent-2) 22%, var(--inv-panel-bg-strong)),
+    color-mix(in oklab, var(--inv-accent-2) 42%, var(--inv-panel-bg-strong))
+  );
+  box-shadow: var(--inv-frame-shadow);
+  transition:
+    filter 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+.inventory-btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in oklab, white 20%, transparent);
+  pointer-events: none;
+}
+.inventory-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.inventory-btn-primary:active:not(:disabled) {
+  filter: brightness(0.95);
+}
+.inventory-btn-primary:focus-visible {
+  outline-offset: 3px;
+}
+.inventory-btn-primary:disabled {
+  filter: grayscale(0.4) brightness(0.9);
+  color: var(--inv-muted);
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inventory-btn-primary {
+    transition: none;
+  }
+}
+
+/*
+ * Desequipar (HU-28.4): misma tecnica solida de `.inventory-btn-primary`
+ * (gradiente + borde + anillo interior + filtro en hover, CERO `transform`),
+ * solo con el token de peligro en vez del acento -para que el jugador
+ * distinga de un vistazo Equipar de Desequipar sin leer el texto-.
+ */
+.inventory-btn-danger {
+  border-color: var(--inv-danger);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--inv-danger) 24%, var(--inv-panel-bg-strong)),
+    color-mix(in oklab, var(--inv-danger) 46%, var(--inv-panel-bg-strong))
+  );
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Equipment slots — pieza real del kit (Family 04) por estado, derivado de
+ * atributos ya presentes en el DOM (`data-filled`, `data-compatible`,
+ * `aria-pressed`, `disabled`), nunca heuristica nueva. `background-size:
+ * contain` conserva la proporcion real del marco cuadrado -nunca lo estira
+ * de forma no uniforme-. Orden de prioridad visual (el ultimo selector que
+ * aplica gana): vacia < ocupada < compatible < seleccionada < bloqueada.
+ * ------------------------------------------------------------------
+ */
+.inventory-slot {
+  position: relative;
+  background: transparent;
+  transition: filter 120ms ease;
+}
+/*
+ * CORRECCION (7a pasada): la pieza ornamental real (Family 04) se mueve del
+ * `<button>` completo a `.inventory-slot-media` -SOLO el frame del
+ * artwork-. Antes vivia en `.inventory-slot` y su `background-size:
+ * contain` se estiraba sobre TODO el boton (media + texto), por lo que el
+ * nombre de la ranura quedaba pintado encima de las gemas del marco. Ahora
+ * el frame termina donde termina `.inventory-slot-media`; el label vive
+ * DEBAJO, en flujo normal, fuera del asset.
+ */
+.inventory-slot-media {
+  background-color: transparent;
+  background-image: url('/assets/inventory/equipment-slots/slot-light-empty.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+:root[data-theme='dark'] .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-dark-empty.png');
+}
+.inventory-slot[data-filled='true'] .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-light-filled.png');
+}
+:root[data-theme='dark'] .inventory-slot[data-filled='true'] .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-dark-filled.png');
+}
+.inventory-slot[data-compatible='true'] .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-light-compatible.png');
+}
+:root[data-theme='dark'] .inventory-slot[data-compatible='true'] .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-dark-compatible.png');
+}
+.inventory-slot[aria-pressed='true'] .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-light-selected.png');
+}
+:root[data-theme='dark'] .inventory-slot[aria-pressed='true'] .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-dark-selected.png');
+}
+.inventory-slot:disabled .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-light-locked.png');
+}
+.inventory-slot:disabled {
+  filter: saturate(0.7);
+}
+:root[data-theme='dark'] .inventory-slot:disabled .inventory-slot-media {
+  background-image: url('/assets/inventory/equipment-slots/slot-dark-locked.png');
+}
+/*
+ * CORRECCION (8a pasada, diagnostico real): el interior de cada ranura (el
+ * "+" vacio O una imagen YA CARGADA) traia su propio fondo solido
+ * (`bg-surface`, blanco en Light / casi negro en Dark) que tapaba el marco
+ * ornamental real -exacto el problema que describio Richard ("cajas
+ * blancas/negras dentro de los equipment slots")-. El selector anterior
+ * (`[role='img']`) solo alcanzaba el estado VACIO/de respaldo -el unico que
+ * tiene ese atributo-: con artwork real cargado (sin `role="img"`) la placa
+ * seguia ahi, sin que ningun selector la anulara. `ProductThumb` es un
+ * componente COMPARTIDO (no se modifica su comportamiento, igual criterio
+ * que `Hero3D`): se le agrego una clase ESTABLE propia (`.product-thumb`,
+ * presente en AMBOS estados) para que este contexto pueda anular su fondo
+ * sin un selector generico de `div` que alcanzaria cualquier otro
+ * contenedor futuro. */
+.inventory-slot .product-thumb {
+  background-color: transparent;
+}
+.inventory-slot .product-thumb span {
+  color: var(--inv-muted);
+}
+
+/*
+ * CORRECCION (4a pasada): la placa semitransparente detras de cada etiqueta
+ * ("Yelmo de Hierro", "Pecho", "Guantes"...) se veia como un rectangulo
+ * beige/blanco solido en Light -exactamente el problema reportado-. Se
+ * retira el fondo por completo; el contraste sobre el escenario se logra
+ * SOLO con `text-shadow` (un halo del color de fondo del panel, sutil, sin
+ * bloque solido). Selector de 2 clases a proposito: sigue necesitando MAS
+ * especificidad que `.inventory-slot span` de arriba para que el color de
+ * texto no quede anulado por la regla de transparencia generica. */
+.inventory-slot .inventory-slot-label {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 100%;
+  width: 100%;
+  margin-top: 2px;
+  /* Gate 7a pasada: claramente menor que el nombre del heroe/titulos de
+   * seccion/titulo de la Ficha. */
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--inv-ink);
+  text-shadow:
+    0 1px 2px color-mix(in oklab, var(--inv-panel-bg-strong) 90%, black),
+    0 0 6px color-mix(in oklab, var(--inv-panel-bg-strong) 70%, transparent);
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Inventory cards — pieza real del kit (Family 03) via `border-image`:
+ * arco superior y placa inferior quedan fijos; los lados se repiten SOLO en
+ * vertical, el arco/placa SOLO en horizontal -nunca ambos ejes a la vez-,
+ * la misma tecnica de `.inventory-btn-primary`. Compatible con Hero3D (el
+ * canvas 3D) igual que con `ProductThumb` (imagen plana): el marco es un
+ * `border-image` alrededor del `<button>` completo, no asume que el
+ * contenido es una imagen estatica.
+ * ------------------------------------------------------------------
+ */
+/*
+ * CORRECCION (3a pasada): el frame raster vertical de Family 03 (arco +
+ * placa inferior, pensado para una tarjeta tipo retrato) nunca calzaba bien
+ * con el hueco casi cuadrado real de la rejilla -los 16 archivos del kit
+ * (02-10) NO se recortan de nuevo, simplemente esta pieza deja de usarse
+ * AQUI-. La card ahora es HTML/CSS puro: casi cuadrada, con el artwork como
+ * protagonista real (`object-fit: contain`, nunca "cover"/"crop", para que
+ * ni una espada alta ni un escudo ancho se deformen o se corten) y los
+ * estados (default/selected/compatible/incompatible) SOLO via color/
+ * outline/glow -- nunca `transform`/`scale`, nunca un cambio de tamaño
+ * exterior entre estados.
+ */
+.inventory-card {
+  position: relative;
+  box-sizing: border-box;
+  /*
+   * CORRECCION (7a pasada): `aspect-ratio` fijo competia por altura con el
+   * bloque de texto y terminaba dejando la media area casi invisible otra
+   * vez. Con solo 8 por pagina (4x2) el panel de Inventario esta
+   * AUTORIZADO a crecer verticalmente -- se reemplaza el aspect-ratio por
+   * un `min-height` real: la media area (`.inventory-card-art`, su propio
+   * `min-height` mas abajo) manda, el bloque de texto se ajusta por
+   * contenido. `lg:[grid-auto-rows:1fr]` en `InventoryGrid.tsx` sigue
+   * igualando la altura de toda la fila (misma geometria exterior entre
+   * estados, nunca `transform`/`scale`).
+   */
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(
+    165deg,
+    var(--inv-panel-bg-strong),
+    color-mix(in oklab, var(--inv-accent-2) 8%, var(--inv-panel-bg))
+  );
+  border: 2px solid color-mix(in oklab, var(--inv-accent-2) 28%, transparent);
+  box-shadow: var(--inv-frame-shadow);
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.inventory-card:hover {
+  border-color: var(--inv-accent-2);
+}
+/* Compatible: verde magico (Dark) / esmeralda (Light). */
+.inventory-card[data-compatible='true'] {
+  border-color: var(--inv-success);
+  box-shadow:
+    var(--inv-frame-shadow),
+    0 0 0 1px color-mix(in oklab, var(--inv-success) 55%, transparent);
+}
+/* Incompatible: rojo sutil/muted -- la opacidad reducida (ya aplicada en el
+ * componente) ya comunica "no aplica"; el borde solo refuerza, no grita. */
+.inventory-card[data-compatible='false'] {
+  border-color: color-mix(in oklab, var(--inv-danger) 55%, transparent);
+}
+/* Seleccionada: acento de seleccion del tema (zafiro Light / violeta Dark)
+ * con glow, prioridad visual maxima. */
+.inventory-card[aria-pressed='true'] {
+  border-color: var(--inv-selected);
+  box-shadow:
+    var(--inv-frame-shadow),
+    0 0 0 2px color-mix(in oklab, var(--inv-selected) 65%, transparent),
+    0 0 14px color-mix(in oklab, var(--inv-selected) 45%, transparent);
+}
+/*
+ * Equipada (la ficha puede marcar el objeto actualmente puesto en una
+ * ranura): SIEMPRE esmeralda/success -- nunca dorado (eso lo usa
+ * "preparado") ni violeta/zafiro (eso lo usa "seleccionado").
+ */
+.inventory-card[data-equipped='true'] {
+  border-color: var(--inv-success);
+  box-shadow:
+    var(--inv-frame-shadow),
+    0 0 0 1px color-mix(in oklab, var(--inv-success) 60%, transparent);
+}
+/*
+ * CORRECCION (6a pasada): con la misma especificidad (1 selector de
+ * atributo cada una), la regla que viene DESPUES en el CSS ganaba
+ * completa -`equipped` tapaba a `selected` entero, perdiendo el anillo de
+ * seleccion-. Selected+Equipped es un caso real (un objeto puede estar
+ * seleccionado en el inventario Y equipado en el heroe a la vez) y ambos
+ * estados deben verse: anillo EXTERIOR = acento de seleccion del tema
+ * (violeta en Dark, zafiro en Light, igual que "solo seleccionado"),
+ * anillo INTERIOR fino = esmeralda (igual significado que la insignia
+ * EQUIPADO). Selector compuesto (mas especificidad) para que SIEMPRE gane
+ * sobre las dos reglas individuales de arriba, sin importar el orden.
+ */
+.inventory-card[aria-pressed='true'][data-equipped='true'] {
+  border-color: var(--inv-selected);
+  box-shadow:
+    var(--inv-frame-shadow),
+    0 0 0 2px color-mix(in oklab, var(--inv-selected) 65%, transparent),
+    0 0 14px color-mix(in oklab, var(--inv-selected) 45%, transparent),
+    inset 0 0 0 2px color-mix(in oklab, var(--inv-success) 70%, transparent);
+}
+/*
+ * Zona de artwork real, con limite visual propio (borde sutil) para que se
+ * reconozca como un area de medios incluso cuando el producto no trae
+ * imagen (fixture DEV sin arte): nunca debe verse como "nada", siempre como
+ * un marco vacio a la espera de la pieza.
+ */
+.inventory-card-art {
+  position: relative;
+  /*
+   * CORRECCION (7a pasada): `min-height: 0` dejaba que el bloque de texto
+   * "ganara" todo el alto que quisiera y la media area terminaba siendo una
+   * tira delgada. Con `min-height: 55%` relativo al nuevo `min-height:
+   * 190px` de `.inventory-card` (gate: ~45-55% de la altura util), la media
+   * area manda incluso si el nombre ocupa sus 3 lineas completas.
+   */
+  flex: 1 1 55%;
+  min-height: 104px;
+  border-radius: 6px;
+  padding: 6px;
+  background: color-mix(in oklab, var(--inv-accent-2) 6%, transparent);
+  border: 1px solid color-mix(in oklab, var(--inv-accent-2) 16%, transparent);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+/* `ProductThumb`/`Hero3D` (componentes compartidos) traen su propio fondo
+ * solido en el marcador neutro (`role="img"`) -- se anula SOLO ahi, nunca
+ * con un selector generico de `div`. */
+.inventory-card-art .product-thumb {
+  background-color: transparent;
+}
+.inventory-card-art img,
+.inventory-card-art canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.inventory-card-name {
+  display: -webkit-box;
+  /* Hasta 3 lineas reales (gate: "Espada del Alba"/"Yelmo de Hierro"/
+   * "Poción de Vitalidad" deben leerse completos, no cortar en "de..."); solo
+   * un nombre verdaderamente extremo llega a truncarse, con `title` como
+   * respaldo nativo (ver `InventoryGrid.tsx`). */
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.1em;
+}
+
+/*
+ * Fila de status RESERVADA (gate 7a pasada): altura minima estable exista o
+ * no la insignia, para que una card equipada y una sin equipar mantengan
+ * EXACTAMENTE la misma composicion/alto -nunca un salto quando cambia el
+ * estado-. Flujo normal, nunca `position:absolute`.
+ */
+.inventory-card-status {
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/*
+ * Insignia "Equipado": SIEMPRE esmeralda/success -nunca dorado ni violeta,
+ * esos colores ya significan "preparado" y "seleccionado" en otras partes de
+ * esta misma pantalla-. Vive en su propia linea, separada de "Tipo · xN",
+ * para no competir por espacio con el meta-dato y para no romper el layout
+ * de la tarjeta (nunca cambia su geometria exterior).
+ */
+.inventory-equipped-badge {
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--inv-success);
+  background: color-mix(in oklab, var(--inv-success) 16%, transparent);
+  border: 1px solid color-mix(in oklab, var(--inv-success) 45%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .inventory-card {
+    transition: none;
+  }
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Escenario del heroe activo (Family 05) — marco real via `border-image`
+ * alrededor del `Hero3D` (modelo 3D real, nunca se envuelve su logica
+ * interna, solo se decora el contenedor por fuera, seccion AA de la
+ * auditoria). El propio fondo "runic alcove"/"ceremonial chamber" de
+ * Family 01 ya se usa como `background-image` del propio marco.
+ * ------------------------------------------------------------------
+ */
+/* Selector de heroe — dropdown/listbox REAL (`<select>` nativo): teclado,
+ * `focus-visible` y semantica de combobox gratis del navegador, sin
+ * reimplementar ARIA a mano. Compacto, una sola linea, con la paleta del
+ * tema -- reemplaza la lista de chips anterior (brief: "ahora parece un
+ * chip, no un selector real"). La logica real (heroes owned/selected/
+ * active, heroe preparado) no cambia: solo el tipo de control. */
+.inventory-hero-select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 30px 6px 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklab, var(--inv-accent-2) 50%, transparent);
+  background-color: var(--inv-panel-bg-strong);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--inv-accent) 50%),
+    linear-gradient(135deg, var(--inv-accent) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) center,
+    calc(100% - 11px) center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  appearance: none;
+  color: var(--inv-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inventory-hero-stage {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /*
+   * CORRECCION (4a pasada): el marco ornamental anterior (hasta 22px/20px
+   * por lado) dominaba visualmente sobre el propio fondo pintado del
+   * escenario -exactamente lo contrario de lo pedido-. Se reduce a un borde
+   * decorativo FINO (misma pieza de Family 01, solo mucho menos ancho) para
+   * que el fondo Dark/Light se aprecie de verdad; el heroe deja de sentirse
+   * "dentro de un marco de cuadro" y pasa a sentirse "parado en un
+   * escenario".
+   *
+   * CORRECCION (6a pasada): la palabra clave `fill` en `border-image-slice`
+   * pintaba TAMBIEN la porcion central del PNG como una capa solida encima
+   * del `background-image` real -esa superficie central (oscura en Dark,
+   * marfil en Light) era justo lo que tapaba el fondo del escenario-. Sin
+   * `fill`, `border-image` pinta SOLO el marco (bordes/esquinas); el centro
+   * queda hueco y el `background-image` de abajo se ve de verdad.
+   */
+  border-style: solid;
+  border-width: clamp(5px, 0.6vw, 8px);
+  border-color: transparent;
+  border-image-source: url('/assets/inventory/hero-selector/hero-stage-frame-light.png');
+  border-image-slice: 60 55;
+  border-image-width: clamp(5px, 0.6vw, 8px);
+  border-image-repeat: stretch;
+  background-image: url('/assets/inventory/backgrounds/hero-stage-light.png');
+  background-size: cover;
+  background-position: center;
+  /* GRANDE: ocupa el ancho real disponible de la columna central, con un
+   * techo razonable para que no desborde en pantallas muy anchas; la altura
+   * sigue el ancho via `aspect-ratio` en vez de un `min-height` fijo que se
+   * veia "chico" en centros angostos. */
+  width: 100%;
+  max-width: clamp(200px, 34vw, 360px);
+  aspect-ratio: 1 / 1.05;
+  margin-inline: auto;
+}
+:root[data-theme='dark'] .inventory-hero-stage {
+  border-image-source: url('/assets/inventory/hero-selector/hero-stage-frame-dark.png');
+  background-image: url('/assets/inventory/backgrounds/hero-stage-dark.png');
+}
+/* CORRECCION ("el heroe tiene un fondo negro/solido detras, el escenario
+ * casi no se ve"): el wrapper interno de `Hero3D` (componente COMPARTIDO,
+ * NUNCA se toca su logica) trae su propio fondo de card (`bg-surface`) en
+ * el `div[role="img"]` que envuelve el canvas -pensado para pantallas donde
+ * el heroe flota sobre una superficie plana, no sobre un escenario pintado-.
+ * Mismo patron YA aprobado y en produccion para Battle Rooms
+ * (`battle-rooms.css`, selector `.br-combatant-model [role='img']`): se
+ * anula SOLO el color de fondo, scoped a este contenedor, dejando pasar el
+ * escenario real de Family 01 que ya pinta `.inventory-hero-stage`. */
+.inventory-hero-stage [role='img'] {
+  background: transparent;
+}
+.inventory-hero-stage canvas,
+.inventory-hero-stage img {
+  object-fit: contain;
+}
+
+/* Rejilla heroe+equipamiento: armadura REAL a los lados del escenario desde
+ * `lg` (3 ranuras a cada lado, mismas `SLOT_META`, nunca inventadas), armas
+ * e items en una fila completa debajo. Por debajo de `lg` se apila
+ * (armadura izquierda -> escenario -> armadura derecha -> armas/items), sin
+ * forzar 3 columnas en centros angostos (tablet/mobile). */
+.inventory-hero-equip-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  align-items: center;
+}
+@media (min-width: 56rem) {
+  .inventory-hero-equip-grid {
+    /* Gate 7a pasada: columnas de armadura agrandadas (min 92px) para que
+     * el media box de 88px + su padding quepan sin apretarse. */
+    grid-template-columns: minmax(92px, 1fr) minmax(170px, 2.6fr) minmax(92px, 1fr);
+  }
+  .inventory-hero-equip-grid__armor-left {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .inventory-hero-equip-grid__stage {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .inventory-hero-equip-grid__armor-right {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .inventory-hero-equip-grid__weapons-items {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+.inventory-hero-equip-grid__armor-left ul,
+.inventory-hero-equip-grid__armor-right ul {
+  gap: 8px;
+}
+
+/* Info compacta del heroe, debajo del escenario+equipamiento. */
+.inventory-hero-info {
+  border-top: 1px solid color-mix(in oklab, var(--inv-accent-2) 22%, transparent);
+  padding-top: 10px;
+}
+
+/* Estadisticas y Efectos, reubicados en la Ficha (columna derecha):
+ * "ledger" tematico propio -tarjeta con borde/gradiente del tema-, nunca
+ * una fila gris generica. */
+.inventory-stats-ledger,
+.inventory-effects-ledger {
+  border-radius: 10px;
+  padding: 10px;
+  background: linear-gradient(
+    165deg,
+    var(--inv-panel-bg-strong),
+    color-mix(in oklab, var(--inv-accent-2) 6%, var(--inv-panel-bg))
+  );
+  border: 1px solid color-mix(in oklab, var(--inv-accent-2) 24%, transparent);
+}
+
+/* Emblema de rol (Family 05) — icono pequeño DECORATIVO junto al nombre del
+ * heroe (texto HTML real, el icono nunca es la unica fuente de informacion).
+ * El rol se resuelve con la funcion de presentacion YA existente
+ * (`heroRole.ts`), nunca una regla nueva: 5 emblemas reales del kit cubren
+ * los 5 roles (Tanque/Guerrero/Mago/Picaro/Soporte) que agrupan a los 8
+ * subtipos reales (Chaman y Medico comparten el emblema de Soporte, Mago
+ * Fuego/Hielo comparten el de Mago, Picaro Veneno/Machete el de Picaro). */
+.inventory-role-emblem {
+  display: inline-block;
+  height: 18px;
+  width: auto;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.inventory-role-emblem--tanque {
+  content: url('/assets/inventory/hero-selector/emblem-light-tanque.png');
+}
+:root[data-theme='dark'] .inventory-role-emblem--tanque {
+  content: url('/assets/inventory/hero-selector/emblem-dark-tanque.png');
+}
+.inventory-role-emblem--guerrero {
+  content: url('/assets/inventory/hero-selector/emblem-light-guerrero.png');
+}
+:root[data-theme='dark'] .inventory-role-emblem--guerrero {
+  content: url('/assets/inventory/hero-selector/emblem-dark-guerrero.png');
+}
+.inventory-role-emblem--mago {
+  content: url('/assets/inventory/hero-selector/emblem-light-mago.png');
+}
+:root[data-theme='dark'] .inventory-role-emblem--mago {
+  content: url('/assets/inventory/hero-selector/emblem-dark-mago.png');
+}
+.inventory-role-emblem--picaro {
+  content: url('/assets/inventory/hero-selector/emblem-light-picaro.png');
+}
+:root[data-theme='dark'] .inventory-role-emblem--picaro {
+  content: url('/assets/inventory/hero-selector/emblem-dark-picaro.png');
+}
+.inventory-role-emblem--soporte {
+  content: url('/assets/inventory/hero-selector/emblem-light-soporte.png');
+}
+:root[data-theme='dark'] .inventory-role-emblem--soporte {
+  content: url('/assets/inventory/hero-selector/emblem-dark-soporte.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Barra de XP (Family 06) — el marco es una pieza real fija via
+ * `border-image`; el relleno es la textura real del kit TILEADA
+ * (`background-repeat: repeat-x`), nunca una imagen con el progreso ya
+ * dibujado. El ancho del relleno lo sigue calculando
+ * `HeroProgressionBar.tsx` en HTML/CSS puro (estilo en linea), exactamente
+ * igual que antes de este remaster -solo cambia la piel-.
+ * ------------------------------------------------------------------
+ */
+.inventory-xp-track {
+  position: relative;
+  box-sizing: border-box;
+  /*
+   * CORRECCION (7a pasada): con `height:22px` y `border-width:10px` arriba
+   * y abajo, el contenido interior real para `.inventory-xp-fill` quedaba
+   * en 22 - 10 - 10 = 2px -- una linea casi imperceptible, exactamente el
+   * "fill demasiado fino" reportado-. Se agranda el track y se reduce el
+   * borde vertical para dejar una franja interior real (~14-16px) donde el
+   * relleno se vea como una barra, no como un hilo.
+   */
+  height: 28px;
+  border-style: solid;
+  border-width: 6px 22px;
+  border-color: transparent;
+  border-image-source: url('/assets/inventory/stats-xp/xp-track-light.png');
+  /* Sin `fill`: el marco decora SOLO el borde, nunca pinta el interior por
+   * encima del relleno dinamico (mismo criterio que `.inventory-hero-stage`). */
+  border-image-slice: 45 110;
+  border-image-width: 6px 22px;
+  border-image-repeat: stretch;
+  overflow: hidden;
+}
+:root[data-theme='dark'] .inventory-xp-track {
+  border-image-source: url('/assets/inventory/stats-xp/xp-track-dark.png');
+}
+.inventory-xp-fill {
+  height: 100%;
+  min-height: 12px;
+  /*
+   * Color solido de respaldo DEBAJO de la textura tileada: aunque la
+   * textura del kit sea tenue a tamanos pequenos, el relleno sigue
+   * leyendose a simple vista como "esta barra esta cargada" (gate: Dark =
+   * violeta/arcano con contraste, Light = zafiro/azul real sobre
+   * marfil/dorado, nunca casi imperceptible).
+   */
+  /*
+   * `--inv-accent`/`--inv-accent-2` cambian de rol entre temas (en Light
+   * `--inv-accent` es el azul real y `--inv-accent-2` es dorado; en Dark es
+   * al reves). El relleno pide explicitamente zafiro/azul real en Light y
+   * violeta/arcano en Dark -- se fija cada uno por tema en vez de asumir
+   * que el mismo token sirve para ambos.
+   */
+  background-color: var(--inv-accent);
+  background-image: url('/assets/inventory/stats-xp/xp-fill-light.png');
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  box-shadow: 0 0 6px color-mix(in oklab, var(--inv-accent) 70%, transparent);
+  transition: width 400ms ease;
+}
+:root[data-theme='dark'] .inventory-xp-fill {
+  background-color: var(--inv-accent-2);
+  background-image: url('/assets/inventory/stats-xp/xp-fill-dark.png');
+  box-shadow: 0 0 6px color-mix(in oklab, var(--inv-accent-2) 70%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .inventory-xp-fill {
+    transition: none;
+  }
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Filtros y paginacion — CORRECCION: mismo cambio que `.inventory-btn-
+ * primary` arriba (se abandona `border-image` de Family 07 para controles
+ * con texto, por el mismo problema de doble capa). Superficie solida +
+ * borde fino + anillo interior, CERO `transform`, geometria exterior
+ * identica en todos los estados.
+ * ------------------------------------------------------------------
+ */
+/*
+ * Rejilla determinista de los 5 filtros de tipo: 6 columnas virtuales,
+ * fila 1 = "Todos/Héroes/Armas" (2 columnas cada uno, mismo ancho real),
+ * fila 2 = "Armaduras/Ítems" centrados debajo (columnas 2-4 y 4-6). Las
+ * columnas exactas las asigna cada `<button>` inline (`gridColumn`) desde
+ * `InventoryToolbar.tsx`; esta clase solo fija la rejilla base. NUNCA
+ * `flex-wrap`: un wrap dependiente del ancho de cada etiqueta fue
+ * exactamente el bug que produjo la geometria "2-1-2" en Dark.
+ */
+.inventory-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  max-width: 22rem;
+  margin-inline: auto;
+}
+.inventory-chip {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: var(--inv-ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid color-mix(in oklab, var(--inv-accent-2) 55%, transparent);
+  background: var(--inv-panel-bg-strong);
+  transition: filter 120ms ease-out;
+}
+.inventory-chip:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.inventory-chip[aria-pressed='true'] {
+  color: var(--inv-accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--inv-accent-2) 22%, var(--inv-panel-bg-strong)),
+    color-mix(in oklab, var(--inv-accent-2) 42%, var(--inv-panel-bg-strong))
+  );
+  border-color: var(--inv-accent-2);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--inv-accent-2) 45%, transparent);
+}
+/*
+ * CORRECCION (4a pasada): el asset ornamental grande de Family 07
+ * (gemas laterales, ~34px de ancho de marco) quedaba demasiado pesado para
+ * un control de filtro compacto -- dominaba visualmente sobre "Todos/
+ * Héroes/Armas/Armaduras/Ítems", justo lo contrario de lo que un filtro
+ * deberia hacer. El PNG NO se borra del proyecto (lo siguen usando otras
+ * superficies), simplemente esta superficie deja de pedirlo. Dark adopta la
+ * MISMA filosofia geometrica compacta que Light (misma tecnica "solid-
+ * surface" de `.inventory-btn-primary`: gradiente + borde fino + anillo
+ * interior sutil, CERO `transform`), con identidad propia
+ * -gunmetal/charcoal/borgoña oscuro, borde bronce/violeta contenido, brillo
+ * interior sutil, violeta/dorado restringido al seleccionado- para que siga
+ * leyendose "Warforge/Dark Royal Armory" sin ser un simple Light recoloreado.
+ */
+:root[data-theme='dark'] .inventory-chip {
+  color: var(--inv-ink);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, #2a2320 85%, black),
+    color-mix(in oklab, #1a1512 85%, black)
+  );
+  border-color: color-mix(in oklab, var(--inv-bronze, var(--inv-accent-2)) 45%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 6%, transparent);
+}
+:root[data-theme='dark'] .inventory-chip[aria-pressed='true'] {
+  color: var(--inv-gold);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--inv-accent-2) 30%, #241a2e),
+    color-mix(in oklab, var(--inv-accent-2) 55%, #241a2e)
+  );
+  border-color: color-mix(in oklab, var(--inv-gold) 55%, var(--inv-accent-2));
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 10%, transparent),
+    0 0 10px color-mix(in oklab, var(--inv-accent-2) 35%, transparent);
+}
+
+.inventory-page-btn {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  min-height: 40px;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--inv-ink);
+  font-weight: 600;
+  border: 1px solid color-mix(in oklab, var(--inv-accent-2) 40%, transparent);
+  background: var(--inv-panel-bg-strong);
+  transition: filter 120ms ease-out;
+}
+.inventory-page-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.inventory-page-btn[aria-current='page'] {
+  color: var(--inv-accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--inv-accent-2) 22%, var(--inv-panel-bg-strong)),
+    color-mix(in oklab, var(--inv-accent-2) 42%, var(--inv-panel-bg-strong))
+  );
+  border-color: var(--inv-accent-2);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--inv-accent-2) 45%, transparent);
+}
+.inventory-page-btn:disabled {
+  filter: grayscale(0.4);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inventory-chip,
+  .inventory-page-btn {
+    transition: none;
+  }
+}
+
+.inventory-search-icon {
+  height: 20px;
+  width: auto;
+  pointer-events: none;
+  content: url('/assets/inventory/filters-pagination/search-icon-light.png');
+}
+:root[data-theme='dark'] .inventory-search-icon {
+  content: url('/assets/inventory/filters-pagination/search-icon-dark.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Ficha del objeto (Family 08) — marco real alrededor de la miniatura
+ * (`ProductThumb` o `Hero3D`); icono de moneda junto al precio en creditos
+ * (texto HTML real, el icono es solo decoracion).
+ * ------------------------------------------------------------------
+ */
+.inventory-item-frame {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-style: solid;
+  border-width: 20px;
+  border-color: transparent;
+  border-image-source: url('/assets/inventory/item-detail/item-frame-light.png');
+  border-image-slice: 58 fill;
+  border-image-width: 20px;
+  border-image-repeat: stretch;
+}
+:root[data-theme='dark'] .inventory-item-frame {
+  border-image-source: url('/assets/inventory/item-detail/item-frame-dark.png');
+}
+.inventory-item-frame .product-thumb {
+  background-color: transparent;
+}
+.inventory-item-frame img,
+.inventory-item-frame canvas {
+  object-fit: contain;
+}
+.inventory-item-frame--large {
+  aspect-ratio: 1 / 1;
+  max-width: clamp(140px, 60%, 220px);
+}
+/* Titulo de la Ficha -- tipografia premium medieval YA usada en E-commerce/
+ * Jugar Online (`var(--font-game-display)`, el mismo token global que
+ * `.inventory-title`/`.inventory-panel > h2`), SOLO para el titulo del
+ * objeto, nunca para parrafos/stats/botones. */
+.inventory-detail-title {
+  font-family: var(--font-game-display);
+  color: var(--inv-accent);
+  letter-spacing: 0.01em;
+}
+.inventory-coin-icon {
+  display: inline-block;
+  height: 16px;
+  width: auto;
+  vertical-align: text-bottom;
+  margin-inline-end: 3px;
+  pointer-events: none;
+  content: url('/assets/inventory/item-detail/coin-icon-light.png');
+}
+:root[data-theme='dark'] .inventory-coin-icon {
+  content: url('/assets/inventory/item-detail/coin-icon-dark.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Scrollbar tematica (Family 10) — el navegador no admite 9-slice en
+ * `::-webkit-scrollbar-thumb`: la pieza real decora como `background-image`
+ * ACOTADO (`background-size` fijo, nunca `100%`) sobre el color solido de
+ * `scrollbar-color`, que sigue siendo la base funcional real -mismo patron
+ * ya aprobado en `account.css`-.
+ * ------------------------------------------------------------------
+ */
+html:has(.inventory-main) ::-webkit-scrollbar-thumb {
+  background-image: url('/assets/inventory/status-decorations/scrollbar-thumb-light.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 60% auto;
+}
+:root[data-theme='dark'] html:has(.inventory-main) ::-webkit-scrollbar-thumb {
+  background-image: url('/assets/inventory/status-decorations/scrollbar-thumb-dark.png');
+}
+
+/* Iconos de estado (Family 10) — decorativos, siempre junto a texto real. */
+.inventory-status-icon {
+  display: inline-block;
+  height: 14px;
+  width: auto;
+  vertical-align: middle;
+  margin-inline-end: 4px;
+  pointer-events: none;
+}
+.inventory-status-icon--ok {
+  content: url('/assets/inventory/status-decorations/status-ok-light.png');
+}
+:root[data-theme='dark'] .inventory-status-icon--ok {
+  content: url('/assets/inventory/status-decorations/status-ok-dark.png');
+}
+.inventory-status-icon--danger {
+  content: url('/assets/inventory/status-decorations/status-danger-light.png');
+}
+:root[data-theme='dark'] .inventory-status-icon--danger {
+  content: url('/assets/inventory/status-decorations/status-danger-dark.png');
+}
+.inventory-status-icon--locked {
+  content: url('/assets/inventory/status-decorations/locked-badge-light.png');
+  height: 20px;
+}
+:root[data-theme='dark'] .inventory-status-icon--locked {
+  content: url('/assets/inventory/status-decorations/locked-badge-dark.png');
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Barra DEV de QA — `PlayerInventoryDevPreview.tsx`. Solo alcanzable bajo
+ * `import.meta.env.DEV`, igual criterio que `.account-dev-toolbar`.
+ * ------------------------------------------------------------------
+ */
+.inventory-dev-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: color-mix(in oklab, var(--color-brand) 12%, var(--color-surface));
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.75rem;
+}
+.inventory-dev-toolbar__theme {
+  display: inline-flex;
+  gap: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  padding: 2px;
+  background-color: var(--color-surface-raised);
+}
+.inventory-dev-toolbar__theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+.inventory-dev-toolbar__theme-btn[aria-pressed='true'] {
+  background-color: var(--color-brand);
+  color: var(--color-brand-ink);
+}
+.inventory-dev-toolbar__scenario {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/*
+ * ------------------------------------------------------------------
+ * Responsive — mobile.
+ * ------------------------------------------------------------------
+ */
+@media (max-width: 39.99rem) {
+  .inventory-page {
+    padding: 10px 8px 32px;
+    border-radius: 12px;
+  }
+}

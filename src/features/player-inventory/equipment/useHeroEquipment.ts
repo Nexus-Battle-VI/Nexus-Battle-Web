@@ -10,6 +10,7 @@ import { queryKeys } from '@/shared/query-keys'
 import {
   equipItemOnHero,
   fetchHeroEquipment,
+  unequipItemFromHero,
   type EquipmentSlotId,
   type HeroEquipment,
 } from './api'
@@ -62,6 +63,35 @@ export const useEquipItem = (
       // `locked: false` si la batalla empezo despues de esa lectura. No se
       // escribe nada sintetico en la cache -eso simularia un cambio que no
       // ocurrio-: se vuelve a pedir el estado real, que ya traera `locked: true`.
+      if (isBattleLockError(error)) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.inventory.heroEquipment(heroReference ?? ''),
+        })
+      }
+    },
+  })
+}
+
+/**
+ * Mutación de desequipar (HU-28.4). Mismo patrón que `useEquipItem`: sin
+ * actualización optimista, la respuesta de `DELETE` trae el nuevo estado
+ * consistente (ranura vacía, stats/efectos/capacidad recalculados) y se
+ * escribe directamente en la caché; la selección preparada se vuelve a pedir
+ * por la misma razón que al equipar.
+ */
+export const useUnequipItem = (
+  heroReference: string | null,
+): UseMutationResult<HeroEquipment, unknown, { slot: EquipmentSlotId }> => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (variables: { slot: EquipmentSlotId }) =>
+      unequipItemFromHero({ heroReference: heroReference ?? '', slot: variables.slot }),
+    onSuccess: (next) => {
+      queryClient.setQueryData(queryKeys.inventory.heroEquipment(heroReference ?? ''), next)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.inventory.heroSelection })
+    },
+    onError: (error) => {
       if (isBattleLockError(error)) {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.inventory.heroEquipment(heroReference ?? ''),

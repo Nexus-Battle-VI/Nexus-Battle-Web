@@ -46,6 +46,7 @@
   },
   "equipment": {
     "title": "Equipment",
+    "loading": "Loading equipment…",
     "of": "{{name}}'s equipment",
     "chooseHero": "Choose a hero to see its slots and stats.",
     "groups": {
@@ -64,6 +65,9 @@
     "equip": "Equip",
     "equipping": "Equipping…",
     "equipFailed": "The item could not be equipped. Try again.",
+    "unequip": "Unequip",
+    "unequipping": "Unequipping…",
+    "unequipFailed": "The item could not be unequipped. Try again.",
     "pickSlotHint": "Choose a slot to see which items fit.",
     "battleLock": {
       "message": "Equipment can't be changed: the hero is in an active battle. You'll be able to change it again once it ends."
@@ -177,6 +181,7 @@
     "emptyFiltered": "No item in your inventory matches the search or filter.",
     "empty": "Your inventory is empty.",
     "unavailableProduct": "Item unavailable",
+    "equippedBadge": "Equipped",
     "viewDetail": "View details",
     "pagination": "Inventory pages",
     "previousPage": "Previous page",
