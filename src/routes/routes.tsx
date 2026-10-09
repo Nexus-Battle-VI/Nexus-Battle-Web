@@ -1,6 +1,7 @@
 import { Navigate, type RouteObject } from 'react-router'
 import { TournamentRegistrationPage } from '@/features/tournament/registration/TournamentRegistrationPage'
 import { TournamentBroadcastPage } from '@/features/tournament/broadcast/TournamentBroadcastPanel'
+import { SpectatorArena } from '@/features/battle-rooms/battle/SpectatorArena'
 
 import { AppLayout } from '@/app/AppLayout'
 import { ChatWidget } from '@/features/chat/ChatWidget'
@@ -229,7 +230,7 @@ export const routes: RouteObject[] = [
     element: (
       <RequireSession>
         <RequireAdministrator>
-          <TournamentBroadcastPage />
+          <TournamentBroadcastPage arena={SpectatorArena} />
         </RequireAdministrator>
       </RequireSession>
     ),

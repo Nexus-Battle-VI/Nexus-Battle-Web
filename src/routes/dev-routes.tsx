@@ -72,6 +72,16 @@ if (import.meta.env.DEV) {
       default: module.HeroSelectionDevPreview,
     })),
   )
+  // EN-029: remaster visual Sprint 3 de "Mi Inventario" ("Warforge Armory" /
+  // "Royal Arsenal"). `/inventory` real vive tras `RequireSession` y necesita
+  // Player-Inventory (compuesto con Catalog) respondiendo de verdad; el
+  // preview intercepta `fetch` para `/api/inventories/me/*` y monta
+  // `PlayerInventoryPage` real, mismo criterio que `ModerationQueueDevPreview`.
+  const PlayerInventoryDevPreviewLazy = lazy(() =>
+    import('@/features/player-inventory/PlayerInventoryDevPreview').then((module) => ({
+      default: module.PlayerInventoryDevPreview,
+    })),
+  )
   const ModerationQueueDevPreviewLazy = lazy(() =>
     import('@/features/admin/comments/dev/ModerationQueueDevPreview').then((module) => ({
       default: module.ModerationQueueDevPreview,
@@ -431,6 +441,15 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <HeroSelectionDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // EN-029: ver comentario junto a `PlayerInventoryDevPreviewLazy` arriba.
+    {
+      path: '__dev/inventory',
+      element: (
+        <Suspense fallback={null}>
+          <PlayerInventoryDevPreviewLazy />
         </Suspense>
       ),
     },

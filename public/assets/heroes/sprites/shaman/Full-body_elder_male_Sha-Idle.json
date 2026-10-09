@@ -1,0 +1,61 @@
+{
+  "character": {
+    "id": "6a4f348b-bd0d-448e-ac0d-9a110a6cc5ab",
+    "name": "Idle",
+    "prompt": "Full-body elder male Shaman with an open rounded silhouette, slim slightly stooped frame, gentle visible face, short gray beard and kind turquoise eyes. Layered moss-green woven cloth (#526b45) dominates his tunic, shoulder drape and knee-length side panels; a narrow light-flax underlayer keeps the face and hands readable. Muted turquoise (#3f8f83) marks two simple woven bands and one attached leaf-shaped clasp. Warm wood brown (#76543a) is confined to a few small fasteners, not a full robe. He stands openly with empty hands and soft dark sandals. No beige-dominant outfit, wooden helmet, bark armor, staff, feather crown or floating leaves.",
+    "size": {
+      "width": 48,
+      "height": 48
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Full-body_elder_male_Sha-Idle.png",
+    "cell_size": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet_size": {
+      "width": 512,
+      "height": 192
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "02a63941-4290-4303-b331-10287596823d",
+        "direction": "south"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "549d8cb2-f534-4875-a4c1-c2dbff725c46",
+        "direction": "south-east"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-07T15:03:12.882226+00:00"
+}

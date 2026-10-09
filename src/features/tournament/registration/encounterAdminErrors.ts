@@ -29,6 +29,16 @@ export const explainAdminError = (error: unknown): string => {
   if (error.status === 403 || error.status === 401)
     return 'Tu cuenta no tiene permiso para administrar justas. No se hizo ningún cambio.'
   switch (code) {
+    case 'ACCEPTANCE_REQUIRED':
+      return 'El servidor aún no confirma el cierre con los dos lados completos. La justa no puede prepararse ni adelantarse.'
+    case 'ACCEPTANCE_CLOSED':
+      return 'La ventana de aceptación no está abierta. Actualiza para consultar el cierre del servidor.'
+    case 'ACCEPTANCE_NOT_OPEN':
+      return 'La ventana de aceptación todavía no se abre. Actualiza para consultar la hora del servidor.'
+    case 'DEPENDENCIES_DELAYED':
+    case 'PREVIOUS_RESULT_PENDING':
+    case 'WINDOW_MISSED':
+      return 'La justa está bloqueada por retraso. Conserva el horario y no tiene ganador por ausencia.'
     case 'PARTICIPANTS_UNRESOLVED':
       return 'Esta justa todavía no tiene a sus dos equipos definidos. No se creó ninguna sala, no se asignaron participantes y no hay ganador.'
     case 'ENCOUNTER_NOT_PREPARED':
@@ -52,12 +62,26 @@ export const explainAdminError = (error: unknown): string => {
       return error.message
   }
 }
-export const explained = async <T>(work: () => Promise<T>): Promise<T> => {
+export const explained = async <T>(
+  work: () => Promise<T>,
+  context: 'admin' | 'player' = 'admin',
+): Promise<T> => {
   try {
     return await work()
   } catch (error: unknown) {
-    if (error instanceof HttpError)
-      throw new HttpError(error.status, explainAdminError(error), error.body)
+    if (error instanceof HttpError) {
+      const message =
+        context === 'player'
+          ? error.status === 401
+            ? 'Tu sesión venció. Inicia sesión y vuelve a consultar tu justa.'
+            : error.status === 403
+              ? 'Tu sesión no pertenece a un integrante de esta justa. No puedes aceptar por otra persona.'
+              : error.status === 503
+                ? 'No se pudo comprobar tu aceptación. Reintenta: se conserva el mismo intento.'
+                : explainAdminError(error)
+          : explainAdminError(error)
+      throw new HttpError(error.status, message, error.body)
+    }
     throw error
   }
 }

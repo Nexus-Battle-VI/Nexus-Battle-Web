@@ -70,21 +70,14 @@ describe('AppLayout', () => {
     expect(screen.getByText('contenido de prueba')).toBeInTheDocument()
   })
 
-  /**
-   * Remaster visual de Mi Cuenta (Sprint 3): `/account*` pasa a usar el mismo
-   * shell ancho sin `max-w-6xl` que ya tenian Commerce/Play/Inventory, para
-   * que el escenario a sangre completa (Guardian's Lodge / Royal Archive)
-   * cubra todo el ancho disponible. Esta prueba demuestra, por comportamiento
-   * observable (la clase real que decide el ancho), los shells que necesitan
-   * espacio horizontal adicional, incluido Auction V2.
-   */
+  /** Verifica los shells especializados de cada modulo remasterizado. */
   it.each([
     ['/account', 'account-main'],
     ['/account/security', 'account-main'],
     ['/ecommerce', 'commerce-main'],
     ['/play', 'br-main'],
     ['/play/rooms/42', 'br-main'],
-    ['/inventory', 'max-w-7xl'],
+    ['/inventory', 'inventory-main'],
     ['/auction', 'max-w-7xl'],
     ['/auction/pending-claims', 'max-w-7xl'],
     ['/__dev/auction/pending-claims', 'max-w-7xl'],

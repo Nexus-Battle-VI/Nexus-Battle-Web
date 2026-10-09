@@ -13,6 +13,32 @@
 .bracket-controls button {
   min-height: 44px;
 }
+.bracket-track-controls,
+.bracket-view-controls,
+.bracket-zoom-controls,
+.bracket-round-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.bracket-track-count {
+  font-variant-numeric: tabular-nums;
+}
+.bracket-guide summary {
+  cursor: pointer;
+  padding-block: 8px;
+}
+.bracket-round-navigation select {
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+}
 .bracket-legend span {
   font-size: 13px;
   font-weight: 600;
@@ -77,7 +103,7 @@
   fill: var(--color-muted);
 }
 .bracket-connectors:has(g[data-highlight='true']) g:not([data-highlight='true']) {
-  opacity: 0.28;
+  opacity: 0.55;
 }
 .bracket-connectors g[data-highlight='true'] .bracket-edge {
   stroke-width: 3.5;
@@ -87,8 +113,14 @@
   top: 15px;
   font-weight: 700;
   text-align: center;
-  padding: 8px;
+  padding: 4px;
   border-bottom: 2px solid var(--color-border);
+}
+.bracket-round-heading > span {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-muted);
 }
 .bracket-track-heading {
   position: absolute;
@@ -110,6 +142,24 @@
 }
 .bracket-node--diagram {
   position: absolute;
+  grid-template-rows: 24px 28px 28px 26px;
+}
+.bracket-node--diagram .bracket-node-heading {
+  padding: 3px 8px;
+  font-size: 12px;
+  line-height: 17px;
+}
+.bracket-node--diagram .bracket-node-side {
+  padding: 3px 8px;
+}
+.bracket-node--diagram .bracket-side-name {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+.bracket-node--diagram .bracket-node-state {
+  padding: 3px 18px 3px 8px;
 }
 .bracket-node:hover {
   border-color: var(--color-brand);
@@ -173,11 +223,11 @@
   border-radius: 2px;
 }
 .bracket-port--winner {
-  top: 138px;
+  top: 82px;
   color: var(--color-brand);
 }
 .bracket-port--loser {
-  top: 160px;
+  top: 94px;
   color: var(--color-muted);
   border-bottom: 1px dashed currentColor;
 }
