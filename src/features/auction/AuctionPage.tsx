@@ -27,10 +27,7 @@ export const AuctionPage = (): React.JSX.Element => {
           <h1 className="auction-title font-semibold text-ink">{t('auction:watchlist.title')}</h1>
           <p className="mt-1 text-sm text-muted">{t('auction:watchlist.subtitle')}</p>
         </div>
-        <Link
-          to="/auction"
-          className="auction-link inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-        >
+        <Link to="/auction" className="auction-link auction-button-tertiary">
           {t('auction:watchlist.viewActive')}
         </Link>
       </header>
@@ -59,7 +56,10 @@ export const AuctionPage = (): React.JSX.Element => {
                 <div className="min-w-0">
                   <AuctionProductSummary productId={auction.productId} />
                 </div>
-                <span className="rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success">
+                <span
+                  className="auction-state-badge rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success"
+                  data-tone="success"
+                >
                   {auction.status}
                 </span>
               </div>
@@ -77,12 +77,12 @@ export const AuctionPage = (): React.JSX.Element => {
                   </dd>
                 </div>
               </dl>
-              <p className="mt-3 text-xs text-muted">
+              <p className="auction-meta mt-3 text-muted">
                 {t('auction:watchlist.since', { date: formatDateTime(followedAt) })}
               </p>
               <Link
                 to={`/auction/${auction.id}`}
-                className="mt-4 inline-flex rounded-md border border-border px-3 py-2 text-sm font-medium text-ink"
+                className="auction-button-secondary mt-4 inline-flex"
               >
                 {t('auction:market.viewDetail')}
               </Link>
@@ -92,7 +92,7 @@ export const AuctionPage = (): React.JSX.Element => {
                 onClick={() => {
                   unfollow(auction.id)
                 }}
-                className="ml-2 mt-4 rounded-md border border-border px-3 py-2 text-sm font-medium text-ink disabled:opacity-50"
+                className="auction-button-tertiary ml-2 mt-4 disabled:opacity-50"
               >
                 {t('auction:watchlist.unfollow')}
               </button>

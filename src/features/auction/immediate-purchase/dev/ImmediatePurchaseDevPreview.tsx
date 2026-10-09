@@ -14,12 +14,12 @@ import { ImmediatePurchaseCard, type ImmediatePurchaseTransaction } from '../Imm
  */
 const SWORD = {
   name: 'Espada Legendaria Nexus',
-  icon: '⚔️',
+  type: 'WEAPON',
   summary: 'Arma mítica · Poder 95 · Rareza Épica',
 }
 const SHIELD = {
   name: 'Escudo Antiguo',
-  icon: '🛡️',
+  type: 'ARMOR',
   summary: 'Escudo raro · Defensa 80 · Rareza Rara',
 }
 const TRANSACTION: ImmediatePurchaseTransaction = {
@@ -52,7 +52,7 @@ export const ImmediatePurchaseDevPreview = (): React.JSX.Element => (
       <h1 className="text-xl font-semibold">Compra inmediata (vista previa)</h1>
       <ThemeToggle />
     </header>
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] items-start gap-6">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,360px),1fr))] items-start gap-6">
       <InteractiveCard />
       <ImmediatePurchaseCard
         product={SWORD}
@@ -98,7 +98,7 @@ export const ImmediatePurchaseDevPreview = (): React.JSX.Element => (
         onBuy={noop}
       />
       <ImmediatePurchaseCard
-        product={{ name: SHIELD.name, icon: SHIELD.icon }}
+        product={{ name: SHIELD.name, type: SHIELD.type }}
         stage="unavailable"
         confirmed={false}
         onConfirmedChange={noop}

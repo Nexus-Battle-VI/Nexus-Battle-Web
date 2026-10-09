@@ -73,7 +73,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
   if (created !== null) {
     return (
       <section aria-labelledby="official-created" className="auction-shell auction-page space-y-4">
-        <div className="rounded-xl border border-success/40 bg-success/10 p-5">
+        <div className="auction-control-card auction-result-card p-5" data-tone="success">
           <div className="flex items-center gap-3">
             <ShieldCheck aria-hidden="true" className="size-6 text-success" />
             <h1 id="official-created" className="text-xl font-semibold text-ink">
@@ -93,7 +93,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
             })}
           </p>
         </div>
-        <Button variant="secondary" onClick={reset}>
+        <Button className="auction-button-secondary" variant="secondary" onClick={reset}>
           {t('auction:official.another')}
         </Button>
       </section>
@@ -211,7 +211,11 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
               {describeAuctionError(mutation.error)}
             </p>
           )}
-          <Button type="submit" loading={mutation.isPending} className="mt-4 w-full sm:w-auto">
+          <Button
+            type="submit"
+            loading={mutation.isPending}
+            className="auction-button-primary mt-4 w-full sm:w-auto"
+          >
             {t('auction:official.submit')}
           </Button>
         </div>

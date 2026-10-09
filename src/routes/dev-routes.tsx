@@ -148,6 +148,21 @@ if (import.meta.env.DEV) {
       default: module.AuctionDetailDevPreview,
     })),
   )
+  const AuctionActivityDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionOperationsDevPreviews').then((module) => ({
+      default: module.AuctionActivityDevPreview,
+    })),
+  )
+  const AuctionPublishDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionOperationsDevPreviews').then((module) => ({
+      default: module.AuctionPublishDevPreview,
+    })),
+  )
+  const AuctionOfficialPublishDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionOperationsDevPreviews').then((module) => ({
+      default: module.AuctionOfficialPublishDevPreview,
+    })),
+  )
   // Remaster visual E-commerce Sprint 3 (4a pasada): Catalog no tiene
   // productos publicados en el entorno local, asi que este preview monta la
   // Product Card/ProductDetail REALES con fixtures locales (sin red) para
@@ -315,6 +330,30 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <AutoBidDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/activity',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionActivityDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/publish',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionPublishDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/publish-official',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionOfficialPublishDevPreviewLazy />
         </Suspense>
       ),
     },

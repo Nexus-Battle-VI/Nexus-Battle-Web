@@ -43,7 +43,8 @@ const ActiveAuctionResult = ({ auction }: { auction: AuctionPublication }): Reac
   return (
     <section
       aria-labelledby="auction-created"
-      className="rounded-xl border border-success/40 bg-success/10 p-5"
+      className="auction-control-card auction-result-card p-5"
+      data-tone="success"
     >
       <div className="flex items-center gap-3">
         <PackageCheck aria-hidden="true" className="size-6 text-success" />
@@ -150,7 +151,11 @@ export const PublishAuctionPage = (): React.JSX.Element => {
       {created !== null && (
         <>
           <ActiveAuctionResult auction={created} />
-          <Button className="self-start" variant="secondary" onClick={reset}>
+          <Button
+            className="auction-button-secondary self-start"
+            variant="secondary"
+            onClick={reset}
+          >
             {t('auction:publish.another')}
           </Button>
         </>
@@ -333,7 +338,11 @@ export const PublishAuctionPage = (): React.JSX.Element => {
                 {describeAuctionError(mutation.error)}
               </p>
             )}
-            <Button type="submit" loading={mutation.isPending} className="mt-5 w-full">
+            <Button
+              type="submit"
+              loading={mutation.isPending}
+              className="auction-button-primary mt-5 w-full"
+            >
               {t('auction:publish.submit')}
             </Button>
             <p className="mt-3 text-xs text-muted">{t('auction:publish.revalidate')}</p>
