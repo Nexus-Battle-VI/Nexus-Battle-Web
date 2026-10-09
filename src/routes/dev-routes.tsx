@@ -159,17 +159,17 @@ if (import.meta.env.DEV) {
     })),
   )
   const AuctionActivityDevPreviewLazy = lazy(() =>
-    import('@/features/auction/dev/AuctionOperationsDevPreviews').then((module) => ({
+    import('@/features/auction/AuctionOperationsDevPreviews').then((module) => ({
       default: module.AuctionActivityDevPreview,
     })),
   )
   const AuctionPublishDevPreviewLazy = lazy(() =>
-    import('@/features/auction/dev/AuctionOperationsDevPreviews').then((module) => ({
+    import('@/features/auction/AuctionOperationsDevPreviews').then((module) => ({
       default: module.AuctionPublishDevPreview,
     })),
   )
   const AuctionOfficialPublishDevPreviewLazy = lazy(() =>
-    import('@/features/auction/dev/AuctionOperationsDevPreviews').then((module) => ({
+    import('@/features/auction/AuctionOperationsDevPreviews').then((module) => ({
       default: module.AuctionOfficialPublishDevPreview,
     })),
   )

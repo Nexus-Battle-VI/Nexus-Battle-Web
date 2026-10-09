@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 
 import { useSession } from '@/shared/session'
-import { AuctionActivityPage } from '../activity/AuctionActivityPage'
-import { OfficialAuctionPublisher } from '../OfficialAuctionPublisher'
-import { PublishAuctionPage } from '../PublishAuctionPage'
-import { AuctionThemeDevToolbar } from './AuctionThemeDevToolbar'
+import { AuctionActivityPage } from './activity/AuctionActivityPage'
+import { AuctionThemeDevToolbar } from './dev/AuctionThemeDevToolbar'
+import { OfficialAuctionPublisher } from './OfficialAuctionPublisher'
+import { PublishAuctionPage } from './PublishAuctionPage'
 
 const jsonResponse = (body: unknown): Response =>
   new Response(JSON.stringify(body), {
