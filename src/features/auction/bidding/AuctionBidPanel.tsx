@@ -16,6 +16,8 @@ interface AuctionBidPanelProps {
   readonly product: {
     readonly name: string
     readonly description?: string
+    readonly imageUrl?: string
+    readonly type?: string
   }
   readonly subject: string | null
   readonly availableCredits?: number
@@ -119,7 +121,8 @@ export const AuctionBidPanel = ({
     <BidRegistrationCard
       product={{
         name: product.name,
-        icon: '⚔️',
+        ...(product.imageUrl === undefined ? {} : { imageUrl: product.imageUrl }),
+        ...(product.type === undefined ? {} : { type: product.type }),
         ...(product.description === undefined ? {} : { summary: product.description }),
       }}
       stage={stage}

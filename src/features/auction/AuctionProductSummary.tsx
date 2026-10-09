@@ -28,7 +28,7 @@ export const AuctionProductSummary = ({
     return (
       <div>
         <p className="font-semibold text-ink">{t('auction:claims.productFallback')}</p>
-        <p className="break-all text-xs text-muted">{productId}</p>
+        <p className="auction-meta break-all text-muted">{productId}</p>
       </div>
     )
   }

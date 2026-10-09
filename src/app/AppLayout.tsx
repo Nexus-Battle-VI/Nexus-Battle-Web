@@ -28,6 +28,12 @@ export const AppLayout = (): React.JSX.Element => {
   // Archive) necesita ocupar todo el ancho disponible. `/account` cubre el
   // shell y, por prefijo, cada seccion hija (`/account/security`, etc.).
   const account = pathname === '/account' || pathname.startsWith('/account/')
+  // Auction V2 necesita el ancho 7xl para sostener la cuadricula de cuatro
+  // Pending Claims sin comprimir sus superficies por debajo de 280 px.
+  const auction =
+    pathname === '/auction' ||
+    pathname.startsWith('/auction/') ||
+    pathname.startsWith('/__dev/auction/')
   return (
     <div className={commerce ? 'commerce-layout min-h-dvh' : 'min-h-dvh'}>
       <AppHeader />
@@ -42,7 +48,9 @@ export const AppLayout = (): React.JSX.Element => {
                 ? 'account-main mx-auto w-full px-3 py-4 sm:px-4'
                 : inventory
                   ? 'inventory-main mx-auto w-full px-3 py-4 sm:px-4'
-                  : 'mx-auto max-w-6xl px-4 py-8'
+                  : auction
+                    ? 'mx-auto max-w-7xl px-4 py-8'
+                    : 'mx-auto max-w-6xl px-4 py-8'
         }
       >
         <Outlet />

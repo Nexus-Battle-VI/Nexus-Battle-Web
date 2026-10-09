@@ -250,15 +250,17 @@ export const AuctionDetailPage = (): React.JSX.Element => {
       <div className="auction-detail-stack mt-4">
         {notFound ? (
           <Card
+            className="auction-control-card auction-detail-state-card"
             title={t('auction:detail.notFound.title')}
             description={t('auction:detail.notFound.description')}
           >
-            <Link to="/auction" className={linkClass}>
+            <Link to="/auction" className={`${linkClass} auction-button-secondary`}>
               {t('auction:detail.notFound.backToMarketplace')}
             </Link>
           </Card>
         ) : forbidden ? (
           <Card
+            className="auction-control-card auction-detail-state-card"
             title={t('auction:detail.forbidden.title')}
             description={t('auction:detail.forbidden.description')}
           >
@@ -288,7 +290,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                       </div>
                     )}
                   </div>
-                  <Link to="/auction" className={linkClass}>
+                  <Link to="/auction" className={`${linkClass} auction-button-secondary`}>
                     {t('auction:detail.notFound.backToMarketplace')}
                   </Link>
                 </header>
@@ -363,12 +365,19 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                 </section>
 
                 <div className="auction-detail-actions">
-                  <Button variant="secondary" onClick={() => void shareAuction()}>
+                  <Button
+                    className="auction-button-tertiary"
+                    variant="secondary"
+                    onClick={() => void shareAuction()}
+                  >
                     {t('auction:detail.share')}
                   </Button>
                   {auction.status === 'ACTIVE' && !isSeller && (
                     <>
                       <Button
+                        className={
+                          isFollowing ? 'auction-button-tertiary' : 'auction-button-secondary'
+                        }
                         variant={isFollowing ? 'secondary' : 'primary'}
                         loading={isSavingFollow}
                         onClick={() => {
@@ -415,6 +424,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                       cancellation === null &&
                       auction.status !== 'ACTIVE' ? (
                         <Card
+                          className="auction-control-card auction-detail-state-card"
                           title={t('auction:detail.notActive')}
                           description={t('auction:detail.currentStatus', {
                             status: auction.status,
@@ -424,27 +434,25 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                         </Card>
                       ) : transaction === null && isSeller ? (
                         auction.publisherType === 'PLAYER' ? (
-                          <Card
-                            title={t('auction:detail.ownTitle')}
-                            description={t('auction:detail.ownDescription')}
-                          >
-                            <AuctionCancellationCard
-                              publicationFeeCredits={auction.publicationFeeCredits}
-                              bidCount={auction.bidCount}
-                              loading={cancellationMutation.isPending}
-                              confirmation={cancellation}
-                              error={
-                                cancellationMutation.isError
-                                  ? describeAuctionCancellationFailure(cancellationMutation.error)
-                                  : null
-                              }
-                              onCancel={() => {
-                                cancellationMutation.mutate(newIdempotencyKey())
-                              }}
-                            />
-                          </Card>
+                          <AuctionCancellationCard
+                            contextTitle={t('auction:detail.ownTitle')}
+                            contextDescription={t('auction:detail.ownDescription')}
+                            publicationFeeCredits={auction.publicationFeeCredits}
+                            bidCount={auction.bidCount}
+                            loading={cancellationMutation.isPending}
+                            confirmation={cancellation}
+                            error={
+                              cancellationMutation.isError
+                                ? describeAuctionCancellationFailure(cancellationMutation.error)
+                                : null
+                            }
+                            onCancel={() => {
+                              cancellationMutation.mutate(newIdempotencyKey())
+                            }}
+                          />
                         ) : (
                           <Card
+                            className="auction-control-card auction-detail-state-card"
                             title={t('auction:detail.ownTitle')}
                             description={t('auction:detail.ownDescription')}
                           >
@@ -458,9 +466,8 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                             <ImmediatePurchaseCard
                               product={{
                                 name: product.name,
-                                // El catalogo real no trae un glifo corto por producto
-                                // (a diferencia del mock de Figma): se usa uno generico.
-                                icon: '🎁',
+                                imageUrl: product.imageUrl,
+                                type: product.type,
                                 summary: product.description,
                               }}
                               stage={purchaseStage}
@@ -506,7 +513,12 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                       product !== undefined && (
                         <AuctionBidPanel
                           auction={auction}
-                          product={{ name: product.name, description: product.description }}
+                          product={{
+                            name: product.name,
+                            description: product.description,
+                            imageUrl: product.imageUrl,
+                            type: product.type,
+                          }}
                           subject={subject}
                           {...(availableCredits === undefined ? {} : { availableCredits })}
                         />

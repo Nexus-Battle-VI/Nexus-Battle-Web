@@ -3,13 +3,14 @@ import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
-import { Clock, Package, RefreshCw } from '@/components/ui/icons'
+import { Clock, RefreshCw } from '@/components/ui/icons'
 import { formatDateTime } from '@/lib/format'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
 import { queryKeys } from '@/shared/query-keys'
 import type { PendingClaim } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { formatInteger } from '@/shared/i18n/format'
+import { AuctionProductIdentity } from '../AuctionProductIdentity'
 
 /** `2500` -> `2.500 créditos`. Misma duplicacion local que `auto-bid`/`bidding`: una feature no importa de otra. */
 const formatCredits = (amount: number): string => {
@@ -100,10 +101,10 @@ export const PendingClaimCard = ({
   return (
     <li>
       <article
-        className="auction-claim-card flex h-full flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
+        className="auction-claim-card flex h-full flex-col rounded-lg border border-border bg-surface-raised"
         aria-labelledby={`pending-claim-${claim.auctionId}-name`}
       >
-        <div className="flex items-start gap-3">
+        <div className="auction-claim-header">
           {displayStatus === 'PENDING' ? (
             <input
               type="checkbox"
@@ -112,32 +113,32 @@ export const PendingClaimCard = ({
               onChange={() => {
                 onToggleSelected(claim.auctionId)
               }}
-              className="mt-1 size-4 shrink-0 accent-[var(--color-brand)]"
+              className="auction-claim-checkbox size-4 shrink-0 accent-[var(--color-brand)]"
             />
           ) : (
             // Reserva el mismo espacio que ocuparia el checkbox: sin esto, el
             // icono y el nombre se corren a la izquierda en las tarjetas sin
             // checkbox y desalinean toda la fila respecto a las que si lo tienen.
-            <span aria-hidden="true" className="mt-1 size-4 shrink-0" />
+            <span aria-hidden="true" className="auction-claim-checkbox size-4 shrink-0" />
           )}
-          <div
-            aria-hidden="true"
-            className="flex size-10 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand"
-          >
-            <Package className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
+          <AuctionProductIdentity
+            name={name}
+            imageUrl={product?.imageUrl}
+            type={product?.type}
+            className="auction-claim-identity"
+          />
+          <div className="auction-claim-product min-w-0 flex-1">
             <h3
               id={`pending-claim-${claim.auctionId}-name`}
-              className="truncate text-sm font-semibold text-ink"
+              className="auction-claim-title text-sm font-semibold text-ink"
               title={name}
             >
               {name}
             </h3>
-            <div className="mt-1">
+            <div className="auction-claim-status">
               <PendingClaimStatusBadge status={displayStatus} />
             </div>
-            <p className="mt-1 truncate text-xs text-muted">
+            <p className="auction-claim-meta truncate text-xs text-muted">
               {t('auction:claims.meta', {
                 type:
                   product === undefined
@@ -149,14 +150,14 @@ export const PendingClaimCard = ({
           </div>
         </div>
 
-        <p className="text-sm font-semibold tabular-nums text-ink">
+        <p className="auction-claim-value text-sm font-semibold tabular-nums text-ink">
           {formatCredits(claim.finalAmountCredits)}
         </p>
 
         {displayStatus !== 'CLAIMED' && (
           <p
             className={clsx(
-              'flex items-center gap-1.5 text-xs',
+              'auction-claim-expiration flex items-center gap-1.5 text-xs',
               urgent ? 'font-semibold text-danger' : 'text-muted',
             )}
           >
@@ -173,11 +174,11 @@ export const PendingClaimCard = ({
           </p>
         )}
 
-        <div className="mt-auto pt-1">
+        <div className="auction-claim-action mt-auto">
           {displayStatus === 'PENDING' && (
             <Button
               variant="primary"
-              className="w-full"
+              className="auction-button-primary w-full"
               disabled={claiming}
               aria-busy={claiming}
               onClick={() => {

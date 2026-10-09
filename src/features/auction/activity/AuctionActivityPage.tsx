@@ -70,7 +70,7 @@ const ActivityPagination = ({
         onClick={() => {
           onPageChange(page - 1)
         }}
-        className={linkClass}
+        className={`${linkClass} auction-button-utility`}
       >
         {t('auction:previous')}
       </button>
@@ -83,7 +83,7 @@ const ActivityPagination = ({
         onClick={() => {
           onPageChange(page + 1)
         }}
-        className={linkClass}
+        className={`${linkClass} auction-button-utility`}
       >
         {t('auction:next')}
       </button>
@@ -96,6 +96,12 @@ const transactionLabel = (type: AuctionTransactionType, t: (key: string) => stri
 
 const participationLabel = (status: BidParticipationStatus, t: (key: string) => string): string =>
   t(`auction:activity.bids.status.${status}`)
+
+/** Tono visual del resultado de participacion, sin alterar el estado de dominio. */
+const participationTone = (status: BidParticipationStatus): 'success' | 'warning' | 'danger' => {
+  if (status === 'LEADING' || status === 'WON') return 'success'
+  return status === 'OUTBID' ? 'warning' : 'danger'
+}
 
 /** Panel unificado de HU-89; enlaza HU-68/HU-69 y no duplica sus datos. */
 export const AuctionActivityPage = (): React.JSX.Element => {
@@ -141,10 +147,16 @@ export const AuctionActivityPage = (): React.JSX.Element => {
           aria-label={t('auction:activity.related')}
           className="auction-nav flex flex-wrap gap-2"
         >
-          <Link className={`${linkClass} auction-link`} to="/auction/watchlist">
+          <Link
+            className={`${linkClass} auction-link auction-button-tertiary`}
+            to="/auction/watchlist"
+          >
             {t('auction:activity.watchlist')}
           </Link>
-          <Link className={`${linkClass} auction-link`} to="/auction/pending-claims">
+          <Link
+            className={`${linkClass} auction-link auction-button-tertiary`}
+            to="/auction/pending-claims"
+          >
             {t('auction:activity.pendingClaims')}
           </Link>
         </nav>
@@ -165,7 +177,7 @@ export const AuctionActivityPage = (): React.JSX.Element => {
               {owned.data?.items.map((auction) => (
                 <li
                   key={auction.auctionId}
-                  className="rounded-lg border border-border bg-surface-raised p-4"
+                  className="auction-card auction-activity-lot-card rounded-lg border border-border bg-surface-raised p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <AuctionProductSummary productId={auction.productId} />
@@ -196,11 +208,17 @@ export const AuctionActivityPage = (): React.JSX.Element => {
                     </div>
                   </dl>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Link className={linkClass} to={`/auction/${auction.auctionId}`}>
+                    <Link
+                      className={`${linkClass} auction-button-secondary`}
+                      to={`/auction/${auction.auctionId}`}
+                    >
                       {t('auction:market.viewDetail')}
                     </Link>
                     {auction.actions.cancel && (
-                      <Link className={linkClass} to={`/auction/${auction.auctionId}?cancel=1`}>
+                      <Link
+                        className={`${linkClass} auction-button-destructive`}
+                        to={`/auction/${auction.auctionId}?cancel=1`}
+                      >
                         {t('auction:activity.owned.cancel')}
                       </Link>
                     )}
@@ -231,11 +249,14 @@ export const AuctionActivityPage = (): React.JSX.Element => {
               {bids.data?.items.map((bid) => (
                 <li
                   key={bid.auctionId}
-                  className="rounded-lg border border-border bg-surface-raised p-4"
+                  className="auction-card auction-activity-lot-card rounded-lg border border-border bg-surface-raised p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <AuctionProductSummary productId={bid.productId} />
-                    <span className="rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold text-brand">
+                    <span
+                      className="auction-state-badge rounded-full bg-brand/10 px-2.5 py-1 text-xs font-semibold text-brand"
+                      data-tone={participationTone(bid.participationStatus)}
+                    >
                       {participationLabel(bid.participationStatus, t)}
                     </span>
                   </div>
@@ -255,7 +276,10 @@ export const AuctionActivityPage = (): React.JSX.Element => {
                       </dd>
                     </div>
                   </dl>
-                  <Link className={`${linkClass} mt-3`} to={`/auction/${bid.auctionId}`}>
+                  <Link
+                    className={`${linkClass} auction-button-secondary mt-3`}
+                    to={`/auction/${bid.auctionId}`}
+                  >
                     {t('auction:market.viewDetail')}
                   </Link>
                 </li>
@@ -288,7 +312,7 @@ export const AuctionActivityPage = (): React.JSX.Element => {
                 >
                   <div>
                     <p className="font-medium text-ink">{transactionLabel(transaction.type, t)}</p>
-                    <p className="text-xs text-muted">
+                    <p className="auction-meta text-muted">
                       {formatDateTime(transaction.occurredAt)} · {transaction.reference}
                     </p>
                   </div>

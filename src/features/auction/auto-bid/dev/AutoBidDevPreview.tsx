@@ -14,7 +14,7 @@ export const AutoBidDevPreview = (): React.JSX.Element => (
       </div>
       <ThemeToggle />
     </header>
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] items-start gap-6">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,360px),1fr))] items-start gap-6">
       <AutoBidConfigCard stage="ready" availableCredits={5000} onConfigure={noop} />
       <AutoBidConfigCard stage="processing" />
       <AutoBidConfigCard

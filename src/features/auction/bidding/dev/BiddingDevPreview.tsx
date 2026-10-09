@@ -5,7 +5,7 @@ import { BidRegistrationCard } from '../BidRegistrationCard'
 
 const PRODUCT = {
   name: 'Espada Legendaria Nexus',
-  icon: '⚔️',
+  type: 'WEAPON',
   summary: 'Arma mítica · Poder 95 · Rareza Épica',
 }
 
@@ -20,7 +20,7 @@ export const BiddingDevPreview = (): React.JSX.Element => (
       </div>
       <ThemeToggle />
     </header>
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] items-start gap-6">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,360px),1fr))] items-start gap-6">
       <BidRegistrationCard
         product={PRODUCT}
         stage="ready"
@@ -58,7 +58,7 @@ export const BiddingDevPreview = (): React.JSX.Element => (
       />
       <BidRegistrationCard product={PRODUCT} stage="limit" minimumBidCredits={100} onClose={noop} />
       <BidRegistrationCard
-        product={{ ...PRODUCT, icon: '📪' }}
+        product={{ ...PRODUCT, type: 'COLLECTIBLE' }}
         stage="outbid"
         minimumBidCredits={100}
         bidCredits={1600}

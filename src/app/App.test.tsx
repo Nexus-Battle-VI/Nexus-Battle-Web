@@ -70,15 +70,7 @@ describe('AppLayout', () => {
     expect(screen.getByText('contenido de prueba')).toBeInTheDocument()
   })
 
-  /**
-   * Remaster visual de Mi Cuenta y Mi Inventario (Sprint 3): `/account*` y
-   * `/inventory` pasan a usar un shell ancho a sangre completa propio
-   * (`account-main`/`inventory-main`), igual criterio que Commerce/Play, para
-   * que su escenario (Guardian's Lodge / Royal Archive; Warforge Armory /
-   * Royal Arsenal) cubra todo el ancho disponible. Esta prueba demuestra, por
-   * comportamiento observable (la clase real que decide el ancho), que las
-   * demas rutas conservan exactamente su tratamiento previo.
-   */
+  /** Verifica los shells especializados de cada modulo remasterizado. */
   it.each([
     ['/account', 'account-main'],
     ['/account/security', 'account-main'],
@@ -86,6 +78,9 @@ describe('AppLayout', () => {
     ['/play', 'br-main'],
     ['/play/rooms/42', 'br-main'],
     ['/inventory', 'inventory-main'],
+    ['/auction', 'max-w-7xl'],
+    ['/auction/pending-claims', 'max-w-7xl'],
+    ['/__dev/auction/pending-claims', 'max-w-7xl'],
     ['/catalog', 'max-w-6xl'],
   ])('asigna el shell esperado para %s', (path, expectedClass) => {
     renderWithProviders(

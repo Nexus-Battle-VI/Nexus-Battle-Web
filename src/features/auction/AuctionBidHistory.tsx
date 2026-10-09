@@ -79,6 +79,7 @@ export const AuctionBidHistory = ({ auctionId }: AuctionBidHistoryProps): React.
           className="flex items-center gap-3"
         >
           <Button
+            className="auction-button-utility"
             variant="secondary"
             disabled={page === 1}
             onClick={() => {
@@ -91,6 +92,7 @@ export const AuctionBidHistory = ({ auctionId }: AuctionBidHistoryProps): React.
             {t('auction:market.pageOf', { page: String(page), pages: String(totalPages) })}
           </span>
           <Button
+            className="auction-button-utility"
             variant="secondary"
             disabled={page >= totalPages}
             onClick={() => {

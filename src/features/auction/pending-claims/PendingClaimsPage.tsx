@@ -243,7 +243,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
         emptyMessage={t('auction:claims.empty')}
       >
         {pendingClaims.length > 0 && (
-          <div className="auction-status-strip mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
+          <div className="auction-status-strip auction-control-card auction-toolbar-shell mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface p-3">
             <label className="flex items-center gap-2 text-sm text-ink">
               <input
                 type="checkbox"
@@ -253,7 +253,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
               />
               {t('auction:claims.selectAll')}
             </label>
-            <span className="text-xs text-muted">
+            <span className="auction-meta text-muted">
               {t('auction:claims.selectedCount', {
                 selected: String(selectedIds.size),
                 total: String(pendingClaims.length),
@@ -261,7 +261,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
             </span>
             <Button
               variant="primary"
-              className="ml-auto"
+              className="auction-button-primary ml-auto"
               disabled={selectedIds.size === 0}
               onClick={openBatchConfirmation}
             >
@@ -282,6 +282,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="primary"
+                className="auction-button-primary"
                 loading={batchMutation.isPending}
                 onClick={handleConfirmBatch}
               >
@@ -289,6 +290,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
               </Button>
               <Button
                 variant="secondary"
+                className="auction-button-secondary"
                 disabled={batchMutation.isPending}
                 onClick={() => {
                   setBatchStep('idle')
@@ -306,7 +308,7 @@ export const PendingClaimsPage = (): React.JSX.Element => {
           </p>
         )}
 
-        <ul className="auction-claims-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <ul className="auction-claims-grid grid gap-4">
           {claims.map((claim) => (
             <PendingClaimCard
               key={claim.auctionId}

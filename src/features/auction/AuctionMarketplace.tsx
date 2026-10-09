@@ -138,15 +138,12 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
             {canBuyNow && (
               <Link
                 to={`/auction/${auction.id}?buyNow=1`}
-                className={`${linkClass} bg-brand text-brand-ink hover:opacity-90`}
+                className={`${linkClass} auction-button-primary`}
               >
                 {t('auction:market.buyNowAction')}
               </Link>
             )}
-            <Link
-              to={`/auction/${auction.id}`}
-              className={`${linkClass} border border-border text-ink hover:bg-surface-raised`}
-            >
+            <Link to={`/auction/${auction.id}`} className={`${linkClass} auction-button-secondary`}>
               {t('auction:market.viewDetail')}
             </Link>
           </div>
@@ -364,29 +361,17 @@ export const AuctionMarketplace = (): React.JSX.Element => {
          * sirve moverse a su seguimiento o a publicar la suya.
          */}
         <nav aria-label={t('auction:market.otherViews')} className="auction-nav">
-          <Link
-            to="/auction/activity"
-            className="auction-link inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-          >
+          <Link to="/auction/activity" className="auction-link auction-button-tertiary">
             {t('auction:market.myActivity')}
           </Link>
-          <Link
-            to="/auction/watchlist"
-            className="auction-link inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-          >
+          <Link to="/auction/watchlist" className="auction-link auction-button-tertiary">
             {t('auction:market.myFollowed')}
           </Link>
-          <Link
-            to="/auction/publish"
-            className="auction-link inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-          >
+          <Link to="/auction/publish" className="auction-link auction-button-primary">
             {t('auction:market.publishMine')}
           </Link>
           {canPublishOfficialAuctions(roles) && (
-            <Link
-              to="/auction/publish-official"
-              className="auction-link inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-            >
+            <Link to="/auction/publish-official" className="auction-link auction-button-primary">
               {t('auction:market.publishOfficial')}
             </Link>
           )}
@@ -395,7 +380,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
       <div
         role="group"
         aria-label={t('auction:market.filters')}
-        className="auction-filters space-y-3 rounded-lg border border-border bg-surface-raised p-4"
+        className="auction-filters auction-control-card space-y-3 rounded-lg border border-border bg-surface-raised p-4"
       >
         <div className="flex flex-wrap items-end gap-3">
           <div ref={comboboxRef} className="relative w-full sm:max-w-md">
@@ -499,7 +484,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
             )}
           </div>
           {filters.search !== '' && (
-            <Button variant="secondary" onClick={clearSearch}>
+            <Button className="auction-button-utility" variant="secondary" onClick={clearSearch}>
               {t('auction:market.clearSearch')}
             </Button>
           )}
@@ -572,6 +557,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
         </div>
         {hasActiveFilters && (
           <Button
+            className="auction-button-utility"
             variant="secondary"
             onClick={() => {
               setInputValue('')
@@ -598,6 +584,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
         {query.data !== undefined && query.data.total > pageSize && (
           <nav aria-label={t('auction:market.pagination')} className="mt-4 flex items-center gap-3">
             <Button
+              className="auction-button-utility"
               variant="secondary"
               disabled={page === 1}
               onClick={() => {
@@ -610,6 +597,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
               {t('auction:market.pageOf', { page: String(page), pages: String(totalPages) })}
             </span>
             <Button
+              className="auction-button-utility"
               variant="secondary"
               disabled={page >= totalPages}
               onClick={() => {
