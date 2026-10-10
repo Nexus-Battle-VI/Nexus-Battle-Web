@@ -44,6 +44,7 @@ import { ProductManagementPage } from '@/features/admin/products/ProductManageme
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModelAdminPage } from '@/features/admin/chatbot/ModelAdminPage'
+import { AuctionMetricsPage } from '@/features/admin/auction-metrics/AuctionMetricsPage'
 import { AnalyticsPage } from '@/features/admin/chatbot/AnalyticsPage'
 import { KnowledgeAdminPage } from '@/features/admin/chatbot/KnowledgeAdminPage'
 import { TicketsAdminPage } from '@/features/admin/chatbot/TicketsAdminPage'
@@ -172,6 +173,13 @@ export const ADMIN_NAVIGATION: readonly NavigationItem[] = [
     path: '/admin/roles',
     label: 'Gestionar roles',
     requiredPrimaryRole: 'SUPER_ADMINISTRATOR',
+  },
+  // HU-91.6 (Management #581): metricas operativas y comerciales de Subasta. Va en el
+  // desplegable "Administrador"; Auction exige ADMINISTRATOR y responde 403 por su cuenta.
+  {
+    path: '/admin/auction-metrics',
+    label: 'Métricas de subasta',
+    requiredPrimaryRole: 'ADMINISTRATOR',
   },
   // HU-41.10 (Management#312): acceso visible a la cola de moderacion para
   // Moderador, Administrador y Super Administrador -nunca Jugador-. Antes
@@ -396,6 +404,15 @@ export const routes: RouteObject[] = [
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.
       { path: 'account', element: <AccountPage />, children: accountSectionRoutes },
+      // HU-91.6: metricas de subasta. Guarda de presentacion; Auction valida el rol.
+      {
+        path: 'admin/auction-metrics',
+        element: (
+          <RequireAdministrator>
+            <AuctionMetricsPage />
+          </RequireAdministrator>
+        ),
+      },
       {
         path: 'admin/roles',
         element: (

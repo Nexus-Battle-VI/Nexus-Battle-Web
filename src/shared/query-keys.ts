@@ -26,6 +26,16 @@ export const queryKeys = {
       readonly lifecycleStatus: string | null
     }) => ['admin', 'products', params] as const,
     chatbotModels: ['admin', 'chatbot', 'models'] as const,
+    /**
+     * Consolidado de metricas de subasta (HU-91.6). Lleva el periodo y la granularidad en la
+     * clave porque ambos viajan al servicio: cada combinacion es una consulta distinta.
+     */
+    auctionMetricsSummary: (params: {
+      readonly from: string
+      readonly to: string
+      readonly granularity: string
+      readonly limit: number
+    }) => ['admin', 'auction-metrics', 'summary', params] as const,
     chatbotAnalytics: ['admin', 'chatbot', 'analytics'] as const,
     chatbotKnowledge: ['admin', 'chatbot', 'knowledge'] as const,
     chatbotTickets: ['admin', 'chatbot', 'tickets'] as const,

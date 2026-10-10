@@ -1,0 +1,214 @@
+{
+  "title": "Auction metrics",
+  "subtitle": "Operational and commercial indicators for player auctions (credits) and official auctions (real money). Figures for each currency are always shown separately.",
+  "breadcrumb": {
+    "home": "Home",
+    "auctions": "Auctions"
+  },
+  "filters": {
+    "group": "Query period",
+    "range": "Range",
+    "preset": {
+      "30": "Last 30 days",
+      "7": "Last 7 days",
+      "90": "Last 90 days",
+      "custom": "Custom"
+    },
+    "from": "From",
+    "to": "To",
+    "apply": "Apply",
+    "refresh": "Refresh",
+    "invalidPeriod": "The \"From\" date must be earlier than \"To\" and the range cannot exceed 366 days.",
+    "period": "Period",
+    "asOf": "Data as of",
+    "rangeSameYear": "{{from}} – {{to}}, {{year}}",
+    "rangeCrossYear": "{{from}}, {{fromYear}} – {{to}}, {{toYear}}"
+  },
+  "badges": {
+    "realMoney": "Real money",
+    "credits": "Credits",
+    "unavailable": "Unavailable",
+    "creditsSalePrice": "Credits · sale price",
+    "realMoneyListPrice": "Real money · list price"
+  },
+  "volume": {
+    "title": "Volume and success rate",
+    "published": "Published auctions",
+    "publishedFoot": "Player auctions, in the period",
+    "closed": "Closed auctions",
+    "closedFoot": "{{active}} active · {{awaiting}} pending closure",
+    "successRate": "Success rate",
+    "successRateFoot": "{{numerator}} of {{denominator}} closed auctions ended in a sale",
+    "successRateEmpty": "No closed auctions",
+    "successRateMeter": "Success rate {{value}}",
+    "claims": "Claims",
+    "claimsFoot": "{{claimed}} claimed · {{pending}} pending · {{expired}} expired",
+    "outcomeTitle": "How the {{total}} closed auctions ended",
+    "withWinner": "With a winner (closed by time)",
+    "soldByBuyNow": "Sold by immediate purchase",
+    "withoutBids": "Without bids",
+    "settlementFailed": "Settlement failed (terminal)",
+    "cancelled": "Cancelled",
+    "cancelledNote": "not counted in the rate",
+    "officialTitle": "Official auctions",
+    "officialFoot": "published · {{official}} OFFICIAL · {{premium}} PREMIUM",
+    "officialRateUnavailable": "Success rate: unavailable"
+  },
+  "trends": {
+    "title": "Closing time and trend",
+    "average": "Average closing time",
+    "averageFoot": "Median {{median}} · P90 {{p90}}",
+    "byReason": "By closing reason",
+    "reason": {
+      "withWinner": "With a winner",
+      "withoutBids": "Without bids",
+      "buyNow": "Immediate purchase"
+    },
+    "lag": "Settlement lag",
+    "lagAverage": "Average",
+    "lagP90": "P90",
+    "lagSample": "Sample",
+    "cardTitle": {
+      "WEEK": "Trend by week",
+      "DAY": "Trend by day",
+      "MONTH": "Trend by month"
+    },
+    "cardDescription": {
+      "WEEK": "Player auctions per week.",
+      "DAY": "Player auctions per day.",
+      "MONTH": "Player auctions per month."
+    },
+    "groupBy": "Group by",
+    "granularity": {
+      "WEEK": "Week",
+      "DAY": "Day",
+      "MONTH": "Month"
+    },
+    "legend": {
+      "published": "Published",
+      "sold": "Sold",
+      "withoutBids": "Without bids"
+    },
+    "chartLabel": {
+      "WEEK": "Weekly trend of published, sold and bidless auctions. The same data is in the table below.",
+      "DAY": "Daily trend of published, sold and bidless auctions. The same data is in the table below.",
+      "MONTH": "Monthly trend of published, sold and bidless auctions. The same data is in the table below."
+    },
+    "success": "Success {{value}}",
+    "viewAsTable": "View as table",
+    "bucketColumn": {
+      "WEEK": "Week",
+      "DAY": "Day",
+      "MONTH": "Month"
+    },
+    "columns": {
+      "published": "Published",
+      "withWinner": "With a winner",
+      "buyNow": "Immediate purchase",
+      "withoutBids": "Without bids",
+      "cancelled": "Cancelled",
+      "success": "Success",
+      "averageClosing": "Avg. closing"
+    },
+    "total": "Total",
+    "tableNote": {
+      "WEEK": "The sum of the weeks matches the totals in \"Volume and success rate\".",
+      "DAY": "The sum of the days matches the totals in \"Volume and success rate\".",
+      "MONTH": "The sum of the months matches the totals in \"Volume and success rate\"."
+    },
+    "officialClosingTitle": "Closing time of official auctions: unavailable."
+  },
+  "rankings": {
+    "title": "Most auctioned and best-selling products",
+    "mostAuctioned": "Most auctioned",
+    "mostAuctionedDescription": "Listings per product in the period.",
+    "mostSold": "Best sellers",
+    "mostSoldDescription": "Player sales closed in the period.",
+    "product": "Product",
+    "total": "Total",
+    "player": "Player",
+    "official": "Official",
+    "auction": "Auction",
+    "buyNow": "Buy now",
+    "unnamed": "Unnamed product",
+    "enrichmentNotice": "We could not get the name of some products. The counts are correct; the identifier is shown instead."
+  },
+  "prices": {
+    "title": "Average prices by currency",
+    "playerTitle": "Player auctions",
+    "officialTitle": "Official auctions",
+    "averageOf_one": "average of {{value}} sale",
+    "averageOf_other": "average of {{value}} sales",
+    "median": "Median",
+    "min": "Minimum",
+    "max": "Maximum",
+    "byChannel": "By sales channel",
+    "auctionClose": "Auction close ({{value}})",
+    "buyNow": "Immediate purchase ({{value}})",
+    "listedMinimum_one": "Listed minimum bid (average of {{value}} auction):",
+    "listedMinimum_other": "Listed minimum bid (average of {{value}} auctions):",
+    "finalPriceUnavailable": "Final sale price: unavailable",
+    "currency": "Currency",
+    "published": "Published",
+    "minimumBidAverage": "Avg. min. bid",
+    "minimum": "Min.",
+    "maximum": "Max.",
+    "buyNowAverage": "Immediate purchase (avg.)",
+    "noBuyNow": "No immediate purchase"
+  },
+  "users": {
+    "title": "Active users and commissions",
+    "activeTitle": "Active users",
+    "total": "Total",
+    "sellers": "Sellers",
+    "bidders": "Bidders",
+    "buyers": "Buyers",
+    "player": "Player (opaque ID)",
+    "auctions": "Auctions",
+    "asSeller": "Sell.",
+    "asBidder": "Bid.",
+    "asBuyer": "Buy.",
+    "commissionTitle": "Listing commission",
+    "gross": "Collected (gross)",
+    "refunded": "Refunded",
+    "net": "Net commission",
+    "pendingRefunds": "Pending refunds ({{value}})",
+    "duration": "Duration",
+    "fee": "Fee",
+    "grossColumn": "Gross",
+    "hours": "{{value}} h",
+    "salesCommission": "Sales commission",
+    "realMoneyCommission": "Real-money commission",
+    "walletReconciliation": "Wallet reconciliation"
+  },
+  "reasons": {
+    "officialSuccessRate": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Official auctions have no closing flow, so only the published volume is reported."
+    },
+    "officialClosingTime": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Official auctions have no closing flow."
+    },
+    "officialFinalPrice": {
+      "OFFICIAL_AUCTION_HAS_NO_SALE_FLOW": "Official auction without a sale flow."
+    },
+    "salesCommission": {
+      "NO_SALE_COMMISSION_DEFINED": "No sales commission is defined."
+    },
+    "realMoneyCommission": {
+      "OFFICIAL_AUCTION_HAS_NO_FEES": "Official auctions do not charge fees."
+    },
+    "walletReconciliation": {
+      "WALLET_READ_ENDPOINT_NOT_AVAILABLE": "Wallet does not expose a commission read yet."
+    }
+  },
+  "states": {
+    "sectionFailed": "This section could not be loaded. The others remain available.",
+    "retry": "Retry",
+    "emptyTitle": "There are no auctions in this period.",
+    "emptyHint": "Try a wider range. Rates and averages are not calculated without data and are shown as \"—\".",
+    "unavailable": "The metrics could not be loaded. Please try again in a moment."
+  },
+  "tabs": {
+    "label": "Metrics sections"
+  }
+}

@@ -24,6 +24,11 @@ let resolvedDevRoutes: RouteObject[] = []
 let resolvedPublicDevRoutes: RouteObject[] = []
 
 if (import.meta.env.DEV) {
+  const AuctionMetricsDevPreviewLazy = lazy(() =>
+    import('@/features/admin/auction-metrics/dev/AuctionMetricsDevPreview').then((module) => ({
+      default: module.AuctionMetricsDevPreview,
+    })),
+  )
   const TournamentModesPreviewLazy = lazy(() =>
     import('@/features/tournament/dev/TournamentModesPreview').then((module) => ({
       default: module.TournamentModesPreview,
@@ -316,6 +321,28 @@ if (import.meta.env.DEV) {
           <AuctionWatchlistDevPreviewLazy />
         </Suspense>
       ),
+    },
+    // HU-91.6: las metricas de subasta viven tras `RequireSession` + `RequireAdministrator` y
+    // necesitan Auction respondiendo de verdad. Este preview monta la pantalla de produccion
+    // con un transporte inyectado y datos de ejemplo; `?state=` elige el estado (design,
+    // loading, degraded, partial, no-catalog, empty, invalid, forbidden, unavailable).
+    {
+      path: '__dev/admin/auction-metrics',
+      element: (
+        <Suspense fallback={null}>
+          <AppLayoutLazy />
+        </Suspense>
+      ),
+      children: [
+        {
+          index: true,
+          element: (
+            <Suspense fallback={null}>
+              <AuctionMetricsDevPreviewLazy />
+            </Suspense>
+          ),
+        },
+      ],
     },
     // HU-64.1: la tarjeta de compra inmediata se monta con datos de ejemplo y sin
     // red, para revisar en claro y oscuro los estados de Figma antes de HU-64.6.
