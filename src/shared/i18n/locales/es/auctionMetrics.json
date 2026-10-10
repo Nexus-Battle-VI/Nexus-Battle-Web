@@ -1,0 +1,216 @@
+{
+  "title": "Métricas de subasta",
+  "subtitle": "Indicadores operativos y comerciales de las subastas de jugador (créditos) y oficiales (dinero real). Las cifras de cada moneda se muestran siempre por separado.",
+  "breadcrumb": {
+    "home": "Inicio",
+    "auctions": "Subastas"
+  },
+  "filters": {
+    "group": "Periodo de consulta",
+    "range": "Rango",
+    "preset": {
+      "30": "Últimos 30 días",
+      "7": "Últimos 7 días",
+      "90": "Últimos 90 días",
+      "custom": "Personalizado"
+    },
+    "from": "Desde",
+    "to": "Hasta",
+    "apply": "Aplicar",
+    "refresh": "Actualizar",
+    "invalidPeriod": "La fecha \"Desde\" debe ser anterior a \"Hasta\" y el rango no puede superar 366 días.",
+    "period": "Periodo",
+    "asOf": "Datos al",
+    "rangeSameYear": "{{from}} – {{to}} de {{year}}",
+    "rangeCrossYear": "{{from}} de {{fromYear}} – {{to}} de {{toYear}}"
+  },
+  "badges": {
+    "realMoney": "Dinero real",
+    "credits": "Créditos",
+    "unavailable": "No disponible",
+    "creditsSalePrice": "Créditos · precio de venta",
+    "realMoneyListPrice": "Dinero real · precio de lista"
+  },
+  "volume": {
+    "title": "Volumen y tasa de éxito",
+    "published": "Subastas publicadas",
+    "publishedFoot": "De jugador, en el periodo",
+    "closed": "Subastas cerradas",
+    "closedFoot": "{{active}} activas · {{awaiting}} por cerrar",
+    "successRate": "Tasa de éxito",
+    "successRateFoot": "{{numerator}} de {{denominator}} cerradas terminaron en venta",
+    "successRateEmpty": "Sin subastas cerradas",
+    "successRateMeter": "Tasa de éxito {{value}}",
+    "claims": "Reclamos",
+    "claimsFoot": "{{claimed}} reclamados · {{pending}} pendientes · {{expired}} vencidos",
+    "outcomeTitle": "Cómo terminaron las {{total}} subastas cerradas",
+    "withWinner": "Con ganador (cierre por tiempo)",
+    "soldByBuyNow": "Vendidas por compra inmediata",
+    "withoutBids": "Sin pujas",
+    "settlementFailed": "Liquidación fallida (terminal)",
+    "cancelled": "Canceladas",
+    "cancelledNote": "no entran en la tasa",
+    "officialTitle": "Subastas oficiales",
+    "officialFoot": "publicadas · {{official}} OFFICIAL · {{premium}} PREMIUM",
+    "officialRateUnavailable": "Tasa de éxito: no disponible"
+  },
+  "trends": {
+    "title": "Tiempo de cierre y tendencia",
+    "average": "Tiempo medio de cierre",
+    "averageFoot": "Mediana {{median}} · P90 {{p90}}",
+    "byReason": "Por motivo de cierre",
+    "reason": {
+      "withWinner": "Con ganador",
+      "withoutBids": "Sin pujas",
+      "buyNow": "Compra inmediata"
+    },
+    "lag": "Retraso de liquidación",
+    "lagAverage": "Promedio",
+    "lagP90": "P90",
+    "lagSample": "Muestra",
+    "cardTitle": {
+      "WEEK": "Evolución por semana",
+      "DAY": "Evolución por día",
+      "MONTH": "Evolución por mes"
+    },
+    "cardDescription": {
+      "WEEK": "Subastas de jugador por semana.",
+      "DAY": "Subastas de jugador por día.",
+      "MONTH": "Subastas de jugador por mes."
+    },
+    "groupBy": "Agrupar por",
+    "granularity": {
+      "WEEK": "Semana",
+      "DAY": "Día",
+      "MONTH": "Mes"
+    },
+    "legend": {
+      "published": "Publicadas",
+      "sold": "Vendidas",
+      "withoutBids": "Sin pujas"
+    },
+    "chartLabel": {
+      "WEEK": "Evolución semanal de subastas publicadas, vendidas y sin pujas. Los mismos datos están en la tabla de abajo.",
+      "DAY": "Evolución diaria de subastas publicadas, vendidas y sin pujas. Los mismos datos están en la tabla de abajo.",
+      "MONTH": "Evolución mensual de subastas publicadas, vendidas y sin pujas. Los mismos datos están en la tabla de abajo."
+    },
+    "success": "Éxito {{value}}",
+    "viewAsTable": "Ver como tabla",
+    "bucketColumn": {
+      "WEEK": "Semana",
+      "DAY": "Día",
+      "MONTH": "Mes"
+    },
+    "columns": {
+      "published": "Publicadas",
+      "withWinner": "Con ganador",
+      "buyNow": "Compra inmediata",
+      "withoutBids": "Sin pujas",
+      "cancelled": "Canceladas",
+      "success": "Éxito",
+      "averageClosing": "Cierre medio"
+    },
+    "total": "Total",
+    "tableNote": {
+      "WEEK": "La suma de las semanas coincide con los totales de \"Volumen y tasa de éxito\".",
+      "DAY": "La suma de los días coincide con los totales de \"Volumen y tasa de éxito\".",
+      "MONTH": "La suma de los meses coincide con los totales de \"Volumen y tasa de éxito\"."
+    },
+    "officialClosingTitle": "Tiempo de cierre de subastas oficiales: no disponible."
+  },
+  "rankings": {
+    "title": "Productos más subastados y más vendidos",
+    "mostAuctioned": "Más subastados",
+    "mostAuctionedDescription": "Publicaciones por producto en el periodo.",
+    "mostSold": "Más vendidos",
+    "mostSoldDescription": "Ventas de jugador cerradas en el periodo.",
+    "product": "Producto",
+    "total": "Total",
+    "player": "Jugador",
+    "official": "Oficial",
+    "auction": "Subasta",
+    "buyNow": "Compra inm.",
+    "unnamed": "Producto sin nombre",
+    "enrichmentNotice": "No pudimos obtener el nombre de algunos productos. Los conteos son correctos; se muestra el identificador en su lugar."
+  },
+  "prices": {
+    "title": "Precios promedio por moneda",
+    "playerTitle": "Subastas de jugador",
+    "officialTitle": "Subastas oficiales",
+    "averageOf_one": "promedio de {{value}} venta",
+    "averageOf_many": "promedio de {{value}} de ventas",
+    "averageOf_other": "promedio de {{value}} ventas",
+    "median": "Mediana",
+    "min": "Mínimo",
+    "max": "Máximo",
+    "byChannel": "Por canal de venta",
+    "auctionClose": "Cierre por subasta ({{value}})",
+    "buyNow": "Compra inmediata ({{value}})",
+    "listedMinimum_one": "Puja mínima publicada (promedio de {{value}} subasta):",
+    "listedMinimum_many": "Puja mínima publicada (promedio de {{value}} de subastas):",
+    "listedMinimum_other": "Puja mínima publicada (promedio de {{value}} subastas):",
+    "finalPriceUnavailable": "Precio final de venta: no disponible",
+    "currency": "Moneda",
+    "published": "Publicadas",
+    "minimumBidAverage": "Puja mín. media",
+    "minimum": "Mín.",
+    "maximum": "Máx.",
+    "buyNowAverage": "Compra inmediata (media)",
+    "noBuyNow": "Sin compra inmediata"
+  },
+  "users": {
+    "title": "Usuarios activos y comisiones",
+    "activeTitle": "Usuarios activos",
+    "total": "Total",
+    "sellers": "Vendedores",
+    "bidders": "Postores",
+    "buyers": "Compradores",
+    "player": "Jugador (ID opaco)",
+    "auctions": "Subastas",
+    "asSeller": "Vend.",
+    "asBidder": "Post.",
+    "asBuyer": "Comp.",
+    "commissionTitle": "Comisión por publicación",
+    "gross": "Cobrado (bruto)",
+    "refunded": "Reembolsado",
+    "net": "Comisión neta",
+    "pendingRefunds": "Reembolsos pendientes ({{value}})",
+    "duration": "Duración",
+    "fee": "Tarifa",
+    "grossColumn": "Bruto",
+    "hours": "{{value}} h",
+    "salesCommission": "Comisión por venta",
+    "realMoneyCommission": "Comisión en dinero real",
+    "walletReconciliation": "Conciliación con Wallet"
+  },
+  "reasons": {
+    "officialSuccessRate": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Las subastas oficiales no tienen flujo de cierre, por eso solo se informa el volumen publicado."
+    },
+    "officialClosingTime": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Las subastas oficiales no tienen flujo de cierre."
+    },
+    "officialFinalPrice": {
+      "OFFICIAL_AUCTION_HAS_NO_SALE_FLOW": "Subasta oficial sin flujo de venta."
+    },
+    "salesCommission": {
+      "NO_SALE_COMMISSION_DEFINED": "No existe una comisión por venta definida."
+    },
+    "realMoneyCommission": {
+      "OFFICIAL_AUCTION_HAS_NO_FEES": "Las subastas oficiales no cobran tarifas."
+    },
+    "walletReconciliation": {
+      "WALLET_READ_ENDPOINT_NOT_AVAILABLE": "Wallet aún no expone una lectura de comisiones."
+    }
+  },
+  "states": {
+    "sectionFailed": "No se pudo cargar esta sección. Las demás siguen disponibles.",
+    "retry": "Reintentar",
+    "emptyTitle": "No hay subastas en este periodo.",
+    "emptyHint": "Prueba con un rango más amplio. Las tasas y promedios no se calculan sin datos y se muestran como \"—\".",
+    "unavailable": "No se pudieron cargar las métricas. Vuelve a intentarlo en un momento."
+  },
+  "tabs": {
+    "label": "Secciones de métricas"
+  }
+}

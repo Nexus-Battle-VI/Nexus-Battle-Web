@@ -47,6 +47,7 @@ describe('devRoutes', () => {
       '__dev/battle-rooms/room-remaster-preview/:roomId',
       '__dev/battle-rooms/battle-remaster-preview',
       '__dev/hu68/watchlist',
+      '__dev/admin/auction-metrics',
       '__dev/auction/immediate-purchase',
       '__dev/auction/bidding',
       '__dev/auction/auto-bid',
