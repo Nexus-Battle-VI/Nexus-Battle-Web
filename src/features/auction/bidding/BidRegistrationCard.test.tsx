@@ -7,7 +7,8 @@ import { BidRegistrationCard } from './BidRegistrationCard'
 
 const product = {
   name: 'Espada Legendaria Nexus',
-  icon: '⚔️',
+  imageUrl: '/assets/catalog/espada-nexus.png',
+  type: 'WEAPON',
   summary: 'Arma mítica',
 }
 

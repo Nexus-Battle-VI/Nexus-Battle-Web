@@ -5,7 +5,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { formatCredits } from './formatCredits'
 import { ImmediatePurchaseCard, type ImmediatePurchaseCardProps } from './ImmediatePurchaseCard'
 
-const SWORD = { name: 'Espada Legendaria Nexus', icon: '⚔️', summary: 'Arma mítica · Poder 95' }
+const SWORD = {
+  name: 'Espada Legendaria Nexus',
+  imageUrl: '/assets/catalog/espada-nexus.png',
+  type: 'WEAPON',
+  summary: 'Arma mítica · Poder 95',
+}
 const TRANSACTION = { id: '#TXN-2692847', debitedCredits: 2500, remainingCredits: 2500 }
 
 const renderCard = (overrides: Partial<ImmediatePurchaseCardProps> = {}) => {
@@ -111,7 +116,7 @@ describe('ImmediatePurchaseCard', () => {
   it('CA-03: sin precio de compra inmediata ofrece ir a pujar', async () => {
     const onGoToBid = vi.fn()
     renderCard({
-      product: { name: 'Escudo Antiguo', icon: '🛡️' },
+      product: { name: 'Escudo Antiguo', type: 'ARMOR' },
       stage: 'unavailable',
       onGoToBid,
     })

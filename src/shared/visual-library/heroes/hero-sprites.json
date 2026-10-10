@@ -1,0 +1,737 @@
+{
+  "guerrero-tanque": {
+    "name": "Guerrero Tanque",
+    "characterId": "004d5e40-cbd7-4498-9c99-51de961930ff",
+    "image": "/assets/heroes/sprites/tank/Full-body_heavy_male_tan-Idle.png",
+    "cell": {
+      "width": 80,
+      "height": 80
+    },
+    "sheet": {
+      "width": 640,
+      "height": 320
+    },
+    "animations": [
+      {
+        "kind": "idle",
+        "directions": {
+          "south-east": {
+            "row": 1,
+            "col": 0,
+            "count": 8
+          },
+          "north-west": {
+            "row": 2,
+            "col": 0,
+            "count": 8
+          }
+        }
+      },
+      {
+        "kind": "hit",
+        "directions": {
+          "south-east": {
+            "row": 3,
+            "col": 0,
+            "count": 6
+          }
+        }
+      },
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  },
+  "guerrero-armas": {
+    "name": "Guerrera de Armas",
+    "characterId": "e7cdad28-5731-4aca-a058-072c4d6ac5c0",
+    "image": "/assets/heroes/sprites/weapons/Full-body_female_two-han-Idle.png",
+    "cell": {
+      "width": 80,
+      "height": 80
+    },
+    "sheet": {
+      "width": 640,
+      "height": 560
+    },
+    "animations": [
+      {
+        "kind": "idle",
+        "directions": {
+          "south": {
+            "row": 2,
+            "col": 0,
+            "count": 8
+          },
+          "south-east": {
+            "row": 3,
+            "col": 0,
+            "count": 8
+          },
+          "north-east": {
+            "row": 4,
+            "col": 0,
+            "count": 8
+          },
+          "north-west": {
+            "row": 5,
+            "col": 0,
+            "count": 8
+          },
+          "south-west": {
+            "row": 6,
+            "col": 0,
+            "count": 8
+          }
+        }
+      },
+      {
+        "kind": "hit",
+        "directions": {
+          "south": {
+            "row": 1,
+            "col": 0,
+            "count": 6
+          }
+        }
+      },
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  },
+  "mago-fuego": {
+    "name": "Mago de Fuego",
+    "characterId": "b7321641-32a0-46d2-8677-6c38b9aedce3",
+    "image": "/assets/heroes/sprites/fire/Full-body_young_male_Fir-Idle.png",
+    "cell": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet": {
+      "width": 512,
+      "height": 576
+    },
+    "animations": [
+      {
+        "kind": "idle",
+        "directions": {
+          "south-east": {
+            "row": 5,
+            "col": 0,
+            "count": 8
+          },
+          "north-east": {
+            "row": 6,
+            "col": 0,
+            "count": 8
+          },
+          "north-west": {
+            "row": 7,
+            "col": 0,
+            "count": 8
+          },
+          "south-west": {
+            "row": 8,
+            "col": 0,
+            "count": 8
+          }
+        }
+      },
+      {
+        "kind": "hit",
+        "directions": {
+          "south-east": {
+            "row": 1,
+            "col": 0,
+            "count": 6
+          },
+          "north-east": {
+            "row": 2,
+            "col": 0,
+            "count": 6
+          },
+          "north-west": {
+            "row": 3,
+            "col": 0,
+            "count": 6
+          },
+          "south-west": {
+            "row": 4,
+            "col": 0,
+            "count": 6
+          }
+        }
+      },
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  },
+  "mago-hielo": {
+    "name": "Maga de Hielo",
+    "characterId": "e979b0e7-30cc-420b-8a69-695b7ec37638",
+    "image": "/assets/heroes/sprites/ice/Full-body_adult_female_I-Idle.png",
+    "cell": {
+      "width": 80,
+      "height": 80
+    },
+    "sheet": {
+      "width": 640,
+      "height": 720
+    },
+    "animations": [
+      {
+        "kind": "idle",
+        "directions": {
+          "south-east": {
+            "row": 1,
+            "col": 0,
+            "count": 8
+          },
+          "north-east": {
+            "row": 2,
+            "col": 0,
+            "count": 8
+          },
+          "north-west": {
+            "row": 3,
+            "col": 0,
+            "count": 8
+          },
+          "south-west": {
+            "row": 4,
+            "col": 0,
+            "count": 8
+          }
+        }
+      },
+      {
+        "kind": "hit",
+        "directions": {
+          "south-east": {
+            "row": 5,
+            "col": 0,
+            "count": 6
+          },
+          "north-east": {
+            "row": 6,
+            "col": 0,
+            "count": 6
+          },
+          "north-west": {
+            "row": 7,
+            "col": 0,
+            "count": 6
+          },
+          "south-west": {
+            "row": 8,
+            "col": 0,
+            "count": 6
+          }
+        }
+      },
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  },
+  "picaro-veneno": {
+    "name": "Pícara de Veneno",
+    "characterId": "0bfd0697-8e0a-44d7-8292-82416b04901f",
+    "image": "/assets/heroes/sprites/poison/Full-body_young_female_P-Idle.png",
+    "cell": {
+      "width": 48,
+      "height": 48
+    },
+    "sheet": {
+      "width": 384,
+      "height": 192
+    },
+    "animations": [
+      {
+        "kind": "idle",
+        "directions": {
+          "south-east": {
+            "row": 1,
+            "col": 0,
+            "count": 8
+          },
+          "north-east": {
+            "row": 2,
+            "col": 0,
+            "count": 8
+          },
+          "north-west": {
+            "row": 3,
+            "col": 0,
+            "count": 8
+          }
+        }
+      },
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  },
+  "picaro-machete": {
+    "name": "Pícaro de Machete",
+    "characterId": "2c3539a5-5d75-4b3c-a9a9-f06ca47f980f",
+    "image": "/assets/heroes/sprites/machete/Full-body_adult_male_Mac-Idle.png",
+    "cell": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet": {
+      "width": 512,
+      "height": 576
+    },
+    "animations": [
+      {
+        "kind": "idle",
+        "directions": {
+          "south-east": {
+            "row": 1,
+            "col": 0,
+            "count": 8
+          },
+          "north-east": {
+            "row": 2,
+            "col": 0,
+            "count": 8
+          },
+          "north-west": {
+            "row": 3,
+            "col": 0,
+            "count": 8
+          },
+          "south-west": {
+            "row": 4,
+            "col": 0,
+            "count": 8
+          }
+        }
+      },
+      {
+        "kind": "hit",
+        "directions": {
+          "south-east": {
+            "row": 5,
+            "col": 0,
+            "count": 6
+          },
+          "north-east": {
+            "row": 6,
+            "col": 0,
+            "count": 6
+          },
+          "north-west": {
+            "row": 7,
+            "col": 0,
+            "count": 6
+          },
+          "south-west": {
+            "row": 8,
+            "col": 0,
+            "count": 6
+          }
+        }
+      },
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  },
+  "chaman": {
+    "name": "Chamán",
+    "characterId": "6a4f348b-bd0d-448e-ac0d-9a110a6cc5ab",
+    "image": "/assets/heroes/sprites/shaman/Full-body_elder_male_Sha-Idle.png",
+    "cell": {
+      "width": 64,
+      "height": 64
+    },
+    "sheet": {
+      "width": 512,
+      "height": 192
+    },
+    "animations": [
+      {
+        "kind": "idle",
+        "directions": {
+          "south-east": {
+            "row": 2,
+            "col": 0,
+            "count": 8
+          }
+        }
+      },
+      {
+        "kind": "hit",
+        "directions": {
+          "south": {
+            "row": 1,
+            "col": 0,
+            "count": 6
+          }
+        }
+      },
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  },
+  "medico": {
+    "name": "Médica de Campo",
+    "characterId": "ff09a46a-b3df-4d27-b976-35edfa5f1bc1",
+    "image": "/assets/heroes/sprites/medic/Full-body_adult_female_F-Idle.png",
+    "cell": {
+      "width": 48,
+      "height": 48
+    },
+    "sheet": {
+      "width": 384,
+      "height": 48
+    },
+    "animations": [
+      {
+        "kind": "poses",
+        "directions": {
+          "south": {
+            "row": 0,
+            "col": 0,
+            "count": 1
+          },
+          "south-east": {
+            "row": 0,
+            "col": 1,
+            "count": 1
+          },
+          "east": {
+            "row": 0,
+            "col": 2,
+            "count": 1
+          },
+          "north-east": {
+            "row": 0,
+            "col": 3,
+            "count": 1
+          },
+          "north": {
+            "row": 0,
+            "col": 4,
+            "count": 1
+          },
+          "north-west": {
+            "row": 0,
+            "col": 5,
+            "count": 1
+          },
+          "west": {
+            "row": 0,
+            "col": 6,
+            "count": 1
+          },
+          "south-west": {
+            "row": 0,
+            "col": 7,
+            "count": 1
+          }
+        }
+      }
+    ]
+  }
+}

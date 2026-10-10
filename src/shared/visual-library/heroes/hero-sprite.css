@@ -1,0 +1,45 @@
+.hero-sprite {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.hero-sprite-frame {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 2px rgb(0 0 0 / 40%));
+}
+
+.hero-sprite[data-loaded='false'] .hero-sprite-frame {
+  visibility: hidden;
+}
+
+.hero-sprite-frame[data-animated='true'] {
+  animation: hero-sprite-idle var(--hero-sprite-duration) steps(var(--hero-sprite-count), end)
+    infinite;
+}
+
+.hero-sprite[data-defeated='true'] {
+  opacity: 0.45;
+}
+
+.hero-sprite[data-defeated='true'] .hero-sprite-frame {
+  animation-play-state: paused;
+}
+
+@keyframes hero-sprite-idle {
+  from {
+    background-position: var(--hero-sprite-start);
+  }
+  to {
+    background-position: var(--hero-sprite-end);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-sprite-frame {
+    animation: none !important;
+  }
+}

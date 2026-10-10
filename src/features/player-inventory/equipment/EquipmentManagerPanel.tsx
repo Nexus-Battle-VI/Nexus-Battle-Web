@@ -3,10 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import { QueryState } from '@/components/ui/QueryState'
 
-import type { EquipmentCapacity } from '../heroSelectionApi'
 import { typeLabel } from '../typeLabels'
-import type { EquipmentSlotId, HeroEquipment } from './api'
-import { EquipmentSlots } from './EquipmentSlots'
+import type { HeroEquipment } from './api'
 import { EquipmentEffectsList, HeroStatsTable } from './HeroStatsPanel'
 import { slotLabel, type SlotMeta } from './slots'
 
@@ -16,26 +14,37 @@ export interface EquipmentManagerPanelProps {
   readonly equipment: HeroEquipment | undefined
   readonly equipmentLoading: boolean
   readonly equipmentError: unknown
-  readonly selectedSlot: EquipmentSlotId | null
   readonly slotMeta: SlotMeta | null
-  readonly onSelectSlot: (slot: EquipmentSlotId) => void
   /** Producto elegido en el inventario (nombre y tipo, para el realce y el aviso). */
   readonly selectedProductName: string | null
   readonly selectedProductType: string | null
-  readonly capacity: Readonly<Record<SlotMeta['group'], EquipmentCapacity>> | null
   readonly canEquip: boolean
   readonly equipping: boolean
   readonly equipError: string | null
   readonly onEquip: () => void
   /** HU-29: `true` mientras el héroe participa en una batalla activa. */
   readonly locked: boolean
+  /**
+   * HU-28.4: `true` cuando la ranura elegida está OCUPADA y la Ficha muestra
+   * EXACTAMENTE ese producto equipado (no otro del catálogo) — la acción
+   * principal pasa a ser Desequipar en lugar de Equipar. Nunca ambos botones
+   * a la vez, salvo que la lógica real lo exigiera (no es el caso aquí).
+   */
+  readonly isUnequipContext: boolean
+  readonly canUnequip: boolean
+  readonly unequipping: boolean
+  readonly unequipError: string | null
+  readonly onUnequip: () => void
 }
 
 /**
- * B. Gestor de equipamiento (HU-28): diez ranuras compactas, la barra de
- * «Equipar», las estadisticas Base/Efectiva/Δ con el daño como magnitud y los
- * efectos. Todo sale del servicio; aqui solo se ordena para leerse de un
- * vistazo. En pantallas anchas, ranuras y estadisticas van lado a lado.
+ * Accion de "Equipar" + Estadisticas Base/Efectiva/Δ + Efectos del
+ * equipamiento del heroe activo (HU-28). Vive en la Ficha del objeto
+ * (columna derecha, `ItemDetailPanel`/`PlayerInventoryPage`), NUNCA en el
+ * centro -- el centro solo tiene el escenario del heroe y sus ranuras
+ * (ver `HeroManagerPanel`). Misma mutacion real que antes
+ * (`useEquipItem`, levantada a `PlayerInventoryPage` como unica fuente de
+ * verdad), ninguna logica duplicada.
  */
 export const EquipmentManagerPanel = ({
   heroName,
@@ -43,118 +52,114 @@ export const EquipmentManagerPanel = ({
   equipment,
   equipmentLoading,
   equipmentError,
-  selectedSlot,
   slotMeta,
-  onSelectSlot,
   selectedProductName,
   selectedProductType,
-  capacity,
   canEquip,
   equipping,
   equipError,
   onEquip,
   locked,
-}: EquipmentManagerPanelProps): React.JSX.Element => {
+  isUnequipContext,
+  canUnequip,
+  unequipping,
+  unequipError,
+  onUnequip,
+}: EquipmentManagerPanelProps): React.JSX.Element | null => {
   const { t } = useTranslation()
   const productFits =
     slotMeta !== null &&
     selectedProductName !== null &&
     selectedProductType === slotMeta.productType
 
+  if (!hasHero) return null
+
   return (
-    <section
-      aria-labelledby="equipment-manager-title"
-      className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
-    >
-      <h2 id="equipment-manager-title" className="text-sm font-semibold text-ink">
-        {heroName === null
-          ? t('inventory:equipment.title')
-          : t('inventory:equipment.of', { name: heroName })}
-      </h2>
+    <QueryState isLoading={equipmentLoading} error={equipmentError}>
+      {equipment !== undefined && (
+        <div className="inventory-equip-action">
+          <h2 id="equipment-manager-title" className="text-sm font-semibold text-ink">
+            {heroName === null
+              ? t('inventory:equipment.title')
+              : t('inventory:equipment.of', { name: heroName })}
+          </h2>
+          <span className="inventory-panel-divider" aria-hidden="true" />
 
-      {!hasHero ? (
-        <p className="text-xs text-muted">{t('inventory:equipment.chooseHero')}</p>
-      ) : (
-        <QueryState isLoading={equipmentLoading} error={equipmentError}>
-          {equipment !== undefined && (
-            <>
-              {locked && (
-                <p
-                  role="status"
-                  className="rounded-md border border-warning bg-warning/10 p-2 text-xs text-ink"
-                >
-                  {t('inventory:equipment.battleLock.message')}
-                </p>
-              )}
-
-              <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <div className="flex min-w-0 flex-col gap-3">
-                  <EquipmentSlots
-                    equipment={equipment}
-                    selectedSlot={selectedSlot}
-                    disabled={equipping || locked}
-                    compatibleType={selectedProductType}
-                    capacity={capacity}
-                    onSelectSlot={onSelectSlot}
-                  />
-
-                  <div
+          {slotMeta !== null && (
+            <div className="rounded-md border border-border p-2 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-muted">
+                    {t('inventory:equipment.slotHint', {
+                      slot: slotLabel(slotMeta.id),
+                      type: typeLabel(slotMeta.productType),
+                    })}
+                  </p>
+                  {productFits && (
+                    <p className="truncate text-ink" title={selectedProductName}>
+                      {t('inventory:equipment.selectedItem', { item: selectedProductName })}
+                    </p>
+                  )}
+                </div>
+                {isUnequipContext ? (
+                  <button
+                    type="button"
+                    disabled={!canUnequip}
+                    onClick={onUnequip}
                     className={clsx(
-                      'rounded-md border p-2 text-xs',
-                      slotMeta === null ? 'border-dashed border-border' : 'border-border',
+                      'inventory-btn-primary inventory-btn-danger min-h-11 px-4 py-2 text-sm font-semibold',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
                     )}
                   >
-                    {slotMeta === null ? (
-                      <p className="text-muted">{t('inventory:equipment.pickSlotHint')}</p>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-muted">
-                            {t('inventory:equipment.slotHint', {
-                              slot: slotLabel(slotMeta.id),
-                              type: typeLabel(slotMeta.productType),
-                            })}
-                          </p>
-                          {productFits && (
-                            <p className="truncate text-ink" title={selectedProductName}>
-                              {t('inventory:equipment.selectedItem', {
-                                item: selectedProductName,
-                              })}
-                            </p>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          disabled={!canEquip}
-                          onClick={onEquip}
-                          className={clsx(
-                            'min-h-11 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white',
-                            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-                            'disabled:cursor-not-allowed disabled:opacity-50',
-                          )}
-                        >
-                          {equipping
-                            ? t('inventory:equipment.equipping')
-                            : t('inventory:equipment.equip')}
-                        </button>
-                      </div>
+                    {unequipping
+                      ? t('inventory:equipment.unequipping')
+                      : t('inventory:equipment.unequip')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!canEquip}
+                    onClick={onEquip}
+                    className={clsx(
+                      'inventory-btn-primary min-h-11 px-4 py-2 text-sm font-semibold',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
                     )}
-                    {equipError !== null && (
-                      <p role="alert" className="mt-1 text-danger">
-                        {equipError}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <HeroStatsTable equipment={equipment} />
+                  >
+                    {equipping
+                      ? t('inventory:equipment.equipping')
+                      : t('inventory:equipment.equip')}
+                  </button>
+                )}
               </div>
-
-              <EquipmentEffectsList equipment={equipment} />
-            </>
+              {isUnequipContext
+                ? unequipError !== null && (
+                    <p role="alert" className="mt-1 text-danger">
+                      {unequipError}
+                    </p>
+                  )
+                : equipError !== null && (
+                    <p role="alert" className="mt-1 text-danger">
+                      {equipError}
+                    </p>
+                  )}
+              {/* El aviso con `role="status"` ya vive una sola vez, arriba
+               * del escenario del heroe (`HeroManagerPanel`) -- aqui solo un
+               * recordatorio de texto plano, sin region ARIA duplicada, para
+               * quien ya scrolleo mas alla de ese aviso. */}
+              {locked && (
+                <p className="mt-1 text-warning">{t('inventory:equipment.battleLock.message')}</p>
+              )}
+            </div>
           )}
-        </QueryState>
+
+          <div className="inventory-stats-ledger mt-3">
+            <HeroStatsTable equipment={equipment} />
+          </div>
+          <div className="inventory-effects-ledger mt-3">
+            <EquipmentEffectsList equipment={equipment} />
+          </div>
+        </div>
       )}
-    </section>
+    </QueryState>
   )
 }

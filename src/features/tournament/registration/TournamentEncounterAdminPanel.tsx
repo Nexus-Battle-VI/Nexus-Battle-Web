@@ -13,6 +13,8 @@ import {
 import { explained } from './encounterAdminErrors'
 import { dateLabel, matchStatus } from './presentation'
 import { useOperation } from './useOperation'
+import { sampleMatches, useEncounterClock, type TimedMatch } from './encounterClock'
+import { MatchSchedule, AbsenceResolution } from './MatchSchedule'
 
 type Tone = 'waiting' | 'preparing' | 'active' | 'cancelled'
 /** Colores de estado del remaster «Jugar Online» (`--br-status-*`). */
@@ -30,24 +32,53 @@ const AdminRow = ({
   receipts,
   admin,
   onChanged,
+  fresh,
 }: {
   readonly id: string
   readonly subject: string
-  readonly match: MatchSummary
+  readonly match: TimedMatch
   readonly receipts: readonly EncounterAdminReceipt[]
   readonly admin: EncounterAdminApi
   readonly onChanged: () => void
+  readonly fresh: boolean
 }): React.JSX.Element => {
   const scope = (action: EncounterAdminAction): string =>
-    `encounter-admin:${subject}:${id}:${match.matchId}:${action}`
+    JSON.stringify([
+      'encounter-admin',
+      match.contractVersion ?? 'legacy',
+      subject,
+      id,
+      match.matchId,
+      action,
+    ])
   const prepare = useOperation(scope('PREPARE'))
   const start = useOperation(scope('START'))
   const state = match.preparationStatus
+  const clock = useEncounterClock(match.displayClock)
+  const newPolicy = match.contractVersion === 'torneos-v3.0.0'
+  const timeUntilStart = clock.remaining(match.scheduledStartAt)
+  const calendarReady =
+    !newPolicy ||
+    (match.acceptanceStatus === 'CLOSED' &&
+      match.registeredTeams?.length === 2 &&
+      match.registeredTeams.every(
+        (team) => team !== null && team.memberIds.length === match.teamSize,
+      ) &&
+      match.acceptedCounts?.length === 2 &&
+      match.acceptedCounts.every((count) => count === match.teamSize) &&
+      timeUntilStart === 0 &&
+      !match.resolution &&
+      (!match.blockReason || match.blockReason.responsible === 'COMBAT_OPERATIONS'))
   const done = match.status === 'FINISHED' || state === 'IN_BATTLE' || state === 'FINISHED'
   const prepared = state === 'PREPARED' || state === 'START_PENDING'
-  const canPrepare = !done && !prepared && match.status !== 'READY'
-  const canStart = prepared || (match.status === 'READY' && match.combatRoomId !== undefined)
+  const canPrepare = fresh && calendarReady && !done && !prepared && match.status !== 'READY'
+  const canStart =
+    fresh &&
+    !done &&
+    calendarReady &&
+    (prepared || (match.status === 'READY' && match.combatRoomId != null))
   const run = async (action: EncounterAdminAction): Promise<void> => {
+    if (prepare.busy || start.busy || (action === 'PREPARE' ? !canPrepare : !canStart)) return
     const op = action === 'PREPARE' ? prepare : start
     const result = await op.run(action, action, (operationId) =>
       explained(() =>
@@ -74,6 +105,14 @@ const AdminRow = ({
         <p className={`br-label-theme text-sm br-room-status-text--${tone(match)}`}>
           {matchStatus(match)}
         </p>
+        <MatchSchedule match={match} />
+        <AbsenceResolution match={match} />
+        {newPolicy && !calendarReady && !match.resolution && !done && (
+          <p className="text-sm text-muted">
+            Preparación e inicio requieren el cierre confirmado, ambos lados completos y la hora
+            prevista. El servidor verifica la acción.
+          </p>
+        )}
         {state === 'WAITING_TEAMS' && (
           <p className="text-sm text-muted">
             Faltan participantes: esta justa depende de resultados previos del bracket.
@@ -86,7 +125,7 @@ const AdminRow = ({
           <Button
             variant="battle-secondary"
             loading={prepare.busy}
-            disabled={!canPrepare || prepare.busy}
+            disabled={!canPrepare || prepare.busy || start.busy}
             aria-label={`Preparar ${match.bracketLabel}`}
             onClick={() => void run('PREPARE')}
           >
@@ -95,7 +134,7 @@ const AdminRow = ({
           <Button
             variant="battle-primary"
             loading={start.busy}
-            disabled={!canStart || start.busy || done}
+            disabled={!canStart || start.busy || prepare.busy || done}
             aria-label={`Iniciar ${match.bracketLabel}`}
             onClick={() => void run('START')}
           >
@@ -114,8 +153,16 @@ const AdminRow = ({
           >
             {mine.map((r) => (
               <li key={r.actionId}>
-                {r.action === 'PREPARE' ? 'Preparada' : 'Iniciada'} por {r.actor} ·{' '}
+                {r.action === 'PREPARE' ? 'Preparada' : 'Iniciada'} por{' '}
+                {r.actor === 'tournament-worker' ? 'worker de Tournament' : r.actor} ·{' '}
                 {dateLabel(r.occurredAt)}
+                <details className="tournament-technical">
+                  <summary>Auditoría de la acción</summary>
+                  <p className="break-all">
+                    Actor: {r.actor} · Operación: {r.operationId} · Recibo: {r.actionId}
+                  </p>
+                  <p>{r.replayed ? 'Recibo repetido sin una nueva acción' : 'Acción registrada'}</p>
+                </details>
               </li>
             ))}
           </ul>
@@ -146,8 +193,10 @@ export const TournamentEncounterAdminPanel = ({
   const client = useQueryClient()
   const list = useQuery({
     queryKey: ['tournament-encounter-admin', subject, id],
-    queryFn: () => encounters.list(id),
+    queryFn: async () => sampleMatches(await encounters.list(id)),
     refetchInterval: 5000,
+    refetchOnReconnect: 'always',
+    refetchOnWindowFocus: 'always',
   })
   const actions = useQuery({
     queryKey: ['tournament-encounter-admin-actions', subject, id],
@@ -205,6 +254,7 @@ export const TournamentEncounterAdminPanel = ({
                 receipts={actions.data ?? []}
                 admin={admin}
                 onChanged={refresh}
+                fresh={!list.isPaused && !list.isError && !list.isFetching && !actions.isError}
               />
             ))}
           </ul>

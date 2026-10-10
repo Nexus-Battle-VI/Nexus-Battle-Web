@@ -48,6 +48,8 @@ const setup = async (transform: (view: ProgressView) => ProgressView = (view) =>
 describe('HU-80: avance en las llaves existentes, con respuestas de prueba', () => {
   it('distingue espera y equipos resueltos de preparación real y enlaza por encounterId', async () => {
     const { snapshot, choose } = await setup()
+    await userEvent.click(screen.getByRole('button', { name: /^Todas/u }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ver árbol' }))
     const e1 = screen.getByRole('button', { name: /^E1 · Ronda/u })
     expect(e1).toHaveTextContent('Equipos definidos; consulta el estado de la justa')
     expect(screen.getByRole('button', { name: /^E13 · Ronda/u })).toHaveTextContent(
@@ -75,6 +77,7 @@ describe('HU-80: avance en las llaves existentes, con respuestas de prueba', () 
     expect(
       screen.queryByRole('button', { name: /^(Elegir|Confirmar) ganador|^Desempatar|^Avanzar/iu }),
     ).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Final · 1' }))
     expect(
       within(screen.getByRole('region', { name: 'Final' })).queryByText(/Campeón confirmado/u),
     ).not.toBeInTheDocument()

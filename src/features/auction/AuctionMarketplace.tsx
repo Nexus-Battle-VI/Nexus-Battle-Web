@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
-import { BadgeDollarSign, Coins } from 'lucide-react'
+import { BadgeDollarSign } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 
@@ -33,6 +33,8 @@ import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
 import { AuctionCountdown } from './AuctionCountdown'
 import { AuctionProductSummary } from './AuctionProductSummary'
+import { auctionRemasterAssets } from './auctionRemasterAssets'
+import './auction-remaster.css'
 
 const priceOf = (auction: ActiveAuction): string =>
   auction.priceKind === 'REAL_MONEY'
@@ -68,26 +70,31 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
     auction.officialMark === 'PREMIUM' ? 'auction:marks.PREMIUM' : 'auction:marks.OFFICIAL',
   )
   return (
-    <article className="rounded-xl border border-border bg-surface-raised p-4">
+    <article className="auction-card rounded-xl border border-border bg-surface-raised p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <AuctionProductSummary productId={auction.productId} />
         {official && (
           <span
             aria-label={t('auction:market.officialLabel', { mark })}
-            className="rounded-full border border-brand/40 bg-brand/10 px-2 py-1 text-xs font-semibold text-brand"
+            className="auction-official-mark rounded-full border border-brand/40 bg-brand/10 px-2 py-1 text-xs font-semibold text-brand"
           >
             {mark}
           </span>
         )}
       </div>
-      <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+      <dl className="auction-card-metadata mt-3 grid gap-2 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-muted">{t('auction:market.minimumPrice')}</dt>
-          <dd className="flex items-center gap-1 font-semibold text-ink">
+          <dd className="auction-card-price flex items-center gap-1 font-semibold text-ink">
             {official ? (
               <BadgeDollarSign aria-hidden="true" className="size-4 text-brand" />
             ) : (
-              <Coins aria-hidden="true" className="size-4 text-brand" />
+              <img
+                aria-hidden="true"
+                alt=""
+                src={auctionRemasterAssets.shared.icons.credits}
+                className="auction-icon auction-icon-sm"
+              />
             )}
             {priceOf(auction)}
           </dd>
@@ -127,19 +134,16 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
          * implementa (ver el propio issue de la historia).
          */
         !official && (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="auction-card-actions mt-3 flex flex-wrap gap-2">
             {canBuyNow && (
               <Link
                 to={`/auction/${auction.id}?buyNow=1`}
-                className={`${linkClass} bg-brand text-brand-ink hover:opacity-90`}
+                className={`${linkClass} auction-button-primary`}
               >
                 {t('auction:market.buyNowAction')}
               </Link>
             )}
-            <Link
-              to={`/auction/${auction.id}`}
-              className={`${linkClass} border border-border text-ink hover:bg-surface-raised`}
-            >
+            <Link to={`/auction/${auction.id}`} className={`${linkClass} auction-button-secondary`}>
               {t('auction:market.viewDetail')}
             </Link>
           </div>
@@ -337,12 +341,18 @@ export const AuctionMarketplace = (): React.JSX.Element => {
   const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / pageSize))
 
   return (
-    <section aria-labelledby="active-auctions-title" className="mt-8 space-y-4">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <section
+      aria-labelledby="active-auctions-title"
+      className="auction-shell auction-page space-y-4"
+    >
+      <header className="auction-hero">
         <div>
-          <h2 id="active-auctions-title" className="text-xl font-semibold text-ink">
+          <p className="auction-kicker" aria-hidden="true">
+            Nexus Battles VI
+          </p>
+          <h1 id="active-auctions-title" className="auction-title font-semibold text-ink">
             {t('auction:market.title')}
-          </h2>
+          </h1>
           <p className="mt-1 text-sm text-muted">{t('auction:market.subtitle')}</p>
         </div>
         {/*
@@ -350,30 +360,18 @@ export const AuctionMarketplace = (): React.JSX.Element => {
          * esa lista aparte): quien ya esta viendo subastas es a quien mas le
          * sirve moverse a su seguimiento o a publicar la suya.
          */}
-        <nav aria-label={t('auction:market.otherViews')} className="flex flex-wrap gap-2">
-          <Link
-            to="/auction/activity"
-            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-          >
+        <nav aria-label={t('auction:market.otherViews')} className="auction-nav">
+          <Link to="/auction/activity" className="auction-link auction-button-tertiary">
             {t('auction:market.myActivity')}
           </Link>
-          <Link
-            to="/auction/watchlist"
-            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-          >
+          <Link to="/auction/watchlist" className="auction-link auction-button-tertiary">
             {t('auction:market.myFollowed')}
           </Link>
-          <Link
-            to="/auction/publish"
-            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-          >
+          <Link to="/auction/publish" className="auction-link auction-button-primary">
             {t('auction:market.publishMine')}
           </Link>
           {canPublishOfficialAuctions(roles) && (
-            <Link
-              to="/auction/publish-official"
-              className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-surface-raised"
-            >
+            <Link to="/auction/publish-official" className="auction-link auction-button-primary">
               {t('auction:market.publishOfficial')}
             </Link>
           )}
@@ -382,7 +380,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
       <div
         role="group"
         aria-label={t('auction:market.filters')}
-        className="space-y-3 rounded-lg border border-border bg-surface-raised p-4"
+        className="auction-filters auction-control-card space-y-3 rounded-lg border border-border bg-surface-raised p-4"
       >
         <div className="flex flex-wrap items-end gap-3">
           <div ref={comboboxRef} className="relative w-full sm:max-w-md">
@@ -486,7 +484,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
             )}
           </div>
           {filters.search !== '' && (
-            <Button variant="secondary" onClick={clearSearch}>
+            <Button className="auction-button-utility" variant="secondary" onClick={clearSearch}>
               {t('auction:market.clearSearch')}
             </Button>
           )}
@@ -559,6 +557,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
         </div>
         {hasActiveFilters && (
           <Button
+            className="auction-button-utility"
             variant="secondary"
             onClick={() => {
               setInputValue('')
@@ -577,7 +576,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
         isEmpty={query.data?.items.length === 0}
         emptyMessage={t(hasActiveFilters ? 'auction:market.emptyFiltered' : 'auction:market.empty')}
       >
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="auction-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {(query.data?.items ?? []).map((auction) => (
             <AuctionCard key={auction.id} auction={auction} />
           ))}
@@ -585,6 +584,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
         {query.data !== undefined && query.data.total > pageSize && (
           <nav aria-label={t('auction:market.pagination')} className="mt-4 flex items-center gap-3">
             <Button
+              className="auction-button-utility"
               variant="secondary"
               disabled={page === 1}
               onClick={() => {
@@ -597,6 +597,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
               {t('auction:market.pageOf', { page: String(page), pages: String(totalPages) })}
             </span>
             <Button
+              className="auction-button-utility"
               variant="secondary"
               disabled={page >= totalPages}
               onClick={() => {

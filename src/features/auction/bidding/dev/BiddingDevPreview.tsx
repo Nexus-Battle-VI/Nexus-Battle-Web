@@ -1,17 +1,18 @@
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import '@/features/auction/auction-remaster.css'
 
 import { BidRegistrationCard } from '../BidRegistrationCard'
 
 const PRODUCT = {
   name: 'Espada Legendaria Nexus',
-  icon: '⚔️',
+  type: 'WEAPON',
   summary: 'Arma mítica · Poder 95 · Rareza Épica',
 }
 
 const noop = (): void => undefined
 
 export const BiddingDevPreview = (): React.JSX.Element => (
-  <main className="mx-auto flex max-w-[1560px] flex-col gap-6 p-6">
+  <main className="auction-shell auction-page mx-auto flex max-w-[1560px] flex-col gap-6 p-6">
     <header className="flex items-center justify-between gap-4">
       <div>
         <p className="text-sm text-muted">HU-63.8</p>
@@ -19,7 +20,7 @@ export const BiddingDevPreview = (): React.JSX.Element => (
       </div>
       <ThemeToggle />
     </header>
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] items-start gap-6">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,360px),1fr))] items-start gap-6">
       <BidRegistrationCard
         product={PRODUCT}
         stage="ready"
@@ -57,7 +58,7 @@ export const BiddingDevPreview = (): React.JSX.Element => (
       />
       <BidRegistrationCard product={PRODUCT} stage="limit" minimumBidCredits={100} onClose={noop} />
       <BidRegistrationCard
-        product={{ ...PRODUCT, icon: '📪' }}
+        product={{ ...PRODUCT, type: 'COLLECTIBLE' }}
         stage="outbid"
         minimumBidCredits={100}
         bidCredits={1600}

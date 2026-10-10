@@ -1,5 +1,40 @@
 import { httpClient } from '@/lib/http'
-import type { TeamAvatar } from './api'
+import type { TeamAvatar, TeamSize, TournamentMode } from './api'
+import type { BracketSource } from './bracketApi'
+import type { MatchAcceptanceReceipt } from './encounterAdminApi'
+export interface TournamentResolution {
+  readonly resultType: 'ABSENCE'
+  readonly resolutionId: string
+  readonly teamIds: readonly [string, string]
+  readonly winnerTeamId: string
+  readonly loserTeamId: string
+  readonly reason: 'ACCEPTANCE_WINDOW_CLOSED'
+  readonly ruleApplied: 'ONE_COMPLETE' | 'HIGHER_ACCEPTANCE_COUNT' | 'TIED_ACCEPTANCE_COUNT'
+  readonly teamSize: TeamSize
+  readonly acceptedCounts: readonly [number, number]
+  readonly tieBreak: {
+    readonly kind: 'UNBIASED_50_50'
+    readonly drawId: string
+    readonly selectedSide: 0 | 1
+  } | null
+  readonly resolvedAt: string
+}
+export interface CombatMatchResult {
+  readonly winnerTeamLabel: string | null
+  readonly reason: string
+  readonly outcome: string
+  readonly finishedAt: string
+}
+export interface PlayedResolution {
+  readonly resultType: 'PLAYED'
+  readonly resolutionId: string
+  readonly resolvedAt: string
+  readonly teamIds: readonly [string, string]
+  readonly winnerTeamId: string | null
+  readonly loserTeamId: string | null
+  readonly combatRoomId: string
+  readonly combatResult: CombatMatchResult
+}
 
 export interface MatchSummary {
   readonly tournamentId: string
@@ -7,6 +42,34 @@ export interface MatchSummary {
   readonly round: number
   readonly bracketLabel: string
   readonly status: 'WAITING_PARTICIPANTS' | 'READY' | 'IN_PROGRESS' | 'FINISHED'
+  readonly contractVersion?: 'torneos-v3.0.0'
+  readonly tournamentMode?: TournamentMode
+  readonly teamSize?: TeamSize
+  readonly acceptanceOpensAt?: string
+  readonly acceptanceClosesAt?: string
+  readonly scheduledStartAt?: string
+  readonly serverNow?: string
+  readonly acceptanceStatus?: 'SCHEDULED' | 'OPEN' | 'CLOSED' | 'BLOCKED_DELAY' | 'RESOLVED'
+  readonly operationalStatus?:
+    | 'IDLE'
+    | 'RESOLUTION_PENDING'
+    | 'PREPARE_PENDING'
+    | 'START_PENDING'
+    | 'IN_BATTLE'
+    | 'FINISHED'
+    | 'DEPENDENCY_ERROR'
+  readonly acceptedCounts?: readonly [number, number]
+  readonly myAcceptance?: MatchAcceptanceReceipt | null
+  readonly blockReason?: {
+    readonly code: string
+    readonly message: string
+    readonly since: string
+    readonly responsible: string
+  } | null
+  readonly resolution?: TournamentResolution | PlayedResolution | null
+  readonly winnerTeamId?: string | null
+  readonly loserTeamId?: string | null
+  readonly sources?: readonly [BracketSource, BracketSource]
   readonly startedAt: string | null
   readonly closedAt: string | null
   readonly encounterId?: string
@@ -36,12 +99,7 @@ export interface MatchDetail extends MatchSummary {
     readonly teamLabel: string
     readonly participants: readonly { readonly playerId: string; readonly heroId: string }[]
   }[]
-  readonly result: {
-    readonly winnerTeamLabel: string | null
-    readonly reason: string
-    readonly outcome: string
-    readonly finishedAt: string
-  } | null
+  readonly result: CombatMatchResult | null
   readonly events: readonly {
     readonly seq: number
     readonly type: string

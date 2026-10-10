@@ -41,7 +41,7 @@ export const AuctionBidHistory = ({ auctionId }: AuctionBidHistoryProps): React.
   const items = query.data?.items ?? []
 
   return (
-    <section aria-labelledby="bid-history-title" className="space-y-3">
+    <section aria-labelledby="bid-history-title" className="auction-history space-y-3">
       <h2 id="bid-history-title" className="text-lg font-semibold text-ink">
         {t('auction:detail.bidHistory.title')}
       </h2>
@@ -59,7 +59,7 @@ export const AuctionBidHistory = ({ auctionId }: AuctionBidHistoryProps): React.
         <p className="text-sm text-muted">{t('auction:detail.bidHistory.empty')}</p>
       )}
       {!query.isLoading && !query.isError && items.length > 0 && (
-        <ul className="divide-y divide-border rounded-lg border border-border">
+        <ul className="auction-history-list divide-y divide-border rounded-lg border border-border">
           {items.map((item) => (
             <li
               key={item.id}
@@ -79,6 +79,7 @@ export const AuctionBidHistory = ({ auctionId }: AuctionBidHistoryProps): React.
           className="flex items-center gap-3"
         >
           <Button
+            className="auction-button-utility"
             variant="secondary"
             disabled={page === 1}
             onClick={() => {
@@ -91,6 +92,7 @@ export const AuctionBidHistory = ({ auctionId }: AuctionBidHistoryProps): React.
             {t('auction:market.pageOf', { page: String(page), pages: String(totalPages) })}
           </span>
           <Button
+            className="auction-button-utility"
             variant="secondary"
             disabled={page >= totalPages}
             onClick={() => {

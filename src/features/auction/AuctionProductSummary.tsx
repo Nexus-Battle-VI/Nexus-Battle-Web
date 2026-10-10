@@ -28,18 +28,18 @@ export const AuctionProductSummary = ({
     return (
       <div>
         <p className="font-semibold text-ink">{t('auction:claims.productFallback')}</p>
-        <p className="break-all text-xs text-muted">{productId}</p>
+        <p className="auction-meta break-all text-muted">{productId}</p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="auction-product-summary flex min-w-0 items-center gap-3">
       {product.imageUrl !== '' && (
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="size-12 shrink-0 rounded-md object-cover"
+          className="auction-product-image size-12 shrink-0 rounded-md object-cover"
         />
       )}
       <div className="min-w-0">

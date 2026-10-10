@@ -1,6 +1,4 @@
 import { useTournamentAssets } from '../tournamentAssets'
-import { TournamentHeroFigure } from '../TournamentVisuals'
-import { tournamentHumanName } from '../tournamentHeroIdentity'
 import { TournamentHeading } from '../TournamentVisuals'
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useParams } from 'react-router'
@@ -8,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { TournamentButton as Button } from '../TournamentVisuals'
 import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
+import type { SpectatorArenaRenderer } from '@/shared/battle/observation'
 import { useTournamentRequestScope } from '../requestScope'
 import { broadcastApi, type BroadcastApi, type BroadcastSnapshot } from './api'
 import { BroadcastObserver } from './BroadcastObserver'
@@ -27,9 +26,11 @@ const actions: Record<string, string> = {
 export const BroadcastCapture = ({
   id,
   api = broadcastApi,
+  arena: Arena,
 }: {
   readonly id: string
   readonly api?: BroadcastApi
+  readonly arena: SpectatorArenaRenderer
 }): React.JSX.Element => {
   const subject = useSession((s) => s.subject)
   const roles = useSession((s) => s.roles)
@@ -79,7 +80,6 @@ export const BroadcastCapture = ({
     }
   }, [observer, subject, admin])
   const view = state.view?.snapshot
-  const current = view?.combatants.find((p) => p.playerId === view.currentPlayerId)
   if (subject === null || !roles.some((r) => r === 'ADMINISTRATOR' || r === 'SUPER_ADMINISTRATOR'))
     return <p>No tienes permiso para observar este torneo.</p>
   return (
@@ -154,7 +154,7 @@ export const BroadcastCapture = ({
           <section
             ref={frame}
             aria-label="Combate capturable"
-            className="grid content-center gap-6 rounded-2xl border border-border bg-surface p-6 text-ink sm:p-10"
+            className="tournament-broadcast-frame grid gap-2 rounded-xl bg-surface text-ink"
           >
             <p
               role="status"
@@ -174,65 +174,20 @@ export const BroadcastCapture = ({
               <p>Selecciona una justa en curso para preparar la captura.</p>
             ) : (
               <>
-                <header>
+                <header className="flex flex-wrap items-center justify-between gap-2 px-3">
                   <p className="text-sm text-muted">
                     {view.tournamentName} · {track(view.track)} · Ronda {String(view.round)}
                   </p>
-                  <h2 className="font-game-display text-3xl">Justa {view.bracketLabel}</h2>
+                  <h2 className="font-game-display text-xl">Justa {view.bracketLabel}</h2>
+                  <p className="text-sm text-muted">
+                    {view.combatants.length / 2}v{view.combatants.length / 2} · Solo lectura
+                  </p>
                 </header>
-                <p className="text-lg">
-                  {view.status === 'FINISHED'
-                    ? 'Combate finalizado'
-                    : `Ronda de combate ${String(view.battleRound)} · Turno de ${tournamentHumanName(current?.displayName) ?? 'un jugador'}`}
-                </p>
-                <div className="grid gap-6 md:grid-cols-2">
-                  {view.teams.map((team) => (
-                    <section
-                      key={team.teamId}
-                      className="grid gap-4 rounded-xl border border-border p-5"
-                    >
-                      <h3 className="text-xl font-semibold">
-                        {team.name} · Equipo {team.teamLabel}
-                      </h3>
-                      {view.combatants
-                        .filter((p) => p.teamLabel === team.teamLabel)
-                        .map((p) => (
-                          <div
-                            key={p.playerId}
-                            className="grid gap-2 rounded-lg bg-surface-raised p-4"
-                          >
-                            <p className="font-semibold">
-                              {tournamentHumanName(p.displayName) ?? 'Jugador sin nombre'}
-                              {view.status === 'IN_PROGRESS' && p.playerId === view.currentPlayerId
-                                ? ' · Turno actual'
-                                : ''}
-                            </p>
-                            <TournamentHeroFigure hero={p} />
-                            <p>
-                              Vida:{' '}
-                              {p.health
-                                ? `${String(p.health.current)} / ${String(p.health.max)}`
-                                : 'Sin dato disponible'}
-                            </p>
-                            {p.health && (
-                              <progress
-                                className="w-full accent-emerald-500"
-                                aria-label={`Vida de ${tournamentHumanName(p.displayName) ?? 'Jugador sin nombre'}`}
-                                value={p.health.current}
-                                max={p.health.max}
-                              />
-                            )}
-                            <p>
-                              Poder:{' '}
-                              {p.power
-                                ? `${String(p.power.current)} / ${String(p.power.max)}`
-                                : 'Sin dato disponible'}
-                            </p>
-                          </div>
-                        ))}
-                    </section>
-                  ))}
-                </div>
+                <Arena
+                  key={view.combatRoomId}
+                  observation={view}
+                  connected={state.connection === 'connected'}
+                />
                 <p>{actions[view.lastAction.type] ?? 'Actualización del combate'}</p>
                 {view.result && (
                   <p className="text-2xl font-semibold">
@@ -254,15 +209,19 @@ export const BroadcastCapture = ({
   )
 }
 
-export const TournamentBroadcastPanel = ({
-  id,
-  api = broadcastApi,
-  captureOnly = false,
-}: {
+type TournamentBroadcastPanelProps = {
   readonly id: string
   readonly api?: BroadcastApi
-  readonly captureOnly?: boolean
-}): React.JSX.Element | null => {
+} & (
+  | { readonly captureOnly: true; readonly arena: SpectatorArenaRenderer }
+  | { readonly captureOnly?: false }
+)
+
+export const TournamentBroadcastPanel = (
+  props: TournamentBroadcastPanelProps,
+): React.JSX.Element | null => {
+  const { id, api = broadcastApi } = props
+  const captureOnly = props.captureOnly ?? false
   const subject = useSession((s) => s.subject)
   const roles = useSession((s) => s.roles)
   const admin = roles.some((r) => r === 'ADMINISTRATOR' || r === 'SUPER_ADMINISTRATOR')
@@ -332,7 +291,7 @@ export const TournamentBroadcastPanel = ({
       )}
       {own && (
         <>
-          {!captureOnly ? (
+          {!props.captureOnly ? (
             <Link
               to={`/tournament/${encodeURIComponent(id)}/broadcast`}
               className="text-brand underline"
@@ -340,14 +299,18 @@ export const TournamentBroadcastPanel = ({
               Abrir vista capturable en esta ventana
             </Link>
           ) : (
-            <BroadcastCapture key={`${id}:${subject}`} id={id} api={api} />
+            <BroadcastCapture key={`${id}:${subject}`} id={id} api={api} arena={props.arena} />
           )}
         </>
       )}
     </section>
   )
 }
-export const TournamentBroadcastPage = (): React.JSX.Element => {
+export const TournamentBroadcastPage = ({
+  arena,
+}: {
+  readonly arena: SpectatorArenaRenderer
+}): React.JSX.Element => {
   const { id = '' } = useParams()
   return (
     <main
@@ -357,7 +320,7 @@ export const TournamentBroadcastPage = (): React.JSX.Element => {
       <Link to="/tournament" className="mb-4 inline-block text-brand underline">
         Volver al torneo
       </Link>
-      <TournamentBroadcastPanel key={id} id={id} captureOnly />
+      <TournamentBroadcastPanel key={id} id={id} captureOnly arena={arena} />
     </main>
   )
 }

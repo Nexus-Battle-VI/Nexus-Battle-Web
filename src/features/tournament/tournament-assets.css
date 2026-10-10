@@ -248,3 +248,22 @@
     transition: none;
   }
 }
+.tournament-broadcast-frame .br-battle-stage {
+  min-height: clamp(320px, calc(100dvh - 330px), 760px);
+}
+
+.tournament-broadcast-frame:fullscreen {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tournament-broadcast-frame:fullscreen .br-battle-scene {
+  flex: 1;
+  min-height: 0;
+}
+
+.tournament-broadcast-frame:fullscreen .br-battle-stage {
+  flex: 1;
+  min-height: 320px;
+}

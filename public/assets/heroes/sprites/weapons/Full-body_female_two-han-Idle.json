@@ -1,0 +1,93 @@
+{
+  "character": {
+    "id": "e7cdad28-5731-4aca-a058-072c4d6ac5c0",
+    "name": "Idle",
+    "prompt": "Full-body female two-handed weapon master, fierce and controlled. Athletic build, determined visible face and dark hair tied in a short braid. Fitted dark tempered-steel armor (#59616a) over charcoal fabric, with one bold angular pauldron on her anatomical left shoulder, a smaller guard on the other, compact articulated forearm plates and a split armored skirt that leaves her legs free to move. A long matte oxide-red scarf (#8f3540) crosses the upper chest and trails behind her, balancing the diagonal of a single heavy two-handed sword held across the body. The blade is dark steel with a narrow rust-red central channel and a restrained aged-copper crossguard (#a66a43). Staggered feet, forward weight and confident attack-ready posture. Strong steel-and-scarf silhouette with large readable shapes, not a red coat. No axe, shield, brown leather outfit, orange fire, gas rig or oversized gauntlet.",
+    "size": {
+      "width": 48,
+      "height": 48
+    },
+    "directions": 8,
+    "view": "low top-down"
+  },
+  "spritesheet": {
+    "path": "Full-body_female_two-han-Idle.png",
+    "cell_size": {
+      "width": 80,
+      "height": 80
+    },
+    "sheet_size": {
+      "width": 640,
+      "height": 560
+    },
+    "columns": 8,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 8,
+        "directions": [
+          "south",
+          "south-east",
+          "east",
+          "north-east",
+          "north",
+          "north-west",
+          "west",
+          "south-west"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 6,
+        "animation": "Taking Punch",
+        "animation_group_id": "1e063dcb-6175-4bda-8e13-617a86656d1e",
+        "direction": "south"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "a085dc53-a19e-4ab7-9376-b87a231b9abe",
+        "direction": "south"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "a085dc53-a19e-4ab7-9376-b87a231b9abe",
+        "direction": "south-east"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "a085dc53-a19e-4ab7-9376-b87a231b9abe",
+        "direction": "north-east"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "a085dc53-a19e-4ab7-9376-b87a231b9abe",
+        "direction": "north-west"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "Fight Stance Idle",
+        "animation_group_id": "a085dc53-a19e-4ab7-9376-b87a231b9abe",
+        "direction": "south-west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-07T15:02:50.087282+00:00"
+}

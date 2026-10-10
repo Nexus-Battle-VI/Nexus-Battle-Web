@@ -126,3 +126,19 @@ export const equipItemOnHero = (params: {
     `/inventories/me/heroes/${encodeURIComponent(params.heroReference)}/equipment/${params.slot}`,
     { method: 'PUT', body: { productReference: params.productReference } },
   )
+
+/**
+ * Desequipa la pieza de una ranura exacta (HU-28.4): `DELETE
+ * .../equipment/:slot`, simetrico a `equipItemOnHero`. El backend borra solo
+ * la asociacion heroe/ranura -el producto sigue en el inventario del
+ * jugador- y devuelve el mismo `HeroEquipment` ya recalculado (stats,
+ * efectos, capacidad), igual que `equipItemOnHero`.
+ */
+export const unequipItemFromHero = (params: {
+  readonly heroReference: string
+  readonly slot: EquipmentSlotId
+}): Promise<HeroEquipment> =>
+  httpClient.request<HeroEquipment>(
+    `/inventories/me/heroes/${encodeURIComponent(params.heroReference)}/equipment/${params.slot}`,
+    { method: 'DELETE' },
+  )

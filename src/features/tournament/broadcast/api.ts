@@ -1,17 +1,19 @@
 import { httpClient } from '@/lib/http'
+import type { ArenaObservation } from '@/shared/battle/observation'
 export interface BroadcastState {
   tournamentId: string
   broadcasterId: string | null
   selectedMatchId: string | null
   revision: number
 }
-export interface BroadcastSnapshot {
+export interface BroadcastSnapshot extends ArenaObservation {
   tournamentId: string
   tournamentName: string
   matchId: string
   encounterId: string
   bracketLabel: string
   combatRoomId: string
+  startedAt: string
   track: 'MAIN' | 'SECONDARY' | 'FINAL'
   round: number
   status: 'IN_PROGRESS' | 'FINISHED'
@@ -27,6 +29,8 @@ export interface BroadcastSnapshot {
     heroId: string
     displayName: string | null
     position: number
+    seat: number
+    heroSubtype: string | null
     health: { current: number; max: number } | null
     power: { current: number; max: number } | null
   }[]

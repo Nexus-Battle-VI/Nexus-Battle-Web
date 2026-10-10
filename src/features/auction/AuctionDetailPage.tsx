@@ -36,6 +36,7 @@ import {
 import { newIdempotencyKey } from './idempotencyKey'
 import { ImmediatePurchaseCard } from './immediate-purchase/ImmediatePurchaseCard'
 import { AuctionCancellationCard } from './cancellation/AuctionCancellationCard'
+import './auction-remaster.css'
 import { useWatchlist } from './useWatchlist'
 
 const MAX_AUTOMATIC_RETRIES = 3
@@ -237,7 +238,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
             : 'available'
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10">
+    <div className="auction-shell auction-page auction-detail-page">
       <Breadcrumb
         items={[
           { label: t('auction:crumbs.home'), to: '/ecommerce' },
@@ -246,18 +247,20 @@ export const AuctionDetailPage = (): React.JSX.Element => {
         ]}
       />
 
-      <div className="mt-6 space-y-6">
+      <div className="auction-detail-stack mt-4">
         {notFound ? (
           <Card
+            className="auction-control-card auction-detail-state-card"
             title={t('auction:detail.notFound.title')}
             description={t('auction:detail.notFound.description')}
           >
-            <Link to="/auction" className={linkClass}>
+            <Link to="/auction" className={`${linkClass} auction-button-secondary`}>
               {t('auction:detail.notFound.backToMarketplace')}
             </Link>
           </Card>
         ) : forbidden ? (
           <Card
+            className="auction-control-card auction-detail-state-card"
             title={t('auction:detail.forbidden.title')}
             description={t('auction:detail.forbidden.description')}
           >
@@ -267,8 +270,32 @@ export const AuctionDetailPage = (): React.JSX.Element => {
           <QueryState isLoading={auctionQuery.isPending} error={auctionQuery.error}>
             {auction !== undefined && (
               <>
+                <header className="auction-hero">
+                  <div>
+                    <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
+                    <h1 className="auction-title">{t('auction:crumbs.detail')}</h1>
+                    {product !== undefined && (
+                      <div className="auction-product-summary mt-2 flex min-w-0 items-center gap-3">
+                        {product.imageUrl !== '' && (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="auction-product-image size-12 shrink-0 rounded-md object-cover"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-ink">{product.name}</p>
+                          <p className="line-clamp-2 text-sm text-muted">{product.description}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <Link to="/auction" className={`${linkClass} auction-button-secondary`}>
+                    {t('auction:detail.notFound.backToMarketplace')}
+                  </Link>
+                </header>
                 {/* Visible para cualquier rol, vendedor incluido: no depende del panel de puja. */}
-                <dl className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
+                <dl className="auction-detail-metrics text-sm">
                   <div className="flex items-baseline gap-2">
                     <dt className="text-muted">{t('auction:detail.timeRemaining')}</dt>
                     <dd className="font-semibold text-ink">
@@ -297,7 +324,10 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                 </dl>
 
                 {/* HU-88: vendedor publico, nunca el sellerId crudo. */}
-                <section aria-labelledby="auction-seller-title" className="space-y-1">
+                <section
+                  aria-labelledby="auction-seller-title"
+                  className="auction-detail-seller space-y-1"
+                >
                   <h2 id="auction-seller-title" className="text-sm font-medium text-muted">
                     {t('auction:detail.seller.title')}
                   </h2>
@@ -322,7 +352,7 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                               : 'auction:marks.OFFICIAL',
                           ),
                         })}
-                        className="rounded-full border border-brand/40 bg-brand/10 px-2 py-1 text-xs font-semibold text-brand"
+                        className="auction-official-mark rounded-full border border-brand/40 bg-brand/10 px-2 py-1 text-xs font-semibold text-brand"
                       >
                         {t(
                           auction.officialMark === 'PREMIUM'
@@ -334,13 +364,20 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                   </div>
                 </section>
 
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button variant="secondary" onClick={() => void shareAuction()}>
+                <div className="auction-detail-actions">
+                  <Button
+                    className="auction-button-tertiary"
+                    variant="secondary"
+                    onClick={() => void shareAuction()}
+                  >
                     {t('auction:detail.share')}
                   </Button>
                   {auction.status === 'ACTIVE' && !isSeller && (
                     <>
                       <Button
+                        className={
+                          isFollowing ? 'auction-button-tertiary' : 'auction-button-secondary'
+                        }
                         variant={isFollowing ? 'secondary' : 'primary'}
                         loading={isSavingFollow}
                         onClick={() => {
@@ -373,120 +410,135 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                     )}
                   </p>
                 )}
-                {
-                  /*
-                   * `transaction` manda sobre `auction.status`: al completar la
-                   * compra se invalida la consulta y el servidor ya reporta la
-                   * subasta como cerrada (`SOLD`), pero la pantalla debe seguir
-                   * mostrando la confirmacion, no el aviso generico de "ya no
-                   * esta activa".
-                   */
-                  transaction === null && cancellation === null && auction.status !== 'ACTIVE' ? (
-                    <Card
-                      title={t('auction:detail.notActive')}
-                      description={t('auction:detail.currentStatus', { status: auction.status })}
-                    >
-                      {null}
-                    </Card>
-                  ) : transaction === null && isSeller ? (
-                    auction.publisherType === 'PLAYER' ? (
-                      <Card
-                        title={t('auction:detail.ownTitle')}
-                        description={t('auction:detail.ownDescription')}
-                      >
-                        <AuctionCancellationCard
-                          publicationFeeCredits={auction.publicationFeeCredits}
-                          bidCount={auction.bidCount}
-                          loading={cancellationMutation.isPending}
-                          confirmation={cancellation}
-                          error={
-                            cancellationMutation.isError
-                              ? describeAuctionCancellationFailure(cancellationMutation.error)
-                              : null
-                          }
-                          onCancel={() => {
-                            cancellationMutation.mutate(newIdempotencyKey())
-                          }}
-                        />
-                      </Card>
-                    ) : (
-                      <Card
-                        title={t('auction:detail.ownTitle')}
-                        description={t('auction:detail.ownDescription')}
-                      >
-                        {null}
-                      </Card>
-                    )
-                  ) : auction.publisherType ===
-                    'GAME_MASTER' ? null /* HU-88: compra inmediata en dinero real aun no tiene flujo en Web. */ : (
-                    <QueryState isLoading={productQuery.isPending} error={productQuery.error}>
-                      {product !== undefined && (
-                        <ImmediatePurchaseCard
+                <div className="auction-detail-workspace">
+                  <aside className="auction-detail-rail">
+                    {
+                      /*
+                       * `transaction` manda sobre `auction.status`: al completar la
+                       * compra se invalida la consulta y el servidor ya reporta la
+                       * subasta como cerrada (`SOLD`), pero la pantalla debe seguir
+                       * mostrando la confirmacion, no el aviso generico de "ya no
+                       * esta activa".
+                       */
+                      transaction === null &&
+                      cancellation === null &&
+                      auction.status !== 'ACTIVE' ? (
+                        <Card
+                          className="auction-control-card auction-detail-state-card"
+                          title={t('auction:detail.notActive')}
+                          description={t('auction:detail.currentStatus', {
+                            status: auction.status,
+                          })}
+                        >
+                          {null}
+                        </Card>
+                      ) : transaction === null && isSeller ? (
+                        auction.publisherType === 'PLAYER' ? (
+                          <AuctionCancellationCard
+                            contextTitle={t('auction:detail.ownTitle')}
+                            contextDescription={t('auction:detail.ownDescription')}
+                            publicationFeeCredits={auction.publicationFeeCredits}
+                            bidCount={auction.bidCount}
+                            loading={cancellationMutation.isPending}
+                            confirmation={cancellation}
+                            error={
+                              cancellationMutation.isError
+                                ? describeAuctionCancellationFailure(cancellationMutation.error)
+                                : null
+                            }
+                            onCancel={() => {
+                              cancellationMutation.mutate(newIdempotencyKey())
+                            }}
+                          />
+                        ) : (
+                          <Card
+                            className="auction-control-card auction-detail-state-card"
+                            title={t('auction:detail.ownTitle')}
+                            description={t('auction:detail.ownDescription')}
+                          >
+                            {null}
+                          </Card>
+                        )
+                      ) : auction.publisherType ===
+                        'GAME_MASTER' ? null /* HU-88: compra inmediata en dinero real aun no tiene flujo en Web. */ : (
+                        <QueryState isLoading={productQuery.isPending} error={productQuery.error}>
+                          {product !== undefined && (
+                            <ImmediatePurchaseCard
+                              product={{
+                                name: product.name,
+                                imageUrl: product.imageUrl,
+                                type: product.type,
+                                summary: product.description,
+                              }}
+                              stage={purchaseStage}
+                              focusConfirmation={buyNowIntent}
+                              {...(buyNowCredits !== null ? { priceCredits: buyNowCredits } : {})}
+                              {...(availableCredits !== undefined ? { availableCredits } : {})}
+                              {...(transaction !== null
+                                ? {
+                                    transaction: {
+                                      id: transaction.transactionId,
+                                      debitedCredits: transaction.debitedCredits,
+                                      remainingCredits: transaction.remainingCredits,
+                                    },
+                                  }
+                                : {})}
+                              confirmed={confirmed}
+                              onConfirmedChange={setConfirmed}
+                              onBuy={() => {
+                                buyNowMutation.mutate(newIdempotencyKey())
+                              }}
+                              onGoToBid={() => {
+                                /* El panel de pujar (`AuctionBidPanel`, HU-63.8) ya vive en esta
+                                 * misma pantalla, justo debajo: no hace falta navegar a ningun lado. */
+                              }}
+                              onViewPending={() => {
+                                void navigate('/auction/pending-claims')
+                              }}
+                            />
+                          )}
+                        </QueryState>
+                      )
+                    }
+
+                    {buyNowMutation.isError && (
+                      <p role="alert" className="text-sm text-danger">
+                        {describeBuyNowFailure(buyNowMutation.error)}
+                      </p>
+                    )}
+
+                    {auction.status === 'ACTIVE' &&
+                      !isSeller &&
+                      auction.publisherType === 'PLAYER' &&
+                      product !== undefined && (
+                        <AuctionBidPanel
+                          auction={auction}
                           product={{
                             name: product.name,
-                            // El catalogo real no trae un glifo corto por producto
-                            // (a diferencia del mock de Figma): se usa uno generico.
-                            icon: '🎁',
-                            summary: product.description,
+                            description: product.description,
+                            imageUrl: product.imageUrl,
+                            type: product.type,
                           }}
-                          stage={purchaseStage}
-                          focusConfirmation={buyNowIntent}
-                          {...(buyNowCredits !== null ? { priceCredits: buyNowCredits } : {})}
-                          {...(availableCredits !== undefined ? { availableCredits } : {})}
-                          {...(transaction !== null
-                            ? {
-                                transaction: {
-                                  id: transaction.transactionId,
-                                  debitedCredits: transaction.debitedCredits,
-                                  remainingCredits: transaction.remainingCredits,
-                                },
-                              }
-                            : {})}
-                          confirmed={confirmed}
-                          onConfirmedChange={setConfirmed}
-                          onBuy={() => {
-                            buyNowMutation.mutate(newIdempotencyKey())
-                          }}
-                          onGoToBid={() => {
-                            /* El panel de pujar (`AuctionBidPanel`, HU-63.8) ya vive en esta
-                             * misma pantalla, justo debajo: no hace falta navegar a ningun lado. */
-                          }}
-                          onViewPending={() => {
-                            void navigate('/auction/pending-claims')
-                          }}
+                          subject={subject}
+                          {...(availableCredits === undefined ? {} : { availableCredits })}
                         />
                       )}
-                    </QueryState>
-                  )
-                }
 
-                {buyNowMutation.isError && (
-                  <p role="alert" className="text-sm text-danger">
-                    {describeBuyNowFailure(buyNowMutation.error)}
-                  </p>
-                )}
+                    {auction.status === 'ACTIVE' &&
+                      !isSeller &&
+                      auction.publisherType === 'PLAYER' && (
+                        <AutoBidPanel
+                          auction={auction}
+                          subject={subject}
+                          {...(availableCredits === undefined ? {} : { availableCredits })}
+                        />
+                      )}
+                  </aside>
 
-                {auction.status === 'ACTIVE' &&
-                  !isSeller &&
-                  auction.publisherType === 'PLAYER' &&
-                  product !== undefined && (
-                    <AuctionBidPanel
-                      auction={auction}
-                      product={{ name: product.name, description: product.description }}
-                      subject={subject}
-                      {...(availableCredits === undefined ? {} : { availableCredits })}
-                    />
-                  )}
-
-                {auction.status === 'ACTIVE' && !isSeller && auction.publisherType === 'PLAYER' && (
-                  <AutoBidPanel
-                    auction={auction}
-                    subject={subject}
-                    {...(availableCredits === undefined ? {} : { availableCredits })}
-                  />
-                )}
-
-                <AuctionBidHistory auctionId={auction.id} />
+                  <div className="auction-detail-main">
+                    <AuctionBidHistory auctionId={auction.id} />
+                  </div>
+                </div>
               </>
             )}
           </QueryState>

@@ -72,6 +72,16 @@ if (import.meta.env.DEV) {
       default: module.HeroSelectionDevPreview,
     })),
   )
+  // EN-029: remaster visual Sprint 3 de "Mi Inventario" ("Warforge Armory" /
+  // "Royal Arsenal"). `/inventory` real vive tras `RequireSession` y necesita
+  // Player-Inventory (compuesto con Catalog) respondiendo de verdad; el
+  // preview intercepta `fetch` para `/api/inventories/me/*` y monta
+  // `PlayerInventoryPage` real, mismo criterio que `ModerationQueueDevPreview`.
+  const PlayerInventoryDevPreviewLazy = lazy(() =>
+    import('@/features/player-inventory/PlayerInventoryDevPreview').then((module) => ({
+      default: module.PlayerInventoryDevPreview,
+    })),
+  )
   const ModerationQueueDevPreviewLazy = lazy(() =>
     import('@/features/admin/comments/dev/ModerationQueueDevPreview').then((module) => ({
       default: module.ModerationQueueDevPreview,
@@ -136,6 +146,31 @@ if (import.meta.env.DEV) {
   const PendingClaimsDevPreviewLazy = lazy(() =>
     import('@/features/auction/pending-claims/dev/PendingClaimsDevPreview').then((module) => ({
       default: module.PendingClaimsDevPreview,
+    })),
+  )
+  const AuctionMarketplaceDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionMarketplaceDevPreview').then((module) => ({
+      default: module.AuctionMarketplaceDevPreview,
+    })),
+  )
+  const AuctionDetailDevPreviewLazy = lazy(() =>
+    import('@/features/auction/dev/AuctionDetailDevPreview').then((module) => ({
+      default: module.AuctionDetailDevPreview,
+    })),
+  )
+  const AuctionActivityDevPreviewLazy = lazy(() =>
+    import('@/features/auction/AuctionOperationsDevPreviews').then((module) => ({
+      default: module.AuctionActivityDevPreview,
+    })),
+  )
+  const AuctionPublishDevPreviewLazy = lazy(() =>
+    import('@/features/auction/AuctionOperationsDevPreviews').then((module) => ({
+      default: module.AuctionPublishDevPreview,
+    })),
+  )
+  const AuctionOfficialPublishDevPreviewLazy = lazy(() =>
+    import('@/features/auction/AuctionOperationsDevPreviews').then((module) => ({
+      default: module.AuctionOfficialPublishDevPreview,
     })),
   )
   // Remaster visual E-commerce Sprint 3 (4a pasada): Catalog no tiene
@@ -308,6 +343,50 @@ if (import.meta.env.DEV) {
         </Suspense>
       ),
     },
+    {
+      path: '__dev/auction/activity',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionActivityDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/publish',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionPublishDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/publish-official',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionOfficialPublishDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/marketplace',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionMarketplaceDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    {
+      path: '__dev/auction/detail',
+      element: <Navigate to="/__dev/auction/detail/auction-remaster-preview" replace />,
+    },
+    {
+      path: '__dev/auction/detail/:auctionId',
+      element: (
+        <Suspense fallback={null}>
+          <AuctionDetailDevPreviewLazy />
+        </Suspense>
+      ),
+    },
     // HU-69.7: productos pendientes de reclamo. Vive tras `RequireSession` y
     // necesita Auction respondiendo de verdad; el preview intercepta `fetch`
     // para `/api/v1/auctions/me/pending-claims*` y `/api/v1/catalog/products/*`
@@ -362,6 +441,15 @@ if (import.meta.env.DEV) {
       element: (
         <Suspense fallback={null}>
           <HeroSelectionDevPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // EN-029: ver comentario junto a `PlayerInventoryDevPreviewLazy` arriba.
+    {
+      path: '__dev/inventory',
+      element: (
+        <Suspense fallback={null}>
+          <PlayerInventoryDevPreviewLazy />
         </Suspense>
       ),
     },
