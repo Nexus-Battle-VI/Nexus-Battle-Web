@@ -18,7 +18,8 @@ import { invalidateWallet, useRefreshWalletOn } from '@/shared/wallet'
 import { registrationApi, type RegistrationApi, type EntryTeam, type EntryView } from './api'
 import type { BracketApi } from './bracketApi'
 import type { EncounterApi } from './encounterApi'
-import type { EncounterAdminApi } from './encounterAdminApi'
+import type { EncounterAdminApi, MatchAcceptanceApi } from './encounterAdminApi'
+import { TournamentAcceptancePanel } from './TournamentAcceptancePanel'
 import { TournamentEncounterAdminPanel } from './TournamentEncounterAdminPanel'
 import { useTournamentAssets } from '../tournamentAssets'
 import { TournamentEmptyState } from '../TournamentVisuals'
@@ -40,6 +41,7 @@ import { membersOf, modeOf, modalities } from './modalities'
 import './tournament.css'
 
 interface Props {
+  readonly acceptance?: MatchAcceptanceApi
   readonly api?: RegistrationApi
   readonly brackets?: BracketApi
   readonly encounters?: EncounterApi
@@ -80,6 +82,7 @@ const RegistrationContent = ({
   brackets,
   encounters,
   encounterAdmin,
+  acceptance,
   avatarDownload,
   links,
   progress,
@@ -179,6 +182,7 @@ const RegistrationContent = ({
               {...(brackets ? { brackets } : {})}
               {...(encounters ? { encounters } : {})}
               {...(encounterAdmin ? { encounterAdmin } : {})}
+              {...(acceptance ? { acceptance } : {})}
               {...(avatarDownload ? { avatarDownload } : {})}
               {...(links ? { links } : {})}
               {...(progress ? { progress } : {})}
@@ -199,6 +203,7 @@ const TournamentContent = ({
   brackets,
   encounters,
   encounterAdmin,
+  acceptance,
   avatarDownload,
   links,
   progress,
@@ -289,6 +294,12 @@ const TournamentContent = ({
               <p className="tournament-eyebrow">
                 ARENA · {format.label} · {format.summary}
               </p>
+              {snapshot.capacity.confirmedPeople !== undefined && (
+                <p className="text-sm text-muted">
+                  {snapshot.capacity.confirmedPeople} de{' '}
+                  {snapshot.capacity.totalPeople ?? format.size * 8} personas confirmadas
+                </p>
+              )}
               <h2 className="font-game-display text-xl">{snapshot.tournament.name}</h2>
               <p className="text-sm text-muted">
                 {String(snapshot.capacity.confirmed)} de 8 {format.slots} confirmados ·{' '}
@@ -373,8 +384,11 @@ const TournamentContent = ({
                   {snapshot.tournament.open ? 'Inscripciones abiertas.' : 'Inscripciones cerradas.'}
                 </p>
                 <p className="text-sm text-muted">
-                  Cierre de inscripción: {dateLabel(snapshot.tournament.closesAt)} · Primera
-                  aceptación: {dateLabel(snapshot.tournament.startsAt)}
+                  Cierre de inscripción: {dateLabel(snapshot.tournament.closesAt)} ·{' '}
+                  {snapshot.tournament.acceptancePolicy === 'ROUND_ACCEPTANCE_V1'
+                    ? 'Primera aceptación'
+                    : 'Inicio programado'}
+                  : {dateLabel(snapshot.tournament.startsAt)}
                 </p>
                 <Button className="mt-3" variant="secondary" onClick={() => void view.refetch()}>
                   Actualizar inscripción
@@ -388,8 +402,52 @@ const TournamentContent = ({
                   {snapshot.tournament.bracketPublished ? 'Consultar llaves' : 'Ir a mi equipo'}
                 </Button>
               </Card>
+              {snapshot.tournament.roundSchedule &&
+                snapshot.tournament.roundSchedule.length > 0 && (
+                  <Card>
+                    <div
+                      className="tournament-calendar-scroll"
+                      tabIndex={0}
+                      aria-label="Calendario confirmado del servidor"
+                    >
+                      <table className="tournament-calendar">
+                        <caption>Calendario confirmado · horarios fijos del servidor</caption>
+                        <thead>
+                          <tr>
+                            <th>Ronda</th>
+                            <th>Aceptación personal</th>
+                            <th>Inicio previsto</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {snapshot.tournament.roundSchedule.map((round) => (
+                            <tr key={round.round}>
+                              <th>{round.round}</th>
+                              <td>
+                                {dateLabel(round.acceptanceOpensAt)} –{' '}
+                                {dateLabel(round.acceptanceClosesAt)}
+                              </td>
+                              <td>{dateLabel(round.scheduledStartAt)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                )}
             </div>
           )}
+          {(tab === 'arena' || tab === 'encuentros') &&
+            roles.includes('PLAYER') &&
+            snapshot.tournament.acceptancePolicy === 'ROUND_ACCEPTANCE_V1' &&
+            snapshot.tournament.bracketPublished && (
+              <TournamentAcceptancePanel
+                id={id}
+                subject={subject}
+                {...(encounters ? { encounters } : {})}
+                {...(acceptance ? { api: acceptance } : {})}
+              />
+            )}
           {tab === 'equipo' && (
             <>
               <section

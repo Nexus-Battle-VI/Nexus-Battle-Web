@@ -78,6 +78,28 @@ describe('presentHeroProgression', () => {
     expect(result.percent).toBeLessThanOrEqual(100)
   })
 
+  it.each([
+    // 7a pasada (gate "XP no inventar matematica"): los casos explicitos
+    // que compara el encargo -10% y 80% deben verse MUY distintos en
+    // Chrome; 30% y 70/240≈29.17% deben verse casi iguales, porque eso es
+    // lo que la formula de progreso DENTRO del nivel actual produce.
+    [10, 100, 10],
+    [80, 100, 80],
+    [30, 100, 30],
+    [70, 240, 29], // round(70/240*100) = 29
+  ])('%i / %i da %i%%', (xpIntoLevel, xpRequiredForLevel, expectedPercent) => {
+    const result = presentHeroProgression(
+      progression({
+        level: 1,
+        currentXp: xpIntoLevel,
+        floorForCurrentLevel: 0,
+        nextLevel: { status: 'AVAILABLE', forNextLevel: 2, amount: xpRequiredForLevel },
+      }),
+    )
+
+    expect(result.percent).toBe(expectedPercent)
+  })
+
   it('con el acumulado ya por encima del umbral (dato desfasado) la barra se satura en 100', () => {
     const result = presentHeroProgression(
       progression({

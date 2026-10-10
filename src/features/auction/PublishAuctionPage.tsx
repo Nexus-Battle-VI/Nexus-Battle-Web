@@ -12,6 +12,7 @@ import { validateAuctionForm, type AuctionFormValues } from './validation'
 import { i18n } from '@/shared/i18n/i18n'
 import { countLabel } from '@/shared/i18n/format'
 import { useAuctionPublishableInventory } from './useAuctionPublishableInventory'
+import './auction-remaster.css'
 
 const newOperationId = (): string => globalThis.crypto.randomUUID()
 
@@ -42,7 +43,8 @@ const ActiveAuctionResult = ({ auction }: { auction: AuctionPublication }): Reac
   return (
     <section
       aria-labelledby="auction-created"
-      className="rounded-xl border border-success/40 bg-success/10 p-5"
+      className="auction-control-card auction-result-card p-5"
+      data-tone="success"
     >
       <div className="flex items-center gap-3">
         <PackageCheck aria-hidden="true" className="size-6 text-success" />
@@ -131,22 +133,29 @@ export const PublishAuctionPage = (): React.JSX.Element => {
   return (
     <section
       aria-labelledby="auction-title"
-      className="mx-auto flex w-full max-w-6xl flex-col gap-4"
+      className="auction-shell auction-page auction-publish-page"
     >
-      <header className="rounded-xl border border-border bg-surface-raised p-5">
-        <div className="flex items-center gap-3">
-          <Gavel aria-hidden="true" className="size-6 text-brand" />
-          <h1 id="auction-title" className="text-xl font-semibold text-ink">
-            {t('auction:publish.title')}
-          </h1>
+      <header className="auction-hero">
+        <div>
+          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
+          <div className="flex items-center gap-3">
+            <Gavel aria-hidden="true" className="size-6 text-brand" />
+            <h1 id="auction-title" className="auction-title">
+              {t('auction:publish.title')}
+            </h1>
+          </div>
+          <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:publish.subtitle')}</p>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:publish.subtitle')}</p>
       </header>
 
       {created !== null && (
         <>
           <ActiveAuctionResult auction={created} />
-          <Button className="self-start" variant="secondary" onClick={reset}>
+          <Button
+            className="auction-button-secondary self-start"
+            variant="secondary"
+            onClick={reset}
+          >
             {t('auction:publish.another')}
           </Button>
         </>
@@ -155,7 +164,7 @@ export const PublishAuctionPage = (): React.JSX.Element => {
       {created === null && (
         <form
           noValidate
-          className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] lg:items-start"
+          className="auction-form grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] lg:items-start"
           onSubmit={(event) => {
             event.preventDefault()
             setSubmitted(true)
@@ -329,7 +338,11 @@ export const PublishAuctionPage = (): React.JSX.Element => {
                 {describeAuctionError(mutation.error)}
               </p>
             )}
-            <Button type="submit" loading={mutation.isPending} className="mt-5 w-full">
+            <Button
+              type="submit"
+              loading={mutation.isPending}
+              className="auction-button-primary mt-5 w-full"
+            >
               {t('auction:publish.submit')}
             </Button>
             <p className="mt-3 text-xs text-muted">{t('auction:publish.revalidate')}</p>

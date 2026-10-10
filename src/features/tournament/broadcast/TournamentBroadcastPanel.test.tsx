@@ -5,9 +5,11 @@ import { useSession } from '@/shared/session'
 import { renderWithProviders } from '@/test/render'
 import { BroadcastCapture, TournamentBroadcastPanel } from './TournamentBroadcastPanel'
 import { BroadcastPreviewApi } from '@/test/tournament-broadcast'
+import { SpectatorArena } from '@/features/battle-rooms/battle/SpectatorArena'
 
 describe('HU-79/81: recorrido de observación en React', () => {
   beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
     useSession.setState({ subject: 'adminA', roles: ['ADMINISTRATOR'] })
   })
   afterEach(() => {
@@ -20,23 +22,23 @@ describe('HU-79/81: recorrido de observación en React', () => {
   it('cambia en la misma superficie y solo presenta estado de Combat, sin controles de combate', async () => {
     const api = new BroadcastPreviewApi()
     const user = userEvent.setup()
-    renderWithProviders(<BroadcastCapture id="DEMO" api={api} />)
+    renderWithProviders(<BroadcastCapture id="DEMO" api={api} arena={SpectatorArena} />)
     await screen.findByText('Justa E1')
     const frame = screen.getByRole('region', { name: 'Combate capturable' })
-    expect(within(frame).getByText('Dragones · Equipo A')).toBeInTheDocument()
+    expect(within(frame).getByRole('region', { name: 'Dragones' })).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /atacar|habilidad|iniciar combate/i }),
     ).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /Mostrar E2/ }))
     await screen.findByText('Justa E2')
     expect(screen.getByRole('region', { name: 'Combate capturable' })).toBe(frame)
-    expect(within(frame).queryByText('Dragones · Equipo A')).not.toBeInTheDocument()
-    expect(within(frame).getByText('Aurora · Equipo A')).toBeInTheDocument()
+    expect(within(frame).queryByRole('region', { name: 'Dragones' })).not.toBeInTheDocument()
+    expect(within(frame).getByRole('region', { name: 'Aurora' })).toBeInTheDocument()
   })
   it('desconexión visible, recuperación con turno actualizado y resultado sin cambio automático', async () => {
     const api = new BroadcastPreviewApi(),
       user = userEvent.setup()
-    renderWithProviders(<BroadcastCapture id="DEMO" api={api} />)
+    renderWithProviders(<BroadcastCapture id="DEMO" api={api} arena={SpectatorArena} />)
     await screen.findByText('Justa E1')
     api.disconnected = true
     await user.click(screen.getByRole('button', { name: 'Recuperar conexión' }))
@@ -44,7 +46,7 @@ describe('HU-79/81: recorrido de observación en React', () => {
     api.advance('encounter-01')
     api.disconnected = false
     await user.click(screen.getByRole('button', { name: 'Recuperar conexión' }))
-    await screen.findByText(/Turno de Nova E1/)
+    expect(await screen.findAllByText(/Turno de Nova E1/)).not.toHaveLength(0)
     api.finish()
     await user.click(screen.getByRole('button', { name: 'Recuperar conexión' }))
     await screen.findByText('Ganador: Dragones')
@@ -75,7 +77,9 @@ describe('HU-79/81: recorrido de observación en React', () => {
       api.state = { ...api.state, broadcasterId: 'adminA', revision: 1 }
       return api.configuration()
     })
-    renderWithProviders(<TournamentBroadcastPanel id="DEMO" api={api} captureOnly />)
+    renderWithProviders(
+      <TournamentBroadcastPanel id="DEMO" api={api} captureOnly arena={SpectatorArena} />,
+    )
     await user.click(await screen.findByRole('button', { name: 'Designarme transmisor' }))
     await screen.findByText('Selecciona una justa en curso para preparar la captura.')
     expect(screen.getByText('Lista para seleccionar una justa')).toBeInTheDocument()
@@ -88,13 +92,15 @@ describe('HU-79/81: recorrido de observación en React', () => {
     const api = new BroadcastPreviewApi()
     api.state.selectedMatchId = null
     api.snapshots.clear()
-    const { unmount } = renderWithProviders(<BroadcastCapture id="DEMO" api={api} />)
+    const { unmount } = renderWithProviders(
+      <BroadcastCapture id="DEMO" api={api} arena={SpectatorArena} />,
+    )
     expect(screen.getByText('Conectando con Combat…')).toBeInTheDocument()
     await screen.findByText(/No hay justas en curso para transmitir/)
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     unmount()
     api.disconnected = true
-    renderWithProviders(<BroadcastCapture id="DEMO" api={api} />)
+    renderWithProviders(<BroadcastCapture id="DEMO" api={api} arena={SpectatorArena} />)
     await screen.findByText('Conexión de prueba interrumpida.')
     expect(screen.getByText(/Vista desconectada/)).toBeInTheDocument()
   })
@@ -104,9 +110,11 @@ describe('HU-79/81: recorrido de observación en React', () => {
     next.state.tournamentId = 'T2'
     next.state.selectedMatchId = null
     next.snapshots.clear()
-    const { rerender } = renderWithProviders(<BroadcastCapture id="DEMO" api={old} />)
+    const { rerender } = renderWithProviders(
+      <BroadcastCapture id="DEMO" api={old} arena={SpectatorArena} />,
+    )
     await screen.findByText('Justa E1')
-    rerender(<BroadcastCapture id="T2" api={next} />)
+    rerender(<BroadcastCapture id="T2" api={next} arena={SpectatorArena} />)
     expect(screen.queryByText('Justa E1')).not.toBeInTheDocument()
     await screen.findByText('Selecciona una justa en curso para preparar la captura.')
   })

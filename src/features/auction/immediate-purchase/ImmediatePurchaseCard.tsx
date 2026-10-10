@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/form/CheckboxField'
 import { countLabel } from '@/shared/i18n/format'
+import { AuctionProductIdentity } from '../AuctionProductIdentity'
 import { formatCredits } from './formatCredits'
+import './immediate-purchase.css'
 
 /**
  * Tarjeta de compra inmediata (HU-64.1).
@@ -14,10 +16,10 @@ import { formatCredits } from './formatCredits'
  * por callbacks. La orquestacion con la API (`POST /auctions/{auctionId}/buy-now`)
  * la aporta HU-64.6.
  *
- * Usa los tokens del producto (`src/index.css`: `--color-brand`, `--color-surface-raised`,
- * `--color-danger`...) y los componentes compartidos (`Card`, `Button`, `CheckboxField`),
- * NO una paleta propia: Figma fue la guia de contenido y disposicion, no una licencia
- * para que este componente se viera distinto al resto de Nexus Battles VI.
+ * Usa una superficie local y los tokens semanticos del producto junto con los
+ * componentes compartidos (`Button`, `CheckboxField`). La capa local solo
+ * ajusta la identidad visual de Auction; estados y comportamiento permanecen
+ * expresados por los tokens compartidos.
  *
  * Criterios de aceptacion que la interfaz hace visibles:
  * - CA-01 `success` / `pending-pickup`: compra completada y producto por recoger.
@@ -30,8 +32,9 @@ export type ImmediatePurchaseStage =
 
 export interface ImmediatePurchaseProduct {
   readonly name: string
-  /** Emoji o glifo corto del producto. */
-  readonly icon: string
+  /** URL e identidad de tipo procedentes del contrato canonico de Catalog. */
+  readonly imageUrl?: string
+  readonly type?: string
   /** Linea descriptiva, por ejemplo "Arma mítica · Poder 95 · Rareza Épica". */
   readonly summary?: string
 }
@@ -108,7 +111,7 @@ const Alert = ({
   readonly message: string
 }): React.JSX.Element => (
   <div
-    className={clsx('flex gap-3 rounded-lg border-l-4 p-4 text-xs', ALERT_TONE[tone])}
+    className={clsx('flex gap-3 rounded-lg border-l-4 p-4 text-sm', ALERT_TONE[tone])}
     role={tone === 'success' || tone === 'info' ? 'status' : 'alert'}
   >
     <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
@@ -126,8 +129,8 @@ const KeyValue = ({
   readonly value: string
 }): React.JSX.Element => (
   <div className="flex flex-col gap-1">
-    <dt className="text-[11px] font-medium text-muted">{label}</dt>
-    <dd className="m-0 text-xs font-semibold text-ink">{value}</dd>
+    <dt className="auction-meta font-medium text-muted">{label}</dt>
+    <dd className="auction-value m-0 font-semibold text-ink">{value}</dd>
   </div>
 )
 
@@ -179,8 +182,15 @@ export const ImmediatePurchaseCard = ({
         {product.name}
       </h3>
       <span
+        data-tone={
+          stage === 'available' || stage === 'success'
+            ? 'success'
+            : stage === 'insufficient-credits'
+              ? 'danger'
+              : 'warning'
+        }
         className={clsx(
-          'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+          'auction-state-badge inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
           BADGE_TONE[stage],
         )}
       >
@@ -192,15 +202,23 @@ export const ImmediatePurchaseCard = ({
   if (stage === 'processing') {
     return (
       <article
-        className="flex w-full max-w-[480px] flex-col gap-5 rounded-lg border border-border bg-surface-raised p-6"
+        className="auction-flow-card immediate-purchase-card flex w-full max-w-[480px] flex-col gap-5 rounded-lg border border-border bg-surface-raised p-6"
         aria-labelledby={titleId}
         aria-busy="true"
       >
-        {header}
+        <div className="flex items-center gap-4">
+          <AuctionProductIdentity
+            name={product.name}
+            imageUrl={product.imageUrl}
+            type={product.type}
+            className="immediate-purchase-product-identity"
+          />
+          {header}
+        </div>
         <div>
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold">
+          <div className="auction-meta mb-2 flex items-center justify-between gap-3 font-semibold">
             <span>{t('auction:purchase.processing')}</span>
-            <span className="text-[11px] font-medium text-muted">{t('auction:dontClose')}</span>
+            <span className="font-medium text-muted">{t('auction:dontClose')}</span>
           </div>
           <div
             className="h-2 overflow-hidden rounded-full bg-border"
@@ -217,7 +235,7 @@ export const ImmediatePurchaseCard = ({
   return (
     <article
       className={clsx(
-        'flex w-full max-w-[480px] flex-col gap-5 rounded-lg border bg-surface-raised p-6',
+        'auction-flow-card immediate-purchase-card flex w-full max-w-[480px] flex-col gap-5 rounded-lg border bg-surface-raised p-6',
         stage === 'available' && !confirmationMissing
           ? 'border-2 border-brand p-[23px] shadow-[0_0_20px_0_var(--color-brand)]/30'
           : 'border-border',
@@ -225,12 +243,12 @@ export const ImmediatePurchaseCard = ({
       aria-labelledby={titleId}
     >
       <div className="flex items-center gap-4">
-        <div
-          className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-brand text-2xl"
-          aria-hidden="true"
-        >
-          {product.icon}
-        </div>
+        <AuctionProductIdentity
+          name={product.name}
+          imageUrl={product.imageUrl}
+          type={product.type}
+          className="immediate-purchase-product-identity"
+        />
         {header}
       </div>
 
@@ -269,7 +287,7 @@ export const ImmediatePurchaseCard = ({
           )}
           <Button
             variant="primary"
-            className="w-full"
+            className="auction-button-primary w-full"
             aria-disabled={confirmationMissing}
             onClick={handleBuy}
           >
@@ -296,7 +314,11 @@ export const ImmediatePurchaseCard = ({
               value={formatCredits(transaction.remainingCredits)}
             />
           </dl>
-          <Button variant="secondary" className="w-full" onClick={onViewPending}>
+          <Button
+            variant="secondary"
+            className="auction-button-secondary w-full"
+            onClick={onViewPending}
+          >
             {t('auction:purchase.viewPending')}
           </Button>
         </>
@@ -309,7 +331,7 @@ export const ImmediatePurchaseCard = ({
             title={t('auction:purchase.unavailableTitle')}
             message={t('auction:purchase.unavailableBody')}
           />
-          <Button variant="primary" className="w-full" onClick={onGoToBid}>
+          <Button variant="primary" className="auction-button-primary w-full" onClick={onGoToBid}>
             {t('auction:purchase.goToBid')}
           </Button>
         </>
@@ -344,7 +366,7 @@ export const ImmediatePurchaseCard = ({
               />
             )}
           </dl>
-          <Button variant="primary" className="w-full" disabled>
+          <Button variant="primary" className="auction-button-primary w-full" disabled>
             {t('auction:purchase.buy')}
           </Button>
         </>
@@ -367,7 +389,11 @@ export const ImmediatePurchaseCard = ({
               value={t('auction:purchase.pendingPickup')}
             />
           </dl>
-          <Button variant="secondary" className="w-full" onClick={onViewOtherProducts}>
+          <Button
+            variant="secondary"
+            className="auction-button-secondary w-full"
+            onClick={onViewOtherProducts}
+          >
             {t('auction:purchase.viewOthers')}
           </Button>
         </>

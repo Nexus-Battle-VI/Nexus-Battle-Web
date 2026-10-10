@@ -195,7 +195,8 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
     fetchMock.mockImplementation(routedFetch(() => json(EMPTY_EQUIPMENT)))
     renderWithProviders(<Harness />)
 
-    expect(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' })).toBeEnabled()
+    expect(await screen.findByRole('option', { name: 'Guerrero Tanque' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Tus héroes' })).toBeEnabled()
     expect(
       fetchMock.mock.calls.some(([url]) => String(url).endsWith('/inventories/me/heroes')),
     ).toBe(true)
@@ -236,16 +237,22 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     expect(await screen.findByText('Nivel 2')).toBeInTheDocument()
     expect(screen.getByText('215 XP acumulada')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Seleccionar Mago Hielo' }))
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Tus héroes' }), 'mago-hielo')
     expect(await screen.findByText('Nivel 3')).toBeInTheDocument()
     expect(screen.getByText('357 XP acumulada')).toBeInTheDocument()
     expect(screen.queryByText('Nivel 2')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     expect(await screen.findByText('Nivel 2')).toBeInTheDocument()
     expect(screen.getByText('215 XP acumulada')).toBeInTheDocument()
   })
@@ -283,7 +290,10 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
     fetchMock.mockImplementation(routedFetch(() => json(EMPTY_EQUIPMENT)))
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(await screen.findByRole('button', { name: 'Confirmar para batalla' })).toBeEnabled()
     expect(
@@ -303,11 +313,8 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
 
     renderWithProviders(<Harness />)
 
-    expect(
-      await screen.findByRole('button', {
-        name: 'Seleccionar Guerrero Tanque (preparado para batalla)',
-      }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('option', { name: 'Guerrero Tanque ✓' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Tus héroes' })).toHaveValue('guerrero-tanque')
     expect(await screen.findByTestId('slot-WEAPON_1')).toBeInTheDocument()
     expect(await screen.findByRole('button', { name: 'Preparado para batalla ✓' })).toBeDisabled()
     // Capacidad tal como la informa el servicio: no se cuenta en la Web.
@@ -334,18 +341,17 @@ describe('HeroConfigurator (HU-28) — A. gestion del heroe', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByRole('button', { name: 'Confirmar para batalla' }))
 
     await waitFor(() => {
       expect(confirmedReference).toBe('guerrero-tanque')
     })
     expect(await screen.findByRole('button', { name: 'Preparado para batalla ✓' })).toBeDisabled()
-    expect(
-      screen.getByRole('button', {
-        name: 'Seleccionar Guerrero Tanque (preparado para batalla)',
-      }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Guerrero Tanque ✓' })).toBeInTheDocument()
   })
 
   it('un heroe preparado pero no listo muestra los avisos del servicio, sin inventar el motivo', async () => {
@@ -403,7 +409,10 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     fetchMock.mockImplementation(routedFetch(() => json(EMPTY_EQUIPMENT)))
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     for (const slot of [
       'WEAPON_1',
@@ -438,7 +447,10 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
         productType="ARMA"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(await screen.findByTestId('slot-WEAPON_1')).toHaveAttribute('data-compatible', 'true')
     expect(screen.getByTestId('slot-WEAPON_2')).toHaveAttribute('data-compatible', 'true')
@@ -500,7 +512,10 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     fetchMock.mockImplementation(routedFetch(() => json(EMPTY_EQUIPMENT)))
 
     renderWithProviders(<Harness productReference="casco-de-acero" productType="ARMADURA" />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
 
     expect(await screen.findByRole('button', { name: 'Equipar' })).toBeDisabled()
@@ -518,7 +533,10 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     )
 
     renderWithProviders(<Harness productReference="espada-de-fuego" productType="ARMA" />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
     await user.click(await screen.findByRole('button', { name: 'Equipar' }))
 
@@ -538,7 +556,7 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     )
 
     renderWithProviders(<Harness productReference="espada-de-fuego" productType="ARMA" />)
-    await user.click(await screen.findByRole('button', { name: 'Sélectionner Guerrero Tanque' }))
+    await user.selectOptions(await screen.findByRole('combobox'), 'guerrero-tanque')
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
     await user.click(await screen.findByRole('button', { name: 'Équiper' }))
 
@@ -554,7 +572,10 @@ describe('HeroConfigurator (HU-28) — B. gestor de equipamiento', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Catalog no disponible.')
   })
@@ -635,7 +656,10 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(await screen.findByText('Sin épica equipada.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Equipar épica$/u })).toBeNull()
@@ -653,7 +677,10 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
     expect(
@@ -698,7 +725,10 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(await screen.findByText('Equipada: Golpe de defensa')).toBeInTheDocument()
     expect(screen.getByText('+4 Defensa')).toBeInTheDocument()
@@ -725,7 +755,10 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(
       await screen.findByText(
@@ -759,7 +792,10 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
         productType="EPICA"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await screen.findByText('Sin épica equipada.')
 
     await user.click(screen.getByRole('button', { name: 'Seleccionar épica' }))
@@ -783,7 +819,10 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
     )
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     await user.click(screen.getByRole('button', { name: 'Seleccionar épica' }))
     expect(screen.getByRole('button', { name: 'Cancelar selección' })).toBeInTheDocument()
@@ -807,7 +846,7 @@ describe('HeroConfigurator (HU-31) — epica equipada', () => {
     renderWithProviders(<Harness />)
     await userEvent
       .setup()
-      .click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+      .selectOptions(await screen.findByRole('combobox', { name: 'Tus héroes' }), 'guerrero-tanque')
 
     expect(
       await screen.findByText(
@@ -855,7 +894,10 @@ describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () =
         productType="ARMA"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
 
     expect(await screen.findByRole('button', { name: 'Equipar' })).toBeEnabled()
@@ -874,7 +916,10 @@ describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () =
         productType="ARMA"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     const notice = await screen.findByRole('status')
     expect(notice).toHaveTextContent('El equipamiento no se puede modificar')
@@ -889,7 +934,10 @@ describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () =
     fetchMock.mockImplementation(routedFetch(() => json({ ...EQUIPPED, locked: true })))
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(
       await within(screen.getByTestId('slot-WEAPON_1')).findByText('Espada de Fuego'),
@@ -919,7 +967,10 @@ describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () =
         productType="ARMA"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
     await user.click(await screen.findByRole('button', { name: 'Equipar' }))
 
@@ -957,7 +1008,10 @@ describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () =
         productType="ARMA"
       />,
     )
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
     await user.click(await screen.findByRole('button', { name: 'Equipar' }))
 
@@ -983,7 +1037,10 @@ describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () =
     )
 
     renderWithProviders(<Harness productReference="espada-de-fuego" productType="ARMA" />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
     await user.click(await screen.findByTestId('slot-WEAPON_1'))
     await user.click(await screen.findByRole('button', { name: 'Equipar' }))
 
@@ -1001,7 +1058,10 @@ describe('HeroConfigurator (HU-29) — bloqueo de equipamiento en combate', () =
     fetchMock.mockImplementation(routedFetch(() => json({ ...EMPTY_EQUIPMENT, locked: true })))
 
     renderWithProviders(<Harness />)
-    await user.click(await screen.findByRole('button', { name: 'Seleccionar Guerrero Tanque' }))
+    await user.selectOptions(
+      await screen.findByRole('combobox', { name: 'Tus héroes' }),
+      'guerrero-tanque',
+    )
 
     expect(await screen.findByTestId('slot-HELMET')).toBeDisabled()
     expect(screen.getByTestId('slot-ITEM_1')).toBeDisabled()

@@ -5,6 +5,10 @@ import process from 'node:process'
 const DIST_DIRECTORY = path.resolve('dist')
 const FORBIDDEN_MARKERS = [
   'TournamentModesPreview',
+  'calendarMatchFixture',
+  'qa-calendar-trio',
+  'qa-server-draw',
+  'qa-third-seat-attack',
   'qa-tree-template',
   'qa-formats-',
   '__dev/tournament',

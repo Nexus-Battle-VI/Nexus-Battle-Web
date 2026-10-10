@@ -3,6 +3,7 @@ import { useSession } from '@/shared/session'
 import { registrationApi } from './api'
 import { bracketApi } from './bracketApi'
 import { encounterApi } from './encounterApi'
+import { matchAcceptanceApi } from './encounterAdminApi'
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
@@ -34,6 +35,18 @@ describe('contrato HTTP de Torneo v2 con httpClient autenticado', () => {
       body: JSON.stringify(input),
     })
     expect(fetch.mock.calls[0]?.[1]?.body).not.toContain('ownerId')
+  })
+  it('acepta una justa por la ruta real v3 y solo con operationId; actor, conteo y ganador pertenecen al servidor', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>(() =>
+      Promise.resolve(json({ receiptId: 'server-receipt' })),
+    )
+    vi.stubGlobal('fetch', fetch)
+    await matchAcceptanceApi.accept('T/3', 'T/3:E1', 'accept-1')
+    expect(fetch).toHaveBeenCalledWith('/api/v1/tournaments/T%2F3/matches/T%2F3%3AE1/acceptance', {
+      method: 'POST',
+      headers: { authorization: 'Bearer test-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ operationId: 'accept-1' }),
+    })
   })
   it('envía intención, método y tarjeta de simulación sin importe/cupo/pagador', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>(() => Promise.resolve(json({ id: 'team' })))

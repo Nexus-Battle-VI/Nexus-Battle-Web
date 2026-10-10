@@ -28,7 +28,7 @@ beforeEach(() => {
     sku: 'sku-1',
     name: 'Espada mítica',
     description: '',
-    imageUrl: '',
+    imageUrl: 'https://cdn.example.test/products/sword.png',
     type: 'WEAPON',
     lifecycleStatus: 'PUBLISHED',
     creditsPrice: 0,
@@ -55,6 +55,9 @@ describe('PendingClaimCard', () => {
     )
 
     expect(await screen.findByText('Espada mítica')).toBeInTheDocument()
+    expect(
+      document.querySelector('img[src="https://cdn.example.test/products/sword.png"]'),
+    ).not.toBeNull()
     expect(screen.getByText('2.500 créditos')).toBeInTheDocument()
     expect(screen.getByText('Pendiente')).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: /Seleccionar/u })).toBeInTheDocument()

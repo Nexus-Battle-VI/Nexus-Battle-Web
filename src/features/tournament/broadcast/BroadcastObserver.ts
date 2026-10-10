@@ -91,6 +91,7 @@ export class BroadcastObserver {
   }
   private accept(view: BroadcastObservation): void {
     const s = view.snapshot
+    const teamSize = s === null ? 0 : s.combatants.length / 2
     if (this.subject !== undefined && view.state.broadcasterId !== this.subject)
       throw new HttpError(403, 'La designación fue revocada.', null)
     if (
@@ -102,16 +103,33 @@ export class BroadcastObserver {
     if (
       s !== null &&
       (!s.combatRoomId ||
+        !s.startedAt ||
+        Number.isNaN(Date.parse(s.startedAt)) ||
         !s.bracketLabel ||
         s.encounterId !== s.matchId ||
         !['IN_PROGRESS', 'FINISHED'].includes(s.status) ||
         !Number.isSafeInteger(s.seq) ||
         s.seq < 0 ||
         s.teams.length !== 2 ||
-        s.combatants.length !== 4 ||
-        new Set(s.combatants.map((p) => p.playerId)).size !== 4 ||
+        ![1, 2, 3].includes(teamSize) ||
+        new Set(s.teams.map((t) => t.teamId)).size !== 2 ||
+        new Set(s.teams.map((t) => t.teamLabel)).size !== 2 ||
+        new Set(s.combatants.map((p) => p.playerId)).size !== s.combatants.length ||
+        s.teams.some(
+          (t) => s.combatants.filter((p) => p.teamLabel === t.teamLabel).length !== teamSize,
+        ) ||
         !s.combatants.some((p) => p.playerId === s.currentPlayerId) ||
-        s.combatants.some((p) => !s.teams.some((t) => t.teamLabel === p.teamLabel)))
+        s.combatants.some(
+          (p, position) =>
+            !s.teams.some((t) => t.teamLabel === p.teamLabel) ||
+            p.position !== position ||
+            !Number.isSafeInteger(p.seat) ||
+            p.seat < 0 ||
+            p.seat >= teamSize ||
+            (p.heroSubtype !== null && typeof p.heroSubtype !== 'string'),
+        ) ||
+        new Set(s.combatants.map((p) => `${p.teamLabel}:${String(p.seat)}`)).size !==
+          s.combatants.length)
     )
       throw new Error('El servicio todavía no ofrece una vista completa y coherente de esta justa.')
     const previous = this.state.view

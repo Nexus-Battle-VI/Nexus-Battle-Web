@@ -211,14 +211,28 @@ describe('árbol generado desde fuentes y destinos', () => {
         winnerLabel={() => null}
       />,
     )
+    expect(screen.getAllByRole('button', { name: / · Ronda /u })).toHaveLength(7)
+    await userEvent.click(screen.getByRole('button', { name: /^Perdedores/u }))
     const node = screen.getByRole('button', { name: /^E9 · Ronda/u })
     node.focus()
     await userEvent.keyboard('{Enter}')
     expect(select).toHaveBeenCalledWith('E9')
     await userEvent.click(screen.getByRole('button', { name: 'Ver por rondas' }))
-    expect(screen.getAllByRole('button', { name: / · Ronda /u })).toHaveLength(14)
+    expect(screen.getAllByRole('button', { name: / · Ronda /u })).toHaveLength(2)
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'Ronda de las llaves' }),
+      '3',
+    )
+    expect(screen.getByRole('button', { name: /^E9 · Ronda/u })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^E10 · Ronda/u })).toBeInTheDocument()
     expect(
       screen.queryByRole('region', { name: 'Árbol desplazable de llaves' }),
     ).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /^Todas/u }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ver árbol' }))
+    expect(screen.getAllByRole('button', { name: / · Ronda /u })).toHaveLength(14)
+    await userEvent.click(screen.getByRole('button', { name: 'Final · 1' }))
+    expect(screen.getAllByRole('button', { name: / · Ronda /u })).toHaveLength(1)
+    expect(screen.getByRole('button', { name: /^Final · Ronda/u })).toBeInTheDocument()
   })
 })

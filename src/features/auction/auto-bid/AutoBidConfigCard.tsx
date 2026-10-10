@@ -173,7 +173,11 @@ export const AutoBidConfigCard = ({
                 setAmount(event.target.value)
               }}
             />
-            <Button type="submit" className="auto-bid-button" disabled={onConfigure === undefined}>
+            <Button
+              type="submit"
+              className="auction-button-primary auto-bid-button"
+              disabled={onConfigure === undefined}
+            >
               {t('auction:autoBid.configure')}
             </Button>
           </form>
@@ -211,7 +215,12 @@ export const AutoBidConfigCard = ({
             title={t('auction:autoBid.invalidTitle')}
             message={errorMessage ?? t('auction:autoBid.defaultError')}
           />
-          <Button type="button" variant="danger" className="auto-bid-button" onClick={onRetry}>
+          <Button
+            type="button"
+            variant="danger"
+            className="auction-button-secondary auto-bid-button"
+            onClick={onRetry}
+          >
             {t('auction:retry')}
           </Button>
         </>
@@ -224,7 +233,12 @@ export const AutoBidConfigCard = ({
             title={t('auction:autoBid.ownTitle')}
             message={t('auction:autoBid.ownBody')}
           />
-          <Button type="button" variant="danger" className="auto-bid-button" onClick={onClose}>
+          <Button
+            type="button"
+            variant="danger"
+            className="auction-button-secondary auto-bid-button"
+            onClick={onClose}
+          >
             {t('auction:understood')}
           </Button>
         </>
@@ -237,7 +251,12 @@ export const AutoBidConfigCard = ({
             title={t('auction:autoBid.notActiveTitle')}
             message={t('auction:autoBid.notActiveBody')}
           />
-          <Button type="button" variant="danger" className="auto-bid-button" onClick={onClose}>
+          <Button
+            type="button"
+            variant="danger"
+            className="auction-button-secondary auto-bid-button"
+            onClick={onClose}
+          >
             {t('auction:understood')}
           </Button>
         </>

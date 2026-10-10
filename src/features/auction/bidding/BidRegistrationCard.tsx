@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
 import { i18n } from '@/shared/i18n/i18n'
 import { formatInteger } from '@/shared/i18n/format'
+import { AuctionProductIdentity } from '../AuctionProductIdentity'
 import './bidding.css'
 
 /** `2500` -> `2.500 créditos` en es; separador y plural del idioma activo. */
@@ -19,7 +20,8 @@ export type BidRegistrationStage =
 
 export interface BidRegistrationProduct {
   readonly name: string
-  readonly icon: string
+  readonly imageUrl?: string
+  readonly type?: string
   readonly summary?: string
 }
 
@@ -129,9 +131,12 @@ export const BidRegistrationCard = ({
     return (
       <article className="bid-card" aria-labelledby={titleId} aria-busy="true">
         <div className="bid-product-row">
-          <div className="bid-product-icon" aria-hidden="true">
-            {product.icon}
-          </div>
+          <AuctionProductIdentity
+            name={product.name}
+            imageUrl={product.imageUrl}
+            type={product.type}
+            className="bid-product-icon"
+          />
           {header}
         </div>
         <div>
@@ -158,9 +163,12 @@ export const BidRegistrationCard = ({
       data-emphasis={stage === 'ready' || stage === 'leading'}
     >
       <div className="bid-product-row">
-        <div className="bid-product-icon" aria-hidden="true">
-          {product.icon}
-        </div>
+        <AuctionProductIdentity
+          name={product.name}
+          imageUrl={product.imageUrl}
+          type={product.type}
+          className="bid-product-icon"
+        />
         {header}
       </div>
 
@@ -208,7 +216,11 @@ export const BidRegistrationCard = ({
                 setAmount(event.target.value)
               }}
             />
-            <Button type="submit" className="bid-button" disabled={onRegister === undefined}>
+            <Button
+              type="submit"
+              className="auction-button-primary bid-button"
+              disabled={onRegister === undefined}
+            >
               {t('auction:bid.register')}
             </Button>
           </form>
@@ -233,7 +245,7 @@ export const BidRegistrationCard = ({
               <KeyValue label={t('auction:bid.reserved')} value={formatCredits(effectiveBid)} />
             )}
           </dl>
-          <Button type="button" className="bid-button" onClick={onAccept}>
+          <Button type="button" className="auction-button-secondary bid-button" onClick={onAccept}>
             {t('auction:accept')}
           </Button>
         </>
@@ -246,7 +258,12 @@ export const BidRegistrationCard = ({
             title={t('auction:bid.insufficientTitle')}
             message={errorMessage ?? t('auction:bid.defaultError')}
           />
-          <Button type="button" variant="danger" className="bid-button" onClick={onRetry}>
+          <Button
+            type="button"
+            variant="danger"
+            className="auction-button-secondary bid-button"
+            onClick={onRetry}
+          >
             {t('auction:retry')}
           </Button>
         </>
@@ -259,7 +276,12 @@ export const BidRegistrationCard = ({
             title={t('auction:bid.ownTitle')}
             message={t('auction:bid.ownBody')}
           />
-          <Button type="button" variant="danger" className="bid-button" onClick={onClose}>
+          <Button
+            type="button"
+            variant="danger"
+            className="auction-button-secondary bid-button"
+            onClick={onClose}
+          >
             {t('auction:understood')}
           </Button>
         </>
@@ -272,7 +294,12 @@ export const BidRegistrationCard = ({
             title={t('auction:bid.cooldownTitle')}
             message={t('auction:bid.cooldownBody')}
           />
-          <Button type="button" variant="danger" className="bid-button" onClick={onRetry}>
+          <Button
+            type="button"
+            variant="danger"
+            className="auction-button-secondary bid-button"
+            onClick={onRetry}
+          >
             {t('auction:retry')}
           </Button>
         </>
@@ -285,7 +312,12 @@ export const BidRegistrationCard = ({
             title={t('auction:bid.limitTitle')}
             message={t('auction:bid.limitBody')}
           />
-          <Button type="button" variant="danger" className="bid-button" onClick={onClose}>
+          <Button
+            type="button"
+            variant="danger"
+            className="auction-button-secondary bid-button"
+            onClick={onClose}
+          >
             {t('auction:close')}
           </Button>
         </>
@@ -309,7 +341,11 @@ export const BidRegistrationCard = ({
               />
             )}
           </dl>
-          <Button type="button" className="bid-button bid-button-warning" onClick={onAccept}>
+          <Button
+            type="button"
+            className="auction-button-secondary bid-button bid-button-warning"
+            onClick={onAccept}
+          >
             {t('auction:accept')}
           </Button>
         </>

@@ -15,6 +15,7 @@ import {
   type OfficialAuctionPublication,
 } from './api'
 import { validateOfficialAuctionForm, type OfficialAuctionFormValues } from './validation'
+import './auction-remaster.css'
 
 const INITIAL_VALUES: OfficialAuctionFormValues = {
   productId: '',
@@ -71,8 +72,8 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
 
   if (created !== null) {
     return (
-      <section aria-labelledby="official-created" className="space-y-4">
-        <div className="rounded-xl border border-success/40 bg-success/10 p-5">
+      <section aria-labelledby="official-created" className="auction-shell auction-page space-y-4">
+        <div className="auction-control-card auction-result-card p-5" data-tone="success">
           <div className="flex items-center gap-3">
             <ShieldCheck aria-hidden="true" className="size-6 text-success" />
             <h1 id="official-created" className="text-xl font-semibold text-ink">
@@ -92,7 +93,7 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
             })}
           </p>
         </div>
-        <Button variant="secondary" onClick={reset}>
+        <Button className="auction-button-secondary" variant="secondary" onClick={reset}>
           {t('auction:official.another')}
         </Button>
       </section>
@@ -100,20 +101,26 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
   }
 
   return (
-    <section aria-labelledby="official-auction-title" className="space-y-4">
-      <header className="rounded-xl border border-brand/40 bg-brand/10 p-5">
-        <div className="flex items-center gap-3">
-          <ShieldCheck aria-hidden="true" className="size-6 text-brand" />
-          <h1 id="official-auction-title" className="text-xl font-semibold text-ink">
-            {t('auction:official.title')}
-          </h1>
+    <section
+      aria-labelledby="official-auction-title"
+      className="auction-shell auction-page space-y-4"
+    >
+      <header className="auction-hero">
+        <div>
+          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
+          <div className="flex items-center gap-3">
+            <ShieldCheck aria-hidden="true" className="size-6 text-brand" />
+            <h1 id="official-auction-title" className="auction-title">
+              {t('auction:official.title')}
+            </h1>
+          </div>
+          <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:official.subtitle')}</p>
         </div>
-        <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:official.subtitle')}</p>
       </header>
       <form
         noValidate
         aria-label={t('auction:official.formLabel')}
-        className="grid gap-4 rounded-xl border border-border bg-surface-raised p-5 sm:grid-cols-2"
+        className="auction-form grid gap-4 rounded-xl border border-border bg-surface-raised p-5 sm:grid-cols-2"
         onSubmit={(event) => {
           event.preventDefault()
           setSubmitted(true)
@@ -204,7 +211,11 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
               {describeAuctionError(mutation.error)}
             </p>
           )}
-          <Button type="submit" loading={mutation.isPending} className="mt-4 w-full sm:w-auto">
+          <Button
+            type="submit"
+            loading={mutation.isPending}
+            className="auction-button-primary mt-4 w-full sm:w-auto"
+          >
             {t('auction:official.submit')}
           </Button>
         </div>
