@@ -13,7 +13,8 @@
     "banners": "Manage banner",
     "roles": "Manage roles",
     "moderation": "Comment moderation",
-    "editMissions": "Edit missions"
+    "editMissions": "Edit missions",
+    "auctionMetrics": "Auction metrics"
   },
   "session": {
     "signUp": "Create account",

@@ -1,0 +1,216 @@
+{
+  "title": "Métricas de leilão",
+  "subtitle": "Indicadores operacionais e comerciais dos leilões de jogadores (créditos) e oficiais (dinheiro real). Os valores de cada moeda são sempre exibidos separadamente.",
+  "breadcrumb": {
+    "home": "Início",
+    "auctions": "Leilões"
+  },
+  "filters": {
+    "group": "Período de consulta",
+    "range": "Intervalo",
+    "preset": {
+      "30": "Últimos 30 dias",
+      "7": "Últimos 7 dias",
+      "90": "Últimos 90 dias",
+      "custom": "Personalizado"
+    },
+    "from": "De",
+    "to": "Até",
+    "apply": "Aplicar",
+    "refresh": "Atualizar",
+    "invalidPeriod": "A data \"De\" deve ser anterior a \"Até\" e o intervalo não pode ultrapassar 366 dias.",
+    "period": "Período",
+    "asOf": "Dados de",
+    "rangeSameYear": "{{from}} – {{to}} de {{year}}",
+    "rangeCrossYear": "{{from}} de {{fromYear}} – {{to}} de {{toYear}}"
+  },
+  "badges": {
+    "realMoney": "Dinheiro real",
+    "credits": "Créditos",
+    "unavailable": "Indisponível",
+    "creditsSalePrice": "Créditos · preço de venda",
+    "realMoneyListPrice": "Dinheiro real · preço de lista"
+  },
+  "volume": {
+    "title": "Volume e taxa de sucesso",
+    "published": "Leilões publicados",
+    "publishedFoot": "De jogadores, no período",
+    "closed": "Leilões encerrados",
+    "closedFoot": "{{active}} ativos · {{awaiting}} a encerrar",
+    "successRate": "Taxa de sucesso",
+    "successRateFoot": "{{numerator}} de {{denominator}} encerrados terminaram em venda",
+    "successRateEmpty": "Sem leilões encerrados",
+    "successRateMeter": "Taxa de sucesso {{value}}",
+    "claims": "Resgates",
+    "claimsFoot": "{{claimed}} resgatados · {{pending}} pendentes · {{expired}} vencidos",
+    "outcomeTitle": "Como terminaram os {{total}} leilões encerrados",
+    "withWinner": "Com vencedor (encerramento por tempo)",
+    "soldByBuyNow": "Vendidos por compra imediata",
+    "withoutBids": "Sem lances",
+    "settlementFailed": "Liquidação falhou (terminal)",
+    "cancelled": "Cancelados",
+    "cancelledNote": "não entram na taxa",
+    "officialTitle": "Leilões oficiais",
+    "officialFoot": "publicados · {{official}} OFFICIAL · {{premium}} PREMIUM",
+    "officialRateUnavailable": "Taxa de sucesso: indisponível"
+  },
+  "trends": {
+    "title": "Tempo de encerramento e tendência",
+    "average": "Tempo médio de encerramento",
+    "averageFoot": "Mediana {{median}} · P90 {{p90}}",
+    "byReason": "Por motivo de encerramento",
+    "reason": {
+      "withWinner": "Com vencedor",
+      "withoutBids": "Sem lances",
+      "buyNow": "Compra imediata"
+    },
+    "lag": "Atraso de liquidação",
+    "lagAverage": "Média",
+    "lagP90": "P90",
+    "lagSample": "Amostra",
+    "cardTitle": {
+      "WEEK": "Evolução por semana",
+      "DAY": "Evolução por dia",
+      "MONTH": "Evolução por mês"
+    },
+    "cardDescription": {
+      "WEEK": "Leilões de jogadores por semana.",
+      "DAY": "Leilões de jogadores por dia.",
+      "MONTH": "Leilões de jogadores por mês."
+    },
+    "groupBy": "Agrupar por",
+    "granularity": {
+      "WEEK": "Semana",
+      "DAY": "Dia",
+      "MONTH": "Mês"
+    },
+    "legend": {
+      "published": "Publicados",
+      "sold": "Vendidos",
+      "withoutBids": "Sem lances"
+    },
+    "chartLabel": {
+      "WEEK": "Evolução semanal de leilões publicados, vendidos e sem lances. Os mesmos dados estão na tabela abaixo.",
+      "DAY": "Evolução diária de leilões publicados, vendidos e sem lances. Os mesmos dados estão na tabela abaixo.",
+      "MONTH": "Evolução mensal de leilões publicados, vendidos e sem lances. Os mesmos dados estão na tabela abaixo."
+    },
+    "success": "Sucesso {{value}}",
+    "viewAsTable": "Ver como tabela",
+    "bucketColumn": {
+      "WEEK": "Semana",
+      "DAY": "Dia",
+      "MONTH": "Mês"
+    },
+    "columns": {
+      "published": "Publicados",
+      "withWinner": "Com vencedor",
+      "buyNow": "Compra imediata",
+      "withoutBids": "Sem lances",
+      "cancelled": "Cancelados",
+      "success": "Sucesso",
+      "averageClosing": "Encerr. médio"
+    },
+    "total": "Total",
+    "tableNote": {
+      "WEEK": "A soma das semanas coincide com os totais de \"Volume e taxa de sucesso\".",
+      "DAY": "A soma dos dias coincide com os totais de \"Volume e taxa de sucesso\".",
+      "MONTH": "A soma dos meses coincide com os totais de \"Volume e taxa de sucesso\"."
+    },
+    "officialClosingTitle": "Tempo de encerramento dos leilões oficiais: indisponível."
+  },
+  "rankings": {
+    "title": "Produtos mais leiloados e mais vendidos",
+    "mostAuctioned": "Mais leiloados",
+    "mostAuctionedDescription": "Publicações por produto no período.",
+    "mostSold": "Mais vendidos",
+    "mostSoldDescription": "Vendas de jogadores encerradas no período.",
+    "product": "Produto",
+    "total": "Total",
+    "player": "Jogador",
+    "official": "Oficial",
+    "auction": "Leilão",
+    "buyNow": "Compra imed.",
+    "unnamed": "Produto sem nome",
+    "enrichmentNotice": "Não conseguimos obter o nome de alguns produtos. As contagens estão corretas; o identificador é exibido no lugar."
+  },
+  "prices": {
+    "title": "Preços médios por moeda",
+    "playerTitle": "Leilões de jogadores",
+    "officialTitle": "Leilões oficiais",
+    "averageOf_one": "média de {{value}} venda",
+    "averageOf_many": "média de {{value}} de vendas",
+    "averageOf_other": "média de {{value}} vendas",
+    "median": "Mediana",
+    "min": "Mínimo",
+    "max": "Máximo",
+    "byChannel": "Por canal de venda",
+    "auctionClose": "Encerramento por leilão ({{value}})",
+    "buyNow": "Compra imediata ({{value}})",
+    "listedMinimum_one": "Lance mínimo publicado (média de {{value}} leilão):",
+    "listedMinimum_many": "Lance mínimo publicado (média de {{value}} de leilões):",
+    "listedMinimum_other": "Lance mínimo publicado (média de {{value}} leilões):",
+    "finalPriceUnavailable": "Preço final de venda: indisponível",
+    "currency": "Moeda",
+    "published": "Publicados",
+    "minimumBidAverage": "Lance mín. médio",
+    "minimum": "Mín.",
+    "maximum": "Máx.",
+    "buyNowAverage": "Compra imediata (média)",
+    "noBuyNow": "Sem compra imediata"
+  },
+  "users": {
+    "title": "Usuários ativos e comissões",
+    "activeTitle": "Usuários ativos",
+    "total": "Total",
+    "sellers": "Vendedores",
+    "bidders": "Licitantes",
+    "buyers": "Compradores",
+    "player": "Jogador (ID opaco)",
+    "auctions": "Leilões",
+    "asSeller": "Vend.",
+    "asBidder": "Lic.",
+    "asBuyer": "Comp.",
+    "commissionTitle": "Comissão de publicação",
+    "gross": "Cobrado (bruto)",
+    "refunded": "Reembolsado",
+    "net": "Comissão líquida",
+    "pendingRefunds": "Reembolsos pendentes ({{value}})",
+    "duration": "Duração",
+    "fee": "Tarifa",
+    "grossColumn": "Bruto",
+    "hours": "{{value}} h",
+    "salesCommission": "Comissão por venda",
+    "realMoneyCommission": "Comissão em dinheiro real",
+    "walletReconciliation": "Conciliação com a Wallet"
+  },
+  "reasons": {
+    "officialSuccessRate": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Os leilões oficiais não têm fluxo de encerramento, por isso só o volume publicado é informado."
+    },
+    "officialClosingTime": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Os leilões oficiais não têm fluxo de encerramento."
+    },
+    "officialFinalPrice": {
+      "OFFICIAL_AUCTION_HAS_NO_SALE_FLOW": "Leilão oficial sem fluxo de venda."
+    },
+    "salesCommission": {
+      "NO_SALE_COMMISSION_DEFINED": "Não há comissão por venda definida."
+    },
+    "realMoneyCommission": {
+      "OFFICIAL_AUCTION_HAS_NO_FEES": "Os leilões oficiais não cobram tarifas."
+    },
+    "walletReconciliation": {
+      "WALLET_READ_ENDPOINT_NOT_AVAILABLE": "A Wallet ainda não expõe uma leitura de comissões."
+    }
+  },
+  "states": {
+    "sectionFailed": "Não foi possível carregar esta seção. As demais continuam disponíveis.",
+    "retry": "Tentar novamente",
+    "emptyTitle": "Não há leilões neste período.",
+    "emptyHint": "Tente um intervalo maior. As taxas e médias não são calculadas sem dados e aparecem como \"—\".",
+    "unavailable": "Não foi possível carregar as métricas. Tente novamente em instantes."
+  },
+  "tabs": {
+    "label": "Seções das métricas"
+  }
+}
