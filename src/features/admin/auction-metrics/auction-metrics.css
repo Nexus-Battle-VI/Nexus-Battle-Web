@@ -1,0 +1,346 @@
+/*
+ * Metricas de subasta (HU-91.6): capa visual propia, acotada con el prefijo `.am-`.
+ *
+ * REGLA: ningun color se escribe a mano. Todo sale de los tokens de `src/index.css`
+ * (`--color-surface`, `--color-surface-raised`, `--color-ink`, `--color-muted`,
+ * `--color-border`, `--color-brand`, `--color-brand-ink`, `--color-accent-gold`,
+ * `--color-success`, `--color-warning`, `--color-danger`, `--nb-field`) y, para dar mas
+ * presencia, mezclados con `color-mix()` sobre esos mismos tokens. Light y Dark cambian
+ * solos porque cada tema redefine los tokens (azul de marca en Light, violeta en Dark).
+ *
+ * No usa fondos de imagen de Mi Cuenta ni de E-commerce, ni degradados: el fondo de la
+ * pagina es el de la aplicacion (`--color-surface`) y los paneles son `--color-surface-raised`.
+ */
+
+.am-page {
+  /* Borde destacado de panel: marca mezclada sobre el borde base del tema. */
+  --am-edge: color-mix(in oklab, var(--color-brand) 38%, var(--color-border));
+  --am-edge-soft: color-mix(in oklab, var(--color-brand) 18%, var(--color-border));
+  --am-brand-wash: color-mix(in oklab, var(--color-brand) 10%, var(--color-surface-raised));
+  --am-shadow: 0 8px 20px -14px color-mix(in oklab, var(--color-ink) 55%, transparent);
+}
+
+/* ---- Paneles ---------------------------------------------------------------------- */
+.am-panel {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--am-edge);
+  border-radius: 0.75rem;
+  box-shadow: var(--am-shadow);
+  color: var(--color-ink);
+}
+
+/* Caja interior (desglose por canal, totales de usuarios, comisiones no disponibles). */
+.am-subpanel {
+  background: var(--color-surface);
+  border: 1px solid var(--am-edge-soft);
+  border-radius: 0.5rem;
+}
+
+/* Tarjeta de cifra: panel + cifra destacada con el color de marca. */
+.am-stat:hover {
+  border-color: var(--color-brand);
+}
+
+.am-stat-value,
+.am-big {
+  color: var(--color-brand);
+}
+
+/* ---- Encabezado de seccion ---------------------------------------------------------- */
+.am-heading-icon {
+  color: var(--color-brand);
+}
+
+/* ---- Pestanas ------------------------------------------------------------------------ */
+.am-tabs {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--am-edge);
+  border-radius: 0.75rem;
+  box-shadow: var(--am-shadow);
+  padding: 0.25rem;
+}
+
+.am-tab {
+  border-radius: 0.5rem;
+  border-bottom: 2px solid transparent;
+  color: var(--color-muted);
+}
+
+.am-tab:hover {
+  color: var(--color-brand);
+  background: var(--am-brand-wash);
+}
+
+.am-tab[aria-selected='true'] {
+  color: var(--color-brand);
+  background: var(--am-brand-wash);
+  border-bottom-color: var(--color-brand);
+}
+
+/* ---- Botones (el tamano no cambia entre estados: solo color) ---------------------- */
+.am-btn-primary,
+.am-btn-secondary {
+  border: 1px solid transparent;
+}
+
+.am-btn-primary {
+  background: var(--color-brand);
+  color: var(--color-brand-ink);
+  /* Dorado: solo el filo del boton primario. */
+  border-color: var(--color-accent-gold);
+}
+
+.am-btn-primary:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-brand) 88%, var(--color-ink));
+}
+
+.am-btn-secondary {
+  background: transparent;
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.am-btn-secondary:hover:not(:disabled) {
+  background: var(--am-brand-wash);
+}
+
+/* ---- Campos del filtro --------------------------------------------------------------- */
+.am-page select,
+.am-page input[type='date'] {
+  border-color: var(--am-edge);
+}
+
+.am-page select:focus-visible,
+.am-page input[type='date']:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+/* ---- Enlaces y desplegables ---------------------------------------------------------- */
+.am-link {
+  color: var(--color-brand);
+}
+
+/* ---- Insignias: con texto siempre, el color solo refuerza ------------------------- */
+.am-badge {
+  border: 1px solid transparent;
+}
+
+.am-badge-ok {
+  background: color-mix(in oklab, var(--color-success) 16%, var(--color-surface-raised));
+  border-color: color-mix(in oklab, var(--color-success) 45%, transparent);
+  color: var(--color-success);
+}
+
+.am-badge-neutral {
+  background: var(--color-surface);
+  border-color: var(--am-edge-soft);
+  color: var(--color-muted);
+}
+
+/* ---- Tablas ------------------------------------------------------------------------- */
+.am-th {
+  color: var(--color-muted);
+  border-bottom: 1px solid var(--am-edge-soft);
+}
+
+.am-td {
+  border-bottom: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+}
+
+.am-rank {
+  background: var(--am-brand-wash);
+  color: var(--color-brand);
+}
+
+.am-thumb {
+  background: var(--color-surface);
+  border: 1px solid var(--am-edge-soft);
+  color: var(--color-brand);
+}
+
+/* ---- Barra de tasa de exito ---------------------------------------------------------- */
+.am-meter {
+  background: color-mix(in oklab, var(--color-brand) 14%, var(--color-border));
+}
+
+.am-meter-fill {
+  background: var(--color-brand);
+}
+
+/* ==================================================================================
+ * Remaster visual de Subasta (EN-029): la pantalla vive dentro de `.auction-shell`
+ * (ver `AuctionMetricsPage`) y hereda sus variables de arte `--auction-art-*`. Aqui solo
+ * se mapean las clases `.am-*` a esas variables; no hay assets ni colores nuevos.
+ * La cabecera usa las clases de Subasta (`auction-hero`, `auction-kicker`, `auction-title`).
+ * ================================================================================== */
+/* Cascaron de Subasta: fondo ilustrado de la galeria/sala y anchos de pagina. */
+.am-page.auction-page {
+  min-height: calc(100dvh - 4rem);
+}
+
+/* Paneles y tarjetas: marco de tarjeta de Subasta + superficie legible interior. */
+.am-page .am-panel {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
+  border-image-source: var(--auction-art-card);
+  border-image-slice: 56 50 54 fill;
+  border-image-width: 14px;
+  border-image-outset: 4px;
+  border-radius: 0;
+  background: var(--auction-panel);
+  box-shadow: none;
+  padding: 30px 32px 16px;
+  overflow: clip;
+}
+
+.am-page .am-panel::before {
+  position: absolute;
+  z-index: 0;
+  inset: var(--auction-frame-card-inset);
+  border: 1px solid var(--auction-content-surface-line);
+  border-radius: 9px;
+  background: var(--auction-content-surface);
+  content: '';
+  pointer-events: none;
+}
+
+.am-page .am-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* El texto sobre la superficie clara del marco usa la tinta del tema, no la de la pagina. */
+.am-page .am-panel {
+  color: var(--color-ink);
+}
+
+.am-page .am-subpanel {
+  border-color: color-mix(in srgb, var(--auction-gold) 40%, transparent);
+  background: var(--auction-surface-level-3);
+}
+
+/* Pestanas: barra de control de Subasta, activa con el acento. */
+.am-page .am-tabs {
+  border-color: color-mix(in srgb, var(--auction-gold) 60%, transparent);
+  border-radius: var(--auction-radius);
+  background: var(--auction-surface-level-2);
+  box-shadow: var(--auction-shadow);
+}
+
+.am-page .am-tab[aria-selected='true'] {
+  color: var(--auction-accent);
+  background: var(--auction-surface-level-3);
+  border-bottom-color: var(--auction-gold);
+}
+
+/*
+ * Campos y boton primario con los marcos de Subasta como marcos de 9 cortes
+ * (`border-image`): los adornos de los extremos conservan su proporcion y solo se estira
+ * el centro. Los bordes y el relleno reservan el ancho del adorno para que el texto y el
+ * icono del calendario nunca queden encima. Subasta fija sus campos con `!important`, asi
+ * que aqui se sube la especificidad y se repite.
+ */
+.am-page.auction-shell.auction-page :is(select, input[type='date']) {
+  min-height: 2.75rem;
+  border-style: solid !important;
+  border-width: 0 1.75rem !important;
+  border-color: transparent !important;
+  border-image-source: var(--auction-art-field) !important;
+  border-image-slice: 0 60 0 60 fill !important;
+  border-image-width: 0 1.75rem !important;
+  border-image-repeat: stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding-block: 0 !important;
+  padding-inline: 0.5rem !important;
+  color: var(--color-ink);
+}
+
+/* Foco ceñido al campo (el aro con separacion se despega del marco ornamental). */
+.am-page.auction-shell.auction-page :is(select, input[type='date']):focus-visible {
+  outline-offset: 0;
+}
+
+/* Botones: jerarquia de Subasta (primario con arte, secundario con borde dorado). */
+.am-page.auction-shell .am-btn-primary {
+  min-height: 46px;
+  border-style: solid !important;
+  border-width: 10px 22px !important;
+  border-color: transparent !important;
+  border-image-source: var(--auction-art-button) !important;
+  border-image-slice: 28 66 28 66 fill !important;
+  border-image-width: 10px 22px !important;
+  border-image-repeat: stretch !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  /* El marco es mas grueso abajo: el texto sube para quedar centrado en el hueco. */
+  padding: 0 0.25rem 4px;
+  line-height: 1;
+  color: var(--auction-button-primary-ink) !important;
+  text-shadow: none;
+}
+
+.am-page .am-btn-secondary {
+  min-height: 42px;
+  border: 1px solid var(--auction-button-secondary-border);
+  background: var(--auction-surface-level-3);
+  color: var(--color-ink);
+}
+
+.am-page .am-btn-secondary:hover:not(:disabled) {
+  background: var(--auction-panel-strong);
+}
+
+.am-page .am-badge-neutral {
+  background: var(--auction-surface-level-3);
+  border-color: color-mix(in srgb, var(--auction-gold) 40%, transparent);
+}
+
+/* El texto de la cabecera debe quedar dentro del centro ilustrado, no bajo los pilares. */
+.am-page .auction-hero {
+  padding-inline: clamp(3.75rem, 7vw, 6.5rem);
+  padding-block: 6rem 3rem;
+}
+
+/* En Light la cinta azul superior del banner es mas alta: el texto baja al centro crema. */
+:root[data-theme='light'] .am-page .auction-hero {
+  /* La gema colgante del banner cae sobre el inicio del texto: el texto arranca mas a la derecha. */
+  padding-inline-start: clamp(5.5rem, 9.5vw, 8.5rem);
+  padding-top: 6.75rem;
+  padding-bottom: 3.25rem;
+}
+
+@media (max-width: 640px) {
+  .am-page .auction-hero {
+    padding: 6.25rem 4.25rem 3.5rem;
+  }
+
+  :root[data-theme='light'] .am-page .auction-hero {
+    padding: 7.5rem 4.25rem 3.75rem;
+  }
+}
+
+/* Light: el marco del boton lleva corona arriba y volutas laterales mas gruesas. */
+:root[data-theme='light'] .am-page.auction-shell .am-btn-primary {
+  min-height: 54px;
+  border-width: 14px 30px 12px !important;
+  border-image-slice: 34 78 30 78 fill !important;
+  border-image-width: 14px 30px 12px !important;
+  padding: 2px 0.25rem 0;
+}
+
+/*
+ * `.auction-shell` fija una altura minima de pantalla; como la pagina es una cuadrilla, el
+ * espacio sobrante se repartiria estirando las filas (el panel de filtros engordaria con las
+ * pestanas cerradas). El contenido se queda arriba y la altura sobrante queda al final.
+ */
+.am-page {
+  align-content: start;
+}
+
+/* Dark: la placa violeta del marco queda mas arriba que el centro del boton; el texto sube. */
+:root[data-theme='dark'] .am-page.auction-shell .am-btn-primary {
+  padding-bottom: 11px;
+}

@@ -90,6 +90,7 @@ describe('ADMIN_NAVIGATION', () => {
       '/admin/chatbot/analytics',
       '/admin/chatbot/tickets',
       '/admin/roles',
+      '/admin/auction-metrics',
       '/admin/comments/moderation',
     ])
     expect(new Set(paths).size).toBe(paths.length)
@@ -127,6 +128,28 @@ describe('ADMIN_NAVIGATION', () => {
     expect(paths).toContain('/admin/banners')
     expect(paths).toContain('/admin/roles')
   })
+
+  /**
+   * HU-91.6 (Management #581): las metricas de subasta las lee un Administrador (y por
+   * jerarquia un Super Administrador); Moderador y Jugador no.
+   */
+  it.each(['ADMINISTRATOR', 'SUPER_ADMINISTRATOR'])(
+    'el rol %s ve el acceso a las metricas de subasta',
+    (role) => {
+      expect(
+        adminNavigationForPrimaryRole(role).some((item) => item.path === '/admin/auction-metrics'),
+      ).toBe(true)
+    },
+  )
+
+  it.each(['MODERATOR', 'PLAYER'])(
+    'el rol %s no ve el acceso a las metricas de subasta',
+    (role) => {
+      expect(
+        adminNavigationForPrimaryRole(role).some((item) => item.path === '/admin/auction-metrics'),
+      ).toBe(false)
+    },
+  )
 
   it('un jugador no ve ningun acceso administrativo', () => {
     const paths = adminNavigationForPrimaryRole('PLAYER').map((item) => item.path)
@@ -865,6 +888,32 @@ describe('Proteccion visual de rutas (HU-02)', () => {
     // necesitar un servidor que responda la peticion.
     expect(await screen.findByText('Cargando el producto…')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Acceso denegado' })).not.toBeInTheDocument()
+  })
+
+  /** HU-91.6: la ruta de metricas de subasta esta conectada a la guarda de Administrador. */
+  it('un jugador no accede a las metricas de subasta', async () => {
+    useSession.setState(AUTHENTICATED_STATE)
+    renderRoute('/admin/auction-metrics')
+
+    expect(await screen.findByRole('heading', { name: 'Acceso denegado' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Métricas de subasta' })).not.toBeInTheDocument()
+  })
+
+  it('un Administrador accede a las metricas de subasta', async () => {
+    useSession.setState({ ...AUTHENTICATED_STATE, roles: ['PLAYER', 'ADMINISTRATOR'] })
+    // La consulta queda pendiente: basta con probar que la guarda dejo pasar la pantalla.
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => undefined)))
+
+    try {
+      renderRoute('/admin/auction-metrics')
+
+      expect(
+        await screen.findByRole('heading', { level: 1, name: 'Métricas de subasta' }),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Acceso denegado' })).not.toBeInTheDocument()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('cerrar sesion elimina la sesion y vuelve al estado publico esperado', async () => {

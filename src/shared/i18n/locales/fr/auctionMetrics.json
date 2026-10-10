@@ -1,0 +1,216 @@
+{
+  "title": "Métriques des enchères",
+  "subtitle": "Indicateurs opérationnels et commerciaux des enchères de joueurs (crédits) et officielles (argent réel). Les chiffres de chaque monnaie sont toujours présentés séparément.",
+  "breadcrumb": {
+    "home": "Accueil",
+    "auctions": "Enchères"
+  },
+  "filters": {
+    "group": "Période de consultation",
+    "range": "Plage",
+    "preset": {
+      "30": "30 derniers jours",
+      "7": "7 derniers jours",
+      "90": "90 derniers jours",
+      "custom": "Personnalisée"
+    },
+    "from": "Du",
+    "to": "Au",
+    "apply": "Appliquer",
+    "refresh": "Actualiser",
+    "invalidPeriod": "La date « Du » doit être antérieure à « Au » et la plage ne peut pas dépasser 366 jours.",
+    "period": "Période",
+    "asOf": "Données au",
+    "rangeSameYear": "{{from}} – {{to}} {{year}}",
+    "rangeCrossYear": "{{from}} {{fromYear}} – {{to}} {{toYear}}"
+  },
+  "badges": {
+    "realMoney": "Argent réel",
+    "credits": "Crédits",
+    "unavailable": "Indisponible",
+    "creditsSalePrice": "Crédits · prix de vente",
+    "realMoneyListPrice": "Argent réel · prix catalogue"
+  },
+  "volume": {
+    "title": "Volume et taux de réussite",
+    "published": "Enchères publiées",
+    "publishedFoot": "De joueurs, sur la période",
+    "closed": "Enchères clôturées",
+    "closedFoot": "{{active}} actives · {{awaiting}} à clôturer",
+    "successRate": "Taux de réussite",
+    "successRateFoot": "{{numerator}} enchères clôturées sur {{denominator}} se sont conclues par une vente",
+    "successRateEmpty": "Aucune enchère clôturée",
+    "successRateMeter": "Taux de réussite {{value}}",
+    "claims": "Réclamations",
+    "claimsFoot": "{{claimed}} réclamées · {{pending}} en attente · {{expired}} expirées",
+    "outcomeTitle": "Issue des {{total}} enchères clôturées",
+    "withWinner": "Avec gagnant (clôture à l'échéance)",
+    "soldByBuyNow": "Vendues par achat immédiat",
+    "withoutBids": "Sans enchères",
+    "settlementFailed": "Règlement échoué (définitif)",
+    "cancelled": "Annulées",
+    "cancelledNote": "non comptées dans le taux",
+    "officialTitle": "Enchères officielles",
+    "officialFoot": "publiées · {{official}} OFFICIAL · {{premium}} PREMIUM",
+    "officialRateUnavailable": "Taux de réussite : indisponible"
+  },
+  "trends": {
+    "title": "Délai de clôture et tendance",
+    "average": "Délai moyen de clôture",
+    "averageFoot": "Médiane {{median}} · P90 {{p90}}",
+    "byReason": "Par motif de clôture",
+    "reason": {
+      "withWinner": "Avec gagnant",
+      "withoutBids": "Sans enchères",
+      "buyNow": "Achat immédiat"
+    },
+    "lag": "Retard de règlement",
+    "lagAverage": "Moyenne",
+    "lagP90": "P90",
+    "lagSample": "Échantillon",
+    "cardTitle": {
+      "WEEK": "Évolution par semaine",
+      "DAY": "Évolution par jour",
+      "MONTH": "Évolution par mois"
+    },
+    "cardDescription": {
+      "WEEK": "Enchères de joueurs par semaine.",
+      "DAY": "Enchères de joueurs par jour.",
+      "MONTH": "Enchères de joueurs par mois."
+    },
+    "groupBy": "Regrouper par",
+    "granularity": {
+      "WEEK": "Semaine",
+      "DAY": "Jour",
+      "MONTH": "Mois"
+    },
+    "legend": {
+      "published": "Publiées",
+      "sold": "Vendues",
+      "withoutBids": "Sans enchères"
+    },
+    "chartLabel": {
+      "WEEK": "Évolution hebdomadaire des enchères publiées, vendues et sans enchères. Les mêmes données figurent dans le tableau ci-dessous.",
+      "DAY": "Évolution quotidienne des enchères publiées, vendues et sans enchères. Les mêmes données figurent dans le tableau ci-dessous.",
+      "MONTH": "Évolution mensuelle des enchères publiées, vendues et sans enchères. Les mêmes données figurent dans le tableau ci-dessous."
+    },
+    "success": "Réussite {{value}}",
+    "viewAsTable": "Voir sous forme de tableau",
+    "bucketColumn": {
+      "WEEK": "Semaine",
+      "DAY": "Jour",
+      "MONTH": "Mois"
+    },
+    "columns": {
+      "published": "Publiées",
+      "withWinner": "Avec gagnant",
+      "buyNow": "Achat immédiat",
+      "withoutBids": "Sans enchères",
+      "cancelled": "Annulées",
+      "success": "Réussite",
+      "averageClosing": "Clôture moy."
+    },
+    "total": "Total",
+    "tableNote": {
+      "WEEK": "La somme des semaines correspond aux totaux de « Volume et taux de réussite ».",
+      "DAY": "La somme des jours correspond aux totaux de « Volume et taux de réussite ».",
+      "MONTH": "La somme des mois correspond aux totaux de « Volume et taux de réussite »."
+    },
+    "officialClosingTitle": "Délai de clôture des enchères officielles : indisponible."
+  },
+  "rankings": {
+    "title": "Produits les plus mis aux enchères et les plus vendus",
+    "mostAuctioned": "Les plus mis aux enchères",
+    "mostAuctionedDescription": "Publications par produit sur la période.",
+    "mostSold": "Les plus vendus",
+    "mostSoldDescription": "Ventes de joueurs clôturées sur la période.",
+    "product": "Produit",
+    "total": "Total",
+    "player": "Joueur",
+    "official": "Officielle",
+    "auction": "Enchère",
+    "buyNow": "Achat imm.",
+    "unnamed": "Produit sans nom",
+    "enrichmentNotice": "Nous n'avons pas pu obtenir le nom de certains produits. Les décomptes sont corrects ; l'identifiant est affiché à la place."
+  },
+  "prices": {
+    "title": "Prix moyens par monnaie",
+    "playerTitle": "Enchères de joueurs",
+    "officialTitle": "Enchères officielles",
+    "averageOf_one": "moyenne de {{value}} vente",
+    "averageOf_many": "moyenne de {{value}} de ventes",
+    "averageOf_other": "moyenne de {{value}} ventes",
+    "median": "Médiane",
+    "min": "Minimum",
+    "max": "Maximum",
+    "byChannel": "Par canal de vente",
+    "auctionClose": "Clôture par enchère ({{value}})",
+    "buyNow": "Achat immédiat ({{value}})",
+    "listedMinimum_one": "Mise minimale publiée (moyenne de {{value}} enchère) :",
+    "listedMinimum_many": "Mise minimale publiée (moyenne de {{value}} d'enchères) :",
+    "listedMinimum_other": "Mise minimale publiée (moyenne de {{value}} enchères) :",
+    "finalPriceUnavailable": "Prix de vente final : indisponible",
+    "currency": "Monnaie",
+    "published": "Publiées",
+    "minimumBidAverage": "Mise min. moy.",
+    "minimum": "Min.",
+    "maximum": "Max.",
+    "buyNowAverage": "Achat immédiat (moy.)",
+    "noBuyNow": "Sans achat immédiat"
+  },
+  "users": {
+    "title": "Utilisateurs actifs et commissions",
+    "activeTitle": "Utilisateurs actifs",
+    "total": "Total",
+    "sellers": "Vendeurs",
+    "bidders": "Enchérisseurs",
+    "buyers": "Acheteurs",
+    "player": "Joueur (ID opaque)",
+    "auctions": "Enchères",
+    "asSeller": "Vend.",
+    "asBidder": "Ench.",
+    "asBuyer": "Ach.",
+    "commissionTitle": "Commission de publication",
+    "gross": "Perçu (brut)",
+    "refunded": "Remboursé",
+    "net": "Commission nette",
+    "pendingRefunds": "Remboursements en attente ({{value}})",
+    "duration": "Durée",
+    "fee": "Tarif",
+    "grossColumn": "Brut",
+    "hours": "{{value}} h",
+    "salesCommission": "Commission sur vente",
+    "realMoneyCommission": "Commission en argent réel",
+    "walletReconciliation": "Rapprochement avec Wallet"
+  },
+  "reasons": {
+    "officialSuccessRate": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Les enchères officielles n'ont pas de flux de clôture ; seul le volume publié est donc indiqué."
+    },
+    "officialClosingTime": {
+      "OFFICIAL_AUCTION_HAS_NO_CLOSING_FLOW": "Les enchères officielles n'ont pas de flux de clôture."
+    },
+    "officialFinalPrice": {
+      "OFFICIAL_AUCTION_HAS_NO_SALE_FLOW": "Enchère officielle sans flux de vente."
+    },
+    "salesCommission": {
+      "NO_SALE_COMMISSION_DEFINED": "Aucune commission sur vente n'est définie."
+    },
+    "realMoneyCommission": {
+      "OFFICIAL_AUCTION_HAS_NO_FEES": "Les enchères officielles ne facturent pas de frais."
+    },
+    "walletReconciliation": {
+      "WALLET_READ_ENDPOINT_NOT_AVAILABLE": "Wallet n'expose pas encore de lecture des commissions."
+    }
+  },
+  "states": {
+    "sectionFailed": "Impossible de charger cette section. Les autres restent disponibles.",
+    "retry": "Réessayer",
+    "emptyTitle": "Aucune enchère sur cette période.",
+    "emptyHint": "Essayez une plage plus large. Les taux et les moyennes ne sont pas calculés sans données et s'affichent sous la forme « — ».",
+    "unavailable": "Impossible de charger les métriques. Réessayez dans un instant."
+  },
+  "tabs": {
+    "label": "Sections des métriques"
+  }
+}

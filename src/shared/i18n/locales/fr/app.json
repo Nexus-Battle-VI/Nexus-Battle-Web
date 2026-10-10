@@ -13,7 +13,8 @@
     "banners": "Gérer la bannière",
     "roles": "Gérer les rôles",
     "moderation": "Modération des commentaires",
-    "editMissions": "Modifier les missions"
+    "editMissions": "Modifier les missions",
+    "auctionMetrics": "Métriques des enchères"
   },
   "session": {
     "signUp": "Créer un compte",

@@ -19,6 +19,7 @@ const ADMIN_NAV_LABEL_KEYS: Readonly<Record<string, string>> = {
   '/admin/products': 'app:nav.manageProducts',
   '/admin/banners': 'app:nav.banners',
   '/admin/roles': 'app:nav.roles',
+  '/admin/auction-metrics': 'app:nav.auctionMetrics',
   '/admin/comments/moderation': 'app:nav.moderation',
 }
 
