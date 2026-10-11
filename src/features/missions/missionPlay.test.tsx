@@ -140,6 +140,11 @@ describe('seguimiento de una misión (P-J6)', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL) => {
+        // El diorama (EN-031) tambien lee la escena y el heroe; aqui se responde
+        // 404 para que use sus respaldos. Solo cuentan las lecturas de progreso.
+        if (!urlOf(input).includes('/v1/missions/me/progress/')) {
+          return Promise.resolve(jsonResponse(404, { code: 'NOT_FOUND' }))
+        }
         urls.push(urlOf(input))
         return Promise.resolve(jsonResponse(200, pages[urls.length - 1] ?? pages[1]))
       }),

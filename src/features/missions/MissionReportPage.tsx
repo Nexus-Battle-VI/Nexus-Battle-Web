@@ -32,6 +32,9 @@ import { MissionExperiencePanel } from './MissionExperiencePanel'
 import { experienceLinesOf, readExperience } from './missionReport'
 import { fetchMissionReport, type MissionReport } from './missionReportApi'
 import { useMissionReport } from './useMissionReport'
+import { EnemyPortrait } from './diorama/EnemyPortrait'
+import { MissionPixelIcon } from './MissionPixelIcon'
+import './missions.css'
 
 const OUTCOME_LABEL: Readonly<Record<'COMPLETED' | 'FAILED' | 'ABANDONED', string>> =
   localizedMessages({
@@ -62,7 +65,7 @@ const StrategyCard = ({
 }): React.JSX.Element => {
   const { t } = useTranslation()
   return (
-    <Card title={t('missions:report.strategyTitle')}>
+    <Card title={t('missions:report.strategyTitle')} className="msn-panel">
       <ul className="flex flex-col gap-2 text-sm text-ink">
         {strategy.abilities.map((ability) => {
           const skipped = Object.entries(ability.skipped)
@@ -115,30 +118,42 @@ const ReportContent = ({
 
   return (
     <>
-      <header>
-        <p className="text-sm text-muted">
-          {categoryLabel[report.mission.category]} · {difficultyName(report.mission.difficulty)}
-        </p>
-        <h1 className="text-2xl font-semibold text-ink">
-          {t('missions:report.title', { mission: report.mission.name })}
-        </h1>
-        <p className="mt-2 text-sm text-ink">
-          {t('missions:report.summaryLine', {
-            outcome: OUTCOME_LABEL[report.summary.outcome],
-            hero: report.summary.hero.name ?? report.summary.hero.heroId,
-            date: formatDateTime(report.summary.finishedAt),
-          })}
-        </p>
-        {report.summary.outcomeReason !== null && (
-          <p className="mt-1 text-sm text-muted">{report.summary.outcomeReason}</p>
-        )}
-        {report.summary.simulatedDuration !== null && (
-          <p className="mt-1 text-sm text-muted">
-            {t('missions:report.simulatedTime', {
-              time: durationLabel(report.summary.simulatedDuration),
+      <header
+        className={
+          report.summary.outcome === 'COMPLETED'
+            ? 'msn-banner msn-banner--victory'
+            : 'msn-banner msn-banner--defeat'
+        }
+      >
+        <MissionPixelIcon
+          icon={report.summary.outcome === 'COMPLETED' ? 'victory' : 'defeat'}
+          size="xl"
+        />
+        <div className="flex min-w-0 flex-col">
+          <p className="msn-eyebrow">
+            {categoryLabel[report.mission.category]} · {difficultyName(report.mission.difficulty)}
+          </p>
+          <h1 className="msn-title">
+            {t('missions:report.title', { mission: report.mission.name })}
+          </h1>
+          <p className="mt-2 text-sm text-ink">
+            {t('missions:report.summaryLine', {
+              outcome: OUTCOME_LABEL[report.summary.outcome],
+              hero: report.summary.hero.name ?? report.summary.hero.heroId,
+              date: formatDateTime(report.summary.finishedAt),
             })}
           </p>
-        )}
+          {report.summary.outcomeReason !== null && (
+            <p className="mt-1 text-sm text-muted">{report.summary.outcomeReason}</p>
+          )}
+          {report.summary.simulatedDuration !== null && (
+            <p className="mt-1 text-sm text-muted">
+              {t('missions:report.simulatedTime', {
+                time: durationLabel(report.summary.simulatedDuration),
+              })}
+            </p>
+          )}
+        </div>
       </header>
 
       {experienceReport !== undefined && (
@@ -149,8 +164,8 @@ const ReportContent = ({
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title={t('missions:report.combatTitle')}>
-          <dl className="grid grid-cols-2 gap-2 text-sm text-ink">
+        <Card title={t('missions:report.combatTitle')} className="msn-panel">
+          <dl className="grid grid-cols-2 gap-2 text-sm text-ink sm:grid-cols-3">
             <Stat
               label={t('missions:report.encountersCompleted')}
               value={valueLabel(report.combatStats.encountersCompleted, t)}
@@ -190,8 +205,11 @@ const ReportContent = ({
           </dl>
           {report.combatStats.skillsUsed.length > 0 && (
             <div className="mt-4 text-sm text-ink">
-              <h3 className="font-medium">{t('missions:report.skillsUsedTitle')}</h3>
-              <ul className="list-inside list-disc">
+              <h3 className="msn-section-title flex items-center gap-1.5">
+                <MissionPixelIcon icon="ability" size="sm" />
+                {t('missions:report.skillsUsedTitle')}
+              </h3>
+              <ul className="mt-1 list-inside list-disc">
                 {report.combatStats.skillsUsed.map((skill) => (
                   <li key={skill.abilityId}>
                     {abilityNames.get(skill.abilityId) ?? t('missions:report.unnamedAbility')}:{' '}
@@ -205,15 +223,19 @@ const ReportContent = ({
 
         {report.strategy !== undefined && <StrategyCard strategy={report.strategy} />}
 
-        <Card title={t('missions:report.enemiesTitle')}>
-          <ul className="list-inside list-disc text-sm text-ink">
+        <Card title={t('missions:report.enemiesTitle')} className="msn-panel">
+          <ul className="grid gap-2 text-sm text-ink sm:grid-cols-2">
             {report.enemies.defeated.map((enemy) => (
-              <li key={enemy.enemyRef}>
-                {enemy.name} × {enemy.count}
+              <li key={enemy.enemyRef} className="msn-tile flex items-center gap-2 p-2">
+                <EnemyPortrait name={enemy.name} role="ENEMY" />
+                <span>
+                  {enemy.name} × {enemy.count}
+                </span>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-sm text-ink">
+          <p className="mt-3 flex items-center gap-2 text-sm text-ink">
+            <EnemyPortrait name={report.enemies.boss.name} role="BOSS" />
             {t('missions:report.bossLine', {
               name: report.enemies.boss.name,
               status: report.enemies.boss.defeated
@@ -222,9 +244,10 @@ const ReportContent = ({
             })}
           </p>
           {report.enemies.masters.length > 0 && (
-            <ul className="mt-2 list-inside list-disc text-sm text-ink">
+            <ul className="mt-2 flex flex-col gap-2 text-sm text-ink">
               {report.enemies.masters.map((master) => (
-                <li key={master.masterRef}>
+                <li key={master.masterRef} className="flex items-center gap-2">
+                  <EnemyPortrait name={master.name} role="MASTER" />
                   {t('missions:report.masterLine', {
                     name: master.name,
                     status: masterStatusLabel(master.status),
@@ -235,17 +258,22 @@ const ReportContent = ({
           )}
         </Card>
 
-        <Card title={t('missions:detail.objectivesTitle')}>
+        <Card title={t('missions:detail.objectivesTitle')} className="msn-panel">
           <ul className="flex flex-col gap-2 text-sm text-ink">
             {report.objectives.map((objective) => (
-              <li key={objective.id}>
+              <li key={objective.id} className="flex items-center gap-2">
+                <MissionPixelIcon
+                  icon={objective.met === true ? 'check' : 'objective'}
+                  size="sm"
+                  className={objective.met === false ? 'msn-locked-art' : undefined}
+                />
                 {objective.text} · {objectiveStatus(objective.met, t)}
               </li>
             ))}
           </ul>
         </Card>
 
-        <Card title={t('missions:report.rewardsTitle')}>
+        <Card title={t('missions:report.rewardsTitle')} className="msn-panel">
           {/* La experiencia POR DERROTA (HU-09) tiene su propio panel; aquí van
               las épicas, los objetos, los créditos y la XP DE FINALIZACIÓN (HU-10). */}
           {deliveries.length === 0 ? (
@@ -293,13 +321,17 @@ const ReportContent = ({
         </Card>
 
         {report.loot !== undefined && (
-          <Card title={t('missions:report.bossLootTitle')}>
+          <Card title={t('missions:report.bossLootTitle')} className="msn-panel">
             {report.loot.length === 0 ? (
               <p className="text-sm text-muted">{t('missions:report.noBossLoot')}</p>
             ) : (
               <ul className="flex flex-col gap-2 text-sm text-ink">
                 {report.loot.map((drop) => (
-                  <li key={`${drop.label}-${drop.productId ?? 'sin-producto'}`}>
+                  <li
+                    key={`${drop.label}-${drop.productId ?? 'sin-producto'}`}
+                    className="flex items-center gap-2"
+                  >
+                    <MissionPixelIcon icon="loot" size="sm" />
                     {drop.label} × {drop.quantity}
                   </li>
                 ))}
@@ -319,9 +351,9 @@ const Stat = ({
   readonly label: string
   readonly value: string
 }): React.JSX.Element => (
-  <div>
-    <dt className="text-muted">{label}</dt>
-    <dd>{value}</dd>
+  <div className="msn-tile px-3 py-2">
+    <dt className="text-xs text-muted">{label}</dt>
+    <dd className="msn-stat-value">{value}</dd>
   </div>
 )
 
@@ -344,8 +376,11 @@ export const MissionReportPage = (): React.JSX.Element => {
   }
 
   return (
-    <section aria-label={t('missions:report.label')} className="flex flex-col gap-6">
-      <Link to="/missions/history" className="w-fit text-sm text-brand hover:underline">
+    <section
+      aria-label={t('missions:report.label')}
+      className="msn-page msn-page--report flex flex-col gap-6"
+    >
+      <Link to="/missions/history" className="msn-link w-fit text-sm">
         {t('missions:report.backToHistory')}
       </Link>
       <QueryState isLoading={report.isPending} error={report.error}>

@@ -1,9 +1,10 @@
 import { useId } from 'react'
 import clsx from 'clsx'
 
-import { Star, TrendingUp } from '@/components/ui/icons'
+import { TrendingUp } from '@/components/ui/icons'
 
 import type { MissionReportRewardLine } from './api'
+import { MissionPixelIcon } from './MissionPixelIcon'
 import {
   creditedText,
   currentXpText,
@@ -57,7 +58,7 @@ export const MissionExperiencePanel = ({
     <section
       aria-labelledby={headingId}
       className={clsx(
-        'flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-4',
+        'msn-panel flex flex-col gap-3 rounded-xl border border-border bg-surface-raised p-4',
         'motion-safe:transition-shadow motion-safe:duration-500',
       )}
     >
@@ -82,7 +83,7 @@ export const MissionExperiencePanel = ({
               role="status"
               className="flex items-center justify-center gap-2 text-lg font-bold text-ink"
             >
-              <Star aria-hidden="true" className="h-5 w-5 text-brand" />
+              <MissionPixelIcon icon="xp" size="md" />
               {experienceGainedText(experience)}
             </p>
           ) : (
