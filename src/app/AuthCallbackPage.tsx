@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
-import { Card } from '@/components/ui/Card'
+import { AuthPixelIcon } from '@/components/auth/AuthPixelIcon'
+import { AuthScene } from '@/components/auth/AuthScene'
 import { authConfig } from '@/shared/auth/config'
 import { exchangeCodeForTokens, readIdentityClaims } from '@/shared/auth/oidc'
 import { takePendingAuthorization } from '@/shared/auth/pkce'
@@ -95,17 +96,22 @@ export const AuthCallbackPage = (): React.JSX.Element => {
       })
   }, [params, navigate, establish])
 
-  if (state === 'working') {
-    return (
-      <Card title={t('app:callback.working')}>
-        <p className="text-sm text-muted">{t('app:callback.verifying')}</p>
-      </Card>
-    )
-  }
-
+  // Misma escena que Login: es el final de un inicio de sesion.
   return (
-    <Card title={t('app:callback.failedTitle')}>
-      <p className="text-sm text-muted">{t(detail)}</p>
-    </Card>
+    <AuthScene>
+      <main className="auth-panel auth-stage text-center">
+        <AuthPixelIcon
+          icon={state === 'working' ? 'hourglass' : 'alert'}
+          size="xl"
+          className="mx-auto"
+        />
+        <h1 className="auth-title mt-2">
+          {state === 'working' ? t('app:callback.working') : t('app:callback.failedTitle')}
+        </h1>
+        <p className="auth-subtitle">
+          {state === 'working' ? t('app:callback.verifying') : t(detail)}
+        </p>
+      </main>
+    </AuthScene>
   )
 }

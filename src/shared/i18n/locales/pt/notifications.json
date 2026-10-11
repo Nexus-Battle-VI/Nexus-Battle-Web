@@ -37,7 +37,10 @@
     "AUCTION_SETTLED_LOSER": "Leilão encerrado",
     "AUCTION_SETTLED_WITHOUT_BIDS": "Leilão sem lances",
     "BATTLE_DROP_GAINED": "Item obtido",
-    "BATTLE_DROP_LOST": "Item perdido"
+    "BATTLE_DROP_LOST": "Item perdido",
+    "AUCTION_PUBLISHED": "Leilão publicado",
+    "AUCTION_NEW_BID": "Novo lance",
+    "AUCTION_BID_ACCEPTED": "Lance aceito"
   },
   "admin": {
     "crumb": "Banner informativo",
@@ -59,5 +62,15 @@
     "active": "Vigente",
     "inactive": "Fora da vigência",
     "back": "← Voltar"
+  },
+  "bell": {
+    "label": "Notificações",
+    "unread": "Notificações: {{count}} não lidas",
+    "title": "Notificações",
+    "empty": "Você não tem notificações novas.",
+    "failed": "Não foi possível carregar suas notificações.",
+    "loading": "Carregando notificações...",
+    "viewAll": "Ver todas ›",
+    "more": "E mais {{count}} no histórico."
   }
 }

@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
-import { formatDateTime } from '@/lib/format'
-import { CatalogNotificationBadge } from './CatalogNotificationBadge'
+import { NotificationRow } from './NotificationRow'
 import { useCatalogNotificationHistory } from './useCatalogNotificationHistory'
 
 /**
@@ -52,14 +51,10 @@ export const NotificationsPage = (): React.JSX.Element => {
       )}
 
       {!isLoading && error === null && items.length > 0 && (
-        <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface-raised">
+        <ul className="nb-notice-panel flex flex-col divide-y divide-border">
           {items.map((item) => (
-            <li key={item.id} className="flex items-start gap-3 p-4">
-              <CatalogNotificationBadge changeType={item.changeType} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-ink">{item.description}</p>
-                <p className="mt-0.5 text-xs text-muted">{formatDateTime(item.implementedAt)}</p>
-              </div>
+            <li key={item.id} className="p-4">
+              <NotificationRow item={item} />
             </li>
           ))}
         </ul>

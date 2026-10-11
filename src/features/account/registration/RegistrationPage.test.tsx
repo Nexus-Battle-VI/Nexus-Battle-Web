@@ -46,18 +46,49 @@ const renderPage = (onSubmit?: (values: RegistrationValues) => Promise<void>): v
   )
 }
 
-const fillValidForm = async (user: ReturnType<typeof setup>): Promise<void> => {
+/**
+ * El registro es un asistente de cuatro pasos (remaster EN-031): datos, avatar,
+ * seguridad y terminos. Estos ayudantes recorren cada paso como lo haria una
+ * persona: rellenar y pulsar «Continuar».
+ */
+const next = async (user: ReturnType<typeof setup>): Promise<void> => {
+  await user.click(screen.getByRole('button', { name: 'Continuar' }))
+}
+
+const fillPersonal = async (user: ReturnType<typeof setup>): Promise<void> => {
   await user.type(screen.getByLabelText('Nombres'), 'Ana')
   await user.type(screen.getByLabelText('Apellidos'), 'Restrepo')
   await user.type(screen.getByLabelText('Correo electrónico'), 'ana@nexus.test')
   await user.type(screen.getByLabelText('Contraseña'), 'Abcdefg1!')
   await user.type(screen.getByLabelText('Apodo'), 'ana-guerrera')
+}
+
+/** Datos validos y paso al de avatar. */
+const toAvatarStep = async (user: ReturnType<typeof setup>): Promise<void> => {
+  await fillPersonal(user)
+  await next(user)
+}
+
+/** Datos y avatar validos, y paso al de las preguntas de seguridad. */
+const toSecurityStep = async (user: ReturnType<typeof setup>): Promise<void> => {
+  await toAvatarStep(user)
   await user.upload(screen.getByLabelText('Sube tu avatar (obligatorio)'), imageOfSize(4096))
+  await next(user)
+}
+
+/** Todo valido salvo los terminos, ya en el ultimo paso. */
+const toTermsStep = async (user: ReturnType<typeof setup>): Promise<void> => {
+  await toSecurityStep(user)
 
   for (const question of SECURITY_QUESTIONS) {
     await user.type(screen.getByLabelText(question.label), 'respuesta')
   }
 
+  await next(user)
+}
+
+const fillValidForm = async (user: ReturnType<typeof setup>): Promise<void> => {
+  await toTermsStep(user)
   await user.click(screen.getByRole('checkbox'))
 }
 
@@ -148,16 +179,11 @@ describe('RegistrationPage', () => {
     expect(screen.queryByLabelText('Nombres')).not.toBeInTheDocument()
   })
 
-  it('renderiza todos los campos obligatorios con su etiqueta asociada', () => {
-    renderPage()
+  it('renderiza todos los campos obligatorios con su etiqueta asociada, paso a paso', async () => {
+    const user = setup()
+    renderPage(vi.fn())
 
-    for (const label of [
-      'Nombres',
-      'Apellidos',
-      'Correo electrónico',
-      'Apodo',
-      'Sube tu avatar (obligatorio)',
-    ]) {
+    for (const label of ['Nombres', 'Apellidos', 'Correo electrónico', 'Apodo']) {
       expect(screen.getByLabelText(label)).toBeInTheDocument()
     }
 
@@ -173,13 +199,26 @@ describe('RegistrationPage', () => {
     const passwordInput = screen.getByLabelText('Contraseña')
     expect(passwordInput).toBeInTheDocument()
     expect(passwordInput).toHaveAttribute('type', 'password')
-    expect(screen.getByRole('checkbox')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument()
+
+    await toAvatarStep(user)
+    expect(screen.getByLabelText('Sube tu avatar (obligatorio)')).toBeInTheDocument()
+
+    await user.upload(screen.getByLabelText('Sube tu avatar (obligatorio)'), imageOfSize(4096))
+    await next(user)
+    for (const question of SECURITY_QUESTIONS) {
+      await user.type(screen.getByLabelText(question.label), 'respuesta')
+    }
+    await next(user)
+
+    expect(screen.getByRole('checkbox')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Completar registro' })).toBeInTheDocument()
   })
 
-  it('muestra las cuatro preguntas de seguridad, cada una con su respuesta', () => {
-    renderPage()
+  it('muestra las cuatro preguntas de seguridad, cada una con su respuesta', async () => {
+    const user = setup()
+    renderPage(vi.fn())
+    await toSecurityStep(user)
 
     expect(SECURITY_QUESTIONS).toHaveLength(4)
 
@@ -211,24 +250,38 @@ describe('RegistrationPage', () => {
     expect(screen.getByLabelText('Contraseña')).toHaveAttribute('type', 'password')
   })
 
-  it('al enviar vacio exige nombres, apellidos, avatar, las cuatro respuestas y los terminos', async () => {
+  it('ningun paso deja avanzar vacio: exige nombres, apellidos, avatar, las cuatro respuestas y los terminos', async () => {
     const onSubmit = vi.fn<(values: RegistrationValues) => Promise<void>>()
     const user = setup()
 
     renderPage(onSubmit)
-    await user.click(screen.getByRole('button', { name: 'Completar registro' }))
+    await next(user)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Revisa los siguientes campos')
     expect(fieldError('first-name')).toContain(MESSAGES.required)
     expect(fieldError('last-name')).toContain(MESSAGES.required)
-    expect(fieldError('avatar')).toContain(MESSAGES.avatarMissing)
-    expect(fieldError('terms')).toContain(MESSAGES.terms)
+    expect(screen.getByLabelText('Nombres')).toHaveAttribute('aria-invalid', 'true')
+    // Sigue en el primer paso: con errores no se avanza.
+    expect(screen.queryByLabelText('Sube tu avatar (obligatorio)')).not.toBeInTheDocument()
 
+    await toAvatarStep(user)
+    await next(user)
+    expect(fieldError('avatar')).toContain(MESSAGES.avatarMissing)
+
+    await user.upload(screen.getByLabelText('Sube tu avatar (obligatorio)'), imageOfSize(4096))
+    await next(user)
+    await next(user)
     for (const question of SECURITY_QUESTIONS) {
       expect(fieldError(`security-${question.id}`)).toContain(MESSAGES.securityAnswer)
     }
 
-    expect(screen.getByLabelText('Nombres')).toHaveAttribute('aria-invalid', 'true')
+    for (const question of SECURITY_QUESTIONS) {
+      await user.type(screen.getByLabelText(question.label), 'respuesta')
+    }
+    await next(user)
+    await user.click(screen.getByRole('button', { name: 'Completar registro' }))
+    expect(fieldError('terms')).toContain(MESSAGES.terms)
+
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
@@ -263,6 +316,7 @@ describe('RegistrationPage', () => {
     const user = setup()
 
     renderPage(vi.fn())
+    await toAvatarStep(user)
     await user.upload(
       screen.getByLabelText('Sube tu avatar (obligatorio)'),
       new File(['x'], 'contrato.pdf', { type: 'application/pdf' }),
@@ -277,6 +331,7 @@ describe('RegistrationPage', () => {
     const user = setup()
 
     renderPage(vi.fn())
+    await toAvatarStep(user)
     await user.upload(
       screen.getByLabelText('Sube tu avatar (obligatorio)'),
       imageOfSize(5 * 1024 * 1024 + 1),
@@ -430,13 +485,16 @@ describe('RegistrationPage', () => {
     const user = setup()
 
     renderPage(vi.fn())
+    await toTermsStep(user)
     await user.click(screen.getByRole('button', { name: 'Términos y Condiciones' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent(/todavía no está publicado/u)
   })
 
-  it('enlaza la Politica de Privacidad al PDF real, en pestana nueva, no como marcador de posicion (EN-011)', () => {
+  it('enlaza la Politica de Privacidad al PDF real, en pestana nueva, no como marcador de posicion (EN-011)', async () => {
+    const user = setup()
     renderPage(vi.fn())
+    await toTermsStep(user)
 
     const link = screen.getByRole('link', { name: 'Política de Privacidad' })
     expect(link).toHaveAttribute('href', '/assets/privacy-policy-v0.3.pdf')
@@ -537,5 +595,98 @@ describe('RegistrationPage', () => {
     await user.tab()
 
     expect(screen.getByLabelText('Correo electrónico')).toHaveFocus()
+  })
+
+  describe('asistente por pasos (remaster EN-031)', () => {
+    it('marca el paso actual y los ya completados', async () => {
+      const user = setup()
+      renderPage(vi.fn())
+
+      const steps = screen.getByRole('list', { name: 'Pasos del registro' })
+      const current = (): HTMLElement | null => steps.querySelector('[aria-current="step"]')
+
+      expect(current()).toHaveTextContent('Paso 1 de 4: Tus datos')
+
+      await toAvatarStep(user)
+
+      expect(current()).toHaveTextContent('Paso 2 de 4: Tu avatar')
+      expect(steps.querySelector('[data-state="done"]')).toHaveTextContent('Tus datos')
+    })
+
+    it('volver atras conserva lo escrito', async () => {
+      const user = setup()
+      renderPage(vi.fn())
+
+      await toAvatarStep(user)
+      await user.click(screen.getByRole('button', { name: 'Atrás' }))
+
+      expect(screen.getByLabelText('Nombres')).toHaveValue('Ana')
+      expect(screen.getByLabelText('Correo electrónico')).toHaveValue('ana@nexus.test')
+      expect(screen.getByLabelText('Contraseña')).toHaveValue('Abcdefg1!')
+    })
+
+    it('si se vuelve atras y se borra un dato, ya no deja avanzar hasta corregirlo', async () => {
+      const onSubmit = vi.fn<(values: RegistrationValues) => Promise<void>>()
+      const user = setup()
+      renderPage(onSubmit)
+
+      await fillValidForm(user)
+      for (let index = 0; index < 3; index++) {
+        await user.click(screen.getByRole('button', { name: 'Atrás' }))
+      }
+      await user.clear(screen.getByLabelText('Nombres'))
+      await next(user)
+
+      // Sigue en el primer paso, con el error a la vista.
+      expect(screen.queryByLabelText('Sube tu avatar (obligatorio)')).not.toBeInTheDocument()
+
+      expect(screen.getByLabelText('Nombres')).toHaveAttribute('aria-invalid', 'true')
+      expect(fieldError('first-name')).toContain(MESSAGES.required)
+      expect(onSubmit).not.toHaveBeenCalled()
+    })
+
+    it('marca en vivo cada requisito de la contrasena con la misma politica que valida', async () => {
+      const user = setup()
+      renderPage(vi.fn())
+
+      const requirements = screen.getByRole('list', { name: 'Requisitos de la contraseña' })
+      const met = (): number => requirements.querySelectorAll('[data-met="true"]').length
+
+      expect(met()).toBe(0)
+
+      await user.type(screen.getByLabelText('Contraseña'), 'abc')
+      expect(met()).toBe(1)
+
+      await user.type(screen.getByLabelText('Contraseña'), 'DEF1!xyz')
+      expect(met()).toBe(5)
+      expect(requirements).not.toHaveTextContent('abcDEF1!xyz')
+    })
+
+    it('muestra la vista previa del avatar y libera su URL al cambiarlo', async () => {
+      const create = vi
+        .fn<() => string>()
+        .mockReturnValueOnce('blob:primera')
+        .mockReturnValueOnce('blob:segunda')
+      const revoke = vi.fn()
+      vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: create, revokeObjectURL: revoke }))
+      const user = setup()
+      renderPage(vi.fn())
+
+      await toAvatarStep(user)
+      await user.upload(screen.getByLabelText('Sube tu avatar (obligatorio)'), imageOfSize(4096))
+
+      expect(screen.getByRole('img', { name: 'Vista previa de tu avatar' })).toHaveAttribute(
+        'src',
+        'blob:primera',
+      )
+
+      await user.upload(
+        screen.getByLabelText('Sube tu avatar (obligatorio)'),
+        imageOfSize(2048, 'image/png', 'otro.png'),
+      )
+
+      expect(revoke).toHaveBeenCalledWith('blob:primera')
+      vi.unstubAllGlobals()
+    })
   })
 })

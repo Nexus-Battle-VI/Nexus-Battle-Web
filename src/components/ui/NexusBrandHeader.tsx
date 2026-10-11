@@ -1,24 +1,25 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Logotipo grafico de "THE NEXUS BATTLES VI — RETURN OF THE WARRIORS".
  *
- * Servido desde `public/assets/logo.png`. El asset y este mismo patron de
- * render (incluido el fallback textual ante `onError`) ya existen en HU-01
- * (`src/features/account/registration/RegistrationPage.tsx`, rama
- * `feature/HU-01-registro-jugador`, todavia no fusionada en `develop`). Se
- * replica aqui en lugar de reinventarlo para que Registro y Login compartan
- * identidad visual; cuando esa rama se fusione, ambas pantallas deberian
- * converger en este unico componente en lugar de mantener dos copias.
+ * Servido desde `public/assets/logo.png`, con un lockup textual de respaldo si
+ * el archivo falla: la pantalla nunca depende de la imagen para seguir siendo
+ * legible. Es el UNICO encabezado de marca de las pantallas de Autenticacion
+ * (Login, Registro, Recuperacion), que lo pintan a traves de `AuthScene`.
  */
 const LOGO_SRC = '/assets/logo.png'
 
 export const NexusBrandHeader = (): React.JSX.Element => {
   const [logoFailed, setLogoFailed] = useState(false)
+  const { t } = useTranslation()
 
   return (
     <header className="text-center">
-      <p className="text-[0.65rem] uppercase tracking-[0.3em] text-muted">UPB-COMPANY presenta</p>
+      <p className="text-[0.65rem] uppercase tracking-[0.3em] text-muted">
+        {t('app:brand.presents')}
+      </p>
 
       {logoFailed ? (
         <>
