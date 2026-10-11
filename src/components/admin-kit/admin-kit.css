@@ -378,8 +378,9 @@
 }
 
 /* Boton "Secciones": la barra lateral plegada por debajo de `lg`. */
+/* `display` lo ponen las clases de Tailwind (`flex lg:hidden`): una regla sin capa
+   aqui ganaria a `lg:hidden`, que vive en `@layer utilities`. */
 .ak-sidebar-toggle {
-  display: flex;
   width: 100%;
   align-items: center;
   gap: 0.6rem;

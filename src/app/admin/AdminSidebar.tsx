@@ -40,7 +40,7 @@ export const AdminSidebar = ({
         onClick={() => {
           setOpenedAt(expanded ? null : pathname)
         }}
-        className="ak-sidebar-toggle lg:hidden"
+        className="ak-sidebar-toggle flex lg:hidden"
       >
         <AdminPixelIcon icon="console" size="md" />
         {t('admin:console.sections')}
