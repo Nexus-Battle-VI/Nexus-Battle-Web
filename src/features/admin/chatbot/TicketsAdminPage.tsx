@@ -1,20 +1,18 @@
 import { useTranslation } from 'react-i18next'
 
-import { Card } from '@/components/ui/Card'
+import { AdminPageHeader, AdminPanel } from '@/components/admin-kit'
 import { QueryState } from '@/components/ui/QueryState'
 
 import type { SupportTicketRow } from './api'
 import { useSupportTickets } from './useModelAdmin'
-
-import './chatbot-admin.css'
 
 export const TicketsAdminPage = (): React.JSX.Element => {
   const { t } = useTranslation()
   const { tickets, isLoading, error } = useSupportTickets()
 
   return (
-    <section className="cb-page flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">{t('chatbotAdmin:ticketsTitle')}</h1>
+    <section className="flex flex-col gap-4">
+      <AdminPageHeader icon="chatbot-tickets" title={t('chatbotAdmin:ticketsTitle')} />
       <QueryState
         isLoading={isLoading}
         error={error}
@@ -37,7 +35,7 @@ const TicketCard = ({ ticket }: { readonly ticket: SupportTicketRow }): React.JS
   const { t } = useTranslation()
 
   return (
-    <Card>
+    <AdminPanel>
       <p>{ticket.question}</p>
       <p className="mt-2 text-sm">
         {t('chatbotAdmin:askedBy')} {ticket.actor}
@@ -50,6 +48,6 @@ const TicketCard = ({ ticket }: { readonly ticket: SupportTicketRow }): React.JS
           {t('chatbotAdmin:view')} {ticket.view}
         </p>
       ) : null}
-    </Card>
+    </AdminPanel>
   )
 }

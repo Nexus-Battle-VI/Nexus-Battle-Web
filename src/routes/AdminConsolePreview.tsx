@@ -3,15 +3,22 @@ import { Route, Routes } from 'react-router'
 
 import { AdminHomePage } from '@/app/admin/AdminHomePage'
 import { AdminLayout } from '@/app/admin/AdminLayout'
+import { AuctionMetricsDevPreview } from '@/features/admin/auction-metrics/dev/AuctionMetricsDevPreview'
+import { KnowledgeAdminPage } from '@/features/admin/chatbot/KnowledgeAdminPage'
+import { TicketsAdminPage } from '@/features/admin/chatbot/TicketsAdminPage'
+import { ModerationQueueDevPreview } from '@/features/admin/comments/dev/ModerationQueueDevPreview'
+import { handleModerationRequest } from '@/features/admin/comments/dev/moderationQueueSimulation'
 import type { AdminProductSummary } from '@/features/admin/products/api'
 import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { ProductManagementPage } from '@/features/admin/products/ProductManagementPage'
+import { RoleManagementPage } from '@/features/admin/roles/RoleManagementPage'
+import { BannerManagementDevPreview } from '@/features/notifications/dev/BannerManagementDevPreview'
 import { useSession } from '@/shared/session'
 
 /**
  * Vista previa de desarrollo de la Consola del Consejo (EN-031): el salon, la
  * barra lateral y el panel de inicio, con pendientes de ejemplo, y las
- * paginas ya migradas al kit (`./products`, `./products/new`) con datos inyectados por props.
+ * paginas ya migradas al kit (`./products`, `./products/new`, `./moderation`, `./banners`, `./roles`, `./chatbot/tickets`, `./chatbot/knowledge`, `./auction-metrics`) con datos inyectados por props.
  *
  * NO ES UNA PANTALLA DEL PRODUCTO. Intercepta `fetch` para la cola de
  * moderacion y los tickets del chatbot y pone una sesion con el rol elegido
@@ -43,16 +50,26 @@ const PRODUCTS: readonly AdminProductSummary[] = [
   attributes: { values: { dropChanceBasisPoints: 500 } },
 }))
 
+/** Cuenta de ejemplo para la busqueda de Roles. */
+const EXAMPLE_ACCOUNT = {
+  id: 'consejo-vista-previa-cuenta',
+  email: 'ana@ejemplo.test',
+  displayName: 'Ana Guardiana',
+  status: 'ACTIVE',
+  roles: ['PLAYER', 'MODERATOR'],
+  mfaEnrolled: true,
+}
+
 const json = (body: unknown): Response =>
   new Response(JSON.stringify(body), {
     status: 200,
     headers: { 'content-type': 'application/json' },
   })
 
-const simulate = (url: string): Response | null => {
-  if (url.includes('/comments/moderation-queue')) {
-    return json({ items: [], total: 4, limit: 20, offset: 0 })
-  }
+const simulate = (url: string, init?: RequestInit): Response | null => {
+  // La misma cola simulada que la vista previa de Moderacion: la insignia y la
+  // pagina comparten cache, asi que ambas deben ver los mismos comentarios.
+  if (url.includes('/api/comments/')) return handleModerationRequest(url, init)
   if (url.includes('/v1/chatbot/admin/tickets')) {
     return json(
       ['consejo-vista-previa-1', 'consejo-vista-previa-2'].map((id) => ({
@@ -76,7 +93,7 @@ export const AdminConsolePreview = (): React.JSX.Element => {
     globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const url =
         typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-      const simulated = simulate(url)
+      const simulated = simulate(url, init)
       return simulated !== null ? Promise.resolve(simulated) : original(input, init)
     }
     useSession.setState({
@@ -123,6 +140,22 @@ export const AdminConsolePreview = (): React.JSX.Element => {
         <Route element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />
           <Route path="products/new" element={<CreateProductPage />} />
+          <Route path="moderation" element={<ModerationQueueDevPreview />} />
+          <Route path="chatbot/tickets" element={<TicketsAdminPage />} />
+          <Route path="auction-metrics" element={<AuctionMetricsDevPreview />} />
+          <Route path="chatbot/knowledge" element={<KnowledgeAdminPage />} />
+          <Route path="banners" element={<BannerManagementDevPreview />} />
+          <Route
+            path="roles"
+            element={
+              <RoleManagementPage
+                onSearch={() => Promise.resolve(EXAMPLE_ACCOUNT)}
+                onAssign={() => Promise.resolve(EXAMPLE_ACCOUNT)}
+                onRevoke={() => Promise.resolve(EXAMPLE_ACCOUNT)}
+                confirmAction={() => true}
+              />
+            }
+          />
           <Route
             path="products"
             element={
