@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-import { Coins } from '@/components/ui/icons'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { useSession } from '@/shared/session'
 import { spendableCredits, useWallet } from '@/shared/wallet'
 
@@ -59,9 +59,9 @@ export const CreditsBadge = (): React.JSX.Element | null => {
       role="img"
       aria-label={detail}
       title={detail}
-      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 text-sm font-semibold tabular-nums text-ink"
+      className="nb-hud-pill inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 text-sm font-semibold tabular-nums text-ink"
     >
-      <Coins aria-hidden="true" className="h-4 w-4 text-brand" />
+      <NavPixelIcon icon="gem" size="sm" />
       <span className="sm:hidden">{compactCredits(available)}</span>
       <span className="hidden sm:inline">{fullCredits(available)}</span>
     </span>

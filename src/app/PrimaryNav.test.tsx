@@ -74,20 +74,32 @@ describe('PrimaryNav', () => {
     expect(navigation).toContainElement(indicator)
   })
 
-  it('desplaza lista e indicador dentro del mismo contenedor responsive', () => {
+  it('lista e indicador comparten contenedor y la barra NUNCA hace scroll horizontal (EN-031)', () => {
     renderNav('/ecommerce')
 
     const navigation = screen.getByRole('navigation', { name: 'Principal' })
     const list = navigation.querySelector('ul')
     const indicator = screen.getByTestId('primary-nav-indicator')
-    const scrollContainer = list?.parentElement
+    const container = list?.parentElement
 
-    expect(scrollContainer).not.toBeNull()
-    expect(scrollContainer).toHaveClass('relative')
-    expect(scrollContainer).toHaveClass('overflow-x-auto')
-    expect(scrollContainer).toContainElement(list)
-    expect(scrollContainer).toContainElement(indicator)
+    expect(container).not.toBeNull()
+    expect(container).toHaveClass('relative')
+    expect(container).toContainElement(list)
+    expect(container).toContainElement(indicator)
+    // Antes `overflow-x-auto`: con el menu de administracion aparecia una barra de
+    // scroll bajo los modulos. Ahora las etiquetas se pliegan a icono (`shell.css`).
+    expect(container).not.toHaveClass('overflow-x-auto')
     expect(list).not.toHaveClass('overflow-x-auto')
+    expect(navigation).toHaveClass('nb-primary-nav')
+  })
+
+  it('cada modulo conserva su nombre accesible aunque la etiqueta se pliegue a icono (EN-031)', () => {
+    renderNav('/ecommerce')
+
+    const link = screen.getByRole('link', { name: 'E-commerce' })
+
+    expect(link).toHaveAttribute('title', 'E-commerce')
+    expect(link.querySelector('.nb-nav-label')).toHaveTextContent('E-commerce')
   })
 
   it('reparte los modulos en un carril tipo rejilla (segmentos equivalentes, sin anchos en px)', () => {

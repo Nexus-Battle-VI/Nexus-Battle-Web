@@ -198,9 +198,7 @@
   letter-spacing: 0.02em;
 }
 
-/* El alto acotado se aplica solo a E-commerce y a escritorios capaces de alojar 4 × 3 tarjetas
-   (12 productos por página, requisito real confirmado en la 6a pasada). Ventanas menores y
-   zoom conservan el flujo natural: ninguna acción queda recortada. */
+/* 12 productos por página (4 × 3 en escritorio, requisito de la 6a pasada) en flujo natural. */
 .commerce-main {
   max-width: 1440px;
 }
@@ -1425,40 +1423,13 @@
     padding-inline: 14px;
   }
 }
-@media (min-width: 1200px) and (min-height: 768px) {
-  .commerce-layout {
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-  }
-  .commerce-main {
-    flex: 1;
-    min-height: 0;
-  }
-  .commerce-page {
-    height: 100%;
-    padding-bottom: 0;
-  }
-  .commerce-showcase {
-    flex: 1;
-  }
-  .commerce-showcase-body {
-    flex: 1;
-  }
-  .commerce-filters {
-    align-self: stretch;
-  }
-  .commerce-filter-footnote {
-    margin-top: auto;
-  }
+/* EN-031: la vitrina ya NO se encaja en 100dvh. El alto fijo, las filas `repeat(3, minmax(0, 1fr))`
+   y `.commerce-page { overflow: hidden }` recortaban tarjetas y paginacion sin dejar ningun
+   contenedor con scroll: a 100 % de zoom no se podia bajar. En escritorio ancho se conservan las
+   4 columnas (12 productos = 3 filas) y la pagina se desplaza con el documento. */
+@media (min-width: 1200px) {
   .commerce-product-grid {
-    flex: 1;
-    min-height: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: repeat(3, minmax(0, 1fr));
-  }
-  .commerce-product-card {
-    min-height: 0;
   }
 }
 @media (max-width: 800px) {
