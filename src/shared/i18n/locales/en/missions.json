@@ -384,5 +384,19 @@
     "PICARO_MACHETE": "Machete Rogue",
     "CHAMAN": "Shaman",
     "MEDICO": "Medic"
+  },
+  "remaster": {
+    "boardEyebrow": "War room · Mission board",
+    "historyEyebrow": "Hero chronicles",
+    "reportEyebrow": "Campaign report",
+    "adminEyebrow": "Game Master workshop",
+    "encounter": "Encounter {{n}}",
+    "bossEncounter": "Encounter {{n}} · Boss",
+    "critical": "Critical!",
+    "miss": "Miss",
+    "victory": "Victory",
+    "defeat": "Defeat",
+    "pauseAnimation": "Pause animation",
+    "resumeAnimation": "Resume animation"
   }
 }

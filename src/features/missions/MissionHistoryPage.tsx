@@ -18,6 +18,9 @@ import {
 } from './missionReportApi'
 import { useTranslation } from 'react-i18next'
 import { localizedMessages } from '@/shared/i18n/messages'
+import { MissionPixelIcon } from './MissionPixelIcon'
+import { CATEGORY_ICON } from './missionsRemasterPresentation'
+import './missions.css'
 
 const OUTCOME_LABEL: Readonly<Record<MissionOutcome, string>> = localizedMessages({
   COMPLETED: 'missions:history.outcome.COMPLETED',
@@ -46,24 +49,29 @@ export const MissionHistoryPage = (): React.JSX.Element => {
   const { t } = useTranslation()
 
   return (
-    <section aria-label={t('missions:history.pageLabel')} className="flex flex-col gap-6">
-      <Link to="/missions" className="w-fit text-sm text-brand hover:underline">
+    <section
+      aria-label={t('missions:history.pageLabel')}
+      className="msn-page msn-page--history flex flex-col gap-6"
+    >
+      <Link to="/missions" className="msn-link w-fit text-sm">
         {t('missions:history.backToBoard')}
       </Link>
-      <header>
-        <h1 className="text-2xl font-semibold text-ink">{t('missions:history.title')}</h1>
-        <p className="text-sm text-muted">{t('missions:history.subtitle')}</p>
+      <header className="flex flex-col gap-1">
+        <p className="msn-eyebrow">{t('missions:remaster.historyEyebrow')}</p>
+        <h1 className="msn-title">{t('missions:history.title')}</h1>
+        <p className="msn-lead text-sm">{t('missions:history.subtitle')}</p>
       </header>
 
-      <Card title={t('missions:history.summaryTitle')}>
+      <Card title={t('missions:history.summaryTitle')} className="msn-panel">
         <QueryState isLoading={summary.isPending} error={summary.error}>
           {summary.data !== undefined && (
             <div className="flex flex-col gap-5 text-sm text-ink">
               <div>
-                <h3 className="font-medium">{t('missions:history.byCategory')}</h3>
-                <ul className="mt-1 grid gap-2 sm:grid-cols-3">
+                <h3 className="msn-section-title">{t('missions:history.byCategory')}</h3>
+                <ul className="mt-2 grid gap-2 sm:grid-cols-3">
                   {summary.data.byCategory.map((item) => (
-                    <li key={item.category}>
+                    <li key={item.category} className="msn-tile flex items-start gap-2 p-3">
+                      <MissionPixelIcon icon={CATEGORY_ICON[item.category]} size="lg" />
                       {t('missions:history.byCategoryLine', {
                         category: categoryLabel[item.category],
                         completed: item.completed,
@@ -78,10 +86,11 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               </div>
               {summary.data.bestTimes.length > 0 && (
                 <div>
-                  <h3 className="font-medium">{t('missions:history.bestTimes')}</h3>
-                  <ul className="mt-1 list-inside list-disc">
+                  <h3 className="msn-section-title">{t('missions:history.bestTimes')}</h3>
+                  <ul className="mt-1 flex flex-col gap-1">
                     {summary.data.bestTimes.map((item) => (
-                      <li key={item.enrollmentId}>
+                      <li key={item.enrollmentId} className="flex items-center gap-1.5">
+                        <MissionPixelIcon icon="timer" size="sm" />
                         {item.missionName ?? item.missionId} · {difficultyName(item.difficulty)} ·{' '}
                         {durationLabel(item.simulatedDuration)}
                       </li>
@@ -91,10 +100,14 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               )}
               {summary.data.epicCollection.length > 0 && (
                 <div>
-                  <h3 className="font-medium">{t('missions:history.epics')}</h3>
-                  <ul className="mt-1 list-inside list-disc">
+                  <h3 className="msn-section-title">{t('missions:history.epics')}</h3>
+                  <ul className="mt-1 flex flex-col gap-1">
                     {summary.data.epicCollection.map((item) => (
-                      <li key={`${item.epicRef}-${item.obtainedAt}`}>
+                      <li
+                        key={`${item.epicRef}-${item.obtainedAt}`}
+                        className="flex items-center gap-1.5"
+                      >
+                        <MissionPixelIcon icon="epic" size="sm" />
                         {item.name}
                         {item.masterName === undefined || item.masterName === null
                           ? ''
@@ -107,10 +120,14 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               )}
               {summary.data.lootCollection.length > 0 && (
                 <div>
-                  <h3 className="font-medium">{t('missions:history.bossLoot')}</h3>
-                  <ul className="mt-1 list-inside list-disc">
+                  <h3 className="msn-section-title">{t('missions:history.bossLoot')}</h3>
+                  <ul className="mt-1 flex flex-col gap-1">
                     {summary.data.lootCollection.map((drop) => (
-                      <li key={`${drop.productId ?? 'material'}-${drop.label}`}>
+                      <li
+                        key={`${drop.productId ?? 'material'}-${drop.label}`}
+                        className="flex items-center gap-1.5"
+                      >
+                        <MissionPixelIcon icon="loot" size="sm" />
                         {drop.label} × {drop.quantity}
                       </li>
                     ))}
@@ -119,10 +136,11 @@ export const MissionHistoryPage = (): React.JSX.Element => {
               )}
               {summary.data.narrativeProgress.length > 0 && (
                 <div>
-                  <h3 className="font-medium">{t('missions:history.narrativeProgress')}</h3>
-                  <ul className="mt-1 list-inside list-disc">
+                  <h3 className="msn-section-title">{t('missions:history.narrativeProgress')}</h3>
+                  <ul className="mt-1 flex flex-col gap-1">
                     {summary.data.narrativeProgress.map((item) => (
-                      <li key={item.chainId}>
+                      <li key={item.chainId} className="flex items-center gap-1.5">
+                        <MissionPixelIcon icon="story" size="sm" />
                         {t('missions:history.narrativeLine', {
                           chain: (item.missionNames ?? item.missions).join(' → '),
                           completed: item.completed,
@@ -140,36 +158,43 @@ export const MissionHistoryPage = (): React.JSX.Element => {
 
       <EpicAlbum entries={summary.data?.epicAlbum ?? []} />
 
-      <Card title={t('missions:history.finishedTitle')}>
+      <Card title={t('missions:history.finishedTitle')} className="msn-panel">
         <QueryState
           isLoading={history.isPending}
           error={history.data === undefined ? history.error : null}
           isEmpty={items.length === 0}
           emptyMessage={t('missions:history.noFinished')}
         >
-          <ul className="flex flex-col divide-y divide-border">
+          <ul className="flex flex-col gap-2">
             {items.map((item) => (
               <li
                 key={item.enrollmentId}
-                className="flex flex-wrap items-center justify-between gap-3 py-3"
+                className="msn-tile flex flex-wrap items-center justify-between gap-3 p-3"
               >
-                <div>
-                  <p className="font-medium text-ink">{item.name}</p>
-                  <p className="text-sm text-muted">
-                    {OUTCOME_LABEL[item.outcome]} · {difficultyName(item.difficulty)} ·{' '}
-                    {dateLabel(item.finishedAt)}
-                    {item.simulatedDuration === null
-                      ? ''
-                      : t('missions:history.simulatedTime', {
-                          time: durationLabel(item.simulatedDuration),
-                        })}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <MissionPixelIcon
+                    icon={item.outcome === 'COMPLETED' ? 'victory' : 'defeat'}
+                    size="lg"
+                  />
+                  <div>
+                    <p className="font-medium text-ink">{item.name}</p>
+                    <p className="text-sm text-muted">
+                      {OUTCOME_LABEL[item.outcome]} · {difficultyName(item.difficulty)} ·{' '}
+                      {dateLabel(item.finishedAt)}
+                      {item.simulatedDuration === null
+                        ? ''
+                        : t('missions:history.simulatedTime', {
+                            time: durationLabel(item.simulatedDuration),
+                          })}
+                    </p>
+                  </div>
                 </div>
                 {item.reportAvailable ? (
                   <Link
                     to={`/missions/reports/${encodeURIComponent(item.enrollmentId)}`}
-                    className="text-sm text-brand hover:underline"
+                    className="msn-btn-link"
                   >
+                    <MissionPixelIcon icon="report" size="sm" />
                     {t('missions:history.viewReportOf', { mission: item.name })}
                   </Link>
                 ) : (
@@ -185,7 +210,7 @@ export const MissionHistoryPage = (): React.JSX.Element => {
           )}
           {history.hasNextPage && (
             <Button
-              variant="secondary"
+              variant="missions-secondary"
               className="mt-4"
               loading={history.isFetchingNextPage}
               onClick={() => void history.fetchNextPage()}

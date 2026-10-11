@@ -13,6 +13,9 @@ export type ButtonVariant =
   | 'account-primary'
   | 'account-secondary'
   | 'account-danger'
+  | 'missions-primary'
+  | 'missions-secondary'
+  | 'missions-danger'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant
@@ -53,6 +56,14 @@ const VARIANTS: Readonly<Record<ButtonVariant, string>> = {
   'account-primary': 'account-btn-primary text-ink',
   'account-secondary': 'account-btn-secondary text-ink',
   'account-danger': 'account-btn-danger text-ink',
+  /*
+   * Remaster visual "Misiones" (Sprint 3, EN-031), mismo criterio que
+   * `account-*`: superficie CSS sin raster en `features/missions/missions.css`
+   * (`msn-btn-*`); aqui solo el gancho de clase.
+   */
+  'missions-primary': 'msn-btn-primary text-ink',
+  'missions-secondary': 'msn-btn-secondary text-ink',
+  'missions-danger': 'msn-btn-danger text-ink',
 }
 
 export const Button = ({

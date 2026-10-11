@@ -32,6 +32,7 @@ import {
   type SectionId,
 } from './admin/missionContentValidation'
 import { i18n } from '@/shared/i18n/i18n'
+import './missions.css'
 
 interface Draft {
   readonly content: MissionContent
@@ -160,14 +161,21 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
   }
 
   return (
-    <section aria-label={t('admin:missions.editor.label')} className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-ink">{t('admin:missions.editor.title')}</h1>
-        <p className="mt-2 text-sm text-muted">{t('admin:missions.editor.subtitle')}</p>
+    <section
+      aria-label={t('admin:missions.editor.label')}
+      className="msn-page msn-page--admin flex flex-col gap-6"
+    >
+      <header className="flex flex-col gap-1">
+        <p className="msn-eyebrow">{t('missions:remaster.adminEyebrow')}</p>
+        <h1 className="msn-title">{t('admin:missions.editor.title')}</h1>
+        <p className="msn-lead text-sm">{t('admin:missions.editor.subtitle')}</p>
       </header>
       <QueryState isLoading={missions.isPending} error={missions.error}>
         <div className="grid items-start gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-          <nav aria-label={t('admin:missions.editor.navLabel')} className="flex flex-col gap-3">
+          <nav
+            aria-label={t('admin:missions.editor.navLabel')}
+            className="msn-tile flex flex-col gap-3 p-3"
+          >
             {list.length === 0 ? (
               <p className="text-sm text-muted">{t('admin:missions.editor.noMissionsYet')}</p>
             ) : (
@@ -226,11 +234,11 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                   {t('admin:missions.editor.unsavedChangesTitle', { label: switchRequest.label })}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="danger" onClick={switchRequest.run}>
+                  <Button variant="missions-danger" onClick={switchRequest.run}>
                     {t('admin:missions.editor.discardAndOpen')}
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="missions-secondary"
                     onClick={() => {
                       setSwitchRequest(null)
                     }}
@@ -246,10 +254,10 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                 {t('admin:missions.editor.chooseOrCreate')}
               </p>
             ) : (
-              <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface-raised p-5">
+              <div className="msn-tile flex flex-col gap-4 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-ink">
+                    <h2 className="msn-section-title text-xl">
                       {draft.isNew
                         ? t('admin:missions.editor.newMission')
                         : t('admin:missions.editor.editingTitle', { name: draft.content.name })}
@@ -265,7 +273,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                           : t('admin:missions.editor.noChanges')}
                     </span>
                     <Button
-                      variant="secondary"
+                      variant="missions-secondary"
                       disabled={!dirty}
                       onClick={() => {
                         open({ ...draft, content: JSON.parse(draft.original) as MissionContent })
@@ -274,14 +282,18 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                       {t('admin:missions.editor.discardChanges')}
                     </Button>
                     <Button
-                      variant="secondary"
+                      variant="missions-secondary"
                       onClick={() => {
                         open(draftOf(duplicateMission(draft.content, takenIds), true))
                       }}
                     >
                       {t('admin:missions.editor.duplicate')}
                     </Button>
-                    <Button loading={save.isPending} onClick={handleSave}>
+                    <Button
+                      variant="missions-primary"
+                      loading={save.isPending}
+                      onClick={handleSave}
+                    >
                       {t('admin:missions.editor.save')}
                     </Button>
                   </div>
@@ -311,7 +323,7 @@ export const MissionContentEditorPage = (): React.JSX.Element => {
                       {SECTIONS.filter((entry) => errorSections.has(entry.id)).map((entry) => (
                         <Button
                           key={entry.id}
-                          variant="secondary"
+                          variant="missions-secondary"
                           onClick={() => {
                             setSection(entry.id)
                           }}
