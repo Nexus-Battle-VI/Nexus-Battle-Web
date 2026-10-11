@@ -69,5 +69,8 @@
     "description": "Conversation threads and messages.",
     "pendingBefore": "This screen is not implemented yet. Its functionality belongs to the service",
     "pendingAfter": "and will be developed in its User Story."
+  },
+  "brand": {
+    "presents": "UPB-COMPANY presents"
   }
 }

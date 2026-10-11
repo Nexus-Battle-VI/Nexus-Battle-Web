@@ -49,6 +49,20 @@ if (import.meta.env.DEV) {
   // previa falsea la sesion, intercepta `fetch` y monta las paginas reales con
   // su propio `missions-main` (sin `AppLayout`, para que ninguna ruta de
   // desarrollo quede escrita en el layout de produccion).
+  // EN-031: remaster de Autenticacion. Monta Login, Registro y Recuperacion
+  // reales con transportes de ejemplo inyectados por sus props, sin red.
+  const AuthRemasterPreviewLazy = lazy(() =>
+    import('./AuthRemasterPreview').then((module) => ({
+      default: module.AuthRemasterPreview,
+    })),
+  )
+  // EN-031: campana, resumen e historial de notificaciones con datos de
+  // ejemplo y una sesion simulada solo mientras la vista esta montada.
+  const NotificationsRemasterPreviewLazy = lazy(() =>
+    import('./NotificationsRemasterPreview').then((module) => ({
+      default: module.NotificationsRemasterPreview,
+    })),
+  )
   const MissionsRemasterPreviewLazy = lazy(() =>
     import('@/features/missions/dev/MissionsRemasterPreview').then((module) => ({
       default: module.MissionsRemasterPreview,
@@ -668,6 +682,24 @@ if (import.meta.env.DEV) {
         ...child,
         element: <Suspense fallback={null}>{child.element}</Suspense>,
       })),
+    },
+    // EN-031: ver comentario junto a `AuthRemasterPreviewLazy` arriba.
+    {
+      path: '__dev/auth',
+      element: (
+        <Suspense fallback={null}>
+          <AuthRemasterPreviewLazy />
+        </Suspense>
+      ),
+    },
+    // EN-031: ver comentario junto a `NotificationsRemasterPreviewLazy` arriba.
+    {
+      path: '__dev/notifications',
+      element: (
+        <Suspense fallback={null}>
+          <NotificationsRemasterPreviewLazy />
+        </Suspense>
+      ),
     },
   ]
 }

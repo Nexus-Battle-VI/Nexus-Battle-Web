@@ -34,6 +34,9 @@ const LABELS: Readonly<Record<string, string>> = localizedMessages({
   AUCTION_SETTLED_WINNER: 'notifications:changeTypes.AUCTION_SETTLED_WINNER',
   AUCTION_SETTLED_LOSER: 'notifications:changeTypes.AUCTION_SETTLED_LOSER',
   AUCTION_SETTLED_WITHOUT_BIDS: 'notifications:changeTypes.AUCTION_SETTLED_WITHOUT_BIDS',
+  AUCTION_PUBLISHED: 'notifications:changeTypes.AUCTION_PUBLISHED',
+  AUCTION_NEW_BID: 'notifications:changeTypes.AUCTION_NEW_BID',
+  AUCTION_BID_ACCEPTED: 'notifications:changeTypes.AUCTION_BID_ACCEPTED',
   BATTLE_DROP_GAINED: 'notifications:changeTypes.BATTLE_DROP_GAINED',
   BATTLE_DROP_LOST: 'notifications:changeTypes.BATTLE_DROP_LOST',
 })
@@ -53,6 +56,9 @@ const TONE: Readonly<Record<string, string>> = {
   AUCTION_SETTLED_WINNER: 'bg-success/15 text-success',
   AUCTION_SETTLED_LOSER: 'bg-border text-muted',
   AUCTION_SETTLED_WITHOUT_BIDS: 'bg-border text-muted',
+  AUCTION_PUBLISHED: 'bg-brand/15 text-brand',
+  AUCTION_NEW_BID: 'bg-success/15 text-success',
+  AUCTION_BID_ACCEPTED: 'bg-success/15 text-success',
   BATTLE_DROP_GAINED: 'bg-success/15 text-success',
   BATTLE_DROP_LOST: 'bg-border text-muted',
 }

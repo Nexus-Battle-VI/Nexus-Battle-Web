@@ -1,8 +1,7 @@
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
-import { formatDateTime } from '@/lib/format'
-import { CatalogNotificationBadge } from './CatalogNotificationBadge'
+import { NotificationRow } from './NotificationRow'
 import { usePendingCatalogNotifications } from './usePendingCatalogNotifications'
 
 /**
@@ -42,21 +41,14 @@ export const CatalogNotificationsSummary = (): React.JSX.Element | null => {
   }
 
   return (
-    <section
-      aria-label={t('notifications:summary.title')}
-      className="rounded-lg border border-border bg-surface-raised p-5"
-    >
+    <section aria-label={t('notifications:summary.title')} className="nb-notice-panel p-5">
       <h2 className="text-lg font-semibold text-ink">{t('notifications:summary.title')}</h2>
       <p className="mt-1 text-sm text-muted">{t('notifications:summary.subtitle')}</p>
 
       <ul className="mt-4 flex flex-col divide-y divide-border">
         {items.map((item) => (
-          <li key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-            <CatalogNotificationBadge changeType={item.changeType} />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm text-ink">{item.description}</p>
-              <p className="mt-0.5 text-xs text-muted">{formatDateTime(item.implementedAt)}</p>
-            </div>
+          <li key={item.id} className="py-3 first:pt-0 last:pb-0">
+            <NotificationRow item={item} />
           </li>
         ))}
       </ul>

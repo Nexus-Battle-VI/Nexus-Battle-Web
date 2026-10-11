@@ -76,6 +76,8 @@ describe('devRoutes', () => {
       '__dev/tournament/registration',
       '__dev/tournament/admin',
       '__dev/missions',
+      '__dev/auth',
+      '__dev/notifications',
     ])
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
 

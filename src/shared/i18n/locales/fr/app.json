@@ -69,5 +69,8 @@
     "description": "Fils de discussion et messages.",
     "pendingBefore": "Cet écran n'est pas encore implémenté. Sa fonctionnalité relève du service",
     "pendingAfter": "et sera développée dans sa User Story."
+  },
+  "brand": {
+    "presents": "UPB-COMPANY présente"
   }
 }

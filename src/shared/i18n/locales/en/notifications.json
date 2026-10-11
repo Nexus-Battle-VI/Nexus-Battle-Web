@@ -37,7 +37,10 @@
     "AUCTION_SETTLED_LOSER": "Auction ended",
     "AUCTION_SETTLED_WITHOUT_BIDS": "Auction without bids",
     "BATTLE_DROP_GAINED": "Item obtained",
-    "BATTLE_DROP_LOST": "Item lost"
+    "BATTLE_DROP_LOST": "Item lost",
+    "AUCTION_PUBLISHED": "Auction published",
+    "AUCTION_NEW_BID": "New bid",
+    "AUCTION_BID_ACCEPTED": "Bid accepted"
   },
   "admin": {
     "crumb": "Information banner",
@@ -59,5 +62,15 @@
     "active": "Active",
     "inactive": "Expired",
     "back": "← Back"
+  },
+  "bell": {
+    "label": "Notifications",
+    "unread": "Notifications: {{count}} unread",
+    "title": "Notifications",
+    "empty": "You have no new notifications.",
+    "failed": "Your notifications could not be loaded.",
+    "loading": "Loading notifications...",
+    "viewAll": "View all ›",
+    "more": "And {{count}} more in your history."
   }
 }
