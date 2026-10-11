@@ -196,7 +196,9 @@
     "currentTurn": "Tour actuel",
     "turns": "Tours",
     "turnOrder": "Ordre des tours",
-    "current": "Actuel"
+    "current": "Actuel",
+    "crashed": "L'affichage de la bataille a échoué. Votre partie continue sur le serveur.",
+    "reconnect": "Se reconnecter"
   },
   "turn": {
     "yours": "Votre tour",
@@ -310,7 +312,10 @@
       "UNKNOWN_SKILL": "Cette compétence n'appartient pas à votre héros.",
       "UNSUPPORTED_SKILL_EFFECT": "Cette compétence ne peut pas encore être utilisée : son effet n'est pas encore défini pour le combat.",
       "SKILL_ON_COOLDOWN": "Cette compétence est encore en recharge. Votre tour n'a pas été consommé.",
-      "default": "Impossible d'utiliser la compétence. Réessayez."
+      "default": "Impossible d'utiliser la compétence. Réessayez.",
+      "SKILL_LOCKED": "Votre héros n'a pas encore le niveau pour cette compétence. Votre tour n'a pas été consommé.",
+      "INVALID_HEAL_TARGET": "Ce soin ne peut cibler qu’un coéquipier.",
+      "INSUFFICIENT_POWER_FOR_HEAL": "Vous n'avez pas assez de Pouvoir pour ce soin. Votre tour n'a pas été consommé."
     },
     "used": "{{actor}} a utilisé {{skill}} contre {{target}}",
     "usedOn": "{{actor}} a utilisé {{skill}} sur {{target}}",
@@ -329,7 +334,12 @@
     "healTarget": "Coéquipier à soigner",
     "chooseHealTarget": "Sur quel coéquipier veux-tu utiliser {{skill}} ?",
     "using": "Utilisation…",
-    "use": "Utiliser {{skill}}"
+    "use": "Utiliser {{skill}}",
+    "locked": "Se débloque au niveau {{level}}",
+    "lockedShort": "Niveau {{level}}",
+    "xpMissing": "encore {{amount}} XP",
+    "usedAlone": "{{actor}} a utilisé {{skill}}",
+    "effectApplied": "Effet appliqué"
   },
   "result": {
     "standing": "Vie restante {{remaining}} / {{max}} ({{percent}} %)",
