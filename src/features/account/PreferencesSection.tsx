@@ -2,9 +2,11 @@ import { useState } from 'react'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { Card } from '@/components/ui/Card'
 import { setLanguage, useLanguage } from '@/shared/i18n/language'
 import { LANGUAGE_NATIVE_NAMES, SUPPORTED_LANGUAGES, type Language } from '@/shared/i18n/languages'
+import { playSfx, useSfxSettings } from '@/shared/sound'
 import { useTheme, type Theme } from '@/shared/theme'
 
 import type { OwnAccount } from './api'
@@ -26,6 +28,9 @@ const LANGUAGE_FLAG: Readonly<Record<Language, keyof typeof accountPreferences.f
  * el conmutador global aqui-. Lee y escribe EXACTAMENTE el mismo store
  * (`@/shared/theme`): no hay un segundo estado ni una segunda persistencia.
  * Sigue siendo una preferencia local del navegador.
+ *
+ * SONIDO (EN-031): mismo store que el interruptor de la cabecera
+ * (`@/shared/sound`), apagado por defecto y guardado solo en este navegador.
  *
  * IDIOMA: se guarda en Account (`preferredLanguage`). Tema e idioma son
  * preferencias independientes: cambiar una no toca la otra.
@@ -190,6 +195,69 @@ const LanguagePreference = ({
   )
 }
 
+const SOUND_OPTIONS = [
+  { enabled: true, icon: 'sound-on', key: 'on' },
+  { enabled: false, icon: 'sound-off', key: 'off' },
+] as const
+
+/** Efectos de sonido 8-bit (EN-031): activados o desactivados. */
+const SoundPreference = (): React.JSX.Element => {
+  const { t } = useTranslation()
+  const enabled = useSfxSettings((state) => state.enabled)
+  const setEnabled = useSfxSettings((state) => state.setEnabled)
+
+  return (
+    <Card
+      className="account-panel"
+      title={t('account:preferences.sound.title')}
+      description={t('account:preferences.sound.description')}
+    >
+      <div
+        role="group"
+        aria-label={t('account:preferences.sound.title')}
+        className="grid gap-3 sm:grid-cols-2"
+      >
+        {SOUND_OPTIONS.map((option) => {
+          const selected = enabled === option.enabled
+          return (
+            <button
+              key={option.key}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => {
+                setEnabled(option.enabled)
+                if (option.enabled) playSfx('click')
+              }}
+              className={clsx(
+                OPTION_CLASS,
+                'flex-row items-center gap-3',
+                selected && 'is-selected',
+              )}
+            >
+              <span className="account-option-card__icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full">
+                <NavPixelIcon icon={option.icon} size="lg" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-ink">
+                  {t(`account:preferences.sound.${option.key}`)}
+                  {selected && (
+                    <span className="ml-2 text-xs text-brand">
+                      {t('account:preferences.active')}
+                    </span>
+                  )}
+                </span>
+                <span className="block text-xs text-muted">
+                  {t(`account:preferences.sound.${option.key}Hint`)}
+                </span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
 export interface PreferencesSectionProps {
   /** Reenviado a `LanguagePreference` (vease su prop homonima). */
   readonly savePreferredLanguage?: LanguagePreferenceProps['savePreferredLanguage']
@@ -258,6 +326,8 @@ export const PreferencesSection = ({
           })}
         </div>
       </Card>
+
+      <SoundPreference />
 
       <LanguagePreference
         {...(savePreferredLanguage === undefined ? {} : { savePreferredLanguage })}

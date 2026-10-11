@@ -720,5 +720,39 @@
       "fieldsToFixTitle": "Not saved: there are fields to fix.",
       "goTo": "Go to {{section}}"
     }
+  },
+  "console": {
+    "title": "Council Hall",
+    "sidebar": "Administration sections",
+    "greeting": "Welcome to the command console. Role: {{role}}.",
+    "pendingTitle": "Pending",
+    "pending": "Pending: {{count}}",
+    "allClear": "All clear",
+    "pendingItems": {
+      "moderation": "Comments to moderate",
+      "tickets": "Chatbot tickets"
+    },
+    "groups": {
+      "content": "Content",
+      "commerce": "Commerce",
+      "community": "Community",
+      "assistant": "Assistant",
+      "security": "Security"
+    },
+    "hints": {
+      "console": "Console overview.",
+      "missions": "Create and edit the board missions.",
+      "banners": "Publish time-limited notices on the storefront.",
+      "products": "Find, edit, suspend or restore products.",
+      "metrics": "Auction volume, timing and fees.",
+      "official-auction": "Publish official real-money auctions.",
+      "moderation": "Review reported comments.",
+      "chatbot-model": "Active version and retraining.",
+      "chatbot-knowledge": "Entries the chatbot can answer.",
+      "chatbot-analytics": "What gets asked and what goes unanswered.",
+      "chatbot-tickets": "Questions the chatbot handed over.",
+      "roles": "Grant and revoke account roles."
+    },
+    "sections": "Sections"
   }
 }

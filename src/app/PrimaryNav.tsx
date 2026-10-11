@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { navigationForPrimaryRole } from '@/routes/routes'
 import { primaryRole } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
+import { playSfx } from '@/shared/sound'
 import { AdminNavMenu } from './AdminNavMenu'
 import { NAV_LABEL_KEYS } from './navLabels'
 import { navModuleForPath } from '@/components/shell/shellRemasterAssets'
@@ -126,6 +127,9 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
                   <NavLink
                     to={item.path}
                     data-nav-module={navModule}
+                    onClick={() => {
+                      playSfx('click')
+                    }}
                     className={({ isActive }) =>
                       clsx(
                         'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',

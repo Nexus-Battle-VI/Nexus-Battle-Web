@@ -50,6 +50,8 @@ export const usePendingCatalogNotifications = () => {
 
   const markRead = useMutation({
     mutationFn: markCatalogNotificationsRead,
+    // Se lanza sola tras presentar las novedades: no debe sonar (EN-031).
+    meta: { sfx: false },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.history(subject) })
     },

@@ -28,7 +28,9 @@ import { i18n } from '@/shared/i18n/i18n'
 import { localizedMessages } from '@/shared/i18n/messages'
 import { countLabel } from '@/shared/i18n/format'
 
-const PAGE_SIZE = 20
+/** Exportado: la insignia de la Consola del Consejo comparte la cache de la primera pagina. */
+export const MODERATION_QUEUE_PAGE_SIZE = 20
+const PAGE_SIZE = MODERATION_QUEUE_PAGE_SIZE
 
 export type FetchModerationQueueTransport = typeof fetchModerationQueue
 

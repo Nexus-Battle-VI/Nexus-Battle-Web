@@ -9,6 +9,10 @@ import { renderWithProviders } from '@/test/render'
 
 import { NotificationBell } from './NotificationBell'
 
+vi.mock('@/shared/sound', () => ({ playSfx: vi.fn() }))
+
+const { playSfx } = await import('@/shared/sound')
+
 const notification = (index: number, ids: readonly string[] = [`n-${String(index)}`]) =>
   ({
     id: `row-${String(index)}`,
@@ -130,6 +134,28 @@ describe('NotificationBell (EN-031)', () => {
       expect(
         await screen.findByText('No se pudieron cargar tus notificaciones.'),
       ).toBeInTheDocument()
+    })
+
+    it('suena solo cuando llegan notificaciones nuevas, nunca en la primera carga (EN-031)', async () => {
+      vi.mocked(playSfx).mockClear()
+      const get = vi
+        .spyOn(httpClient, 'get')
+        .mockResolvedValue({ items: [notification(0), notification(1)] })
+      const { queryClient } = renderWithProviders(<NotificationBell />)
+
+      await screen.findByRole('button', { name: 'Notificaciones: 2 sin leer' })
+      expect(playSfx).not.toHaveBeenCalledWith('notification')
+
+      get.mockResolvedValue({ items: [notification(0), notification(1), notification(2)] })
+      await queryClient.invalidateQueries()
+      await screen.findByRole('button', { name: 'Notificaciones: 3 sin leer' })
+      expect(playSfx).toHaveBeenCalledWith('notification')
+
+      vi.mocked(playSfx).mockClear()
+      get.mockResolvedValue({ items: [notification(0)] })
+      await queryClient.invalidateQueries()
+      await screen.findByRole('button', { name: 'Notificaciones: 1 sin leer' })
+      expect(playSfx).not.toHaveBeenCalledWith('notification')
     })
   })
 })

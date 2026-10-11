@@ -12,6 +12,8 @@ import { RequireAdministrator } from '@/app/RequireAdministrator'
 import { RequireSuperAdministrator } from '@/app/RequireSuperAdministrator'
 import { RequireModerator } from '@/app/RequireModerator'
 import { RequireGameMaster } from '@/app/RequireGameMaster'
+import { AdminHomePage } from '@/app/admin/AdminHomePage'
+import { AdminLayout } from '@/app/admin/AdminLayout'
 import { PublicOnlyRoute } from '@/app/PublicOnlyRoute'
 import { AccountPage } from '@/features/account/AccountPage'
 import { accountSectionRoutes } from '@/features/account/routes'
@@ -344,13 +346,137 @@ export const routes: RouteObject[] = [
       { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
       { path: 'missions/progress/:enrollmentId', element: <MissionProgressPage /> },
       { path: 'missions/:missionId', element: <MissionDetailPage /> },
+      // EN-031: Consola del Consejo. Ruta de layout SIN path: envuelve cada
+      // pantalla administrativa con la escena y la barra lateral, sin cambiar
+      // ninguna URL ni ninguna guarda (cada hija conserva la suya). `/admin`
+      // es el panel de inicio.
       {
-        path: 'admin/missions',
-        element: (
-          <RequireAdministrator>
-            <MissionContentEditorPage />
-          </RequireAdministrator>
-        ),
+        element: <AdminLayout />,
+        children: [
+          {
+            path: 'admin',
+            element: (
+              <RequireModerator>
+                <AdminHomePage />
+              </RequireModerator>
+            ),
+          },
+          {
+            path: 'admin/missions',
+            element: (
+              <RequireAdministrator>
+                <MissionContentEditorPage />
+              </RequireAdministrator>
+            ),
+          },
+          // HU-91.6: metricas de subasta. Guarda de presentacion; Auction valida el rol.
+          {
+            path: 'admin/auction-metrics',
+            element: (
+              <RequireAdministrator>
+                <AuctionMetricsPage />
+              </RequireAdministrator>
+            ),
+          },
+          {
+            path: 'admin/roles',
+            element: (
+              <RequireSuperAdministrator>
+                <RoleManagementPage />
+              </RequireSuperAdministrator>
+            ),
+          },
+          // Gestion de productos (buscar, editar, eliminar/restaurar): el destino
+          // real de "Gestionar productos" en `ADMIN_NAVIGATION`. NO sustituye a
+          // `admin/products/new` ni a `admin/products/:productId/inventory` -son
+          // rutas propias, con su propio path, que esta pantalla enlaza en vez de
+          // reemplazar-. Misma guarda de presentacion que el resto: Catalog
+          // exige ademas evidencia de segundo factor y responde 403 por su cuenta.
+          {
+            path: 'admin/products',
+            element: (
+              <RequireAdministrator>
+                <ProductManagementPage />
+              </RequireAdministrator>
+            ),
+          },
+          // Catalogo administrativo (HU-33). La guarda es de presentacion: Catalog
+          // exige ademas evidencia de segundo factor y responde 403 por su cuenta.
+          {
+            path: 'admin/products/new',
+            element: (
+              <RequireAdministrator>
+                <CreateProductPage />
+              </RequireAdministrator>
+            ),
+          },
+          // Ajuste de tiraje (HU-34). NO entra en `NAVIGATION`: se llega con un
+          // producto concreto en la mano, y un enlace de menu sin identificador no
+          // lleva a ninguna parte.
+          {
+            path: 'admin/products/:productId/inventory',
+            element: (
+              <RequireAdministrator>
+                <AdjustInventoryPage />
+              </RequireAdministrator>
+            ),
+          },
+          // Gestion del banner informativo (HU-38, Task #181). Misma guarda que el
+          // resto de superficies administrativas: el backend tambien valida el
+          // testimonio y responde 403 aunque alguien escriba la URL a mano.
+          {
+            path: 'admin/banners',
+            element: (
+              <RequireAdministrator>
+                <BannerManagementPage />
+              </RequireAdministrator>
+            ),
+          },
+          {
+            path: 'admin/chatbot',
+            element: (
+              <RequireAdministrator>
+                <ModelAdminPage />
+              </RequireAdministrator>
+            ),
+          },
+          {
+            path: 'admin/chatbot/knowledge',
+            element: (
+              <RequireAdministrator>
+                <KnowledgeAdminPage />
+              </RequireAdministrator>
+            ),
+          },
+          {
+            path: 'admin/chatbot/analytics',
+            element: (
+              <RequireAdministrator>
+                <AnalyticsPage />
+              </RequireAdministrator>
+            ),
+          },
+          {
+            path: 'admin/chatbot/tickets',
+            element: (
+              <RequireAdministrator>
+                <TicketsAdminPage />
+              </RequireAdministrator>
+            ),
+          },
+          // Cola de moderacion de comentarios (HU-41.4). Entra en `NAVIGATION`
+          // desde HU-41.10: a diferencia del ajuste de tiraje, esta pantalla no
+          // depende de un producto concreto, asi que un enlace de menu si lleva a
+          // alguna parte.
+          {
+            path: 'admin/comments/moderation',
+            element: (
+              <RequireModerator>
+                <ModerationQueuePage />
+              </RequireModerator>
+            ),
+          },
+        ],
       },
       { path: 'tournament', element: <TournamentRegistrationPage /> },
       { path: 'tournament/registration', element: <Navigate to="/tournament" replace /> },
@@ -404,113 +530,6 @@ export const routes: RouteObject[] = [
       // ruta hija con su propia URL (`/account`, `/account/security`, ...); ver
       // `@/features/account/routes`.
       { path: 'account', element: <AccountPage />, children: accountSectionRoutes },
-      // HU-91.6: metricas de subasta. Guarda de presentacion; Auction valida el rol.
-      {
-        path: 'admin/auction-metrics',
-        element: (
-          <RequireAdministrator>
-            <AuctionMetricsPage />
-          </RequireAdministrator>
-        ),
-      },
-      {
-        path: 'admin/roles',
-        element: (
-          <RequireSuperAdministrator>
-            <RoleManagementPage />
-          </RequireSuperAdministrator>
-        ),
-      },
-      // Gestion de productos (buscar, editar, eliminar/restaurar): el destino
-      // real de "Gestionar productos" en `ADMIN_NAVIGATION`. NO sustituye a
-      // `admin/products/new` ni a `admin/products/:productId/inventory` -son
-      // rutas propias, con su propio path, que esta pantalla enlaza en vez de
-      // reemplazar-. Misma guarda de presentacion que el resto: Catalog
-      // exige ademas evidencia de segundo factor y responde 403 por su cuenta.
-      {
-        path: 'admin/products',
-        element: (
-          <RequireAdministrator>
-            <ProductManagementPage />
-          </RequireAdministrator>
-        ),
-      },
-      // Catalogo administrativo (HU-33). La guarda es de presentacion: Catalog
-      // exige ademas evidencia de segundo factor y responde 403 por su cuenta.
-      {
-        path: 'admin/products/new',
-        element: (
-          <RequireAdministrator>
-            <CreateProductPage />
-          </RequireAdministrator>
-        ),
-      },
-      // Ajuste de tiraje (HU-34). NO entra en `NAVIGATION`: se llega con un
-      // producto concreto en la mano, y un enlace de menu sin identificador no
-      // lleva a ninguna parte.
-      {
-        path: 'admin/products/:productId/inventory',
-        element: (
-          <RequireAdministrator>
-            <AdjustInventoryPage />
-          </RequireAdministrator>
-        ),
-      },
-      // Gestion del banner informativo (HU-38, Task #181). Misma guarda que el
-      // resto de superficies administrativas: el backend tambien valida el
-      // testimonio y responde 403 aunque alguien escriba la URL a mano.
-      {
-        path: 'admin/banners',
-        element: (
-          <RequireAdministrator>
-            <BannerManagementPage />
-          </RequireAdministrator>
-        ),
-      },
-      {
-        path: 'admin/chatbot',
-        element: (
-          <RequireAdministrator>
-            <ModelAdminPage />
-          </RequireAdministrator>
-        ),
-      },
-      {
-        path: 'admin/chatbot/knowledge',
-        element: (
-          <RequireAdministrator>
-            <KnowledgeAdminPage />
-          </RequireAdministrator>
-        ),
-      },
-      {
-        path: 'admin/chatbot/analytics',
-        element: (
-          <RequireAdministrator>
-            <AnalyticsPage />
-          </RequireAdministrator>
-        ),
-      },
-      {
-        path: 'admin/chatbot/tickets',
-        element: (
-          <RequireAdministrator>
-            <TicketsAdminPage />
-          </RequireAdministrator>
-        ),
-      },
-      // Cola de moderacion de comentarios (HU-41.4). Entra en `NAVIGATION`
-      // desde HU-41.10: a diferencia del ajuste de tiraje, esta pantalla no
-      // depende de un producto concreto, asi que un enlace de menu si lleva a
-      // alguna parte.
-      {
-        path: 'admin/comments/moderation',
-        element: (
-          <RequireModerator>
-            <ModerationQueuePage />
-          </RequireModerator>
-        ),
-      },
       // Pantallas de HUs anteriores. Se mantienen montadas y accesibles por
       // URL directa; solo se retiraron de `NAVIGATION` porque HU-02 exige que
       // la navegacion principal no nombre bounded contexts.

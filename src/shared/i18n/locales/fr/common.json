@@ -76,5 +76,10 @@
     "loading": "Chargement de l'aperçu…",
     "unavailable": "L'aperçu 3D n'est pas disponible dans cet environnement.",
     "unavailableFor": "Aperçu indisponible pour « {{id}} »."
+  },
+  "sound": {
+    "toggle": "Effets sonores",
+    "on": "Son activé",
+    "off": "Son désactivé"
   }
 }
