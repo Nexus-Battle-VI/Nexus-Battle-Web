@@ -127,6 +127,18 @@ describe('AppHeader', () => {
     expect(screen.getByRole('group', { name: 'Tema de la interfaz' })).toBeInTheDocument()
   })
 
+  it('el interruptor de sonido va junto al de tema y, como el, se oculta en Mi cuenta (EN-031)', () => {
+    const { unmount } = renderHeader('/ecommerce')
+    expect(screen.getByRole('button', { name: 'Efectos de sonido' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    unmount()
+
+    renderHeader('/account/preferences')
+    expect(screen.queryByRole('button', { name: 'Efectos de sonido' })).not.toBeInTheDocument()
+  })
+
   describe('conmutador de tema en el area "Mi cuenta" (HU-05.4)', () => {
     const themeGroup = () => screen.queryByRole('group', { name: 'Tema de la interfaz' })
 

@@ -82,7 +82,11 @@ describe('AppLayout', () => {
     ['/missions/history', 'missions-main'],
     ['/missions/progress/abc', 'missions-main'],
     ['/admin/missions', 'missions-main'],
-    ['/admin/products', 'max-w-6xl'],
+    // EN-031: las pantallas administrativas viven en la Consola del Consejo,
+    // que fija su propio ancho (`admin-main`), en lugar del `max-w-6xl` generico.
+    ['/admin', 'admin-main'],
+    ['/admin/products', 'admin-main'],
+    ['/admin/roles', 'admin-main'],
     ['/auction', 'max-w-7xl'],
     ['/auction/pending-claims', 'max-w-7xl'],
     ['/__dev/auction/pending-claims', 'max-w-7xl'],

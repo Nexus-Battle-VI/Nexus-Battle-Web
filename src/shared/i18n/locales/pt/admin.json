@@ -726,5 +726,39 @@
       "fieldsToFixTitle": "Não salvo: há campos a corrigir.",
       "goTo": "Ir para {{section}}"
     }
+  },
+  "console": {
+    "title": "Salão do Conselho",
+    "sidebar": "Seções de administração",
+    "greeting": "Bem-vindo ao console de comando. Papel: {{role}}.",
+    "pendingTitle": "Pendentes",
+    "pending": "Pendentes: {{count}}",
+    "allClear": "Em dia",
+    "pendingItems": {
+      "moderation": "Comentários a moderar",
+      "tickets": "Tickets do chatbot"
+    },
+    "groups": {
+      "content": "Conteúdo",
+      "commerce": "Comércio",
+      "community": "Comunidade",
+      "assistant": "Assistente",
+      "security": "Segurança"
+    },
+    "hints": {
+      "console": "Visão geral do console.",
+      "missions": "Crie e edite as missões do quadro.",
+      "banners": "Publique avisos com prazo na vitrine.",
+      "products": "Busque, edite, suspenda ou restaure produtos.",
+      "metrics": "Volume, tempos e comissões dos leilões.",
+      "official-auction": "Publique leilões oficiais com dinheiro real.",
+      "moderation": "Revise os comentários denunciados.",
+      "chatbot-model": "Versão ativa e retreinamento.",
+      "chatbot-knowledge": "Entradas que o chatbot sabe responder.",
+      "chatbot-analytics": "O que é perguntado e o que fica sem resposta.",
+      "chatbot-tickets": "Perguntas que o chatbot encaminhou.",
+      "roles": "Atribua e retire papéis das contas."
+    },
+    "sections": "Seções"
   }
 }

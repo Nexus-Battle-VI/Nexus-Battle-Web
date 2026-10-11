@@ -14,7 +14,17 @@
     "roles": "Manage roles",
     "moderation": "Comment moderation",
     "editMissions": "Edit missions",
-    "auctionMetrics": "Auction metrics"
+    "auctionMetrics": "Auction metrics",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "drawerLabel": "Navigation menu",
+    "drawerNav": "Modules",
+    "console": "Command console",
+    "chatbotModel": "Chatbot model",
+    "chatbotKnowledge": "Chatbot dictionary",
+    "chatbotAnalytics": "Chatbot analytics",
+    "chatbotTickets": "Chatbot tickets",
+    "officialAuction": "Publish official auction"
   },
   "session": {
     "signUp": "Create account",

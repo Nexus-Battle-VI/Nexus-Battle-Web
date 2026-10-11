@@ -726,5 +726,39 @@
       "fieldsToFixTitle": "No se guardó: hay campos por corregir.",
       "goTo": "Ir a {{section}}"
     }
+  },
+  "console": {
+    "title": "Salón del Consejo",
+    "sidebar": "Secciones de administración",
+    "greeting": "Bienvenido a la consola de mando. Rol: {{role}}.",
+    "pendingTitle": "Pendientes",
+    "pending": "Pendientes: {{count}}",
+    "allClear": "Al día",
+    "pendingItems": {
+      "moderation": "Comentarios por moderar",
+      "tickets": "Tickets del chatbot"
+    },
+    "groups": {
+      "content": "Contenido",
+      "commerce": "Comercio",
+      "community": "Comunidad",
+      "assistant": "Asistente",
+      "security": "Seguridad"
+    },
+    "hints": {
+      "console": "Resumen de la consola.",
+      "missions": "Crea y edita las misiones del tablero.",
+      "banners": "Publica avisos con vigencia en la vitrina.",
+      "products": "Busca, edita, suspende o restaura productos.",
+      "metrics": "Volumen, tiempos y comisiones de las subastas.",
+      "official-auction": "Publica subastas oficiales con dinero real.",
+      "moderation": "Revisa los comentarios reportados.",
+      "chatbot-model": "Versión activa y reentrenamiento.",
+      "chatbot-knowledge": "Entradas que el chatbot sabe responder.",
+      "chatbot-analytics": "Qué se pregunta y qué no se resuelve.",
+      "chatbot-tickets": "Preguntas que el chatbot derivó.",
+      "roles": "Asigna y retira roles de las cuentas."
+    },
+    "sections": "Secciones"
   }
 }

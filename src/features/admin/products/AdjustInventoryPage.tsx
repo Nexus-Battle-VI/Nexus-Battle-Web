@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
+import { AdminPageHeader } from '@/components/admin-kit'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
 import { SelectField } from '@/components/ui/form/SelectField'
@@ -184,7 +185,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
 
   if (consulta.isPending) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-10">
+      <div className="ak-panel">
         <p className="text-sm text-muted">{t('admin:products.adjust.loading')}</p>
       </div>
     )
@@ -192,33 +193,28 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
 
   if (consulta.isError || producto === undefined) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-4 py-10">
+      <div className="ak-panel">
         <p className="text-sm text-danger">{describeAdjustmentFailure(consulta.error)}</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10">
-      <Breadcrumb
-        items={[
-          { label: t('admin:home'), to: '/ecommerce' },
-          { label: t('admin:catalog'), to: '/catalog' },
-          { label: t('admin:products.adjust.crumb') },
-        ]}
-      />
-
-      <header className="mt-6 mb-8">
-        <p className="text-xs uppercase tracking-widest text-muted">
+    <div className="flex flex-col gap-4">
+      <AdminPageHeader icon="inventory" title={producto.name}>
+        <Breadcrumb
+          items={[
+            { label: t('admin:home'), to: '/ecommerce' },
+            { label: t('admin:catalog'), to: '/catalog' },
+            { label: t('admin:products.adjust.crumb') },
+          ]}
+        />
+        <p className="mt-2 text-xs uppercase tracking-widest text-muted">
           {t('admin:products.eyebrow')}
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink">{producto.name}</h1>
-      </header>
+      </AdminPageHeader>
 
-      <section
-        aria-label={t('admin:products.adjust.current')}
-        className="mb-8 rounded-lg border border-ink/10 bg-surface p-5"
-      >
+      <section aria-label={t('admin:products.adjust.current')} className="ak-panel">
         <div className="flex flex-wrap items-center gap-3">
           <AvailabilityBadge availableUnits={producto.availableUnits} />
           <span className="text-xs text-muted">
@@ -257,10 +253,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
         )}
       </section>
 
-      <section
-        aria-label={t('admin:products.adjust.statusSection')}
-        className="mb-8 rounded-lg border border-ink/10 bg-surface p-5"
-      >
+      <section aria-label={t('admin:products.adjust.statusSection')} className="ak-panel">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs text-muted">{t('admin:products.adjust.statusSection')}</p>
@@ -274,7 +267,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
           {!motivoAbierto && (
             <Button
               type="button"
-              variant={producto.lifecycleStatus === 'ACTIVE' ? 'danger' : 'primary'}
+              variant={producto.lifecycleStatus === 'ACTIVE' ? 'admin-danger' : 'admin-primary'}
               onClick={abrirConfirmacion}
             >
               {producto.lifecycleStatus === 'ACTIVE'
@@ -322,7 +315,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
             <div className="flex gap-2">
               <Button
                 type="submit"
-                variant={producto.lifecycleStatus === 'ACTIVE' ? 'danger' : 'primary'}
+                variant={producto.lifecycleStatus === 'ACTIVE' ? 'admin-danger' : 'admin-primary'}
                 loading={cambioDeEstado.isPending}
               >
                 {producto.lifecycleStatus === 'ACTIVE'
@@ -331,7 +324,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
               </Button>
               <Button
                 type="button"
-                variant="secondary"
+                variant="admin-ghost"
                 disabled={cambioDeEstado.isPending}
                 onClick={cancelarConfirmacion}
               >
@@ -348,7 +341,7 @@ export const AdjustInventoryPage = (): React.JSX.Element => {
         )}
       </section>
 
-      <form onSubmit={enviar} className="flex flex-col gap-6">
+      <form onSubmit={enviar} className="ak-panel flex flex-col gap-6">
         <div className="grid gap-6 md:grid-cols-2">
           <SelectField
             label={t('admin:products.pricing.availability')}

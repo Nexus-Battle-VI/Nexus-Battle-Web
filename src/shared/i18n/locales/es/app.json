@@ -14,7 +14,17 @@
     "roles": "Gestionar roles",
     "moderation": "Moderación de comentarios",
     "editMissions": "Editar misiones",
-    "auctionMetrics": "Métricas de subasta"
+    "auctionMetrics": "Métricas de subasta",
+    "openMenu": "Abrir menú de navegación",
+    "closeMenu": "Cerrar menú de navegación",
+    "drawerLabel": "Menú de navegación",
+    "drawerNav": "Módulos",
+    "console": "Consola de mando",
+    "chatbotModel": "Modelo del chatbot",
+    "chatbotKnowledge": "Diccionario del chatbot",
+    "chatbotAnalytics": "Analíticas del chatbot",
+    "chatbotTickets": "Tickets del chatbot",
+    "officialAuction": "Publicar subasta oficial"
   },
   "session": {
     "signUp": "Crear cuenta",

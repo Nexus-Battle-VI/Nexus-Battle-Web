@@ -266,6 +266,20 @@ if (import.meta.env.DEV) {
   // espera este modulo con `await` de nivel superior. Una importacion estatica
   // cierra el ciclo y el navegador deja la aplicacion en blanco con `npm run dev`
   // (Vitest no lo reproduce: su cargador tolera el ciclo).
+  // EN-031: armazon remasterizado (mundo vivo, cabecera estandarte, cajon
+  // movil) dentro del `AppLayout` real, con un rol de ejemplo a elegir.
+  const ShellRemasterPreviewLazy = lazy(() =>
+    import('./ShellRemasterPreview').then((module) => ({
+      default: module.ShellRemasterPreview,
+    })),
+  )
+  // EN-031: Consola del Consejo (salon, barra lateral, panel de inicio) con
+  // pendientes de ejemplo y un rol a elegir.
+  const AdminConsolePreviewLazy = lazy(() =>
+    import('./AdminConsolePreview').then((module) => ({
+      default: module.AdminConsolePreview,
+    })),
+  )
   const AppLayoutLazy = lazy(() =>
     import('@/app/AppLayout').then((module) => ({ default: module.AppLayout })),
   )
@@ -380,6 +394,45 @@ if (import.meta.env.DEV) {
     // necesitan Auction respondiendo de verdad. Este preview monta la pantalla de produccion
     // con un transporte inyectado y datos de ejemplo; `?state=` elige el estado (design,
     // loading, degraded, partial, no-catalog, empty, invalid, forbidden, unavailable).
+    // EN-031: ver comentario junto a `AdminConsolePreviewLazy`.
+    {
+      path: '__dev/admin/console',
+      element: (
+        <Suspense fallback={null}>
+          <AppLayoutLazy />
+        </Suspense>
+      ),
+      children: [
+        {
+          // `*`: la vista previa monta sus propias subrutas (`products`...).
+          path: '*',
+          element: (
+            <Suspense fallback={null}>
+              <AdminConsolePreviewLazy />
+            </Suspense>
+          ),
+        },
+      ],
+    },
+    // EN-031: ver comentario junto a `ShellRemasterPreviewLazy`.
+    {
+      path: '__dev/shell',
+      element: (
+        <Suspense fallback={null}>
+          <AppLayoutLazy />
+        </Suspense>
+      ),
+      children: [
+        {
+          index: true,
+          element: (
+            <Suspense fallback={null}>
+              <ShellRemasterPreviewLazy />
+            </Suspense>
+          ),
+        },
+      ],
+    },
     {
       path: '__dev/admin/auction-metrics',
       element: (

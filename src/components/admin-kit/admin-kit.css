@@ -1,0 +1,397 @@
+/*
+ * Kit de la Consola del Consejo (EN-031): armazon de las paginas de
+ * administracion y sus piezas (cabecera, paneles, mosaicos, tablas,
+ * pestanas, dialogo, insignias). Prefijo `.ak-`.
+ *
+ * Mismo criterio que el kit `am-*` de las metricas de subasta, del que
+ * deriva: los colores salen de los tokens de `src/index.css` mezclados con
+ * `color-mix()`, asi Light y Dark cambian solos. Lo unico propio es la escena
+ * del salon y el oro del estandarte (`--nb-banner-gold`, de `shell.css`).
+ */
+
+.ak-console {
+  --ak-edge: color-mix(in oklab, var(--color-brand) 38%, var(--color-border));
+  --ak-edge-soft: color-mix(in oklab, var(--color-brand) 18%, var(--color-border));
+  --ak-wash: color-mix(in oklab, var(--color-brand) 10%, var(--color-surface-raised));
+  --ak-panel: color-mix(in oklab, var(--color-surface-raised) 92%, transparent);
+  --ak-shadow: 0 10px 24px -16px color-mix(in oklab, var(--color-ink) 60%, transparent);
+  --ak-gold: var(--nb-banner-gold, oklch(0.72 0.12 80));
+  --ak-scene: url('/assets/admin/scene/council-hall-light.png');
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid var(--ak-edge);
+  box-shadow: var(--ak-shadow);
+  padding: 1rem;
+  min-height: calc(100dvh - 7rem);
+}
+
+:root[data-theme='dark'] .ak-console {
+  --ak-scene: url('/assets/admin/scene/council-hall-dark.png');
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .ak-console {
+    --ak-scene: url('/assets/admin/scene/council-hall-dark.png');
+  }
+}
+
+/* Escena del salon y un velo para el contraste del contenido. */
+.ak-console::before,
+.ak-console::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.ak-console::before {
+  background: var(--ak-scene) center top / cover no-repeat;
+  image-rendering: pixelated;
+}
+.ak-console::after {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-surface) 30%, transparent),
+    color-mix(in oklab, var(--color-surface) 72%, transparent) 55%
+  );
+}
+
+.ak-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .ak-layout {
+    grid-template-columns: 15.5rem minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+/* ---- Barra lateral --------------------------------------------------------- */
+.ak-sidebar {
+  background: var(--ak-panel);
+  border: 1px solid var(--ak-edge);
+  border-top: 3px solid var(--ak-gold);
+  border-radius: 0.9rem;
+  box-shadow: var(--ak-shadow);
+  padding: 0.75rem;
+  backdrop-filter: blur(6px);
+}
+
+@media (min-width: 1024px) {
+  .ak-sidebar {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+.ak-sidebar-group + .ak-sidebar-group {
+  margin-top: 0.75rem;
+}
+
+.ak-sidebar-heading {
+  padding: 0 0.6rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.ak-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 0.55rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+}
+
+.ak-sidebar-link:hover,
+.ak-sidebar-link:focus-visible {
+  background: var(--ak-wash);
+}
+
+.ak-sidebar-link[aria-current='page'] {
+  background: color-mix(in oklab, var(--ak-gold) 26%, transparent);
+  box-shadow: inset 3px 0 0 var(--ak-gold);
+  font-weight: 600;
+}
+
+/* ---- Escenario (contenido) ------------------------------------------------- */
+.ak-stage {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ak-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  background: var(--ak-panel);
+  border: 1px solid var(--ak-edge);
+  border-bottom: 3px solid var(--ak-gold);
+  border-radius: 0.9rem;
+  box-shadow: var(--ak-shadow);
+  padding: 1rem 1.25rem;
+  backdrop-filter: blur(6px);
+}
+
+.ak-title {
+  font-family: var(--font-game-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-ink);
+}
+
+.ak-panel {
+  background: var(--ak-panel);
+  border: 1px solid var(--ak-edge);
+  border-radius: 0.9rem;
+  box-shadow: var(--ak-shadow);
+  padding: 1.1rem 1.25rem;
+  backdrop-filter: blur(6px);
+}
+
+.ak-panel-title {
+  font-family: var(--font-game-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--color-ink);
+}
+
+.ak-icon {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+/* ---- Mosaicos del panel de inicio ------------------------------------------ */
+.ak-tiles {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.ak-tile {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: var(--ak-panel);
+  border: 1px solid var(--ak-edge-soft);
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+  color: var(--color-ink);
+  box-shadow: var(--ak-shadow);
+}
+
+.ak-tile:hover,
+.ak-tile:focus-visible {
+  border-color: var(--ak-gold);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ak-tile {
+    transition:
+      transform 160ms ease-out,
+      border-color 160ms ease-out;
+  }
+  .ak-tile:hover,
+  .ak-tile:focus-visible {
+    transform: translateY(-2px);
+  }
+}
+
+/* ---- Insignia ------------------------------------------------------------- */
+.ak-badge {
+  display: inline-flex;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in oklab, var(--color-danger) 85%, transparent);
+  color: var(--color-brand-ink);
+}
+
+.ak-badge--muted {
+  background: var(--ak-wash);
+  color: var(--color-muted);
+}
+
+/* ---- Tabla ---------------------------------------------------------------- */
+.ak-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ak-edge-soft);
+  border-radius: 0.7rem;
+}
+
+.ak-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ak-table caption {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.ak-th {
+  position: sticky;
+  top: 0;
+  background: color-mix(in oklab, var(--ak-gold) 18%, var(--color-surface-raised));
+  border-bottom: 1px solid var(--ak-edge);
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.ak-td {
+  border-bottom: 1px solid var(--ak-edge-soft);
+  padding: 0.55rem 0.75rem;
+  color: var(--color-ink);
+}
+
+.ak-table tbody tr:hover .ak-td {
+  background: var(--ak-wash);
+}
+
+/* ---- Pestanas ------------------------------------------------------------- */
+.ak-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  background: var(--ak-panel);
+  border: 1px solid var(--ak-edge);
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+}
+
+.ak-tab {
+  border-radius: 0.5rem;
+  border-bottom: 2px solid transparent;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.ak-tab:hover {
+  color: var(--color-ink);
+  background: var(--ak-wash);
+}
+
+.ak-tab[aria-selected='true'] {
+  color: var(--color-ink);
+  font-weight: 600;
+  background: color-mix(in oklab, var(--ak-gold) 22%, transparent);
+  border-bottom-color: var(--ak-gold);
+}
+
+/* ---- Dialogo -------------------------------------------------------------- */
+.ak-dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in oklab, black 50%, transparent);
+}
+
+.ak-dialog {
+  width: min(32rem, 100%);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--ak-edge);
+  border-top: 3px solid var(--ak-gold);
+  border-radius: 0.9rem;
+  box-shadow: 0 24px 48px -20px color-mix(in oklab, black 70%, transparent);
+  padding: 1.25rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ak-dialog {
+    animation: ak-dialog-in 160ms ease-out;
+  }
+  @keyframes ak-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+  }
+}
+
+/* ---- Botones (variantes `admin-*` de Button) ------------------------------- */
+.ak-btn-primary {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-brand) 88%, white 12%),
+    var(--color-brand)
+  );
+  border: 1px solid var(--ak-gold, oklch(0.72 0.12 80));
+  color: var(--color-brand-ink);
+}
+
+.ak-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.ak-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--ak-edge, var(--color-border));
+}
+
+.ak-btn-ghost:hover:not(:disabled) {
+  background: var(--ak-wash, var(--color-surface));
+}
+
+.ak-btn-danger {
+  background: color-mix(in oklab, var(--color-danger) 14%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-danger) 60%, transparent);
+  color: var(--color-danger);
+}
+
+.ak-btn-danger:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--color-danger) 22%, transparent);
+}
+
+/* Boton "Secciones": la barra lateral plegada por debajo de `lg`. */
+/* `display` lo ponen las clases de Tailwind (`flex lg:hidden`): una regla sin capa
+   aqui ganaria a `lg:hidden`, que vive en `@layer utilities`. */
+.ak-sidebar-toggle {
+  width: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  background: var(--ak-panel);
+  border: 1px solid var(--ak-edge);
+  border-radius: 0.9rem;
+  padding: 0.55rem 0.8rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.ak-sidebar-toggle[aria-expanded='true'] {
+  border-color: var(--ak-gold);
+}
