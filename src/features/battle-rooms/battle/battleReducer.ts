@@ -8,6 +8,7 @@ import type {
   SkillUsedMessage,
   SnapshotMessage,
   TargetRef,
+  UnrecognizedBattleEvent,
 } from './types'
 
 /**
@@ -61,6 +62,25 @@ export interface LastHealSkill {
 }
 
 /**
+ * EN-031: la ultima habilidad de dano directo (Agonia) o epica que el servidor publico, tal cual
+ * llego. Ninguna de las dos resuelve Ataque contra Defensa, asi que comparten forma: actor, nombre,
+ * Poder, recarga y, SOLO si los hubo, objetivo, dano, curacion y Vida «antes -> despues».
+ */
+export interface LastEffect {
+  readonly seq: number
+  readonly commandId: string
+  readonly kind: 'directDamage' | 'epic'
+  readonly actor: TargetRef
+  readonly target: TargetRef | null
+  readonly name: string
+  readonly power: { readonly before: number; readonly after: number }
+  readonly cooldown: { readonly remainingTurns: number }
+  readonly appliedDamage: number | null
+  readonly healed: number | null
+  readonly targetHealth: { readonly before: number; readonly after: number } | null
+}
+
+/**
  * El ultimo turno perdido por tiempo que el servidor publico (HU-21), tal cual
  * llego: alimenta el aviso de la franja de resultado. No se deriva nada.
  */
@@ -97,6 +117,8 @@ export interface BattleClientState {
    * de HU-12); `null` tras una instantanea.
    */
   readonly lastHealSkill: LastHealSkill | null
+  /** EN-031: el ultimo dano directo o epica aplicado; `null` tras una instantanea. */
+  readonly lastEffect: LastEffect | null
   /**
    * HU-21: el resultado unico cuando la batalla termino (`battleFinished` o un
    * `snapshot` de una sala `FINISHED`); `null` mientras siga en curso.
@@ -115,6 +137,7 @@ export const initialBattleState: BattleClientState = {
   lastAttack: null,
   lastSkill: null,
   lastHealSkill: null,
+  lastEffect: null,
   result: null,
   lastTurnTimeout: null,
 }
@@ -122,6 +145,8 @@ export const initialBattleState: BattleClientState = {
 export type BattleAction =
   | { readonly type: 'snapshot'; readonly message: SnapshotMessage }
   | { readonly type: 'event'; readonly message: BattleEventMessage }
+  /** EN-031: evento de un tipo que Web no conoce; solo se aplica su vista y su `seq`. */
+  | { readonly type: 'unrecognizedEvent'; readonly message: UnrecognizedBattleEvent }
   | { readonly type: 'synced' }
   | { readonly type: 'connectionLost' }
   | { readonly type: 'resyncRequested' }
@@ -176,6 +201,59 @@ const lastHealSkillOf = (
       }
     : previous
 
+const lastEffectOf = (
+  message: BattleEventMessage,
+  previous: LastEffect | null,
+): LastEffect | null => {
+  if (message.type === 'directDamageSkillUsed') {
+    return {
+      seq: message.seq,
+      commandId: message.commandId,
+      kind: 'directDamage',
+      actor: message.actor,
+      target: message.target,
+      name: message.skill.name,
+      power: message.power,
+      cooldown: message.cooldown,
+      appliedDamage: message.damage.appliedDamage,
+      healed: null,
+      targetHealth: message.targetHealth,
+    }
+  }
+
+  if (message.type === 'epicUsed') {
+    return {
+      seq: message.seq,
+      commandId: message.commandId,
+      kind: 'epic',
+      actor: message.actor,
+      target: message.target ?? null,
+      name: message.epic.name,
+      power: message.power,
+      cooldown: message.cooldown,
+      appliedDamage: message.damage?.appliedDamage ?? null,
+      healed: message.heal?.amount ?? null,
+      targetHealth: message.targetHealth ?? null,
+    }
+  }
+
+  return previous
+}
+
+/** Mismas reglas de orden para todo evento: `apply` si toca aplicarlo, si no el estado a devolver. */
+const orderedStep = (state: BattleClientState, seq: number): BattleClientState | 'apply' => {
+  // HU-21: la batalla ya termino; ningun evento posterior se aplica.
+  if (state.roomStatus === 'FINISHED' || seq <= state.lastSeq) {
+    return state
+  }
+
+  if (seq !== state.lastSeq + 1) {
+    return state.needsResync ? state : { ...state, needsResync: true }
+  }
+
+  return 'apply'
+}
+
 /**
  * Reductor PURO de la batalla (HU-17, HU-18):
  *
@@ -206,23 +284,16 @@ export const battleReducer = (
         lastAttack: null,
         lastSkill: null,
         lastHealSkill: null,
+        lastEffect: null,
         result: action.message.result ?? null,
         lastTurnTimeout: null,
       }
     case 'event': {
       const { message } = action
+      const step = orderedStep(state, message.seq)
 
-      // HU-21: la batalla ya termino; ningun evento posterior se aplica.
-      if (state.roomStatus === 'FINISHED') {
-        return state
-      }
-
-      if (message.seq <= state.lastSeq) {
-        return state
-      }
-
-      if (message.seq !== state.lastSeq + 1) {
-        return state.needsResync ? state : { ...state, needsResync: true }
+      if (step !== 'apply') {
+        return step
       }
 
       return {
@@ -233,12 +304,25 @@ export const battleReducer = (
         lastAttack: lastAttackOf(message, state.lastAttack),
         lastSkill: lastSkillOf(message, state.lastSkill),
         lastHealSkill: lastHealSkillOf(message, state.lastHealSkill),
+        lastEffect: lastEffectOf(message, state.lastEffect),
         result: message.type === 'battleFinished' ? message.result : state.result,
         lastTurnTimeout:
           message.type === 'turnTimedOut'
             ? { seq: message.seq, timedOut: message.timedOut, occurredAt: message.occurredAt }
             : state.lastTurnTimeout,
       }
+    }
+    case 'unrecognizedEvent': {
+      const step = orderedStep(state, action.message.seq)
+
+      return step !== 'apply'
+        ? step
+        : {
+            ...state,
+            roomStatus: 'IN_BATTLE',
+            battle: action.message.battle,
+            lastSeq: action.message.seq,
+          }
     }
     case 'synced':
       return { ...state, synced: true, needsResync: false }
