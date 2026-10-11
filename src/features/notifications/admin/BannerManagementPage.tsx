@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import { AdminPageHeader } from '@/components/admin-kit'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
@@ -87,23 +88,21 @@ export const BannerManagementPage = (): React.JSX.Element => {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
-      <Breadcrumb
-        items={[
-          { label: t('notifications:home'), to: '/ecommerce' },
-          { label: t('notifications:admin.crumb') },
-        ]}
-      />
-
-      <header>
-        <h1 className="text-2xl font-semibold text-ink">{t('notifications:admin.title')}</h1>
-        <p className="mt-1 text-sm text-muted">{t('notifications:admin.subtitle')}</p>
-      </header>
-
-      <form
-        onSubmit={submit}
-        className="flex flex-col gap-4 rounded-lg border border-border bg-surface-raised p-5"
+    <div className="flex flex-col gap-4">
+      <AdminPageHeader
+        icon="banners"
+        title={t('notifications:admin.title')}
+        subtitle={t('notifications:admin.subtitle')}
       >
+        <Breadcrumb
+          items={[
+            { label: t('notifications:home'), to: '/ecommerce' },
+            { label: t('notifications:admin.crumb') },
+          ]}
+        />
+      </AdminPageHeader>
+
+      <form onSubmit={submit} className="ak-panel flex flex-col gap-4">
         <TextField
           label={t('notifications:admin.titleField')}
           required
@@ -170,7 +169,7 @@ export const BannerManagementPage = (): React.JSX.Element => {
         </div>
       </form>
 
-      <section aria-label={t('notifications:admin.list')}>
+      <section aria-label={t('notifications:admin.list')} className="ak-panel">
         <h2 className="text-sm font-semibold text-muted">{t('notifications:admin.list')}</h2>
 
         {isLoading && (

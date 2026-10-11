@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { AdminPageHeader, AdminPanel } from '@/components/admin-kit'
 import { QueryState } from '@/components/ui/QueryState'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
@@ -13,8 +13,6 @@ import { useLanguage } from '@/shared/i18n/language'
 import type { KnowledgeDocument, KnowledgeEntry } from './api'
 import { exportKnowledge, importKnowledge } from './api'
 import { useDeleteKnowledge, useKnowledgeEntries, useSaveKnowledge } from './useKnowledge'
-
-import './chatbot-admin.css'
 
 interface FormState {
   readonly intent: string
@@ -105,12 +103,11 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
   }
 
   return (
-    <section className="cb-page flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">{t('chatbotAdmin:dictionaryTitle')}</h1>
+    <section className="flex flex-col gap-4">
+      <AdminPageHeader icon="chatbot-knowledge" title={t('chatbotAdmin:dictionaryTitle')} />
       <div className="flex flex-wrap gap-2">
         <Button
-          variant="secondary"
-          className="cb-btn"
+          variant="admin-ghost"
           onClick={() => {
             void exportKnowledge()
               .then((document) => {
@@ -132,8 +129,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
           {t('chatbotAdmin:exportFile')}
         </Button>
         <Button
-          variant="secondary"
-          className="cb-btn"
+          variant="admin-ghost"
           onClick={() => {
             fileRef.current?.click()
           }}
@@ -171,7 +167,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
         />
       </div>
       {notice !== null ? <p role="status">{notice}</p> : null}
-      <Card title={editingId === null ? t('chatbotAdmin:newEntry') : t('chatbotAdmin:edit')}>
+      <AdminPanel title={editingId === null ? t('chatbotAdmin:newEntry') : t('chatbotAdmin:edit')}>
         <form className="flex flex-col gap-3" onSubmit={submit}>
           <TextField
             label={t('chatbotAdmin:intent')}
@@ -227,17 +223,17 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
             <p role="alert">{describeFailure(save.error, t, language)}</p>
           ) : null}
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="cb-btn cb-btn-primary" loading={save.isPending}>
+            <Button type="submit" variant="admin-primary" loading={save.isPending}>
               {editingId === null ? t('chatbotAdmin:createEntry') : t('chatbotAdmin:saveEntry')}
             </Button>
             {editingId !== null ? (
-              <Button variant="secondary" className="cb-btn" onClick={reset}>
+              <Button variant="admin-ghost" onClick={reset}>
                 {t('chatbotAdmin:newEntry')}
               </Button>
             ) : null}
           </div>
         </form>
-      </Card>
+      </AdminPanel>
       <QueryState
         isLoading={isLoading}
         error={error}
@@ -247,7 +243,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
         <ul className="flex flex-col gap-3">
           {entries.map((entry) => (
             <li key={entry.id}>
-              <Card title={`${entry.language}: ${entry.intent}`}>
+              <AdminPanel title={`${entry.language}: ${entry.intent}`}>
                 <p className="text-sm">{entry.answer}</p>
                 <p className="mt-2 text-sm text-muted">
                   {t('chatbotAdmin:priority')} {String(entry.priority)}
@@ -264,8 +260,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
                 </ul>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
-                    variant="secondary"
-                    className="cb-btn"
+                    variant="admin-ghost"
                     onClick={() => {
                       edit(entry)
                     }}
@@ -273,7 +268,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
                     {t('chatbotAdmin:edit')}
                   </Button>
                   <Button
-                    variant="danger"
+                    variant="admin-danger"
                     loading={remove.isPending}
                     onClick={() => {
                       remove.mutate(entry.id)
@@ -282,7 +277,7 @@ export const KnowledgeAdminPage = (): React.JSX.Element => {
                     {t('chatbotAdmin:remove')}
                   </Button>
                 </div>
-              </Card>
+              </AdminPanel>
             </li>
           ))}
         </ul>

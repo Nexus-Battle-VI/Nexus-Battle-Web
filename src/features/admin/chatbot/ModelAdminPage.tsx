@@ -1,14 +1,12 @@
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { AdminPageHeader, AdminPanel } from '@/components/admin-kit'
 import { describeFailure } from '@/shared/i18n/errors'
 import { useLanguage } from '@/shared/i18n/language'
 
 import type { ModelVersionRow, TrainingResult } from './api'
 import { useModelVersions, useStartModelTraining } from './useModelAdmin'
-
-import './chatbot-admin.css'
 
 const percent = (value: number | null): string => {
   if (value === null) {
@@ -35,14 +33,14 @@ export const ModelAdminPage = (): React.JSX.Element => {
   const inExperiment = versions.some((version) => version.inExperiment)
 
   return (
-    <section className="cb-page flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">{t('chatbotAdmin:title')}</h1>
+    <section className="flex flex-col gap-4">
+      <AdminPageHeader icon="chatbot-model" title={t('chatbotAdmin:title')} />
       <p className="text-sm text-muted">
         {inExperiment ? t('chatbotAdmin:experimentOn') : t('chatbotAdmin:experimentOff')}
       </p>
       <Button
         type="button"
-        className="cb-btn cb-btn-primary"
+        variant="admin-primary"
         loading={training.isPending}
         onClick={() => {
           training.mutate()
@@ -81,7 +79,7 @@ const VersionCard = ({ version }: { readonly version: ModelVersionRow }): React.
   const stateKey = version.state === 'ACTIVE' ? 'chatbotAdmin:active' : 'chatbotAdmin:candidate'
 
   return (
-    <Card title={t(stateKey)}>
+    <AdminPanel title={t(stateKey)}>
       <p className="text-sm">
         {t('chatbotAdmin:accuracy')} {percent(version.accuracy)}
       </p>
@@ -110,7 +108,7 @@ const VersionCard = ({ version }: { readonly version: ModelVersionRow }): React.
         </>
       ) : null}
       <ConfusionList version={version} />
-    </Card>
+    </AdminPanel>
   )
 }
 

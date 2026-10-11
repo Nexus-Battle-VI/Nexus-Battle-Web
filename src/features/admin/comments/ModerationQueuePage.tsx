@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { AdminPageHeader } from '@/components/admin-kit'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { formatDateTime } from '@/lib/format'
@@ -48,13 +48,13 @@ interface ActiveAction {
 const ACTIONS: readonly {
   readonly kind: ModerationActionKind
   readonly label: string
-  readonly variant: 'primary' | 'secondary' | 'danger'
+  readonly variant: 'admin-primary' | 'admin-ghost' | 'admin-danger'
 }[] = [
-  { kind: 'approve', label: 'admin:moderation.actions.approve', variant: 'primary' },
-  { kind: 'hide', label: 'admin:moderation.actions.hide', variant: 'secondary' },
-  { kind: 'delete', label: 'admin:moderation.actions.delete', variant: 'danger' },
-  { kind: 'mark', label: 'admin:moderation.actions.mark', variant: 'secondary' },
-  { kind: 'edit', label: 'admin:moderation.actions.edit', variant: 'secondary' },
+  { kind: 'approve', label: 'admin:moderation.actions.approve', variant: 'admin-primary' },
+  { kind: 'hide', label: 'admin:moderation.actions.hide', variant: 'admin-ghost' },
+  { kind: 'delete', label: 'admin:moderation.actions.delete', variant: 'admin-danger' },
+  { kind: 'mark', label: 'admin:moderation.actions.mark', variant: 'admin-ghost' },
+  { kind: 'edit', label: 'admin:moderation.actions.edit', variant: 'admin-ghost' },
 ]
 
 const SOURCE_LABELS: Readonly<Record<ModerationQueueEntrySource, string>> = localizedMessages({
@@ -233,21 +233,22 @@ export const ModerationQueuePage = ({
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-10">
-      <Breadcrumb
-        items={[
-          { label: t('admin:home'), to: '/ecommerce' },
-          { label: t('admin:moderation.crumb') },
-        ]}
-      />
-
-      <header className="mt-6 mb-8">
-        <p className="text-xs uppercase tracking-widest text-muted">
+    <div className="flex flex-col gap-4">
+      <AdminPageHeader
+        icon="moderation"
+        title={t('admin:moderation.title')}
+        subtitle={t('admin:moderation.intro')}
+      >
+        <Breadcrumb
+          items={[
+            { label: t('admin:home'), to: '/ecommerce' },
+            { label: t('admin:moderation.crumb') },
+          ]}
+        />
+        <p className="mt-2 text-xs uppercase tracking-widest text-muted">
           {t('admin:moderation.eyebrow')}
         </p>
-        <h1 className="mt-1 text-2xl font-semibold text-ink">{t('admin:moderation.title')}</h1>
-        <p className="mt-1 text-sm text-muted">{t('admin:moderation.intro')}</p>
-      </header>
+      </AdminPageHeader>
 
       {banner !== null && (
         <p
@@ -274,7 +275,7 @@ export const ModerationQueuePage = ({
 
             return (
               <li key={comment.id}>
-                <Card>
+                <div className="ak-panel">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm text-ink">{comment.content}</p>
@@ -338,7 +339,7 @@ export const ModerationQueuePage = ({
                           commentId={comment.id}
                           action={activeAction.action}
                           actionLabel={actionLabel}
-                          variant={meta?.variant ?? 'primary'}
+                          variant={meta?.variant ?? 'admin-primary'}
                           initialContent={activeAction.action === 'edit' ? comment.content : ''}
                           onSubmit={submitFor(activeAction.action)}
                           onSuccess={
@@ -352,7 +353,7 @@ export const ModerationQueuePage = ({
                         />
                       )
                     })()}
-                </Card>
+                </div>
               </li>
             )
           })}
@@ -364,7 +365,7 @@ export const ModerationQueuePage = ({
             className="mt-6 flex items-center justify-center gap-3"
           >
             <Button
-              variant="secondary"
+              variant="admin-ghost"
               disabled={currentPage === 1}
               onClick={() => {
                 setOffset(Math.max(0, offset - PAGE_SIZE))
@@ -379,7 +380,7 @@ export const ModerationQueuePage = ({
               })}
             </span>
             <Button
-              variant="secondary"
+              variant="admin-ghost"
               disabled={currentPage >= pageCount}
               onClick={() => {
                 setOffset(offset + PAGE_SIZE)
