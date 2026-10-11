@@ -3,11 +3,15 @@ import { Route, Routes } from 'react-router'
 
 import { AdminHomePage } from '@/app/admin/AdminHomePage'
 import { AdminLayout } from '@/app/admin/AdminLayout'
+import type { AdminProductSummary } from '@/features/admin/products/api'
+import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
+import { ProductManagementPage } from '@/features/admin/products/ProductManagementPage'
 import { useSession } from '@/shared/session'
 
 /**
  * Vista previa de desarrollo de la Consola del Consejo (EN-031): el salon, la
- * barra lateral y el panel de inicio, con pendientes de ejemplo.
+ * barra lateral y el panel de inicio, con pendientes de ejemplo, y las
+ * paginas ya migradas al kit (`./products`, `./products/new`) con datos inyectados por props.
  *
  * NO ES UNA PANTALLA DEL PRODUCTO. Intercepta `fetch` para la cola de
  * moderacion y los tickets del chatbot y pone una sesion con el rol elegido
@@ -20,6 +24,24 @@ const ROLES = [
   ['Super administrador', ['SUPER_ADMINISTRATOR']],
   ['Game Master', ['PLAYER', 'GAME_MASTER']],
 ] as const
+
+const PRODUCTS: readonly AdminProductSummary[] = [
+  ['Espada del Alba', 'ARMA', 'ACTIVE', 'play'],
+  ['Escudo de Roble', 'ARMADURA', 'ACTIVE', 'inventory'],
+  ['Pocion de Furia', 'ITEM', 'SUSPENDED', 'gem'],
+].map(([name, type, status, icon], index) => ({
+  productId: `consejo-vista-previa-producto-${String(index)}`,
+  sku: `SKU-${String(index)}`,
+  name: name ?? '',
+  imageUrl: `/assets/shell/nav/icon-${icon ?? 'gem'}-dark.png`,
+  type: type as AdminProductSummary['type'],
+  lifecycleStatus: status as AdminProductSummary['lifecycleStatus'],
+  creditsPrice: 120 * (index + 1),
+  premium: index === 0,
+  realMoneyPrice: null,
+  availableUnits: index === 2 ? 0 : 25,
+  attributes: { values: { dropChanceBasisPoints: 500 } },
+}))
 
 const json = (body: unknown): Response =>
   new Response(JSON.stringify(body), {
@@ -100,6 +122,22 @@ export const AdminConsolePreview = (): React.JSX.Element => {
       <Routes>
         <Route element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />
+          <Route path="products/new" element={<CreateProductPage />} />
+          <Route
+            path="products"
+            element={
+              <ProductManagementPage
+                onSearch={() =>
+                  Promise.resolve({
+                    items: PRODUCTS,
+                    page: 1,
+                    pageSize: 20,
+                    total: PRODUCTS.length,
+                  })
+                }
+              />
+            }
+          />
         </Route>
       </Routes>
     </div>

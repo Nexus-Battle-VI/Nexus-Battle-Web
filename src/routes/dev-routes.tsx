@@ -404,7 +404,8 @@ if (import.meta.env.DEV) {
       ),
       children: [
         {
-          index: true,
+          // `*`: la vista previa monta sus propias subrutas (`products`...).
+          path: '*',
           element: (
             <Suspense fallback={null}>
               <AdminConsolePreviewLazy />
