@@ -8,20 +8,7 @@ import { primaryRole } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
 import { ChevronDown } from '@/components/ui/icons'
 
-/**
- * Etiqueta traducida de cada acceso administrativo, por ruta. Mismo motivo que
- * `NAV_LABEL_KEYS` de `PrimaryNav`: `ADMIN_NAVIGATION` conserva su `label` en
- * español como respaldo, asi un acceso nuevo sin traduccion sigue mostrandose
- * en lugar de desaparecer.
- */
-const ADMIN_NAV_LABEL_KEYS: Readonly<Record<string, string>> = {
-  '/admin/missions': 'app:nav.editMissions',
-  '/admin/products': 'app:nav.manageProducts',
-  '/admin/banners': 'app:nav.banners',
-  '/admin/roles': 'app:nav.roles',
-  '/admin/auction-metrics': 'app:nav.auctionMetrics',
-  '/admin/comments/moderation': 'app:nav.moderation',
-}
+import { ADMIN_NAV_LABEL_KEYS } from './navLabels'
 
 /**
  * Entrada "Administrador" de la navegacion principal (pedido del profesor,

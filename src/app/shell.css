@@ -1,0 +1,376 @@
+/*
+ * Armazon comun remasterizado (EN-031): mundo vivo de fondo, cabecera
+ * estandarte, iconos de la navegacion y cajon movil.
+ *
+ * Todo el movimiento anima SOLO `transform`/`opacity` (capas de compositor,
+ * sin layout ni paint por fotograma), se detiene con
+ * `prefers-reduced-motion` y se pausa con la pestana oculta
+ * (`data-page-hidden`, ver `WorldBackdrop.tsx`).
+ */
+
+/* ------------------------------------------------------------------
+ * Mundo vivo
+ * ------------------------------------------------------------------ */
+:root {
+  --nb-world-sky: url('/assets/shell/world/world-sky-light.png');
+  --nb-world-mid: url('/assets/shell/world/world-mid-light.png');
+  --nb-world-clouds: url('/assets/shell/world/world-clouds-light.png');
+  --nb-world-veil: color-mix(in oklab, var(--color-surface) 22%, transparent);
+  --nb-world-veil-dim: color-mix(in oklab, var(--color-surface) 58%, transparent);
+  /* Polen dorado al sol. */
+  --nb-world-mote: oklch(0.93 0.09 95 / 0.75);
+  --nb-world-mote-soft: oklch(0.97 0.05 95 / 0.45);
+}
+
+:root[data-theme='dark'] {
+  --nb-world-sky: url('/assets/shell/world/world-sky-dark.png');
+  --nb-world-mid: url('/assets/shell/world/world-mid-dark.png');
+  --nb-world-clouds: url('/assets/shell/world/world-clouds-dark.png');
+  --nb-world-veil: color-mix(in oklab, var(--color-surface) 30%, transparent);
+  --nb-world-veil-dim: color-mix(in oklab, var(--color-surface) 66%, transparent);
+  /* Brasas de antorcha. */
+  --nb-world-mote: oklch(0.78 0.17 55 / 0.85);
+  --nb-world-mote-soft: oklch(0.72 0.16 310 / 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --nb-world-sky: url('/assets/shell/world/world-sky-dark.png');
+    --nb-world-mid: url('/assets/shell/world/world-mid-dark.png');
+    --nb-world-clouds: url('/assets/shell/world/world-clouds-dark.png');
+    --nb-world-veil: color-mix(in oklab, var(--color-surface) 30%, transparent);
+    --nb-world-veil-dim: color-mix(in oklab, var(--color-surface) 66%, transparent);
+    --nb-world-mote: oklch(0.78 0.17 55 / 0.85);
+    --nb-world-mote-soft: oklch(0.72 0.16 310 / 0.55);
+  }
+}
+
+.nb-world {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.nb-world > div {
+  position: absolute;
+  will-change: transform;
+}
+
+.nb-world__sky {
+  inset: 0;
+  background: var(--nb-world-sky) center 35% / cover no-repeat;
+}
+
+/* Dos copias de la tira, una junto a otra: desplazar -50% deja el patron
+   exactamente donde empezo, asi el bucle no tiene salto. */
+.nb-world__clouds {
+  top: 3vh;
+  left: 0;
+  width: 200%;
+  height: 26vh;
+  background: var(--nb-world-clouds) left center / 50% 100% repeat-x;
+  opacity: 0.85;
+  animation: nb-world-drift 160s linear infinite;
+}
+
+.nb-world__mid {
+  inset: auto 0 -6vh;
+  height: 62vh;
+  background: var(--nb-world-mid) center bottom / cover no-repeat;
+}
+
+/* Brasas / polen: dos redes de puntos que suben a distinta velocidad. La capa
+   mide el alto del viewport mas un periodo, y sube exactamente un periodo. */
+.nb-world__embers {
+  inset: 0 0 auto;
+  height: calc(100% + 420px);
+  background-image:
+    radial-gradient(circle at 20% 30%, var(--nb-world-mote) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 70% 80%, var(--nb-world-mote-soft) 0 1px, transparent 2px),
+    radial-gradient(circle at 45% 60%, var(--nb-world-mote) 0 1px, transparent 2px);
+  background-size:
+    260px 420px,
+    340px 420px,
+    190px 420px;
+  animation: nb-world-rise 28s linear infinite;
+  mask-image: linear-gradient(to top, black 35%, transparent 85%);
+}
+
+/* Velo: asegura el contraste del contenido sobre el mundo. */
+.nb-world::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--nb-world-veil);
+}
+
+/* Modulos con escenario propio: el mundo se retira. */
+.nb-world[data-variant='dim']::after {
+  background: var(--nb-world-veil-dim);
+}
+.nb-world[data-variant='dim'] .nb-world__embers {
+  display: none;
+}
+
+@keyframes nb-world-drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes nb-world-rise {
+  to {
+    transform: translateY(-420px);
+  }
+}
+
+/* Parallax con el scroll de la pagina, sin JS: los navegadores sin
+   `animation-timeline` dejan la capa quieta. */
+@supports (animation-timeline: scroll()) {
+  .nb-world__mid {
+    animation: nb-world-parallax linear both;
+    animation-timeline: scroll(root);
+  }
+
+  @keyframes nb-world-parallax {
+    to {
+      transform: translateY(-5vh);
+    }
+  }
+}
+
+:root[data-page-hidden] .nb-world * {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-world *,
+  .nb-world__mid {
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Cabecera estandarte
+ * ------------------------------------------------------------------ */
+:root {
+  --nb-banner-top: color-mix(in oklab, oklch(0.97 0.012 85) 92%, transparent);
+  --nb-banner-bottom: color-mix(in oklab, oklch(0.92 0.02 80) 92%, transparent);
+  --nb-banner-gold: oklch(0.72 0.12 80);
+  --nb-banner-gold-soft: oklch(0.84 0.09 85);
+}
+
+:root[data-theme='dark'] {
+  --nb-banner-top: color-mix(in oklab, oklch(0.24 0.03 295) 92%, transparent);
+  --nb-banner-bottom: color-mix(in oklab, oklch(0.17 0.025 290) 94%, transparent);
+  --nb-banner-gold: oklch(0.7 0.12 80);
+  --nb-banner-gold-soft: oklch(0.5 0.09 75);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --nb-banner-top: color-mix(in oklab, oklch(0.24 0.03 295) 92%, transparent);
+    --nb-banner-bottom: color-mix(in oklab, oklch(0.17 0.025 290) 94%, transparent);
+    --nb-banner-gold: oklch(0.7 0.12 80);
+    --nb-banner-gold-soft: oklch(0.5 0.09 75);
+  }
+}
+
+.nb-banner {
+  background: linear-gradient(180deg, var(--nb-banner-top), var(--nb-banner-bottom));
+  border-bottom: 2px solid var(--nb-banner-gold);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 18%, transparent),
+    inset 0 -3px 0 var(--nb-banner-gold-soft),
+    0 6px 18px -10px color-mix(in oklab, black 55%, transparent);
+}
+
+/* Remaches de oro en los extremos del estandarte. */
+.nb-banner::before,
+.nb-banner::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  rotate: 45deg;
+  background: var(--nb-banner-gold);
+  box-shadow: 0 0 0 2px var(--nb-banner-gold-soft);
+  pointer-events: none;
+}
+.nb-banner::before {
+  left: 14px;
+}
+.nb-banner::after {
+  right: 14px;
+}
+
+/* ------------------------------------------------------------------
+ * Iconos de los modulos en la navegacion principal
+ *
+ * Fondo CSS del propio enlace, no un nodo nuevo: la navegacion no gana
+ * elementos decorativos (ver `PrimaryNav.test.tsx`) y `::before`/`::after`
+ * siguen libres para la red de raices Nexus de `index.css`.
+ * ------------------------------------------------------------------ */
+.nb-nav-seg[data-nav-module] {
+  padding-inline-start: 2.1rem;
+  background-image: var(--nb-nav-icon);
+  background-repeat: no-repeat;
+  background-position: 0.55rem center;
+  background-size: 1.2rem 1.2rem;
+  image-rendering: pixelated;
+}
+
+.nb-nav-seg[data-nav-module]:hover,
+.nb-nav-seg[data-nav-module]:focus-visible {
+  background-size: 1.35rem 1.35rem;
+}
+
+/* Icono de cada modulo, por tema (generado a mano a partir de NAV_ICON_NAMES). */
+.nb-nav-seg[data-nav-module='ecommerce'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-ecommerce-light.png');
+}
+.nb-nav-seg[data-nav-module='play'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-play-light.png');
+}
+.nb-nav-seg[data-nav-module='missions'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-missions-light.png');
+}
+.nb-nav-seg[data-nav-module='tournament'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-tournament-light.png');
+}
+.nb-nav-seg[data-nav-module='inventory'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-inventory-light.png');
+}
+.nb-nav-seg[data-nav-module='auction'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-auction-light.png');
+}
+:root[data-theme='dark'] {
+  & .nb-nav-seg[data-nav-module='ecommerce'] {
+    --nb-nav-icon: url('/assets/shell/nav/icon-ecommerce-dark.png');
+  }
+  & .nb-nav-seg[data-nav-module='play'] {
+    --nb-nav-icon: url('/assets/shell/nav/icon-play-dark.png');
+  }
+  & .nb-nav-seg[data-nav-module='missions'] {
+    --nb-nav-icon: url('/assets/shell/nav/icon-missions-dark.png');
+  }
+  & .nb-nav-seg[data-nav-module='tournament'] {
+    --nb-nav-icon: url('/assets/shell/nav/icon-tournament-dark.png');
+  }
+  & .nb-nav-seg[data-nav-module='inventory'] {
+    --nb-nav-icon: url('/assets/shell/nav/icon-inventory-dark.png');
+  }
+  & .nb-nav-seg[data-nav-module='auction'] {
+    --nb-nav-icon: url('/assets/shell/nav/icon-auction-dark.png');
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    & .nb-nav-seg[data-nav-module='ecommerce'] {
+      --nb-nav-icon: url('/assets/shell/nav/icon-ecommerce-dark.png');
+    }
+    & .nb-nav-seg[data-nav-module='play'] {
+      --nb-nav-icon: url('/assets/shell/nav/icon-play-dark.png');
+    }
+    & .nb-nav-seg[data-nav-module='missions'] {
+      --nb-nav-icon: url('/assets/shell/nav/icon-missions-dark.png');
+    }
+    & .nb-nav-seg[data-nav-module='tournament'] {
+      --nb-nav-icon: url('/assets/shell/nav/icon-tournament-dark.png');
+    }
+    & .nb-nav-seg[data-nav-module='inventory'] {
+      --nb-nav-icon: url('/assets/shell/nav/icon-inventory-dark.png');
+    }
+    & .nb-nav-seg[data-nav-module='auction'] {
+      --nb-nav-icon: url('/assets/shell/nav/icon-auction-dark.png');
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nb-nav-seg[data-nav-module] {
+    transition:
+      color 150ms ease-out,
+      background-size 160ms ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .nb-nav-seg[data-nav-module] {
+    background-image: none;
+    padding-inline-start: 0.75rem;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Cajon movil
+ * ------------------------------------------------------------------ */
+.nb-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: color-mix(in oklab, black 45%, transparent);
+  animation: nb-drawer-fade 160ms ease-out;
+}
+
+.nb-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 71;
+  display: flex;
+  flex-direction: column;
+  width: min(20rem, 86vw);
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--nb-banner-top), var(--nb-banner-bottom));
+  border-right: 2px solid var(--nb-banner-gold);
+  box-shadow: 12px 0 32px -16px color-mix(in oklab, black 60%, transparent);
+  animation: nb-drawer-slide 200ms ease-out;
+}
+
+.nb-drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.nb-drawer-link:hover,
+.nb-drawer-link:focus-visible {
+  background: color-mix(in oklab, var(--color-brand) 14%, transparent);
+}
+
+.nb-drawer-link[aria-current='page'] {
+  background: color-mix(in oklab, var(--nb-banner-gold) 28%, transparent);
+  box-shadow: inset 3px 0 0 var(--nb-banner-gold);
+}
+
+.nb-pixel-icon {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+@keyframes nb-drawer-slide {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes nb-drawer-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-drawer,
+  .nb-drawer-scrim {
+    animation: none;
+  }
+}
