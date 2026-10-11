@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
+import { AdminPageHeader } from '@/components/admin-kit'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
 import { SelectField } from '@/components/ui/form/SelectField'
@@ -227,29 +228,29 @@ export const ProductManagementPage = ({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10">
-      <Breadcrumb
-        items={[
-          { label: t('admin:home'), to: '/ecommerce' },
-          { label: t('admin:products.manage.crumb') },
-        ]}
-      />
-
-      <header className="mt-6 mb-8 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted">
-            {t('admin:products.eyebrow')}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold text-ink">
-            {t('admin:products.manage.title')}
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted">{t('admin:products.manage.intro')}</p>
-        </div>
-
-        <Link to="/admin/products/new">
-          <Button type="button">{t('admin:products.manage.createNew')}</Button>
-        </Link>
-      </header>
+    <div className="flex flex-col gap-4">
+      <AdminPageHeader
+        icon="products"
+        title={t('admin:products.manage.title')}
+        subtitle={t('admin:products.manage.intro')}
+        actions={
+          <Link to="/admin/products/new">
+            <Button type="button" variant="admin-primary">
+              {t('admin:products.manage.createNew')}
+            </Button>
+          </Link>
+        }
+      >
+        <Breadcrumb
+          items={[
+            { label: t('admin:home'), to: '/ecommerce' },
+            { label: t('admin:products.manage.crumb') },
+          ]}
+        />
+        <p className="mt-2 text-xs uppercase tracking-widest text-muted">
+          {t('admin:products.eyebrow')}
+        </p>
+      </AdminPageHeader>
 
       {banner !== null && (
         <p
@@ -264,7 +265,7 @@ export const ProductManagementPage = ({
         </p>
       )}
 
-      <div className="mb-6 grid gap-4 rounded-lg border border-border bg-surface-raised p-4 sm:grid-cols-3">
+      <div className="ak-panel grid gap-4 sm:grid-cols-3">
         <TextField
           label={t('admin:products.manage.search')}
           type="search"
@@ -329,7 +330,7 @@ export const ProductManagementPage = ({
           <ul className="space-y-4" data-testid="product-management-list">
             {items.map((product) => (
               <li key={product.productId}>
-                <div className="rounded-lg border border-border bg-surface-raised p-4">
+                <div className="ak-panel">
                   <div className="flex flex-wrap items-start gap-4">
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border">
                       {(() => {
@@ -398,7 +399,7 @@ export const ProductManagementPage = ({
                     <div className="flex flex-wrap gap-2">
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant="admin-ghost"
                         aria-expanded={editingId === product.productId}
                         onClick={() => {
                           openEdit(product.productId)
@@ -407,14 +408,14 @@ export const ProductManagementPage = ({
                         {t('admin:products.manage.edit')}
                       </Button>
                       <Link to={`/admin/products/${product.productId}/inventory`}>
-                        <Button type="button" variant="secondary">
+                        <Button type="button" variant="admin-ghost">
                           {t('admin:products.manage.adjustInventory')}
                         </Button>
                       </Link>
                       {REQUIRES_DROP_CHANCE.has(product.type) && (
                         <Button
                           type="button"
-                          variant={dropChanceOf(product) === null ? 'danger' : 'secondary'}
+                          variant={dropChanceOf(product) === null ? 'admin-danger' : 'admin-ghost'}
                           aria-expanded={dropChanceEditingId === product.productId}
                           onClick={() => {
                             openDropChance(product.productId)
@@ -425,7 +426,9 @@ export const ProductManagementPage = ({
                       )}
                       <Button
                         type="button"
-                        variant={product.lifecycleStatus === 'ACTIVE' ? 'danger' : 'primary'}
+                        variant={
+                          product.lifecycleStatus === 'ACTIVE' ? 'admin-danger' : 'admin-primary'
+                        }
                         onClick={() => {
                           openStatusAction(product)
                         }}
@@ -503,7 +506,11 @@ export const ProductManagementPage = ({
                       <div className="flex gap-2">
                         <Button
                           type="submit"
-                          variant={statusAction.nextStatus === 'SUSPENDED' ? 'danger' : 'primary'}
+                          variant={
+                            statusAction.nextStatus === 'SUSPENDED'
+                              ? 'admin-danger'
+                              : 'admin-primary'
+                          }
                           loading={statusMutation.isPending}
                         >
                           {statusAction.nextStatus === 'SUSPENDED'
@@ -512,7 +519,7 @@ export const ProductManagementPage = ({
                         </Button>
                         <Button
                           type="button"
-                          variant="secondary"
+                          variant="admin-ghost"
                           disabled={statusMutation.isPending}
                           onClick={cancelStatusAction}
                         >
@@ -532,7 +539,7 @@ export const ProductManagementPage = ({
               className="mt-6 flex items-center justify-center gap-3"
             >
               <Button
-                variant="secondary"
+                variant="admin-ghost"
                 disabled={page === 1}
                 onClick={() => {
                   setPage((current) => Math.max(1, current - 1))
@@ -547,7 +554,7 @@ export const ProductManagementPage = ({
                 })}
               </span>
               <Button
-                variant="secondary"
+                variant="admin-ghost"
                 disabled={page >= pageCount}
                 onClick={() => {
                   setPage((current) => Math.min(pageCount, current + 1))

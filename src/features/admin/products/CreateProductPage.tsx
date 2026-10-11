@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
+import { AdminPageHeader } from '@/components/admin-kit'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
 import { Stepper, type StepDefinition } from '@/components/ui/Stepper'
@@ -137,24 +138,25 @@ export const CreateProductPage = ({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <Breadcrumb
-        items={[
-          { label: t('admin:home'), to: '/ecommerce' },
-          { label: t('admin:catalog'), to: '/catalog' },
-          { label: t('admin:products.create.crumb') },
-        ]}
-      />
-
-      <header className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-brand">
+    <div className="flex flex-col gap-4">
+      <AdminPageHeader
+        icon="new-product"
+        title={t('admin:products.create.title')}
+        subtitle={t('admin:products.create.intro')}
+      >
+        <Breadcrumb
+          items={[
+            { label: t('admin:home'), to: '/ecommerce' },
+            { label: t('admin:catalog'), to: '/catalog' },
+            { label: t('admin:products.create.crumb') },
+          ]}
+        />
+        <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-muted">
           {t('admin:products.eyebrow')}
         </p>
-        <h1 className="text-3xl font-bold text-ink">{t('admin:products.create.title')}</h1>
-        <p className="max-w-3xl text-sm text-muted">{t('admin:products.create.intro')}</p>
-      </header>
+      </AdminPageHeader>
 
-      <section className="overflow-hidden rounded-lg border border-border bg-surface-raised">
+      <section className="ak-panel overflow-hidden !p-0">
         <Stepper
           steps={STEPS}
           current={step}
