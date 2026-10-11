@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 import { useTheme, type Theme } from '@/shared/theme'
 
+import './theme-toggle.css'
+
 /**
  * Conmutador global de tema (HU-05.4).
  *
@@ -14,11 +16,20 @@ import { useTheme, type Theme } from '@/shared/theme'
  * Conserva el markup del conmutador que HU-01 tenia embebido en `RegistrationPage`
  * (grupo con dos botones "Light"/"Dark" y `aria-pressed`) para no romper su
  * contrato accesible ni sus pruebas.
+ *
+ * EN-031: se ve como un interruptor pixel art de piedra y oro (sol y luna de
+ * PixelLab, `public/assets/shell/theme/`) con una placa que se desliza al tema
+ * activo. Los textos "Light"/"Dark" siguen siendo el nombre accesible de cada
+ * boton (texto `sr-only`) y su `title`.
  */
 
-const OPTIONS: readonly { readonly value: Theme; readonly labelKey: string }[] = [
-  { value: 'light', labelKey: 'common:theme.light' },
-  { value: 'dark', labelKey: 'common:theme.dark' },
+const OPTIONS: readonly {
+  readonly value: Theme
+  readonly labelKey: string
+  readonly icon: string
+}[] = [
+  { value: 'light', labelKey: 'common:theme.light', icon: '/assets/shell/theme/sun.png' },
+  { value: 'dark', labelKey: 'common:theme.dark', icon: '/assets/shell/theme/moon.png' },
 ]
 
 export interface ThemeToggleProps {
@@ -34,26 +45,22 @@ export const ThemeToggle = ({ className }: ThemeToggleProps): React.JSX.Element 
     <div
       role="group"
       aria-label={t('common:theme.group')}
-      className={clsx(
-        'inline-flex items-center gap-1 rounded-full border border-border bg-surface-raised p-1',
-        className,
-      )}
+      data-theme-choice={theme}
+      className={clsx('nb-theme-switch', className)}
     >
       {OPTIONS.map((option) => (
         <button
           key={option.value}
           type="button"
           aria-pressed={theme === option.value}
+          title={t(option.labelKey)}
           onClick={() => {
             setTheme(option.value)
           }}
-          className={clsx(
-            'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
-            theme === option.value ? 'bg-brand text-brand-ink' : 'text-muted hover:text-ink',
-          )}
+          className="nb-theme-option focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          {t(option.labelKey)}
+          <img src={option.icon} alt="" aria-hidden="true" width={32} height={32} />
+          <span className="sr-only">{t(option.labelKey)}</span>
         </button>
       ))}
     </div>

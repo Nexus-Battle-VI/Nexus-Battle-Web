@@ -84,15 +84,17 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
   }, [activePath, navigation.length])
 
   return (
-    <nav aria-label={t('app:nav.label')} className={className}>
+    <nav aria-label={t('app:nav.label')} className={clsx('nb-primary-nav', className)}>
       {/*
        * Carril segmentado: `grid` de columnas `1fr` (via `minmax(max-content, 1fr)`)
        * reparte los seis modulos por TODO el ancho disponible sin anchos en
-       * pixeles. Si el contenido no cabe (movil), cada columna se queda en su
-       * `max-content` y el carril hace scroll horizontal INTERNO.
+       * pixeles. EN-031: NUNCA hay scroll horizontal. `nb-primary-nav` es un
+       * contenedor de consulta (`shell.css`): cuando las etiquetas no caben, cada
+       * modulo se queda en su icono y la etiqueta pasa a `sr-only` (el nombre
+       * accesible no cambia) con `title` como pista visual.
        */}
-      <div className="flex items-center gap-2">
-        <div className="relative min-w-0 flex-1 overflow-x-auto">
+      <div className="nb-nav-inner flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
           {activePath !== null && (
             <span
               ref={pillRef}
@@ -126,6 +128,7 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
                 >
                   <NavLink
                     to={item.path}
+                    title={labelKey === undefined ? item.label : t(labelKey)}
                     data-nav-module={navModule}
                     onClick={() => {
                       playSfx('click')
@@ -138,7 +141,9 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
                       )
                     }
                   >
-                    {labelKey === undefined ? item.label : t(labelKey)}
+                    <span className="nb-nav-label">
+                      {labelKey === undefined ? item.label : t(labelKey)}
+                    </span>
                   </NavLink>
                 </li>
               )

@@ -17,6 +17,8 @@ Los ficheros publicados se derivan de estos originales con `scripts/process-shel
 | `world-clouds-dark` | `0a50bc56-912f-4a3a-9ca6-f3e0641e82da` | 2026-10-11 | Tira de nubes nocturnas (`create_image_pro`, referencia de estilo `bg-auth-gate-dark`)                                            |
 | `nav-icons-dark`    | `d4d45d51-9591-4190-a51a-fb3baa4b2d8b` | 2026-10-11 | Hoja de 16 iconos en placas enmarcadas (`create_image_pro`, referencia de estilo `icon-chest-dark`)                               |
 | `nav-icons-light`   | `d06a64a4-8c44-4100-b0e1-f5b9689f65ba` | 2026-10-11 | Hoja de iconos con luz de día (`edit_image` sobre `nav-icons-dark`)                                                               |
+| `theme-sun`         | `e6f86d62-b93f-474b-9703-5c1aa6f11e8f` | 2026-10-11 | Sol del interruptor de tema, 32×32 (`create_image_pixen`)                                                                         |
+| `theme-moon`        | `ec6bbf52-795b-4c1e-b639-648974352feb` | 2026-10-11 | Luna creciente del interruptor de tema, 32×32 (`create_image_pixen`)                                                              |
 
 **Descartadas:**
 
@@ -33,6 +35,7 @@ Los ficheros publicados se derivan de estos originales con `scripts/process-shel
 | `world-clouds-dark` | `shell/world/world-clouds-dark.png`, sin las nubes que corta el borde, para que la tira se repita limpia                                                          |
 | `world-clouds-dark` | `shell/world/world-clouds-light.png`: la misma tira, recoloreada por luminancia hacia blancos y azules de día                                                     |
 | `nav-icons-*`       | `shell/nav/icon-<nombre>-{dark,light}.png`: 16 iconos de 72×72, el interior de cada placa sin su marco                                                            |
+| `theme-*`           | `shell/theme/{sun,moon}.png` (copia; los mismos en ambos temas)                                                                                                   |
 
 PixelLab no encaja las placas en la cuadrícula: miden unos 100×98 y las del borde salen cortadas. Por eso se recorta el interior de cada placa, centrado en la placa completa.
 
