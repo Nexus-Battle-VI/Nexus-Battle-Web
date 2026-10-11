@@ -14,7 +14,11 @@
     "roles": "Manage roles",
     "moderation": "Comment moderation",
     "editMissions": "Edit missions",
-    "auctionMetrics": "Auction metrics"
+    "auctionMetrics": "Auction metrics",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "drawerLabel": "Navigation menu",
+    "drawerNav": "Modules"
   },
   "session": {
     "signUp": "Create account",

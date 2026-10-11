@@ -14,7 +14,11 @@
     "roles": "Gerenciar funções",
     "moderation": "Moderação de comentários",
     "editMissions": "Editar missões",
-    "auctionMetrics": "Métricas de leilão"
+    "auctionMetrics": "Métricas de leilão",
+    "openMenu": "Abrir menu de navegação",
+    "closeMenu": "Fechar menu de navegação",
+    "drawerLabel": "Menu de navegação",
+    "drawerNav": "Módulos"
   },
   "session": {
     "signUp": "Criar conta",

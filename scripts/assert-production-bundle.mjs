@@ -73,6 +73,9 @@ const FORBIDDEN_MARKERS = [
   '__dev/notifications',
   'NotificationsRemasterPreview',
   'sujeto-vista-previa',
+  '__dev/shell',
+  'ShellRemasterPreview',
+  'sujeto-armazon-vista-previa',
 ]
 
 /**

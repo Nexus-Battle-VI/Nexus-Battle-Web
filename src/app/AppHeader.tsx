@@ -2,10 +2,12 @@ import { Link, matchPath, useLocation } from 'react-router'
 
 import { CreditsBadge } from './CreditsBadge'
 import { NotificationBell } from './NotificationBell'
+import { MobileNavDrawer } from './MobileNavDrawer'
 import { PendingClaimsBadge } from './PendingClaimsBadge'
 import { PrimaryNav } from './PrimaryNav'
 import { SessionControl } from './SessionControl'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import './shell.css'
 import { ACCOUNT_PATH, ECOMMERCE_PATH } from '@/routes/routes'
 
 /**
@@ -43,8 +45,10 @@ export const AppHeader = (): React.JSX.Element => {
     // propio z-50- pinta segun el orden del DOM frente a <main>, que llega
     // despues y por tanto queda ENCIMA. En la vitrina de e-commerce (grid de
     // tarjetas) eso tapaba visualmente el menu abierto.
-    <header className="relative z-50 border-b border-border bg-surface-raised/85 backdrop-blur">
+    <header className="nb-banner relative z-50 backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
+        <MobileNavDrawer />
+
         <Link
           to={ECOMMERCE_PATH}
           className="shrink-0 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -58,7 +62,8 @@ export const AppHeader = (): React.JSX.Element => {
           />
         </Link>
 
-        <PrimaryNav className="order-3 w-full min-w-0 sm:order-none sm:w-auto sm:flex-1" />
+        {/* EN-031: por debajo de `sm` la navegacion vive en `MobileNavDrawer`. */}
+        <PrimaryNav className="min-w-0 max-sm:hidden sm:flex-1" />
 
         <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2 sm:flex-nowrap sm:gap-3">
           <SessionControl />

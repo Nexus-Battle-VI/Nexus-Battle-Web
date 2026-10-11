@@ -5,6 +5,7 @@ import { MissionFinishedNotice } from '@/features/missions/MissionFinishedNotice
 import { ECOMMERCE_PATH } from '@/routes/routes'
 
 import { AppHeader } from './AppHeader'
+import { WorldBackdrop } from './WorldBackdrop'
 
 export const AppLayout = (): React.JSX.Element => {
   const { pathname } = useLocation()
@@ -40,8 +41,13 @@ export const AppLayout = (): React.JSX.Element => {
     pathname === '/auction' ||
     pathname.startsWith('/auction/') ||
     pathname.startsWith('/__dev/auction/')
+  // EN-031: el mundo vivo se retira (`dim`) en los modulos que ya pintan su
+  // propio escenario, para no competir con el.
+  const ownScene = commerce || play || account || inventory || missions || auction
+
   return (
     <div className={commerce ? 'commerce-layout min-h-dvh' : 'min-h-dvh'}>
+      <WorldBackdrop variant={ownScene ? 'dim' : 'full'} />
       <AppHeader />
 
       <main
