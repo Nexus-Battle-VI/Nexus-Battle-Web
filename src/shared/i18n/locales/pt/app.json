@@ -14,7 +14,17 @@
     "roles": "Gerenciar funções",
     "moderation": "Moderação de comentários",
     "editMissions": "Editar missões",
-    "auctionMetrics": "Métricas de leilão"
+    "auctionMetrics": "Métricas de leilão",
+    "openMenu": "Abrir menu de navegação",
+    "closeMenu": "Fechar menu de navegação",
+    "drawerLabel": "Menu de navegação",
+    "drawerNav": "Módulos",
+    "console": "Console de comando",
+    "chatbotModel": "Modelo do chatbot",
+    "chatbotKnowledge": "Dicionário do chatbot",
+    "chatbotAnalytics": "Análises do chatbot",
+    "chatbotTickets": "Tickets do chatbot",
+    "officialAuction": "Publicar leilão oficial"
   },
   "session": {
     "signUp": "Criar conta",

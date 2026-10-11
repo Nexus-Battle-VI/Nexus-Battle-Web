@@ -2,7 +2,7 @@ import { useState, type SyntheticEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
+import { AdminPageHeader, AdminPanel } from '@/components/admin-kit'
 import { primaryRole, roleLabel } from '@/shared/rbac'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
@@ -144,7 +144,12 @@ export const RoleManagementPage = ({
 
   return (
     <div className="space-y-4">
-      <Card title={t('admin:roles.title')} description={t('admin:roles.description')}>
+      <AdminPageHeader
+        icon="roles"
+        title={t('admin:roles.title')}
+        subtitle={t('admin:roles.description')}
+      />
+      <AdminPanel>
         <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1 text-sm font-medium text-ink">
             {t('admin:roles.email')}
@@ -163,7 +168,7 @@ export const RoleManagementPage = ({
             {t('admin:roles.search')}
           </Button>
         </form>
-      </Card>
+      </AdminPanel>
 
       {failure !== null && (
         <p role="alert" className="rounded-lg border border-danger bg-danger/10 p-3 text-sm">
@@ -177,7 +182,8 @@ export const RoleManagementPage = ({
       )}
 
       {account !== null && (
-        <Card title={account.displayName} description={account.email}>
+        <AdminPanel title={account.displayName}>
+          <p className="-mt-2 mb-3 text-sm text-muted">{account.email}</p>
           <dl className="grid gap-3 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-muted">{t('admin:roles.current')}</dt>
@@ -235,7 +241,7 @@ export const RoleManagementPage = ({
                 {assignedElevatedRoles.map((role) => (
                   <Button
                     key={role}
-                    variant="danger"
+                    variant="admin-danger"
                     loading={changing}
                     onClick={() => {
                       handleRevoke(role)
@@ -247,7 +253,7 @@ export const RoleManagementPage = ({
               </div>
             </div>
           )}
-        </Card>
+        </AdminPanel>
       )}
     </div>
   )

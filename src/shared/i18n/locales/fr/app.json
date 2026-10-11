@@ -14,7 +14,17 @@
     "roles": "Gérer les rôles",
     "moderation": "Modération des commentaires",
     "editMissions": "Modifier les missions",
-    "auctionMetrics": "Métriques des enchères"
+    "auctionMetrics": "Métriques des enchères",
+    "openMenu": "Ouvrir le menu de navigation",
+    "closeMenu": "Fermer le menu de navigation",
+    "drawerLabel": "Menu de navigation",
+    "drawerNav": "Modules",
+    "console": "Console de commandement",
+    "chatbotModel": "Modèle du chatbot",
+    "chatbotKnowledge": "Dictionnaire du chatbot",
+    "chatbotAnalytics": "Analyses du chatbot",
+    "chatbotTickets": "Tickets du chatbot",
+    "officialAuction": "Publier une enchère officielle"
   },
   "session": {
     "signUp": "Créer un compte",

@@ -76,5 +76,10 @@
     "loading": "Carregando pré-visualização…",
     "unavailable": "A pré-visualização 3D não está disponível neste ambiente.",
     "unavailableFor": "Pré-visualização indisponível para \"{{id}}\"."
+  },
+  "sound": {
+    "toggle": "Efeitos sonoros",
+    "on": "Som ativado",
+    "off": "Som desativado"
   }
 }

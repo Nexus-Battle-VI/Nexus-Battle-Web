@@ -9,6 +9,7 @@ import { useActiveMissions } from './useActiveMissions'
 import { useTranslation } from 'react-i18next'
 import { MissionPixelIcon } from './MissionPixelIcon'
 import './missions.css'
+import { playSfx } from '@/shared/sound'
 
 interface FinishedMission {
   readonly enrollmentId: string
@@ -38,6 +39,7 @@ export const MissionFinishedNotice = (): React.JSX.Element | null => {
       .filter(([enrollmentId]) => !current.has(enrollmentId))
       .map(([enrollmentId, missionName]) => ({ enrollmentId, missionName }))
     if (ended.length === 0) return
+    playSfx('success')
     setFinished((list) => [...list, ...ended])
     void queryClient.invalidateQueries({ queryKey: ['missions', 'board'] })
     void queryClient.invalidateQueries({ queryKey: ['missions', 'history'] })

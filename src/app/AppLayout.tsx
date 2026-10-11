@@ -5,6 +5,7 @@ import { MissionFinishedNotice } from '@/features/missions/MissionFinishedNotice
 import { ECOMMERCE_PATH } from '@/routes/routes'
 
 import { AppHeader } from './AppHeader'
+import { WorldBackdrop } from './WorldBackdrop'
 
 export const AppLayout = (): React.JSX.Element => {
   const { pathname } = useLocation()
@@ -34,14 +35,23 @@ export const AppLayout = (): React.JSX.Element => {
   // informes y el editor de contenido de administracion.
   const missions =
     pathname === '/missions' || pathname.startsWith('/missions/') || pathname === '/admin/missions'
+  // Consola del Consejo (EN-031): `/admin` y sus secciones pintan su propio
+  // salon (`AdminLayout`) y fijan el ancho de su contenido. `/admin/missions`
+  // conserva `missions-main` (arriba): su editor depende de ese ancho.
+  const admin = pathname === '/admin' || pathname.startsWith('/admin/')
   // Auction V2 necesita el ancho 7xl para sostener la cuadricula de cuatro
   // Pending Claims sin comprimir sus superficies por debajo de 280 px.
   const auction =
     pathname === '/auction' ||
     pathname.startsWith('/auction/') ||
     pathname.startsWith('/__dev/auction/')
+  // EN-031: el mundo vivo se retira (`dim`) en los modulos que ya pintan su
+  // propio escenario, para no competir con el.
+  const ownScene = commerce || play || account || inventory || missions || auction || admin
+
   return (
     <div className={commerce ? 'commerce-layout min-h-dvh' : 'min-h-dvh'}>
+      <WorldBackdrop variant={ownScene ? 'dim' : 'full'} />
       <AppHeader />
 
       <main
@@ -56,9 +66,11 @@ export const AppLayout = (): React.JSX.Element => {
                   ? 'inventory-main mx-auto w-full px-3 py-4 sm:px-4'
                   : missions
                     ? 'missions-main mx-auto w-full px-3 py-4 sm:px-4'
-                    : auction
-                      ? 'mx-auto max-w-7xl px-4 py-8'
-                      : 'mx-auto max-w-6xl px-4 py-8'
+                    : admin
+                      ? 'admin-main mx-auto w-full max-w-7xl px-3 py-4 sm:px-4'
+                      : auction
+                        ? 'mx-auto max-w-7xl px-4 py-8'
+                        : 'mx-auto max-w-6xl px-4 py-8'
         }
       >
         <Outlet />

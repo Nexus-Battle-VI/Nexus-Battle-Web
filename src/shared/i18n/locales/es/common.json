@@ -76,5 +76,10 @@
     "loading": "Cargando vista previa…",
     "unavailable": "Vista previa 3D no disponible en este entorno.",
     "unavailableFor": "Vista previa no disponible para \"{{id}}\"."
+  },
+  "sound": {
+    "toggle": "Efectos de sonido",
+    "on": "Sonido activado",
+    "off": "Sonido desactivado"
   }
 }

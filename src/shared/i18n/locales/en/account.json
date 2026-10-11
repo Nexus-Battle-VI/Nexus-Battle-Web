@@ -17,6 +17,14 @@
       "saved": "Language saved to your account.",
       "failed": "The language could not be saved to your account. The previous language was restored; please try again.",
       "contentNote": "Product, hero and skill names, and chat messages, are shown exactly as they were created."
+    },
+    "sound": {
+      "title": "Sound effects",
+      "description": "8-bit sounds when navigating, opening menus and completing actions. Saved in this browser.",
+      "on": "On",
+      "onHint": "They play with each interaction.",
+      "off": "Off",
+      "offHint": "The interface stays silent."
     }
   },
   "page": {

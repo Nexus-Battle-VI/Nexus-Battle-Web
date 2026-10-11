@@ -6,26 +6,10 @@ import { useTranslation } from 'react-i18next'
 import { navigationForPrimaryRole } from '@/routes/routes'
 import { primaryRole } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
+import { playSfx } from '@/shared/sound'
 import { AdminNavMenu } from './AdminNavMenu'
-
-/**
- * Etiqueta traducida de cada acceso, por ruta. `routes.tsx` conserva su
- * `label` en español como respaldo: asi este cambio no toca la lista de rutas
- * (que otras features editan) y un acceso nuevo sin traduccion sigue
- * mostrandose, en español, en lugar de desaparecer.
- *
- * Los cinco accesos administrativos (antes sueltos aqui) viven ahora en
- * `ADMIN_NAVIGATION` y se pintan agrupados por `AdminNavMenu`, no como
- * segmentos de este carril: ver el comentario de esa lista en `routes.tsx`.
- */
-const NAV_LABEL_KEYS: Readonly<Record<string, string>> = {
-  '/ecommerce': 'app:nav.ecommerce',
-  '/play': 'app:nav.play',
-  '/missions': 'app:nav.missions',
-  '/tournament': 'app:nav.tournament',
-  '/inventory': 'app:nav.inventory',
-  '/auction': 'app:nav.auction',
-}
+import { NAV_LABEL_KEYS } from './navLabels'
+import { navModuleForPath } from '@/components/shell/shellRemasterAssets'
 
 export interface PrimaryNavProps {
   readonly className?: string
@@ -124,6 +108,9 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
           >
             {navigation.map((item) => {
               const labelKey = NAV_LABEL_KEYS[item.path]
+              // EN-031: el icono del modulo es fondo CSS del propio enlace
+              // (`shell.css`), no un nodo nuevo dentro de la navegacion.
+              const navModule = navModuleForPath(item.path) ?? undefined
 
               return (
                 <li
@@ -139,6 +126,10 @@ export const PrimaryNav = ({ className }: PrimaryNavProps): React.JSX.Element =>
                 >
                   <NavLink
                     to={item.path}
+                    data-nav-module={navModule}
+                    onClick={() => {
+                      playSfx('click')
+                    }}
                     className={({ isActive }) =>
                       clsx(
                         'nb-nav-seg block rounded-md px-3 py-1.5 text-center text-sm whitespace-nowrap',
