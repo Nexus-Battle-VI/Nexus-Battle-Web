@@ -22,6 +22,8 @@ import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } fro
 import { join, resolve } from 'node:path'
 import { PNG } from 'pngjs'
 
+import { components, crop, readPng as read } from './pixel-assets-lib.mjs'
+
 const args = process.argv.slice(2)
 const sourceIndex = args.indexOf('--source')
 if (sourceIndex === -1 || args[sourceIndex + 1] === undefined) {
@@ -33,30 +35,14 @@ const OUT = resolve('public/assets/missions')
 const THEMES = ['dark', 'light']
 
 /**
- * @typedef {{ x: number, y: number, w: number, h: number }} Box
  * @typedef {{ row: number, type: string, frame_count: number, animation?: string, direction?: string }} SheetRow
  * @typedef {{ path: string, cell_size: { width: number, height: number }, rows: SheetRow[] }} SheetLayout
  */
 
-/** @param {string} path @returns {PNG} */
-const read = (path) => PNG.sync.read(readFileSync(path))
 /** @param {string} path @param {PNG} png */
 const write = (path, png) => {
   writeFileSync(path, PNG.sync.write(png))
   process.stdout.write(`   ${path.slice(OUT.length + 1)}\n`)
-}
-/**
- * @param {PNG} png
- * @param {number} x
- * @param {number} y
- * @param {number} width
- * @param {number} height
- * @returns {PNG}
- */
-const crop = (png, x, y, width, height) => {
-  const out = new PNG({ width, height })
-  PNG.bitblt(png, out, x, y, width, height, 0, 0)
-  return out
 }
 /** @param {string} dir @returns {string} */
 const ensure = (dir) => {
@@ -76,47 +62,6 @@ for (const file of rawFiles.filter((name) => /^scene-.+\.png$/u.test(name))) {
 }
 
 // --- Ornamentos: componentes conexos del canal alfa -------------------------
-/**
- * Cajas de las piezas opacas de la imagen (vecindad de 8).
- * @param {PNG} png
- * @returns {Box[]}
- */
-const components = (png) => {
-  const { width, height, data } = png
-  const seen = new Uint8Array(width * height)
-  /** @type {Box[]} */
-  const boxes = []
-  for (let start = 0; start < width * height; start++) {
-    if (seen[start] === 1 || data[start * 4 + 3] < 16) continue
-    const stack = [start]
-    seen[start] = 1
-    let [minX, minY, maxX, maxY, count] = [width, height, 0, 0, 0]
-    for (let index = stack.pop(); index !== undefined; index = stack.pop()) {
-      const x = index % width
-      const y = (index - x) / width
-      count++
-      minX = x < minX ? x : minX
-      minY = y < minY ? y : minY
-      maxX = x > maxX ? x : maxX
-      maxY = y > maxY ? y : maxY
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          const nx = x + dx
-          const ny = y + dy
-          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
-          const next = ny * width + nx
-          if (seen[next] === 0 && data[next * 4 + 3] >= 16) {
-            seen[next] = 1
-            stack.push(next)
-          }
-        }
-      }
-    }
-    if (count >= 40) boxes.push({ x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 })
-  }
-  return boxes
-}
-
 process.stdout.write('ornamentos\n')
 for (const theme of THEMES) {
   const kit = read(join(raw, `ornaments-${theme}.png`))

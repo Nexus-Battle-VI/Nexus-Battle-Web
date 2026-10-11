@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AuthScene } from '@/components/auth/AuthScene'
 import { useSession } from '@/shared/session'
 import { SignInPrompt } from './SignInPrompt'
 
@@ -29,9 +30,12 @@ export const RequireSession = ({ children }: RequireSessionProps): React.JSX.Ele
 
   if (subject === null) {
     return (
-      <div className="flex min-h-dvh items-center justify-center px-4 py-10 text-ink">
-        <SignInPrompt description={t('app:signIn.required')} headingTag="h1" cancelHref="/" />
-      </div>
+      // La invitacion a entrar vive en la misma escena que Login y Registro.
+      <AuthScene>
+        <main className="auth-panel auth-stage flex justify-center">
+          <SignInPrompt description={t('app:signIn.required')} headingTag="h1" cancelHref="/" />
+        </main>
+      </AuthScene>
     )
   }
 

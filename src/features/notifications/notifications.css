@@ -1,0 +1,81 @@
+/*
+ * Piel de las notificaciones (EN-031): fila con icono de PixelLab en una
+ * placa, compartida por el resumen de la vitrina, el historial y la campana
+ * de la cabecera. Se apoya en los tokens globales de tema, asi que Light y
+ * Dark salen solos.
+ */
+.nb-notice-icon {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.nb-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.nb-notice-plate {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in oklch, var(--color-brand) 35%, var(--color-border));
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      color-mix(in oklch, var(--color-brand) 18%, transparent),
+      transparent 70%
+    ),
+    var(--color-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-surface-raised) 60%, transparent);
+}
+
+.nb-notice-panel {
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in oklch, var(--color-brand) 25%, var(--color-border));
+  background: var(--color-surface-raised);
+  box-shadow: 0 12px 32px -18px color-mix(in oklch, var(--color-brand) 60%, transparent);
+}
+
+/* Campana de la cabecera */
+.nb-bell {
+  position: relative;
+}
+.nb-bell-count {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: var(--color-brand-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.nb-bell-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  width: min(22rem, calc(100vw - 2rem));
+  z-index: 60;
+  animation: nb-bell-in 160ms ease-out;
+}
+@keyframes nb-bell-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nb-bell-popover {
+    animation: none;
+  }
+}

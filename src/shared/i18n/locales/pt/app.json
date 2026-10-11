@@ -69,5 +69,8 @@
     "description": "Tópicos de conversa e mensagens.",
     "pendingBefore": "Esta tela ainda não foi implementada. Sua funcionalidade pertence ao serviço",
     "pendingAfter": "e será desenvolvida na sua História de Usuário."
+  },
+  "brand": {
+    "presents": "UPB-COMPANY apresenta"
   }
 }

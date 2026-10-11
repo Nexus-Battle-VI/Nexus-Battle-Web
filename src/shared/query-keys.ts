@@ -253,6 +253,13 @@ export const queryKeys = {
     pending: (subject: string | null) => ['notifications', 'catalog', 'pending', subject] as const,
     /** Historial completo (`GET /api/v1/notifications/me/history`). */
     history: (subject: string | null) => ['notifications', 'catalog', 'history', subject] as const,
+    /**
+     * Pendientes vistos por la campana de la cabecera (EN-031). Mismo endpoint
+     * que `pending` pero clave PROPIA: la campana se refresca cada 60 s y, con
+     * la clave compartida, vaciaria de golpe el resumen de la vitrina, que a
+     * proposito no se refresca tras marcar como leido.
+     */
+    bell: (subject: string | null) => ['notifications', 'catalog', 'bell', subject] as const,
     /** Banners vigentes, ya filtrados por el backend (`GET /api/v1/banners`). Publico: sin subject. */
     banners: ['notifications', 'banners', 'active'] as const,
     /** Listado administrativo (`GET /api/v1/admin/banners`). */

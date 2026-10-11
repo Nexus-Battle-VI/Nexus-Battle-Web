@@ -1,16 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
-import clsx from 'clsx'
+import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
+import { AuthField } from '@/components/auth/AuthField'
+import { AuthPixelIcon } from '@/components/auth/AuthPixelIcon'
+import { AuthScene } from '@/components/auth/AuthScene'
+import { HeroParade, type HeroParadeMood } from '@/components/auth/HeroParade'
+import { PasswordRequirements } from '@/components/auth/PasswordRequirements'
+import {
+  AUTH_STEP_SEALS,
+  authAvatarFrame,
+  authStepSeals,
+  type AuthStepSeal,
+} from '@/components/auth/authRemasterAssets'
 import { Button } from '@/components/ui/Button'
 import { PasswordField } from '@/components/ui/PasswordField'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
+import { useTheme } from '@/shared/theme'
 import { LEGAL_DOCUMENTS, SECURITY_QUESTIONS } from './constants'
 import { confirmRegistration, registerAccount } from './api'
+import { passwordRequirements } from './passwordRequirements'
 import {
   EMPTY_VALUES,
   FIELD,
@@ -27,122 +37,28 @@ import {
  * El tema lo gobierna la fuente unica global (`@/shared/theme`) a traves de
  * `ThemeToggle`. Aqui no se persiste nada del formulario: ni la contrasena, ni
  * el avatar, ni las respuestas de seguridad tocan el almacenamiento del
- * navegador.
+ * navegador. El asistente guarda lo escrito solo en memoria, asi volver a un
+ * paso anterior no borra nada.
  */
-const CONTROL_CLASS =
-  'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
+type StepId = AuthStepSeal
 
-/**
- * Logotipo grafico de "THE NEXUS BATTLES VI — RETURN OF THE WARRIORS".
- *
- * Servido desde `public/assets/logo.png`. El `<img>` conserva un `onError`
- * que cae de vuelta al lockup textual si el archivo llegara a faltar: la
- * pantalla nunca depende de que exista para seguir siendo legible.
- */
-const LOGO_SRC = '/assets/logo.png'
+const STEPS: readonly StepId[] = AUTH_STEP_SEALS
 
-interface SectionProps {
-  readonly title: string
-  readonly description?: string
-  readonly children: ReactNode
+/** Que campos valida cada paso antes de dejar avanzar. */
+const STEP_FIELDS: Readonly<Record<StepId, readonly string[]>> = {
+  personal: [FIELD.firstName, FIELD.lastName, FIELD.email, FIELD.nickname, FIELD.password],
+  avatar: [FIELD.avatar],
+  security: SECURITY_QUESTIONS.map((question) => securityFieldId(question.id)),
+  terms: [FIELD.terms],
 }
 
-/**
- * Agrupacion visual local a esta pantalla.
- *
- * No reutiliza `Card` (`src/components/ui/Card.tsx`) a proposito: ese
- * componente es compartido por las cinco pantallas de marcador de posicion, y
- * compactar su padding aqui las habria afectado a todas. Esta version vive
- * solo en HU-01 y usa los mismos tokens del Design System.
- */
-const Section = ({ title, description, children }: SectionProps): React.JSX.Element => (
-  <section className="rounded-lg border border-border bg-surface-raised p-5">
-    <h2 className="text-sm font-semibold uppercase tracking-wide text-ink">{title}</h2>
-    {description !== undefined && <p className="mt-1 text-xs text-muted">{description}</p>}
-    <div className="mt-3">{children}</div>
-  </section>
-)
+const stepOfField = (field: string): number =>
+  STEPS.findIndex((step) => STEP_FIELDS[step].includes(field))
 
 /** Fila de dos campos que se apila en una sola columna cuando falta espacio. */
-const FieldRow = ({ children }: { readonly children: ReactNode }): React.JSX.Element => (
+const FieldRow = ({ children }: { readonly children: React.ReactNode }): React.JSX.Element => (
   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
 )
-
-interface FieldProps {
-  readonly id: string
-  readonly label: string
-  readonly hint?: string
-  readonly counter?: string
-  readonly error?: string
-  readonly children: (props: {
-    readonly id: string
-    readonly 'aria-invalid': boolean
-    readonly 'aria-describedby': string | undefined
-    readonly 'aria-required': true
-    readonly className: string
-  }) => ReactNode
-}
-
-/**
- * Campo con su etiqueta, su texto auxiliar y su error asociado.
- *
- * El cableado accesible (`aria-invalid`, `aria-describedby`) se entrega al
- * control en lugar de repetirse en cada uno: asi ningun campo se queda sin el
- * justo cuando es el que falla.
- */
-const Field = ({ id, label, hint, counter, error, children }: FieldProps): React.JSX.Element => {
-  const describedBy = [
-    hint === undefined ? null : `${id}-hint`,
-    counter === undefined ? null : `${id}-counter`,
-    error === undefined ? null : `${id}-error`,
-  ]
-    .filter((value) => value !== null)
-    .join(' ')
-
-  return (
-    <div className="w-full min-w-0">
-      <label htmlFor={id} className="block text-sm font-medium text-ink">
-        {label}
-      </label>
-
-      <div className="mt-1">
-        {children({
-          id,
-          'aria-invalid': error !== undefined,
-          'aria-describedby': describedBy === '' ? undefined : describedBy,
-          'aria-required': true,
-          className: clsx(CONTROL_CLASS, error === undefined ? 'border-border' : 'border-danger'),
-        })}
-      </div>
-
-      {(hint !== undefined || counter !== undefined) && (
-        <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          {hint !== undefined && (
-            <p id={`${id}-hint`} className="text-xs text-muted">
-              {hint}
-            </p>
-          )}
-          {counter !== undefined && (
-            <p id={`${id}-counter`} className="text-xs tabular-nums text-muted">
-              {counter}
-            </p>
-          )}
-        </div>
-      )}
-
-      {error !== undefined && (
-        // El error no se senala solo con color: lleva tambien una marca
-        // textual, porque quien no distingue el rojo necesita otra pista.
-        <p id={`${id}-error`} className="mt-1 flex items-start gap-1.5 text-sm text-danger">
-          <span aria-hidden="true" className="font-bold leading-5">
-            !
-          </span>
-          <span>{error}</span>
-        </p>
-      )}
-    </div>
-  )
-}
 
 interface ConfirmationStepProps {
   readonly email: string
@@ -156,7 +72,7 @@ interface ConfirmationStepProps {
 }
 
 /**
- * Segundo paso del alta: confirmar el correo con el codigo que el proveedor
+ * Ultimo paso del alta: confirmar el correo con el codigo que el proveedor
  * envio al buzon.
  *
  * Es una pantalla distinta, no un aviso al pie del formulario: el registro ya se
@@ -177,30 +93,27 @@ const ConfirmationStep = ({
   const { t } = useTranslation()
 
   return (
-    <div className="mx-auto max-w-md">
+    <div className="auth-stage mx-auto max-w-md">
       {confirmed ? (
         <div className="space-y-5 text-center">
-          <h1 className="text-xl font-semibold text-ink">
-            {t('account:registration.activatedTitle')}
-          </h1>
-          <p
-            role="status"
-            className="rounded-lg border border-brand bg-brand/10 p-4 text-sm text-ink"
-          >
+          <AuthPixelIcon icon="check" size="xl" className="mx-auto" />
+          <h1 className="auth-title">{t('account:registration.activatedTitle')}</h1>
+          <p role="status" className="auth-notice">
             {t('account:registration.activatedBody')}
           </p>
           <div className="flex justify-center">
-            <Button onClick={onGoToLogin}>{t('account:registration.goToLogin')}</Button>
+            <Button variant="auth-primary" onClick={onGoToLogin}>
+              {t('account:registration.goToLogin')}
+            </Button>
           </div>
         </div>
       ) : (
         <>
-          <h1 className="text-center text-xl font-semibold text-ink">
-            {t('account:registration.confirmTitle')}
-          </h1>
-          <p className="mx-auto mt-1.5 max-w-sm text-center text-sm text-muted">
+          <AuthPixelIcon icon="mail" size="xl" className="mx-auto" />
+          <h1 className="auth-title mt-2 text-center">{t('account:registration.confirmTitle')}</h1>
+          <p className="auth-subtitle mx-auto max-w-sm text-center">
             {t('account:registration.confirmSentBefore')}{' '}
-            <span className="font-medium text-ink">{email}</span>
+            <span className="font-semibold">{email}</span>
             {t('account:registration.confirmSentAfter')}
           </p>
 
@@ -213,41 +126,113 @@ const ConfirmationStep = ({
             className="mt-6 space-y-4"
           >
             {failure !== null && (
-              <p
-                role="alert"
-                className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
-              >
+              <p role="alert" className="auth-alert">
                 {failure}
               </p>
             )}
 
-            <Field
+            <AuthField
               id="confirmation-code"
               label={t('account:registration.code')}
               hint={t('account:registration.codeHint')}
+              required
             >
               {(field) => (
-                <input
-                  {...field}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  value={code}
-                  onChange={(event) => {
-                    onCodeChange(event.target.value)
-                  }}
-                />
+                <div className="auth-code">
+                  <input
+                    {...field}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={code}
+                    onChange={(event) => {
+                      onCodeChange(event.target.value)
+                    }}
+                  />
+                </div>
               )}
-            </Field>
+            </AuthField>
 
             <div className="flex justify-end">
-              <Button type="submit" loading={confirming}>
+              <Button type="submit" variant="auth-primary" loading={confirming}>
                 {t('account:registration.confirm')}
               </Button>
             </div>
           </form>
         </>
       )}
+    </div>
+  )
+}
+
+/**
+ * Indicador del asistente: un sello por paso. Es navegacion de solo lectura
+ * (los pasos se recorren con Continuar/Atras, que validan), y anuncia el paso
+ * actual con `aria-current="step"`.
+ */
+const StepSeals = ({ current }: { readonly current: number }): React.JSX.Element => {
+  const { t } = useTranslation()
+  const theme = useTheme((state) => state.theme)
+  return (
+    <ol aria-label={t('account:registration.stepsLabel')} className="auth-steps">
+      {STEPS.map((step, index) => (
+        <li
+          key={step}
+          className="auth-step"
+          aria-current={index === current ? 'step' : undefined}
+          data-state={index < current ? 'done' : index === current ? 'current' : 'pending'}
+        >
+          <img src={authStepSeals[step][theme]} alt="" aria-hidden="true" />
+          {index < current && <AuthPixelIcon icon="check" size="sm" className="auth-step-check" />}
+          <span>
+            <span className="sr-only">
+              {t('account:registration.stepCounter', {
+                current: String(index + 1),
+                total: String(STEPS.length),
+              })}
+              {': '}
+            </span>
+            {t(`account:registration.steps.${step}`)}
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+/** Vista previa del avatar dentro del marco del kit. La URL se libera al cambiar. */
+const AvatarPreview = ({ file }: { readonly file: File | null }): React.JSX.Element => {
+  const { t } = useTranslation()
+  const theme = useTheme((state) => state.theme)
+  const url = useMemo(
+    () =>
+      file !== null && file.type.startsWith('image/') && typeof URL.createObjectURL === 'function'
+        ? URL.createObjectURL(file)
+        : null,
+    [file],
+  )
+
+  useEffect(
+    () => () => {
+      if (url !== null) URL.revokeObjectURL(url)
+    },
+    [url],
+  )
+
+  return (
+    <div className="auth-avatar-preview">
+      {url === null ? (
+        <span className="auth-avatar-empty">
+          <AuthPixelIcon icon="portrait" size="xl" />
+        </span>
+      ) : (
+        <img
+          src={url}
+          alt={t('account:registration.avatarPreview')}
+          className="auth-avatar-photo"
+        />
+      )}
+      <img src={authAvatarFrame[theme]} alt="" aria-hidden="true" className="auth-avatar-frame" />
     </div>
   )
 }
@@ -263,14 +248,18 @@ export interface RegistrationPageProps {
 }
 
 /**
- * HU-01 — Registro de cuenta de jugador.
+ * HU-01 — Registro de cuenta de jugador, como asistente de cuatro pasos
+ * (remaster EN-031): datos, avatar, preguntas de seguridad y terminos. Despues
+ * llega la confirmacion del correo.
  *
  * Es una pantalla **publica** y se monta fuera de `AppLayout`: quien todavia no
- * tiene cuenta no puede tener catalogo, inventario ni pedidos, y mostrarle esa
- * navegacion seria ofrecerle destinos que no le corresponden.
+ * tiene cuenta no puede tener catalogo, inventario ni pedidos.
  *
- * Los errores no aparecen mientras se escribe por primera vez: un campo vacio
- * que aun no se ha tocado no esta mal, esta sin empezar.
+ * Mismas reglas que el formulario de una sola pagina: cada paso valida solo sus
+ * campos antes de avanzar, y el envio final vuelve a validar TODO con
+ * `validateRegistration`. Los errores no aparecen mientras se escribe por
+ * primera vez: un campo vacio que aun no se ha tocado no esta mal, esta sin
+ * empezar.
  */
 export const RegistrationPage = ({
   onSubmit = registerAccount,
@@ -282,11 +271,16 @@ export const RegistrationPage = ({
 
   const [values, setValues] = useState<RegistrationValues>(EMPTY_VALUES)
   const [touched, setTouched] = useState<Readonly<Record<string, boolean>>>({})
-  const [attempted, setAttempted] = useState(false)
+  const [step, setStep] = useState(0)
+  // Pasos en los que ya se intento avanzar (o enviar): sus errores se ven.
+  const [checkedSteps, setCheckedSteps] = useState<ReadonlySet<number>>(new Set())
   const [sending, setSending] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [unavailableDocument, setUnavailableDocument] = useState<string | null>(null)
-  const [logoFailed, setLogoFailed] = useState(false)
+  const [parade, setParade] = useState<{ readonly mood: HeroParadeMood; readonly beat: number }>({
+    mood: 'idle',
+    beat: 0,
+  })
 
   // Segundo paso del alta. `pendingEmail` distinto de null significa que el
   // registro fue aceptado y la cuenta espera el codigo que el proveedor envio al
@@ -304,11 +298,17 @@ export const RegistrationPage = ({
 
   const visible: RegistrationErrors = useMemo(
     () =>
-      attempted
-        ? errors
-        : Object.fromEntries(Object.entries(errors).filter(([field]) => touched[field] === true)),
-    [errors, touched, attempted],
+      Object.fromEntries(
+        Object.entries(errors).filter(
+          ([field]) => touched[field] === true || checkedSteps.has(stepOfField(field)),
+        ),
+      ),
+    [errors, touched, checkedSteps],
   )
+
+  const bump = (mood: HeroParadeMood): void => {
+    setParade((previous) => ({ mood, beat: previous.beat + 1 }))
+  }
 
   const markTouched = (field: string): void => {
     setTouched((previous) => ({ ...previous, [field]: true }))
@@ -318,7 +318,28 @@ export const RegistrationPage = ({
     key: K,
     value: RegistrationValues[K],
   ): void => {
+    bump('typing')
     setValues((previous) => ({ ...previous, [key]: value }))
+  }
+
+  const currentStep = STEPS[step] ?? 'personal'
+  const stepIssues = Object.entries(errors).filter(
+    ([field]) => checkedSteps.has(step) && STEP_FIELDS[currentStep].includes(field),
+  )
+
+  const checkStep = (index: number): void => {
+    setCheckedSteps((previous) => new Set([...previous, index]))
+  }
+
+  /** Avanza solo si el paso actual no tiene errores; si los tiene, los muestra. */
+  const handleNext = (): void => {
+    checkStep(step)
+    if (STEP_FIELDS[currentStep].some((field) => errors[field] !== undefined)) {
+      bump('error')
+      setFocusSummaryToken((token) => token + 1)
+      return
+    }
+    setStep((index) => index + 1)
   }
 
   const handleSubmit = async (): Promise<void> => {
@@ -328,17 +349,18 @@ export const RegistrationPage = ({
       return
     }
 
-    setAttempted(true)
     setFailure(null)
 
     if (hasErrors(errors)) {
-      // En un formulario largo el error puede quedar fuera de la vista: se le
-      // lleva el foco al resumen para que el envio fallido no parezca no haber
-      // hecho nada. En el primer intento invalido el resumen todavia no existe
-      // en el DOM en este punto (el estado que lo monta aun no se ha
-      // confirmado), asi que enfocarlo aqui directamente no haria nada: se
-      // difiere a un efecto que se dispara despues de que React confirme el
-      // render.
+      // El envio valida TODO: si un paso anterior quedo invalido (por ejemplo,
+      // tras volver atras y borrar un dato), se lleva a ese paso con sus
+      // errores a la vista.
+      const firstInvalid = STEPS.findIndex((candidate) =>
+        STEP_FIELDS[candidate].some((field) => errors[field] !== undefined),
+      )
+      checkStep(firstInvalid)
+      setStep(firstInvalid)
+      bump('error')
       setFocusSummaryToken((token) => token + 1)
       return
     }
@@ -348,10 +370,10 @@ export const RegistrationPage = ({
     try {
       await onSubmit(values)
       // El alta quedo aceptada pero PENDIENTE: el proveedor envio un codigo al
-      // correo y la cuenta no se activa hasta confirmarlo. La pantalla pasa al
-      // segundo paso en lugar de anunciar un exito que aun no lo es.
+      // correo y la cuenta no se activa hasta confirmarlo.
       setPendingEmail(values.email)
     } catch (error: unknown) {
+      bump('error')
       setFailure(
         error instanceof Error
           ? describeFailure(error, t, language)
@@ -379,7 +401,9 @@ export const RegistrationPage = ({
     try {
       await onConfirm(pendingEmail, code.trim())
       setConfirmed(true)
+      bump('success')
     } catch (error: unknown) {
+      bump('error')
       setConfirmFailure(
         error instanceof Error
           ? describeFailure(error, t, language)
@@ -390,318 +414,301 @@ export const RegistrationPage = ({
     }
   }
 
-  const issues = attempted ? Object.entries(errors) : []
-
-  // Se dispara solo cuando `focusSummaryToken` cambia (cada envio invalido),
-  // ya con el resumen confirmado en el DOM: aqui `summaryRef.current` ya
-  // apunta al elemento, a diferencia del momento en que se solicito el foco.
+  // Se dispara solo cuando `focusSummaryToken` cambia (cada intento invalido),
+  // ya con el resumen confirmado en el DOM.
   useEffect(() => {
     if (focusSummaryToken > 0) {
       summaryRef.current?.focus()
     }
   }, [focusSummaryToken])
 
+  const isLast = step === STEPS.length - 1
+
   return (
-    <div className="min-h-dvh text-ink">
-      <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6">
-        <div className="flex items-center justify-between gap-3">
-          <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
-            {t('account:registration.backToMenu')}
-          </Link>
+    <AuthScene
+      scene="oath"
+      width="xl"
+      back={{ to: '/', label: t('account:registration.backToMenu') }}
+      footer={<HeroParade mood={parade.mood} beat={parade.beat} />}
+    >
+      <main className="auth-panel mx-auto max-w-2xl pb-8">
+        {pendingEmail !== null ? (
+          <ConfirmationStep
+            email={pendingEmail}
+            code={code}
+            onCodeChange={(value) => {
+              bump('typing')
+              setCode(value)
+            }}
+            onConfirm={() => {
+              void handleConfirm()
+            }}
+            confirming={confirming}
+            confirmed={confirmed}
+            failure={confirmFailure}
+            onGoToLogin={() => {
+              void navigate('/login')
+            }}
+          />
+        ) : (
+          <>
+            <h1 className="auth-title text-center">{t('account:registration.title')}</h1>
+            <p className="auth-subtitle mx-auto max-w-lg text-center">
+              {t('account:registration.subtitle')}
+            </p>
 
-          <ThemeToggle />
-        </div>
+            <div className="mt-5">
+              <StepSeals current={step} />
+            </div>
 
-        <header className="mt-2 text-center">
-          {logoFailed ? (
-            <>
-              <p className="text-[0.65rem] uppercase tracking-[0.3em] text-muted">
-                {t('account:registration.presents')}
-              </p>
-              <p className="mt-1 text-xl font-semibold uppercase tracking-[0.16em] text-ink">
-                The Nexus Battles VI
-              </p>
-              <p className="text-xs uppercase tracking-[0.3em] text-brand">
-                Return of the Warriors
-              </p>
-              <span
-                aria-hidden="true"
-                className="mx-auto mt-2 block h-0.5 w-16 rounded-full bg-brand"
-              />
-            </>
-          ) : (
-            <>
-              <p className="text-[0.65rem] uppercase tracking-[0.3em] text-muted">
-                {t('account:registration.presents')}
-              </p>
-              <img
-                src={LOGO_SRC}
-                alt="The Nexus Battles VI — Return of the Warriors"
-                width={1600}
-                height={600}
-                // El asset es un banner ancho (~2.67:1), no un icono: necesita
-                // mas ancho que un logo cuadrado para que "RETURN OF THE
-                // WARRIORS" siga siendo legible a este tamano.
-                className="mx-auto mt-1 h-auto w-[280px] max-w-full sm:w-[420px]"
-                onError={() => {
-                  setLogoFailed(true)
-                }}
-              />
-            </>
-          )}
-        </header>
-
-        <main className="mt-6 pb-10">
-          {pendingEmail !== null ? (
-            <ConfirmationStep
-              email={pendingEmail}
-              code={code}
-              onCodeChange={setCode}
-              onConfirm={() => {
-                void handleConfirm()
-              }}
-              confirming={confirming}
-              confirmed={confirmed}
-              failure={confirmFailure}
-              onGoToLogin={() => {
-                void navigate('/login')
-              }}
-            />
-          ) : (
-            <>
-              <h1 className="text-center text-xl font-semibold text-ink">
-                {t('account:registration.title')}
-              </h1>
-              <p className="mx-auto mt-1.5 max-w-lg text-center text-sm text-muted">
-                {t('account:registration.subtitle')}
-              </p>
-
-              <form
-                noValidate
-                onSubmit={(event) => {
-                  event.preventDefault()
+            <form
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault()
+                if (isLast) {
                   void handleSubmit()
-                }}
-                className="mt-6 space-y-5"
-              >
-                {issues.length > 0 && (
-                  <div
-                    ref={summaryRef}
-                    role="alert"
-                    tabIndex={-1}
-                    className="rounded-lg border border-danger bg-danger/10 p-4"
-                  >
-                    <p className="text-sm font-semibold text-danger">
-                      {t('account:registration.summary')}
-                    </p>
-                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-danger">
-                      {issues.map(([field, message]) => (
-                        <li key={field}>
-                          <a href={`#${field}`} className="underline">
-                            {message}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                } else {
+                  handleNext()
+                }
+              }}
+              className="mt-6 space-y-5"
+            >
+              {stepIssues.length > 0 && (
+                <div ref={summaryRef} role="alert" tabIndex={-1} className="auth-alert">
+                  <p className="font-semibold">{t('account:registration.summary')}</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {stepIssues.map(([field, message]) => (
+                      <li key={field}>
+                        <a href={`#${field}`} className="underline">
+                          {message}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-                {failure !== null && (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-danger bg-danger/10 p-4 text-sm text-danger"
-                  >
-                    {failure}
-                  </p>
-                )}
+              {failure !== null && (
+                <p role="alert" className="auth-alert">
+                  {failure}
+                </p>
+              )}
 
-                <Section title={t('account:registration.personal')}>
-                  <div className="space-y-4">
-                    <FieldRow>
-                      <Field
-                        id={FIELD.firstName}
-                        label={t('account:registration.firstNames')}
-                        hint={t('account:registration.requiredHint')}
-                        {...(visible[FIELD.firstName] === undefined
-                          ? {}
-                          : { error: visible[FIELD.firstName] })}
-                      >
-                        {(field) => (
-                          <input
-                            {...field}
-                            type="text"
-                            autoComplete="given-name"
-                            value={values.firstName}
-                            onBlur={() => {
-                              markTouched(FIELD.firstName)
-                            }}
-                            onChange={(event) => {
-                              setValue('firstName', event.target.value)
-                            }}
-                          />
-                        )}
-                      </Field>
-
-                      <Field
-                        id={FIELD.lastName}
-                        label={t('account:registration.lastNames')}
-                        hint={t('account:registration.requiredHint')}
-                        {...(visible[FIELD.lastName] === undefined
-                          ? {}
-                          : { error: visible[FIELD.lastName] })}
-                      >
-                        {(field) => (
-                          <input
-                            {...field}
-                            type="text"
-                            autoComplete="family-name"
-                            value={values.lastName}
-                            onBlur={() => {
-                              markTouched(FIELD.lastName)
-                            }}
-                            onChange={(event) => {
-                              setValue('lastName', event.target.value)
-                            }}
-                          />
-                        )}
-                      </Field>
-                    </FieldRow>
-
-                    <FieldRow>
-                      <Field
-                        id={FIELD.email}
-                        label={t('account:registration.email')}
-                        hint={t('account:registration.emailHint')}
-                        {...(visible[FIELD.email] === undefined
-                          ? {}
-                          : { error: visible[FIELD.email] })}
-                      >
-                        {(field) => (
-                          <input
-                            {...field}
-                            type="email"
-                            autoComplete="email"
-                            value={values.email}
-                            onBlur={() => {
-                              markTouched(FIELD.email)
-                            }}
-                            onChange={(event) => {
-                              setValue('email', event.target.value)
-                            }}
-                          />
-                        )}
-                      </Field>
-
-                      <Field
-                        id={FIELD.nickname}
-                        label={t('account:registration.nickname')}
-                        hint={t('account:registration.nicknameHint')}
-                        counter={t('account:registration.nicknameCounter', {
-                          current: String(values.nickname.length),
-                          max: String(NICKNAME_MAX_LENGTH),
-                        })}
-                        {...(visible[FIELD.nickname] === undefined
-                          ? {}
-                          : { error: visible[FIELD.nickname] })}
-                      >
-                        {(field) => (
-                          <input
-                            {...field}
-                            type="text"
-                            autoComplete="nickname"
-                            // Se impide al escribir y ademas se valida: `maxLength`
-                            // no cubre un valor pegado por script.
-                            maxLength={NICKNAME_MAX_LENGTH}
-                            value={values.nickname}
-                            onBlur={() => {
-                              markTouched(FIELD.nickname)
-                            }}
-                            onChange={(event) => {
-                              setValue('nickname', event.target.value)
-                            }}
-                          />
-                        )}
-                      </Field>
-                    </FieldRow>
-
-                    <Field
-                      id={FIELD.password}
-                      label={t('account:registration.password')}
-                      hint={t('account:registration.passwordHint')}
-                      {...(visible[FIELD.password] === undefined
+              {currentStep === 'personal' && (
+                <section key="personal" className="auth-section auth-stage space-y-4">
+                  <h2 className="auth-section-title">
+                    <AuthPixelIcon icon="user" size="sm" />
+                    {t('account:registration.personal')}
+                  </h2>
+                  <FieldRow>
+                    <AuthField
+                      id={FIELD.firstName}
+                      label={t('account:registration.firstNames')}
+                      hint={t('account:registration.requiredHint')}
+                      required
+                      {...(visible[FIELD.firstName] === undefined
                         ? {}
-                        : { error: visible[FIELD.password] })}
+                        : { error: visible[FIELD.firstName] })}
                     >
                       {(field) => (
-                        <PasswordField
+                        <input
                           {...field}
-                          autoComplete="new-password"
-                          value={values.password}
+                          type="text"
+                          autoComplete="given-name"
+                          value={values.firstName}
                           onBlur={() => {
-                            markTouched(FIELD.password)
+                            markTouched(FIELD.firstName)
                           }}
                           onChange={(event) => {
-                            setValue('password', event.target.value)
+                            setValue('firstName', event.target.value)
                           }}
                         />
                       )}
-                    </Field>
-                  </div>
-                </Section>
+                    </AuthField>
 
-                <Section title={t('account:registration.avatarSection')}>
-                  <Field
-                    id={FIELD.avatar}
-                    label={t('account:registration.avatar')}
-                    hint={t('account:registration.avatarHint')}
-                    {...(visible[FIELD.avatar] === undefined
+                    <AuthField
+                      id={FIELD.lastName}
+                      label={t('account:registration.lastNames')}
+                      hint={t('account:registration.requiredHint')}
+                      required
+                      {...(visible[FIELD.lastName] === undefined
+                        ? {}
+                        : { error: visible[FIELD.lastName] })}
+                    >
+                      {(field) => (
+                        <input
+                          {...field}
+                          type="text"
+                          autoComplete="family-name"
+                          value={values.lastName}
+                          onBlur={() => {
+                            markTouched(FIELD.lastName)
+                          }}
+                          onChange={(event) => {
+                            setValue('lastName', event.target.value)
+                          }}
+                        />
+                      )}
+                    </AuthField>
+                  </FieldRow>
+
+                  <FieldRow>
+                    <AuthField
+                      id={FIELD.email}
+                      label={t('account:registration.email')}
+                      hint={t('account:registration.emailHint')}
+                      required
+                      {...(visible[FIELD.email] === undefined
+                        ? {}
+                        : { error: visible[FIELD.email] })}
+                    >
+                      {(field) => (
+                        <input
+                          {...field}
+                          type="email"
+                          autoComplete="email"
+                          value={values.email}
+                          onBlur={() => {
+                            markTouched(FIELD.email)
+                          }}
+                          onChange={(event) => {
+                            setValue('email', event.target.value)
+                          }}
+                        />
+                      )}
+                    </AuthField>
+
+                    <AuthField
+                      id={FIELD.nickname}
+                      label={t('account:registration.nickname')}
+                      hint={t('account:registration.nicknameHint')}
+                      counter={t('account:registration.nicknameCounter', {
+                        current: String(values.nickname.length),
+                        max: String(NICKNAME_MAX_LENGTH),
+                      })}
+                      required
+                      {...(visible[FIELD.nickname] === undefined
+                        ? {}
+                        : { error: visible[FIELD.nickname] })}
+                    >
+                      {(field) => (
+                        <input
+                          {...field}
+                          type="text"
+                          autoComplete="nickname"
+                          // Se impide al escribir y ademas se valida: `maxLength`
+                          // no cubre un valor pegado por script.
+                          maxLength={NICKNAME_MAX_LENGTH}
+                          value={values.nickname}
+                          onBlur={() => {
+                            markTouched(FIELD.nickname)
+                          }}
+                          onChange={(event) => {
+                            setValue('nickname', event.target.value)
+                          }}
+                        />
+                      )}
+                    </AuthField>
+                  </FieldRow>
+
+                  <AuthField
+                    id={FIELD.password}
+                    label={t('account:registration.password')}
+                    hint={t('account:registration.passwordHint')}
+                    required
+                    {...(visible[FIELD.password] === undefined
                       ? {}
-                      : { error: visible[FIELD.avatar] })}
+                      : { error: visible[FIELD.password] })}
                   >
                     {(field) => (
-                      <input
+                      <PasswordField
                         {...field}
-                        type="file"
-                        // `accept` filtra el dialogo del sistema pero NO valida:
-                        // el tipo se comprueba igualmente.
-                        accept="image/*"
-                        className={clsx(
-                          field.className,
-                          'file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-ink',
-                        )}
+                        autoComplete="new-password"
+                        value={values.password}
+                        eyeIcon={<AuthPixelIcon icon="eye" size="sm" />}
+                        eyeOffIcon={<AuthPixelIcon icon="eye-off" size="sm" />}
+                        onBlur={() => {
+                          markTouched(FIELD.password)
+                        }}
                         onChange={(event) => {
-                          markTouched(FIELD.avatar)
-                          setValue('avatar', event.target.files?.[0] ?? null)
+                          setValue('password', event.target.value)
                         }}
                       />
                     )}
-                  </Field>
+                  </AuthField>
+                  <PasswordRequirements
+                    id="password-requirements"
+                    requirements={passwordRequirements(values.password, t)}
+                  />
+                </section>
+              )}
 
-                  {values.avatar !== null && (
-                    <p className="mt-1.5 truncate text-xs text-muted">
-                      {t('account:registration.avatarSelected', { name: values.avatar.name })}
-                    </p>
-                  )}
-                </Section>
+              {currentStep === 'avatar' && (
+                <section key="avatar" className="auth-section auth-stage">
+                  <h2 className="auth-section-title">
+                    <AuthPixelIcon icon="portrait" size="sm" />
+                    {t('account:registration.avatarSection')}
+                  </h2>
+                  <div className="mt-3 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                    <AvatarPreview file={values.avatar} />
+                    <div className="w-full min-w-0">
+                      <AuthField
+                        id={FIELD.avatar}
+                        label={t('account:registration.avatar')}
+                        hint={t('account:registration.avatarHint')}
+                        required
+                        {...(visible[FIELD.avatar] === undefined
+                          ? {}
+                          : { error: visible[FIELD.avatar] })}
+                      >
+                        {(field) => (
+                          <input
+                            {...field}
+                            type="file"
+                            // `accept` filtra el dialogo del sistema pero NO
+                            // valida: el tipo se comprueba igualmente.
+                            accept="image/*"
+                            onChange={(event) => {
+                              markTouched(FIELD.avatar)
+                              setValue('avatar', event.target.files?.[0] ?? null)
+                            }}
+                          />
+                        )}
+                      </AuthField>
 
-                <Section
-                  title={t('account:registration.securitySection')}
-                  description={t('account:registration.securityDescription')}
-                >
+                      {values.avatar !== null && (
+                        <p className="auth-hint mt-1.5 truncate">
+                          {t('account:registration.avatarSelected', {
+                            name: values.avatar.name,
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {currentStep === 'security' && (
+                <section key="security" className="auth-section auth-stage">
+                  <h2 className="auth-section-title">
+                    <AuthPixelIcon icon="shield" size="sm" />
+                    {t('account:registration.securitySection')}
+                  </h2>
+                  <p className="auth-hint mt-1">{t('account:registration.securityDescription')}</p>
                   {/*
-                Una columna: con dos columnas, una pregunta que envuelve a dos
-                lineas (la de los padres) empuja su input mas abajo que el de
-                la columna vecina y el formulario se ve descuadrado.
-              */}
-                  <div className="space-y-5">
+                    Una columna: con dos, una pregunta que envuelve a dos lineas
+                    empuja su input mas abajo que el de la columna vecina.
+                  */}
+                  <div className="mt-3 space-y-5">
                     {SECURITY_QUESTIONS.map((question) => {
                       const id = securityFieldId(question.id)
 
                       return (
-                        <Field
+                        <AuthField
                           key={question.id}
                           id={id}
                           label={question.label}
+                          required
                           {...(visible[id] === undefined ? {} : { error: visible[id] })}
                         >
                           {(field) => (
@@ -714,6 +721,7 @@ export const RegistrationPage = ({
                                 markTouched(id)
                               }}
                               onChange={(event) => {
+                                bump('typing')
                                 setValues((previous) => ({
                                   ...previous,
                                   securityAnswers: {
@@ -724,14 +732,20 @@ export const RegistrationPage = ({
                               }}
                             />
                           )}
-                        </Field>
+                        </AuthField>
                       )
                     })}
                   </div>
-                </Section>
+                </section>
+              )}
 
-                <div>
-                  <div className="flex items-start gap-3">
+              {currentStep === 'terms' && (
+                <section key="terms" className="auth-section auth-stage">
+                  <h2 className="auth-section-title">
+                    <AuthPixelIcon icon="scroll" size="sm" />
+                    {t('account:registration.steps.terms')}
+                  </h2>
+                  <div className="mt-3 flex items-start gap-3">
                     <input
                       id={FIELD.terms}
                       type="checkbox"
@@ -745,26 +759,26 @@ export const RegistrationPage = ({
                         markTouched(FIELD.terms)
                         setValue('acceptedTerms', event.target.checked)
                       }}
-                      className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                      className="mt-0.5 size-4 shrink-0"
                     />
-                    <label htmlFor={FIELD.terms} className="text-sm text-ink">
+                    <label htmlFor={FIELD.terms} className="text-sm">
                       {t('account:registration.terms')}
                     </label>
                   </div>
 
                   {/*
-                Los documentos van fuera de la etiqueta: una `label` no puede
-                contener otro control sin dejar ambiguo que activa cada clic.
-                Mientras un documento no exista, su control lo dice en lugar de
-                abrir un destino inventado.
-              */}
+                    Los documentos van fuera de la etiqueta: una `label` no puede
+                    contener otro control sin dejar ambiguo que activa cada clic.
+                    Mientras un documento no exista, su control lo dice en lugar de
+                    abrir un destino inventado.
+                  */}
                   <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-7 text-sm">
                     {LEGAL_DOCUMENTS.map((document) =>
                       document.href === null ? (
                         <button
                           key={document.id}
                           type="button"
-                          className="font-medium text-brand underline"
+                          className="auth-link"
                           onClick={() => {
                             setUnavailableDocument(document.label)
                           }}
@@ -777,7 +791,7 @@ export const RegistrationPage = ({
                           href={document.href}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-medium text-brand underline"
+                          className="auth-link"
                         >
                           {document.label}
                         </a>
@@ -786,7 +800,7 @@ export const RegistrationPage = ({
                   </p>
 
                   {unavailableDocument !== null && (
-                    <p role="status" className="mt-2 pl-7 text-xs text-muted">
+                    <p role="status" className="auth-hint mt-2 pl-7">
                       {t('account:registration.documentUnavailable', {
                         document: unavailableDocument,
                       })}
@@ -794,36 +808,45 @@ export const RegistrationPage = ({
                   )}
 
                   {visible[FIELD.terms] !== undefined && (
-                    <p
-                      id={`${FIELD.terms}-error`}
-                      className="mt-2 flex items-start gap-1.5 pl-7 text-sm text-danger"
-                    >
+                    <p id={`${FIELD.terms}-error`} className="auth-error pl-7">
                       <span aria-hidden="true" className="font-bold leading-5">
                         !
                       </span>
                       <span>{MESSAGES.terms}</span>
                     </p>
                   )}
-                </div>
+                </section>
+              )}
 
-                <div className="flex flex-wrap justify-end gap-3">
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      void navigate('/')
-                    }}
-                  >
-                    {t('common:cancel')}
-                  </Button>
-                  <Button type="submit" loading={sending}>
-                    {t('account:registration.submit')}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Button
+                  variant="auth-secondary"
+                  onClick={() => {
+                    void navigate('/')
+                  }}
+                >
+                  {t('common:cancel')}
+                </Button>
+                <div className="flex flex-wrap gap-3">
+                  {step > 0 && (
+                    <Button
+                      variant="auth-secondary"
+                      onClick={() => {
+                        setStep((index) => index - 1)
+                      }}
+                    >
+                      {t('account:registration.back')}
+                    </Button>
+                  )}
+                  <Button type="submit" variant="auth-primary" loading={isLast && sending}>
+                    {isLast ? t('account:registration.submit') : t('account:registration.next')}
                   </Button>
                 </div>
-              </form>
-            </>
-          )}
-        </main>
-      </div>
-    </div>
+              </div>
+            </form>
+          </>
+        )}
+      </main>
+    </AuthScene>
   )
 }
