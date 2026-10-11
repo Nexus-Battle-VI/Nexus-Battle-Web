@@ -77,6 +77,9 @@ const FORBIDDEN_MARKERS = [
   'ShellRemasterPreview',
   'sujeto-armazon-vista-previa',
   'sfx-pad-vista-previa',
+  '__dev/admin/console',
+  'AdminConsolePreview',
+  'consejo-vista-previa',
 ]
 
 /**

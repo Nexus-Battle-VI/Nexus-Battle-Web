@@ -82,3 +82,51 @@ export const cropGrid = (sheet, names, cell) =>
     const y = ((index - (index % 4)) / 4) * cell
     return [{ name, png: crop(sheet, x, y, cell, cell) }]
   })
+
+/**
+ * Centro de una placa a lo largo de un eje. Una placa cortada por el borde
+ * del lienzo mide menos que las demas: su centro real se deduce del borde que
+ * SI se ve y del tamano que tendria entera.
+ * @param {number} start @param {number} size @param {number} plate @param {number} limit
+ * @returns {number}
+ */
+export const plateCentre = (start, size, plate, limit) => {
+  if (size >= plate) return start + size / 2
+  if (start === 0) return start + size - plate / 2
+  if (start + size === limit) return start + plate / 2
+  return start + size / 2
+}
+
+/**
+ * PixelLab no encaja las placas en la cuadricula: miden ~100x98 y las de los
+ * bordes salen recortadas. Se toma el INTERIOR de cada placa (el objeto con su
+ * fondo, sin el marco), centrado en la placa completa aunque esta quede
+ * cortada, para que todos los iconos salgan iguales.
+ * @param {PNG} sheet
+ * @param {number} expected numero de placas que debe traer la hoja
+ * @param {number} [side] lado del recorte (72 por defecto, para placas de ~100 px)
+ * @returns {PNG[]}
+ */
+export const plateInteriors = (sheet, expected, side = 72) => {
+  // Las placas son las `expected` piezas mayores; lo demas son chispas o
+  // particulas sueltas del brillo que PixelLab dibuja fuera del marco.
+  const boxes = components(sheet)
+    .sort((a, b) => b.w * b.h - a.w * a.h)
+    .slice(0, expected)
+  const smallest = Math.min(...boxes.map((box) => box.w * box.h))
+  const largest = Math.max(...boxes.map((box) => box.w * box.h))
+  if (boxes.length !== expected || smallest < largest / 3) {
+    throw new Error(`se esperaban ${String(expected)} placas de tamano parecido`)
+  }
+  const plateW = Math.max(...boxes.map((box) => box.w))
+  const plateH = Math.max(...boxes.map((box) => box.h))
+  return boxes
+    .sort((a, b) => Math.round(a.y / 50) - Math.round(b.y / 50) || a.x - b.x)
+    .map((box) => {
+      const cx = plateCentre(box.x, box.w, plateW, sheet.width)
+      const cy = plateCentre(box.y, box.h, plateH, sheet.height)
+      const x = Math.min(sheet.width - side, Math.max(0, Math.round(cx - side / 2)))
+      const y = Math.min(sheet.height - side, Math.max(0, Math.round(cy - side / 2)))
+      return crop(sheet, x, y, side, side)
+    })
+}

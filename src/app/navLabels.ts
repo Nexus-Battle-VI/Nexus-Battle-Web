@@ -24,4 +24,11 @@ export const ADMIN_NAV_LABEL_KEYS: Readonly<Record<string, string>> = {
   '/admin/roles': 'app:nav.roles',
   '/admin/auction-metrics': 'app:nav.auctionMetrics',
   '/admin/comments/moderation': 'app:nav.moderation',
+  // EN-031: las cuatro del chatbot no tenian traduccion (salian siempre en español).
+  '/admin/chatbot': 'app:nav.chatbotModel',
+  '/admin/chatbot/knowledge': 'app:nav.chatbotKnowledge',
+  '/admin/chatbot/analytics': 'app:nav.chatbotAnalytics',
+  '/admin/chatbot/tickets': 'app:nav.chatbotTickets',
+  '/auction/publish-official': 'app:nav.officialAuction',
+  '/admin': 'app:nav.console',
 }

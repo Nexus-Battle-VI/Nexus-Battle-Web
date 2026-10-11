@@ -21,7 +21,7 @@ import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { PNG } from 'pngjs'
 
-import { components, crop, readPng } from './pixel-assets-lib.mjs'
+import { components, plateInteriors, readPng } from './pixel-assets-lib.mjs'
 
 const args = process.argv.slice(2)
 const sourceIndex = args.indexOf('--source')
@@ -149,50 +149,11 @@ const NAV_ICONS = [
   'logout',
   'gem',
 ]
-/**
- * Centro de una placa a lo largo de un eje. Una placa cortada por el borde
- * del lienzo mide menos que las demas: su centro real se deduce del borde que
- * SI se ve y del tamano que tendria entera.
- * @param {number} start @param {number} size @param {number} plate @param {number} limit
- * @returns {number}
- */
-const plateCentre = (start, size, plate, limit) => {
-  if (size >= plate) return start + size / 2
-  if (start === 0) return start + size - plate / 2
-  if (start + size === limit) return start + plate / 2
-  return start + size / 2
-}
-
-/**
- * PixelLab no encaja las placas en la cuadricula: miden ~100x98 y las de los
- * bordes salen recortadas. Se toma el INTERIOR de cada placa (el objeto con su
- * fondo, sin el marco), centrado en la placa completa aunque esta quede
- * cortada, para que todos los iconos salgan iguales.
- * @param {PNG} sheet
- * @returns {PNG[]}
- */
-const plateInteriors = (sheet) => {
-  const boxes = components(sheet)
-  if (boxes.length !== NAV_ICONS.length) {
-    throw new Error(`se esperaban ${String(NAV_ICONS.length)} placas, hay ${String(boxes.length)}`)
-  }
-  const plateW = Math.max(...boxes.map((box) => box.w))
-  const plateH = Math.max(...boxes.map((box) => box.h))
-  const side = 72
-  return boxes
-    .sort((a, b) => Math.round(a.y / 50) - Math.round(b.y / 50) || a.x - b.x)
-    .map((box) => {
-      const cx = plateCentre(box.x, box.w, plateW, sheet.width)
-      const cy = plateCentre(box.y, box.h, plateH, sheet.height)
-      const x = Math.min(sheet.width - side, Math.max(0, Math.round(cx - side / 2)))
-      const y = Math.min(sheet.height - side, Math.max(0, Math.round(cy - side / 2)))
-      return crop(sheet, x, y, side, side)
-    })
-}
-
 process.stdout.write('iconos\n')
 for (const theme of THEMES) {
-  plateInteriors(readPng(join(RAW, `nav-icons-${theme}.png`))).forEach((png, index) => {
-    write('nav', `icon-${NAV_ICONS[index] ?? 'sin-nombre'}-${theme}.png`, png)
-  })
+  plateInteriors(readPng(join(RAW, `nav-icons-${theme}.png`)), NAV_ICONS.length).forEach(
+    (png, index) => {
+      write('nav', `icon-${NAV_ICONS[index] ?? 'sin-nombre'}-${theme}.png`, png)
+    },
+  )
 }

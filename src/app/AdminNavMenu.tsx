@@ -115,6 +115,24 @@ export const AdminNavMenu = (): React.JSX.Element | null => {
           className="absolute left-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-surface-raised py-1 shadow-2xl backdrop-blur-md"
           data-testid="admin-nav-dropdown"
         >
+          {/* EN-031: entrada a la Consola del Consejo, con todas las secciones. */}
+          <NavLink
+            to="/admin"
+            end
+            role="menuitem"
+            onClick={() => {
+              setIsOpen(false)
+            }}
+            className={({ isActive: linkActive }) =>
+              clsx(
+                'block px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-brand/10',
+                linkActive && 'text-brand',
+              )
+            }
+          >
+            {t('app:nav.console')}
+          </NavLink>
+          <div role="separator" className="my-1 border-t border-border" />
           {items.map((item) => (
             <NavLink
               key={item.path}

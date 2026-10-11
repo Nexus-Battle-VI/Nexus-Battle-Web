@@ -68,6 +68,21 @@ describe('AdminNavMenu', () => {
     expect(screen.getByRole('menuitem', { name: 'Gestionar roles' })).toBeInTheDocument()
   })
 
+  it.each([['MODERATOR'], ['ADMINISTRATOR'], ['SUPER_ADMINISTRATOR']])(
+    'con %s el primer acceso es la Consola de mando (EN-031)',
+    async (role) => {
+      const user = userEvent.setup()
+      useSession.setState({ roles: [role] })
+      renderMenu()
+
+      await user.click(screen.getByTestId('admin-nav-trigger'))
+
+      const items = screen.getAllByRole('menuitem')
+      expect(items[0]).toHaveAccessibleName('Consola de mando')
+      expect(items[0]).toHaveAttribute('href', '/admin')
+    },
+  )
+
   it('con MODERATOR solo muestra "Moderación de comentarios"', async () => {
     const user = userEvent.setup()
     useSession.setState({ roles: ['MODERATOR'] })

@@ -18,6 +18,9 @@ export type ButtonVariant =
   | 'missions-danger'
   | 'auth-primary'
   | 'auth-secondary'
+  | 'admin-primary'
+  | 'admin-ghost'
+  | 'admin-danger'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant
@@ -72,6 +75,10 @@ const VARIANTS: Readonly<Record<ButtonVariant, string>> = {
    */
   'auth-primary': 'auth-btn-primary text-ink',
   'auth-secondary': 'auth-btn-secondary text-ink',
+  // EN-031: Consola del Consejo (`src/components/admin-kit/admin-kit.css`).
+  'admin-primary': 'ak-btn-primary',
+  'admin-ghost': 'ak-btn-ghost text-ink',
+  'admin-danger': 'ak-btn-danger',
 }
 
 export const Button = ({

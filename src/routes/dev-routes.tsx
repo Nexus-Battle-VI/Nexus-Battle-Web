@@ -273,6 +273,13 @@ if (import.meta.env.DEV) {
       default: module.ShellRemasterPreview,
     })),
   )
+  // EN-031: Consola del Consejo (salon, barra lateral, panel de inicio) con
+  // pendientes de ejemplo y un rol a elegir.
+  const AdminConsolePreviewLazy = lazy(() =>
+    import('./AdminConsolePreview').then((module) => ({
+      default: module.AdminConsolePreview,
+    })),
+  )
   const AppLayoutLazy = lazy(() =>
     import('@/app/AppLayout').then((module) => ({ default: module.AppLayout })),
   )
@@ -387,6 +394,25 @@ if (import.meta.env.DEV) {
     // necesitan Auction respondiendo de verdad. Este preview monta la pantalla de produccion
     // con un transporte inyectado y datos de ejemplo; `?state=` elige el estado (design,
     // loading, degraded, partial, no-catalog, empty, invalid, forbidden, unavailable).
+    // EN-031: ver comentario junto a `AdminConsolePreviewLazy`.
+    {
+      path: '__dev/admin/console',
+      element: (
+        <Suspense fallback={null}>
+          <AppLayoutLazy />
+        </Suspense>
+      ),
+      children: [
+        {
+          index: true,
+          element: (
+            <Suspense fallback={null}>
+              <AdminConsolePreviewLazy />
+            </Suspense>
+          ),
+        },
+      ],
+    },
     // EN-031: ver comentario junto a `ShellRemasterPreviewLazy`.
     {
       path: '__dev/shell',

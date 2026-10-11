@@ -18,7 +18,13 @@
     "openMenu": "Abrir menu de navegação",
     "closeMenu": "Fechar menu de navegação",
     "drawerLabel": "Menu de navegação",
-    "drawerNav": "Módulos"
+    "drawerNav": "Módulos",
+    "console": "Console de comando",
+    "chatbotModel": "Modelo do chatbot",
+    "chatbotKnowledge": "Dicionário do chatbot",
+    "chatbotAnalytics": "Análises do chatbot",
+    "chatbotTickets": "Tickets do chatbot",
+    "officialAuction": "Publicar leilão oficial"
   },
   "session": {
     "signUp": "Criar conta",
