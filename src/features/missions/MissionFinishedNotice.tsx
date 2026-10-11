@@ -7,6 +7,8 @@ import { useCallAt } from '@/shared/countdown'
 
 import { useActiveMissions } from './useActiveMissions'
 import { useTranslation } from 'react-i18next'
+import { MissionPixelIcon } from './MissionPixelIcon'
+import './missions.css'
 
 interface FinishedMission {
   readonly enrollmentId: string
@@ -63,31 +65,31 @@ export const MissionFinishedNotice = (): React.JSX.Element | null => {
       className="fixed inset-x-4 bottom-4 z-50 flex flex-col gap-2 sm:left-auto sm:w-96"
     >
       {finished.map((mission) => (
-        <div
-          key={mission.enrollmentId}
-          className="flex flex-col gap-2 rounded-lg border border-brand/60 bg-surface-raised p-4 text-sm shadow-lg"
-        >
-          <p className="font-semibold text-ink">
-            {t('missions:notice.finished', { name: mission.missionName })}
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              to={`/missions/reports/${encodeURIComponent(mission.enrollmentId)}`}
-              onClick={() => {
-                dismiss(mission.enrollmentId)
-              }}
-              className="font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
-            >
-              {t('missions:notice.viewReport')}
-            </Link>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                dismiss(mission.enrollmentId)
-              }}
-            >
-              {t('missions:notice.close')}
-            </Button>
+        <div key={mission.enrollmentId} className="msn-toast flex gap-3 p-4 text-sm">
+          <MissionPixelIcon icon="chest" size="lg" />
+          <div className="flex flex-col gap-2">
+            <p className="msn-toast-title">
+              {t('missions:notice.finished', { name: mission.missionName })}
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                to={`/missions/reports/${encodeURIComponent(mission.enrollmentId)}`}
+                onClick={() => {
+                  dismiss(mission.enrollmentId)
+                }}
+                className="font-semibold text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+              >
+                {t('missions:notice.viewReport')}
+              </Link>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  dismiss(mission.enrollmentId)
+                }}
+              >
+                {t('missions:notice.close')}
+              </Button>
+            </div>
           </div>
         </div>
       ))}
