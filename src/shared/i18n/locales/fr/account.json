@@ -17,6 +17,14 @@
       "saved": "Langue enregistrée dans votre compte.",
       "failed": "La langue n'a pas pu être enregistrée dans votre compte. La langue précédente a été rétablie ; veuillez réessayer.",
       "contentNote": "Les noms des produits, des héros et des compétences, ainsi que les messages du chat, sont affichés tels qu’ils ont été créés."
+    },
+    "sound": {
+      "title": "Effets sonores",
+      "description": "Sons 8 bits lors de la navigation, de l’ouverture des menus et des actions terminées. Enregistrés dans ce navigateur.",
+      "on": "Activés",
+      "onHint": "Ils accompagnent chaque interaction.",
+      "off": "Désactivés",
+      "offHint": "L’interface reste silencieuse."
     }
   },
   "page": {

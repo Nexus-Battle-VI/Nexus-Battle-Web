@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState } from 'react'
 
 import { useSession } from '@/shared/session'
+import { playSfx, type SfxName } from '@/shared/sound'
 
 /**
  * Vista previa de desarrollo del armazon remasterizado (EN-031): el mundo vivo
@@ -19,6 +20,15 @@ const ROLES = [
   ['Administrador', 'ADMINISTRATOR'],
   ['Super administrador', 'SUPER_ADMINISTRATOR'],
 ] as const
+
+const SOUNDS: readonly SfxName[] = [
+  'click',
+  'menuOpen',
+  'menuClose',
+  'success',
+  'error',
+  'notification',
+]
 
 export const ShellRemasterPreview = (): React.JSX.Element => {
   const [role, setRole] = useState<string>('PLAYER')
@@ -51,6 +61,30 @@ export const ShellRemasterPreview = (): React.JSX.Element => {
               }}
             >
               {label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section
+        data-preview="sfx-pad-vista-previa"
+        className="rounded-xl border border-border bg-surface-raised/90 p-5"
+      >
+        <h2 className="text-base font-semibold text-ink">Efectos de sonido</h2>
+        <p className="mt-1 text-sm text-muted">
+          Activa el sonido con el altavoz de la cabecera y prueba cada efecto.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {SOUNDS.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className="rounded-md border border-border px-3 py-1 text-sm"
+              onClick={() => {
+                playSfx(name)
+              }}
+            >
+              {name}
             </button>
           ))}
         </div>

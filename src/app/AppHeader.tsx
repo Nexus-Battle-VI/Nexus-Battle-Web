@@ -6,6 +6,7 @@ import { MobileNavDrawer } from './MobileNavDrawer'
 import { PendingClaimsBadge } from './PendingClaimsBadge'
 import { PrimaryNav } from './PrimaryNav'
 import { SessionControl } from './SessionControl'
+import { SoundToggle } from '@/components/shell/SoundToggle'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import './shell.css'
 import { ACCOUNT_PATH, ECOMMERCE_PATH } from '@/routes/routes'
@@ -71,6 +72,7 @@ export const AppHeader = (): React.JSX.Element => {
           <PendingClaimsBadge />
           <CreditsBadge />
           {!inAccountArea && <ThemeToggle />}
+          {!inAccountArea && <SoundToggle />}
         </div>
       </div>
     </header>
