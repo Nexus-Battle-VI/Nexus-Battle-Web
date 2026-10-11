@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import { useSession } from '@/shared/session'
+import { playSfx } from '@/shared/sound'
 import { primaryRole, roleLabel } from '@/shared/rbac'
 import { ChevronDown, LogOut, Package, User } from '@/components/ui/icons'
 import { Avatar } from '@/components/ui/Avatar'
@@ -124,6 +125,7 @@ export const SessionControl = (): React.JSX.Element | null => {
         aria-expanded={isOpen}
         aria-label={t('app:session.menu')}
         onClick={() => {
+          playSfx(isOpen ? 'menuClose' : 'menuOpen')
           setIsOpen((prev) => !prev)
         }}
         className="flex items-center gap-2 rounded-lg border border-brand/60 bg-brand/12 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-brand/20"

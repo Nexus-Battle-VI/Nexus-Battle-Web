@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { adminNavigationForPrimaryRole, navigationForPrimaryRole } from '@/routes/routes'
 import { primaryRole } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
+import { playSfx } from '@/shared/sound'
 
 import { ADMIN_NAV_LABEL_KEYS, NAV_LABEL_KEYS } from './navLabels'
 import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
@@ -45,6 +46,7 @@ export const MobileNavDrawer = (): React.JSX.Element => {
   const drawerId = useId()
 
   const close = (returnFocus: boolean): void => {
+    playSfx('menuClose')
     setOpenedAt(null)
     if (returnFocus) triggerRef.current?.focus()
   }
@@ -90,6 +92,7 @@ export const MobileNavDrawer = (): React.JSX.Element => {
         aria-expanded={open}
         aria-controls={open ? drawerId : undefined}
         onClick={() => {
+          playSfx('menuOpen')
           setOpenedAt(pathname)
         }}
         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:hidden"
@@ -142,7 +145,13 @@ export const MobileNavDrawer = (): React.JSX.Element => {
                     const labelKey = NAV_LABEL_KEYS[item.path]
                     return (
                       <li key={item.path}>
-                        <NavLink to={item.path} className="nb-drawer-link">
+                        <NavLink
+                          to={item.path}
+                          className="nb-drawer-link"
+                          onClick={() => {
+                            playSfx('click')
+                          }}
+                        >
                           {icon !== null && <NavPixelIcon icon={icon} size="md" />}
                           {labelKey === undefined ? item.label : t(labelKey)}
                         </NavLink>
@@ -161,7 +170,13 @@ export const MobileNavDrawer = (): React.JSX.Element => {
                         const labelKey = ADMIN_NAV_LABEL_KEYS[item.path]
                         return (
                           <li key={item.path}>
-                            <NavLink to={item.path} className="nb-drawer-link">
+                            <NavLink
+                              to={item.path}
+                              className="nb-drawer-link"
+                              onClick={() => {
+                                playSfx('click')
+                              }}
+                            >
                               <NavPixelIcon icon="console" size="md" />
                               {labelKey === undefined ? item.label : t(labelKey)}
                             </NavLink>

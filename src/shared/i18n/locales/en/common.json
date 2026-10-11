@@ -71,5 +71,10 @@
     "loading": "Loading preview…",
     "unavailable": "3D preview is not available in this environment.",
     "unavailableFor": "Preview not available for \"{{id}}\"."
+  },
+  "sound": {
+    "toggle": "Sound effects",
+    "on": "Sound on",
+    "off": "Sound off"
   }
 }

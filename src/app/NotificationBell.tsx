@@ -11,6 +11,7 @@ import {
 import { NotificationRow } from '@/features/notifications/NotificationRow'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
+import { playSfx } from '@/shared/sound'
 
 /** Cuantas se muestran en el panel; el resto, en el historial. */
 const SHOWN = 5
@@ -51,14 +52,29 @@ export const NotificationBell = (): React.JSX.Element | null => {
     refetchInterval: REFRESH_MS,
   })
 
+  // EN-031: suena SOLO cuando llegan notificaciones nuevas (el contador sube
+  // respecto a la lectura anterior), nunca en la primera carga ni al bajar.
+  const pendingCount = query.data?.length
+  const previousCount = useRef<number | null>(null)
+  useEffect(() => {
+    if (pendingCount === undefined) return
+    if (previousCount.current !== null && pendingCount > previousCount.current) {
+      playSfx('notification')
+    }
+    previousCount.current = pendingCount
+  }, [pendingCount])
+
   const markRead = useMutation({
     mutationFn: markCatalogNotificationsRead,
+    // Se lanza sola al abrir el panel: no es una accion que deba sonar.
+    meta: { sfx: false },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.history(subject) })
     },
   })
 
   const close = (returnFocus: boolean): void => {
+    playSfx('menuClose')
     setOpen(false)
     void queryClient.invalidateQueries({ queryKey: key })
     if (returnFocus) buttonRef.current?.focus()
@@ -106,6 +122,7 @@ export const NotificationBell = (): React.JSX.Element | null => {
       close(false)
       return
     }
+    playSfx('menuOpen')
     setOpen(true)
     const ids = [...new Set(shown.flatMap((item) => item.notificationIds))]
     if (ids.length > 0) markRead.mutate(ids)

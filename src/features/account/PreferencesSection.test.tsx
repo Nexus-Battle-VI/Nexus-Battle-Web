@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { PreferencesSection } from './PreferencesSection'
 import { LANGUAGE_STORAGE_KEY, useLanguage } from '@/shared/i18n/language'
 import { queryKeys } from '@/shared/query-keys'
+import { SFX_STORAGE_KEY, useSfxSettings } from '@/shared/sound'
 import { THEME_STORAGE_KEY, initTheme, useTheme } from '@/shared/theme'
 
 import type { OwnAccount } from './api'
@@ -80,6 +81,26 @@ describe('PreferencesSection — tema', () => {
     expect(globalThis.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark')
     // El tema no toca el idioma.
     expect(useLanguage.getState().language).toBe('es')
+  })
+})
+
+describe('PreferencesSection — sonido (EN-031)', () => {
+  it('arranca en Desactivados y escribe el MISMO store que la cabecera', async () => {
+    const user = userEvent.setup()
+    useSfxSettings.setState({ enabled: false })
+    renderSection()
+
+    const group = screen.getByRole('group', { name: 'Efectos de sonido' })
+    expect(within(group).getByRole('button', { name: /Desactivados/u })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    await user.click(within(group).getByRole('button', { name: /^Activados/u }))
+
+    expect(useSfxSettings.getState().enabled).toBe(true)
+    expect(globalThis.localStorage.getItem(SFX_STORAGE_KEY)).toBe('on')
+    useSfxSettings.getState().setEnabled(false)
   })
 })
 

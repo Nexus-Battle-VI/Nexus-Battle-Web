@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { adminNavigationForPrimaryRole } from '@/routes/routes'
 import { primaryRole } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
+import { playSfx } from '@/shared/sound'
 import { ChevronDown } from '@/components/ui/icons'
 
 import { ADMIN_NAV_LABEL_KEYS } from './navLabels'
@@ -90,6 +91,7 @@ export const AdminNavMenu = (): React.JSX.Element | null => {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={() => {
+          playSfx(isOpen ? 'menuClose' : 'menuOpen')
           setIsOpen((prev) => !prev)
         }}
         className={clsx(

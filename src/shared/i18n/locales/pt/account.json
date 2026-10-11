@@ -17,6 +17,14 @@
       "saved": "Idioma salvo na sua conta.",
       "failed": "Não foi possível salvar o idioma na sua conta. O idioma anterior foi restaurado; tente novamente.",
       "contentNote": "Os nomes de produtos, heróis e habilidades, e as mensagens do chat, são exibidos exatamente como foram criados."
+    },
+    "sound": {
+      "title": "Efeitos sonoros",
+      "description": "Sons 8-bit ao navegar, abrir menus e concluir ações. Salvos neste navegador.",
+      "on": "Ativados",
+      "onHint": "Tocam a cada interação.",
+      "off": "Desativados",
+      "offHint": "A interface fica em silêncio."
     }
   },
   "page": {
