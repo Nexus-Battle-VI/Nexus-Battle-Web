@@ -1,12 +1,16 @@
 import { useState } from 'react'
-import type { ReactNode, SyntheticEvent } from 'react'
+import type { SyntheticEvent } from 'react'
 import { Link } from 'react-router'
-import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import { AuthField } from '@/components/auth/AuthField'
+import { AuthPixelIcon } from '@/components/auth/AuthPixelIcon'
+import type { AuthIconName } from '@/components/auth/authRemasterAssets'
+import { AuthScene } from '@/components/auth/AuthScene'
+import { PasswordRequirements } from '@/components/auth/PasswordRequirements'
 import { Button } from '@/components/ui/Button'
-import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { PasswordField } from '@/components/ui/PasswordField'
+import { passwordRequirements } from '@/features/account/registration/passwordRequirements'
 import { HttpError } from '@/lib/http'
 import {
   resetRecoveryPassword,
@@ -29,59 +33,12 @@ type Step = 'identify' | 'questions' | 'code' | 'password' | 'done'
 
 const STEPS: readonly Exclude<Step, 'done'>[] = ['identify', 'questions', 'code', 'password']
 
-const CONTROL_CLASS =
-  'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
-
-const Field = ({
-  id,
-  label,
-  hint,
-  error,
-  children,
-}: {
-  readonly id: string
-  readonly label: string
-  readonly hint?: string
-  readonly error?: string
-  readonly children: (props: {
-    readonly id: string
-    readonly 'aria-invalid': boolean
-    readonly 'aria-describedby': string | undefined
-    readonly className: string
-  }) => ReactNode
-}): React.JSX.Element => {
-  const describedBy = [
-    hint === undefined ? null : `${id}-hint`,
-    error === undefined ? null : `${id}-error`,
-  ]
-    .filter((value) => value !== null)
-    .join(' ')
-
-  return (
-    <div className="w-full min-w-0">
-      <label htmlFor={id} className="block text-sm font-medium text-ink">
-        {label}
-      </label>
-      <div className="mt-1.5">
-        {children({
-          id,
-          'aria-invalid': error !== undefined,
-          'aria-describedby': describedBy === '' ? undefined : describedBy,
-          className: clsx(CONTROL_CLASS, error === undefined ? 'border-border' : 'border-danger'),
-        })}
-      </div>
-      {hint !== undefined && (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-muted">
-          {hint}
-        </p>
-      )}
-      {error !== undefined && (
-        <p id={`${id}-error`} className="mt-1.5 text-sm text-danger">
-          {error}
-        </p>
-      )}
-    </div>
-  )
+/** Icono de cada paso en el indicador de progreso. */
+const STEP_ICON: Readonly<Record<Exclude<Step, 'done'>, AuthIconName>> = {
+  identify: 'mail',
+  questions: 'question',
+  code: 'authenticator',
+  password: 'key',
 }
 
 /** Clave del aviso (se traduce al pintar). */
@@ -228,45 +185,42 @@ export const RecoveryPage = ({
     }
   }
 
+  const stepIndex = step === 'done' ? STEPS.length : STEPS.indexOf(step)
+
   return (
-    <div className="min-h-dvh px-4 py-8 text-ink sm:px-6">
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
-        <div className="flex justify-end">
-          <ThemeToggle />
-        </div>
-
-        <NexusBrandHeader />
-
-        <nav
-          aria-label={t('auth:recovery.progress')}
-          className="flex flex-wrap gap-x-3 gap-y-1 text-xs"
-        >
-          {STEPS.map((item) => (
+    <AuthScene width="lg">
+      <main className="auth-panel flex flex-col gap-6">
+        <nav aria-label={t('auth:recovery.progress')} className="auth-steps">
+          {STEPS.map((item, index) => (
             <span
               key={item}
-              className={clsx(
-                'font-semibold',
-                item === step ? 'border-b-2 border-brand text-ink' : 'text-muted',
-              )}
+              className="auth-step"
+              aria-current={item === step ? 'step' : undefined}
+              data-state={index < stepIndex ? 'done' : index === stepIndex ? 'current' : 'pending'}
             >
+              <AuthPixelIcon icon={STEP_ICON[item]} size="lg" />
               {t(`auth:recovery.steps.${item}`)}
             </span>
           ))}
         </nav>
 
         {step === 'identify' && (
-          <form noValidate onSubmit={(event) => void handleIdentify(event)} className="space-y-5">
+          <form
+            noValidate
+            onSubmit={(event) => void handleIdentify(event)}
+            className="auth-stage space-y-5"
+          >
             <div>
-              <p className="text-xs text-muted">{t('auth:recovery.breadcrumb')}</p>
-              <h1 className="mt-2 text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
-              <p className="mt-2 text-sm text-muted">{t('auth:recovery.identifyBody')}</p>
+              <p className="auth-hint">{t('auth:recovery.breadcrumb')}</p>
+              <h1 className="auth-title mt-2">{t('auth:recovery.title')}</h1>
+              <p className="auth-subtitle">{t('auth:recovery.identifyBody')}</p>
             </div>
             {message !== null && (
-              <p role="alert" className="text-sm text-danger">
+              <p role="alert" className="auth-alert">
                 {t(message)}
               </p>
             )}
-            <Field
+            <AuthField
               id={RECOVERY_FIELD.email}
               label={t('auth:recovery.email')}
               hint={t('auth:recovery.identifyBody')}
@@ -284,24 +238,28 @@ export const RecoveryPage = ({
                   }}
                 />
               )}
-            </Field>
-            <Button type="submit" loading={submitting} className="w-full">
+            </AuthField>
+            <Button type="submit" variant="auth-primary" loading={submitting} className="w-full">
               {t('auth:recovery.continue')}
             </Button>
-            <Link to="/login" className="inline-block text-sm font-medium text-brand underline">
+            <Link to="/login" className="auth-link inline-block text-sm">
               {t('auth:recovery.backToLogin')}
             </Link>
           </form>
         )}
 
         {step === 'questions' && (
-          <form noValidate onSubmit={(event) => void handleAnswers(event)} className="space-y-5">
+          <form
+            noValidate
+            onSubmit={(event) => void handleAnswers(event)}
+            className="auth-stage space-y-5"
+          >
             <div>
-              <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
-              <p className="mt-2 text-sm text-muted">{t('auth:recovery.questionsBody')}</p>
+              <h1 className="auth-title">{t('auth:recovery.title')}</h1>
+              <p className="auth-subtitle">{t('auth:recovery.questionsBody')}</p>
             </div>
             {message !== null && (
-              <p role="alert" className="text-sm text-danger">
+              <p role="alert" className="auth-alert">
                 {t(message)}
               </p>
             )}
@@ -310,7 +268,7 @@ export const RecoveryPage = ({
               const errors = attempted ? validateAnswersStep(questions, answers) : {}
 
               return (
-                <Field
+                <AuthField
                   key={question.id}
                   id={fieldId}
                   label={t('auth:recovery.question', { number: String(index + 1) })}
@@ -332,64 +290,74 @@ export const RecoveryPage = ({
                       }}
                     />
                   )}
-                </Field>
+                </AuthField>
               )
             })}
-            <Button type="submit" loading={submitting} className="w-full">
+            <Button type="submit" variant="auth-primary" loading={submitting} className="w-full">
               {t('auth:recovery.continue')}
             </Button>
           </form>
         )}
 
         {step === 'code' && (
-          <form noValidate onSubmit={(event) => void handleCode(event)} className="space-y-5">
+          <form
+            noValidate
+            onSubmit={(event) => void handleCode(event)}
+            className="auth-stage space-y-5"
+          >
             <div>
-              <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
-              <p className="mt-2 text-sm text-muted">{t('auth:recovery.codeBody')}</p>
+              <h1 className="auth-title">{t('auth:recovery.title')}</h1>
+              <p className="auth-subtitle">{t('auth:recovery.codeBody')}</p>
             </div>
             {message !== null && (
-              <p role="alert" className="text-sm text-danger">
+              <p role="alert" className="auth-alert">
                 {t(message)}
               </p>
             )}
-            <Field
+            <AuthField
               id={RECOVERY_FIELD.code}
               label={t('auth:recovery.code')}
               hint={t('auth:recovery.codeHint')}
               {...(codeError === undefined ? {} : { error: codeError })}
             >
               {(props) => (
-                <input
-                  {...props}
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  placeholder={t('auth:recovery.codePlaceholder')}
-                  value={code}
-                  onChange={(event) => {
-                    setCode(event.target.value)
-                  }}
-                />
+                <div className="auth-code">
+                  <input
+                    {...props}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder={t('auth:recovery.codePlaceholder')}
+                    value={code}
+                    onChange={(event) => {
+                      setCode(event.target.value)
+                    }}
+                  />
+                </div>
               )}
-            </Field>
-            <Button type="submit" loading={submitting} className="w-full">
+            </AuthField>
+            <Button type="submit" variant="auth-primary" loading={submitting} className="w-full">
               {t('auth:recovery.continue')}
             </Button>
           </form>
         )}
 
         {step === 'password' && (
-          <form noValidate onSubmit={(event) => void handlePassword(event)} className="space-y-5">
+          <form
+            noValidate
+            onSubmit={(event) => void handlePassword(event)}
+            className="auth-stage space-y-5"
+          >
             <div>
-              <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.title')}</h1>
-              <p className="mt-2 text-sm text-muted">{t('auth:recovery.passwordBody')}</p>
+              <h1 className="auth-title">{t('auth:recovery.title')}</h1>
+              <p className="auth-subtitle">{t('auth:recovery.passwordBody')}</p>
             </div>
             {message !== null && (
-              <p role="alert" className="text-sm text-danger">
+              <p role="alert" className="auth-alert">
                 {t(message)}
               </p>
             )}
-            <Field
+            <AuthField
               id={RECOVERY_FIELD.password}
               label={t('auth:recovery.newPassword')}
               hint={t('auth:recovery.newPasswordHint')}
@@ -398,19 +366,24 @@ export const RecoveryPage = ({
                 : { error: passwordErrors[RECOVERY_FIELD.password] })}
             >
               {(props) => (
-                <input
+                <PasswordField
                   {...props}
-                  type="password"
                   autoComplete="new-password"
                   placeholder={t('auth:recovery.newPasswordPlaceholder')}
                   value={password}
+                  eyeIcon={<AuthPixelIcon icon="eye" size="sm" />}
+                  eyeOffIcon={<AuthPixelIcon icon="eye-off" size="sm" />}
                   onChange={(event) => {
                     setPassword(event.target.value)
                   }}
                 />
               )}
-            </Field>
-            <Field
+            </AuthField>
+            <PasswordRequirements
+              id="recovery-password-requirements"
+              requirements={passwordRequirements(password, t)}
+            />
+            <AuthField
               id={RECOVERY_FIELD.confirm}
               label={t('auth:recovery.confirm')}
               {...(passwordErrors[RECOVERY_FIELD.confirm] === undefined
@@ -429,26 +402,27 @@ export const RecoveryPage = ({
                   }}
                 />
               )}
-            </Field>
-            <Button type="submit" loading={submitting} className="w-full">
+            </AuthField>
+            <Button type="submit" variant="auth-primary" loading={submitting} className="w-full">
               {t('auth:recovery.save')}
             </Button>
           </form>
         )}
 
         {step === 'done' && (
-          <div className="space-y-4">
-            <h1 className="text-2xl font-semibold text-ink">{t('auth:recovery.doneTitle')}</h1>
-            <p className="text-sm text-muted">{t('auth:recovery.doneBody')}</p>
+          <div className="auth-stage space-y-4 text-center">
+            <AuthPixelIcon icon="check" size="xl" className="mx-auto" />
+            <h1 className="auth-title">{t('auth:recovery.doneTitle')}</h1>
+            <p className="auth-subtitle">{t('auth:recovery.doneBody')}</p>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink"
+              className="auth-btn-primary inline-flex items-center justify-center px-5 py-2 text-sm"
             >
               {t('auth:recovery.goToLogin')}
             </Link>
           </div>
         )}
-      </div>
-    </div>
+      </main>
+    </AuthScene>
   )
 }

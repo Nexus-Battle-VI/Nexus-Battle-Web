@@ -37,7 +37,10 @@
     "AUCTION_SETTLED_LOSER": "Subasta finalizada",
     "AUCTION_SETTLED_WITHOUT_BIDS": "Subasta sin pujas",
     "BATTLE_DROP_GAINED": "Pieza obtenida",
-    "BATTLE_DROP_LOST": "Pieza perdida"
+    "BATTLE_DROP_LOST": "Pieza perdida",
+    "AUCTION_PUBLISHED": "Subasta publicada",
+    "AUCTION_NEW_BID": "Nueva puja",
+    "AUCTION_BID_ACCEPTED": "Puja aceptada"
   },
   "admin": {
     "crumb": "Banner informativo",
@@ -59,5 +62,15 @@
     "active": "Vigente",
     "inactive": "Fuera de vigencia",
     "back": "← Volver"
+  },
+  "bell": {
+    "label": "Notificaciones",
+    "unread": "Notificaciones: {{count}} sin leer",
+    "title": "Notificaciones",
+    "empty": "No tienes notificaciones nuevas.",
+    "failed": "No se pudieron cargar tus notificaciones.",
+    "loading": "Cargando notificaciones...",
+    "viewAll": "Ver todas ›",
+    "more": "Y {{count}} más en el historial."
   }
 }

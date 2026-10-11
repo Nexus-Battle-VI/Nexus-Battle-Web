@@ -201,7 +201,18 @@
       "avatarSize": "El avatar no puede superar los 5 MB.",
       "securityAnswer": "Responde esta pregunta de seguridad.",
       "terms": "Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar."
-    }
+    },
+    "stepsLabel": "Pasos del registro",
+    "steps": {
+      "personal": "Tus datos",
+      "avatar": "Tu avatar",
+      "security": "Seguridad",
+      "terms": "Juramento"
+    },
+    "stepCounter": "Paso {{current}} de {{total}}",
+    "back": "Atrás",
+    "next": "Continuar",
+    "avatarPreview": "Vista previa de tu avatar"
   },
   "statistics": {
     "title": "Estadísticas y logros",

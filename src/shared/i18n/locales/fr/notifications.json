@@ -37,7 +37,10 @@
     "AUCTION_SETTLED_LOSER": "Enchère terminée",
     "AUCTION_SETTLED_WITHOUT_BIDS": "Enchère sans offres",
     "BATTLE_DROP_GAINED": "Objet obtenu",
-    "BATTLE_DROP_LOST": "Objet perdu"
+    "BATTLE_DROP_LOST": "Objet perdu",
+    "AUCTION_PUBLISHED": "Enchère publiée",
+    "AUCTION_NEW_BID": "Nouvelle offre",
+    "AUCTION_BID_ACCEPTED": "Offre acceptée"
   },
   "admin": {
     "crumb": "Bannière d'information",
@@ -59,5 +62,15 @@
     "active": "En vigueur",
     "inactive": "Hors validité",
     "back": "← Retour"
+  },
+  "bell": {
+    "label": "Notifications",
+    "unread": "Notifications : {{count}} non lues",
+    "title": "Notifications",
+    "empty": "Vous n'avez aucune nouvelle notification.",
+    "failed": "Impossible de charger vos notifications.",
+    "loading": "Chargement des notifications...",
+    "viewAll": "Tout voir ›",
+    "more": "Et {{count}} de plus dans l’historique."
   }
 }

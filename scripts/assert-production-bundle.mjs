@@ -66,6 +66,13 @@ const FORBIDDEN_MARKERS = [
   '__dev/missions',
   'MissionsRemasterPreview',
   'matricula-vista-previa',
+  // Artefactos exclusivamente DEV del remaster de Autenticacion (EN-031).
+  '__dev/auth',
+  'AuthRemasterPreview',
+  'reto-vista-previa',
+  '__dev/notifications',
+  'NotificationsRemasterPreview',
+  'sujeto-vista-previa',
 ]
 
 /**

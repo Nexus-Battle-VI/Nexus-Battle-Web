@@ -48,12 +48,24 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u
 
 export const isValidEmail = (value: string): boolean => EMAIL_PATTERN.test(value.trim())
 
+/**
+ * Reglas de la politica de contrasena de HU-01, una por requisito. Son la
+ * UNICA definicion: `isValidPassword` exige todas y el medidor en vivo del
+ * remaster (EN-031) las muestra una a una, asi la ayuda y la validacion no
+ * pueden contradecirse.
+ */
+export const PASSWORD_RULES = [
+  { id: 'length', test: (value: string) => value.length > PASSWORD_EXCLUSIVE_MIN_LENGTH },
+  { id: 'upper', test: (value: string) => /\p{Lu}/u.test(value) },
+  { id: 'lower', test: (value: string) => /\p{Ll}/u.test(value) },
+  { id: 'digit', test: (value: string) => /\p{Nd}/u.test(value) },
+  { id: 'symbol', test: (value: string) => /[^\p{L}\p{N}]/u.test(value) },
+] as const
+
+export type PasswordRuleId = (typeof PASSWORD_RULES)[number]['id']
+
 export const isValidPassword = (value: string): boolean =>
-  value.length > PASSWORD_EXCLUSIVE_MIN_LENGTH &&
-  /\p{Lu}/u.test(value) &&
-  /\p{Ll}/u.test(value) &&
-  /\p{Nd}/u.test(value) &&
-  /[^\p{L}\p{N}]/u.test(value)
+  PASSWORD_RULES.every((rule) => rule.test(value))
 
 export interface RegistrationValues {
   readonly firstName: string

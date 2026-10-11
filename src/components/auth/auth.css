@@ -1,0 +1,538 @@
+/*
+ * ============================================================
+ * AUTENTICACION — remaster visual Sprint 3 (EN-031)
+ * Dark: "La Puerta de la Fortaleza" de noche (piedra, amatista, bronce)
+ * Light: la misma puerta al amanecer (marfil, zafiro, oro)
+ * ============================================================
+ * Mismo criterio que `missions.css` y `account.css`:
+ *   - los PNG de PixelLab (`public/assets/auth/`, ver
+ *     `authRemasterAssets.ts`) son la PIEL; el HTML sigue siendo la unica
+ *     fuente de texto, estado y accesibilidad;
+ *   - todo selector vive bajo `.auth-scene`; los tokens `--auth-*` son propios
+ *     y no sustituyen ningun token global;
+ *   - paneles y botones son superficie CSS con esquinas de tamano fijo, nunca
+ *     `border-image` estirado;
+ *   - el arte es pixel art: `image-rendering: pixelated`.
+ */
+@import '@fontsource/cinzel/latin-600.css';
+@import '@fontsource/cinzel/latin-ext-600.css';
+@import '@fontsource/cinzel/latin-700.css';
+@import '@fontsource/cinzel/latin-ext-700.css';
+
+.auth-scene {
+  --auth-ink: #1d2236;
+  --auth-muted: #4b5470;
+  --auth-title: #17335e;
+  --auth-accent: #8a5a12;
+  --auth-accent-2: #1e4e8c;
+  --auth-danger: #8a2020;
+  --auth-success: #1f6b3a;
+  --auth-panel-bg: rgba(251, 247, 236, 0.9);
+  --auth-panel-border: rgba(120, 82, 20, 0.42);
+  --auth-field-bg: rgba(255, 252, 244, 0.96);
+  --auth-shadow: 0 14px 34px rgba(40, 28, 8, 0.25);
+  --auth-overlay: rgba(251, 247, 236, 0.35);
+  --auth-text-halo: 0 1px 2px rgba(255, 251, 240, 0.9), 0 0 10px rgba(255, 251, 240, 0.6);
+
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  overflow-x: hidden;
+  padding: 16px 16px 0;
+  color: var(--auth-ink);
+}
+:root[data-theme='dark'] .auth-scene {
+  --auth-ink: #efe4cc;
+  --auth-muted: #bdb2d6;
+  --auth-title: #e7c873;
+  --auth-accent: #d1ab52;
+  --auth-accent-2: #a77ae0;
+  --auth-danger: #ee8b84;
+  --auth-success: #7fd39a;
+  --auth-panel-bg: rgba(20, 16, 28, 0.86);
+  --auth-panel-border: rgba(167, 122, 224, 0.4);
+  --auth-field-bg: rgba(12, 10, 18, 0.9);
+  --auth-shadow: 0 16px 38px rgba(0, 0, 0, 0.55);
+  --auth-overlay: rgba(8, 6, 12, 0.35);
+  --auth-text-halo: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.55);
+}
+
+/* Escena a pantalla completa, fija detras del contenido (no se desplaza). */
+.auth-scene::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  image-rendering: pixelated;
+}
+.auth-scene::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--auth-overlay);
+}
+.auth-scene--gate::before {
+  background-image: url('/assets/auth/backgrounds/bg-auth-gate-light.png');
+}
+.auth-scene--oath::before {
+  background-image: url('/assets/auth/backgrounds/bg-auth-oath-light.png');
+}
+:root[data-theme='dark'] .auth-scene--gate::before {
+  background-image: url('/assets/auth/backgrounds/bg-auth-gate-dark.png');
+}
+:root[data-theme='dark'] .auth-scene--oath::before {
+  background-image: url('/assets/auth/backgrounds/bg-auth-oath-dark.png');
+}
+
+.auth-column {
+  position: relative;
+  z-index: 1;
+  padding-bottom: 24px;
+}
+.auth-back {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--auth-ink);
+  text-shadow: var(--auth-text-halo);
+}
+.auth-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth-brand {
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+}
+.auth-scene .auth-brand p {
+  color: var(--auth-ink);
+  text-shadow: var(--auth-text-halo);
+}
+
+/* ------------------------------------------------------------------
+ * Panel del formulario: superficie CSS con esquinas de PixelLab de tamano fijo.
+ * ------------------------------------------------------------------ */
+.auth-panel {
+  position: relative;
+  border: 1px solid var(--auth-panel-border);
+  border-radius: 16px;
+  background: var(--auth-panel-bg);
+  box-shadow: var(--auth-shadow);
+  backdrop-filter: blur(4px);
+  padding: 24px clamp(18px, 4vw, 32px) 28px;
+}
+.auth-panel::before,
+.auth-panel::after {
+  content: '';
+  position: absolute;
+  top: -6px;
+  width: 34px;
+  height: 34px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.auth-panel::before {
+  left: -6px;
+  background-image: url('/assets/auth/ui/corner-tl-light.png');
+}
+.auth-panel::after {
+  right: -6px;
+  background-image: url('/assets/auth/ui/corner-tr-light.png');
+}
+:root[data-theme='dark'] .auth-panel::before {
+  background-image: url('/assets/auth/ui/corner-tl-dark.png');
+}
+:root[data-theme='dark'] .auth-panel::after {
+  background-image: url('/assets/auth/ui/corner-tr-dark.png');
+}
+
+.auth-title {
+  font-family: var(--font-game-display);
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--auth-title);
+}
+.auth-subtitle {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--auth-muted);
+}
+.auth-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-game-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--auth-accent);
+}
+.auth-section {
+  border: 1px solid var(--auth-panel-border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--auth-field-bg) 55%, transparent);
+  padding: 16px;
+}
+
+/* Cada etapa entra deslizandose; sin movimiento reducido. */
+.auth-stage {
+  animation: auth-enter 360ms ease-out both;
+}
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Campos.
+ * ------------------------------------------------------------------ */
+.auth-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--auth-ink);
+}
+.auth-control {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--auth-panel-border);
+  border-radius: 10px;
+  background: var(--auth-field-bg);
+  padding: 9px 12px;
+  font-size: 14px;
+  color: var(--auth-ink);
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+.auth-control::placeholder {
+  color: var(--auth-muted);
+}
+.auth-control:focus-visible {
+  outline: none;
+  border-color: var(--auth-accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--auth-accent) 30%, transparent);
+}
+.auth-control--invalid {
+  border-color: var(--auth-danger);
+}
+.auth-control[type='file']::file-selector-button {
+  margin-right: 12px;
+  border: 1px solid var(--auth-accent);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--auth-accent) 22%, var(--auth-field-bg));
+  padding: 4px 12px;
+  color: var(--auth-ink);
+  font-weight: 600;
+}
+.auth-hint {
+  font-size: 12px;
+  color: var(--auth-muted);
+}
+.auth-error {
+  margin-top: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--auth-danger);
+}
+.auth-scene input[type='checkbox'] {
+  accent-color: var(--auth-accent);
+}
+.auth-scene a.auth-link,
+.auth-scene button.auth-link {
+  font-weight: 600;
+  color: var(--auth-accent-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth-scene a:focus-visible,
+.auth-scene button:focus-visible,
+.auth-scene input:focus-visible {
+  outline: 2px solid var(--auth-accent);
+  outline-offset: 2px;
+}
+
+/* Avisos (resumen de errores, error del servicio, estado). */
+.auth-alert {
+  border: 1px solid var(--auth-danger);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--auth-danger) 12%, var(--auth-panel-bg));
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--auth-ink);
+}
+.auth-notice {
+  border: 1px solid var(--auth-success);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--auth-success) 12%, var(--auth-panel-bg));
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--auth-ink);
+}
+
+/* ------------------------------------------------------------------
+ * Botones (`Button` variantes `auth-*`).
+ * ------------------------------------------------------------------ */
+.auth-btn-primary,
+.auth-btn-secondary {
+  min-height: 42px;
+  border: 1px solid var(--auth-panel-border);
+  border-radius: 10px;
+  background: var(--auth-field-bg);
+  color: var(--auth-ink);
+  font-family: var(--font-game-display);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: var(--auth-shadow);
+  transition:
+    filter 120ms ease-out,
+    transform 100ms ease-out;
+}
+.auth-btn-primary {
+  border-color: var(--auth-accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--auth-accent) 30%, var(--auth-field-bg)),
+    color-mix(in oklab, var(--auth-accent) 55%, var(--auth-field-bg))
+  );
+}
+.auth-btn-primary:hover:not(:disabled),
+.auth-btn-secondary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.auth-btn-primary:active:not(:disabled),
+.auth-btn-secondary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Tarjetas de eleccion del segundo factor. */
+.auth-choice {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--auth-panel-border);
+  border-radius: 12px;
+  background: var(--auth-field-bg);
+  padding: 12px 14px;
+  text-align: left;
+  transition:
+    border-color 120ms ease-out,
+    transform 120ms ease-out;
+}
+.auth-choice:hover:not(:disabled) {
+  border-color: var(--auth-accent);
+  transform: translateY(-1px);
+}
+.auth-choice:disabled {
+  opacity: 0.6;
+}
+
+/* ------------------------------------------------------------------
+ * Codigo de un solo uso: SIGUE siendo un unico <input> (autocompletado del
+ * sistema, `one-time-code`, pegado); las casillas son solo su piel.
+ * ------------------------------------------------------------------ */
+.auth-code {
+  position: relative;
+}
+.auth-code .auth-control {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 22px;
+  letter-spacing: 0.6em;
+  text-align: center;
+  padding-left: 0.6em;
+}
+/* El espaciado es para los digitos: el texto de ayuda se leeria roto. */
+.auth-code .auth-control::placeholder {
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: normal;
+}
+
+/* ------------------------------------------------------------------
+ * Asistente del registro: sellos de los pasos.
+ * ------------------------------------------------------------------ */
+.auth-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.auth-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--auth-muted);
+}
+.auth-step img {
+  width: 56px;
+  height: 56px;
+  image-rendering: pixelated;
+  filter: grayscale(0.9) brightness(0.8);
+  opacity: 0.75;
+  transition:
+    filter 200ms ease-out,
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
+}
+.auth-step[data-state='done'] img {
+  filter: none;
+  opacity: 1;
+}
+.auth-step[data-state='current'] {
+  color: var(--auth-ink);
+}
+.auth-step[data-state='current'] img {
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--auth-accent) 70%, transparent));
+  opacity: 1;
+  transform: scale(1.08);
+}
+.auth-step-check {
+  position: absolute;
+  top: -2px;
+  right: calc(50% - 32px);
+}
+
+/* Requisitos de la contrasena: cada regla con su marca. */
+.auth-requirements {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.auth-requirement {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--auth-muted);
+}
+.auth-requirement[data-met='true'] {
+  color: var(--auth-success);
+}
+.auth-requirement-mark {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Avatar: vista previa dentro del marco del kit. */
+.auth-avatar-preview {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  flex-shrink: 0;
+}
+.auth-avatar-preview img.auth-avatar-photo {
+  position: absolute;
+  inset: 16%;
+  width: 68%;
+  height: 68%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.auth-avatar-preview img.auth-avatar-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.auth-avatar-empty {
+  position: absolute;
+  inset: 16%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--auth-field-bg) 80%, transparent);
+}
+
+/* ------------------------------------------------------------------
+ * Desfile de heroes al pie de la escena (decorativo).
+ * ------------------------------------------------------------------ */
+.auth-footer {
+  position: relative;
+  z-index: 0;
+  margin-top: auto;
+  padding-top: 8px;
+  pointer-events: none;
+}
+.auth-parade {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(2px, 1vw, 14px);
+  margin: 0 auto;
+  max-width: 980px;
+}
+.auth-parade-hero {
+  width: clamp(44px, 9vw, 96px);
+  filter: drop-shadow(0 5px 4px rgba(0, 0, 0, 0.5));
+  transition: transform 220ms ease-out;
+}
+.auth-parade-hero[data-watching='true'] {
+  transform: translateY(-6px) scale(1.06);
+}
+.auth-parade--celebrate .auth-parade-hero {
+  animation: auth-cheer 700ms ease-out 3 both;
+}
+@keyframes auth-cheer {
+  35% {
+    transform: translateY(-24%);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  75% {
+    transform: translateY(-8%);
+  }
+}
+/* En pantallas estrechas el desfile se reduce a cuatro heroes. */
+@media (max-width: 480px) {
+  .auth-parade-hero:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-stage,
+  .auth-parade--celebrate .auth-parade-hero {
+    animation: none;
+  }
+  .auth-parade-hero,
+  .auth-choice,
+  .auth-step img,
+  .auth-btn-primary,
+  .auth-btn-secondary {
+    transition: none;
+  }
+  .auth-parade-hero[data-watching='true'] {
+    transform: none;
+  }
+}

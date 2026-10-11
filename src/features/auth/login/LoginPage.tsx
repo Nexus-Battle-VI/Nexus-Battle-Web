@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
-import type { ReactNode, SyntheticEvent } from 'react'
+import type { SyntheticEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
-import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
+import { AuthField } from '@/components/auth/AuthField'
+import { AuthPixelIcon } from '@/components/auth/AuthPixelIcon'
+import type { AuthIconName } from '@/components/auth/authRemasterAssets'
+import { AuthScene } from '@/components/auth/AuthScene'
+import { HeroParade, type HeroParadeMood } from '@/components/auth/HeroParade'
 import { Button } from '@/components/ui/Button'
-import { NexusBrandHeader } from '@/components/ui/NexusBrandHeader'
 import { PasswordField } from '@/components/ui/PasswordField'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { HttpError } from '@/lib/http'
 import { useSession } from '@/shared/session'
 import { roleLabel } from '@/shared/rbac'
@@ -51,50 +53,18 @@ const GENERIC_SECOND_FACTOR_REJECTED = 'auth:login.secondFactorRejected'
 const describeFailure = (error: unknown, unauthorizedMessage: string): string =>
   error instanceof HttpError && error.isUnauthorized ? unauthorizedMessage : GENERIC_SERVICE_ERROR
 
-const CONTROL_CLASS =
-  'block w-full min-w-0 rounded-md border bg-[var(--nb-field)] px-3 py-2 text-sm text-ink placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand'
-
-interface FieldProps {
-  readonly id: string
-  readonly label: string
-  readonly error?: string
-  readonly children: (props: {
-    readonly id: string
-    readonly 'aria-invalid': boolean
-    readonly 'aria-describedby': string | undefined
-    readonly className: string
-  }) => ReactNode
+/** Icono de cada factor en las tarjetas de eleccion. */
+const FACTOR_ICON: Readonly<Record<SecondFactorMethod, AuthIconName>> = {
+  AUTHENTICATOR_APP: 'authenticator',
+  EMAIL: 'mail',
+  SMS: 'bell',
 }
-
-/** Campo con su etiqueta y su error asociado. Ver el mismo patron en HU-01. */
-const Field = ({ id, label, error, children }: FieldProps): React.JSX.Element => (
-  <div className="w-full min-w-0">
-    <label htmlFor={id} className="block text-sm font-medium text-ink">
-      {label}
-    </label>
-    <div className="mt-1.5">
-      {children({
-        id,
-        'aria-invalid': error !== undefined,
-        'aria-describedby': error === undefined ? undefined : `${id}-error`,
-        className: clsx(CONTROL_CLASS, error === undefined ? 'border-border' : 'border-danger'),
-      })}
-    </div>
-    {error !== undefined && (
-      <p id={`${id}-error`} className="mt-1.5 flex items-start gap-1.5 text-sm text-danger">
-        <span aria-hidden="true" className="font-bold leading-5">
-          !
-        </span>
-        <span>{error}</span>
-      </p>
-    )}
-  </div>
-)
 
 export interface LoginPageProps {
   /** Se inyectan para poder probar todos los estados sin depender de red real. */
   readonly loginFn?: typeof login
   readonly completeSecondFactorFn?: typeof completeSecondFactor
+  readonly chooseSecondFactorFn?: typeof chooseSecondFactor
 }
 
 /**
@@ -137,6 +107,7 @@ const secondFactorPromptKey = (method: SecondFactorMethod | null): string =>
 export const LoginPage = ({
   loginFn = login,
   completeSecondFactorFn = completeSecondFactor,
+  chooseSecondFactorFn = chooseSecondFactor,
 }: LoginPageProps = {}): React.JSX.Element => {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -155,6 +126,14 @@ export const LoginPage = ({
   const [secondFactorAttempted, setSecondFactorAttempted] = useState(false)
   const [secondFactorMessage, setSecondFactorMessage] = useState<string | null>(null)
   const [sessionRole, setSessionRole] = useState<string | null>(null)
+  // Solo el ESTADO del formulario llega al desfile de heroes, nunca valores.
+  const [parade, setParade] = useState<{ readonly mood: HeroParadeMood; readonly beat: number }>({
+    mood: 'idle',
+    beat: 0,
+  })
+  const bump = (mood: HeroParadeMood): void => {
+    setParade((previous) => ({ mood, beat: previous.beat + 1 }))
+  }
 
   const errors = validateLoginForm(values)
   const visible = attempted
@@ -163,8 +142,7 @@ export const LoginPage = ({
 
   // Redirige tan pronto la pantalla de "acceso completado" se muestra: HU-02
   // exige que el destino sea siempre E-commerce (aclaracion del cliente), no
-  // el lugar del que vino la persona. Por eso no se lee ni se muestra el
-  // `returnTo` que deja `RequireSession`: el destino nunca varia con el.
+  // el lugar del que vino la persona: el destino nunca varia.
   useEffect(() => {
     if (stage !== 'success') {
       return
@@ -185,6 +163,7 @@ export const LoginPage = ({
     if (outcome.status === 'AUTHENTICATED') {
       establishSession(outcome.session)
       setSessionRole(outcome.session.roles[0] ?? null)
+      bump('success')
       setStage('success')
 
       return
@@ -217,7 +196,7 @@ export const LoginPage = ({
     setAuthMessage(null)
 
     try {
-      applyOutcome(await chooseSecondFactor(values.identifier, challengeToken, method))
+      applyOutcome(await chooseSecondFactorFn(values.identifier, challengeToken, method))
     } catch (error: unknown) {
       // Mismo ayudante que las otras etapas: distingue 503 de 401 sin que esta
       // pantalla invente su propia clasificacion.
@@ -239,6 +218,7 @@ export const LoginPage = ({
     setAuthMessage(null)
 
     if (hasErrors(errors)) {
+      bump('error')
       return
     }
 
@@ -253,6 +233,7 @@ export const LoginPage = ({
       // contrasena es incorrecta: el mismo mensaje generico cubre ambos casos
       // sin permitir enumerar cuentas.
       setAuthMessage(describeFailure(error, GENERIC_INVALID_CREDENTIALS))
+      bump('error')
     } finally {
       setSubmitting(false)
     }
@@ -286,6 +267,7 @@ export const LoginPage = ({
       applyOutcome(outcome)
     } catch (error: unknown) {
       setSecondFactorMessage(describeFailure(error, GENERIC_SECOND_FACTOR_REJECTED))
+      bump('error')
     } finally {
       setSubmitting(false)
     }
@@ -294,184 +276,179 @@ export const LoginPage = ({
   const showInfoSummary = attempted && hasErrors(errors)
 
   return (
-    <div className="flex min-h-dvh flex-col px-4 py-10 text-ink">
-      <div className="mx-auto w-full max-w-md">
-        <div className="flex items-center justify-between gap-3">
-          <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
-            {t('auth:backToMenu')}
-          </Link>
-          <ThemeToggle />
-        </div>
+    <AuthScene
+      back={{ to: '/', label: t('auth:backToMenu') }}
+      footer={<HeroParade mood={parade.mood} beat={parade.beat} />}
+    >
+      <main className="auth-panel">
+        {stage === 'success' && (
+          <div className="auth-stage text-center">
+            <AuthPixelIcon icon="check" size="xl" className="mx-auto" />
+            <h1 className="auth-title mt-2">{t('auth:login.successTitle')}</h1>
+            <p role="status" className="auth-subtitle">
+              {sessionRole !== null
+                ? t('auth:login.successBodyRole', { role: roleLabel(sessionRole) })
+                : t('auth:login.successBody')}
+            </p>
+          </div>
+        )}
 
-        <div className="mt-4">
-          <NexusBrandHeader />
-        </div>
+        {stage === 'credentials' && (
+          <div className="auth-stage">
+            <h1 className="auth-title">{t('auth:login.title')}</h1>
+            <p className="auth-subtitle">{t('auth:login.subtitle')}</p>
 
-        <main className="mt-10">
-          {stage === 'success' && (
-            <div>
-              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.successTitle')}</h1>
-              <p role="status" className="mt-2 text-sm text-muted">
-                {sessionRole !== null
-                  ? t('auth:login.successBodyRole', { role: roleLabel(sessionRole) })
-                  : t('auth:login.successBody')}
-              </p>
-            </div>
-          )}
-
-          {stage === 'credentials' && (
-            <div>
-              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.title')}</h1>
-              <p className="mt-2 text-sm text-muted">{t('auth:login.subtitle')}</p>
-
-              <form
-                noValidate
-                onSubmit={(event) => void handleCredentialsSubmit(event)}
-                className="mt-6 space-y-5"
-              >
-                {showInfoSummary && (
-                  <div role="alert" className="border-l-2 border-danger pl-3">
-                    <p className="text-sm font-semibold text-ink">{MESSAGES.summaryTitle}</p>
-                    <p className="mt-0.5 text-sm text-muted">{MESSAGES.summaryBody}</p>
-                  </div>
-                )}
-
-                {authMessage !== null && (
-                  <p role="alert" className="border-l-2 border-danger pl-3 text-sm text-danger">
-                    {t(authMessage)}
-                  </p>
-                )}
-
-                <Field
-                  id={FIELD.identifier}
-                  label={t('auth:login.identifier')}
-                  {...(visible[FIELD.identifier] === undefined
-                    ? {}
-                    : { error: visible[FIELD.identifier] })}
-                >
-                  {(field) => (
-                    <input
-                      {...field}
-                      type="text"
-                      autoComplete="username"
-                      placeholder={t('auth:login.identifierPlaceholder')}
-                      value={values.identifier}
-                      onBlur={() => {
-                        setTouched((previous) => ({ ...previous, [FIELD.identifier]: true }))
-                      }}
-                      onChange={(event) => {
-                        setValues((previous) => ({ ...previous, identifier: event.target.value }))
-                      }}
-                    />
-                  )}
-                </Field>
-
-                <Field
-                  id={FIELD.password}
-                  label={t('auth:login.password')}
-                  {...(visible[FIELD.password] === undefined
-                    ? {}
-                    : { error: visible[FIELD.password] })}
-                >
-                  {(field) => (
-                    <PasswordField
-                      {...field}
-                      autoComplete="current-password"
-                      placeholder={t('auth:login.passwordPlaceholder')}
-                      value={values.password}
-                      onBlur={() => {
-                        setTouched((previous) => ({ ...previous, [FIELD.password]: true }))
-                      }}
-                      onChange={(event) => {
-                        setValues((previous) => ({ ...previous, password: event.target.value }))
-                      }}
-                    />
-                  )}
-                </Field>
-
-                {/*
-                  Apilados, no en fila: es el orden y la disposicion que
-                  muestra el Figma (cada enlace en su propia linea), no una
-                  barra de acciones secundarias horizontal.
-                */}
-                <div className="flex flex-col items-start gap-2 text-sm">
-                  <Link to="/recover" className="font-medium text-brand underline">
-                    {t('auth:login.forgot')}
-                  </Link>
-                  <Link to="/register" className="font-medium text-brand underline">
-                    {t('auth:login.noAccount')}
-                  </Link>
+            <form
+              noValidate
+              onSubmit={(event) => void handleCredentialsSubmit(event)}
+              className="mt-6 space-y-5"
+            >
+              {showInfoSummary && (
+                <div role="alert" className="auth-alert">
+                  <p className="font-semibold">{MESSAGES.summaryTitle}</p>
+                  <p className="mt-0.5">{MESSAGES.summaryBody}</p>
                 </div>
+              )}
 
-                <Button type="submit" loading={submitting} className="w-full">
-                  {t('auth:login.submit')}
-                </Button>
-              </form>
-            </div>
-          )}
+              {authMessage !== null && (
+                <p role="alert" className="auth-alert">
+                  {t(authMessage)}
+                </p>
+              )}
 
-          {stage === 'selection' && (
-            <div>
-              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.chooseTitle')}</h1>
-              <p className="mt-2 text-sm text-muted">{t('auth:login.chooseBody')}</p>
-
-              <div className="mt-6 flex flex-col gap-3">
-                {availableFactors.map((factor) => (
-                  <button
-                    key={factor}
-                    type="button"
-                    disabled={submitting}
-                    data-testid={`choose-factor-${factor}`}
-                    className="rounded-md border border-border bg-surface-raised px-4 py-3 text-left transition-opacity hover:opacity-90 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                    onClick={() => {
-                      void handleFactorChoice(factor)
-                    }}
-                  >
-                    <span className="block text-sm font-medium text-ink">
-                      {t(factorLabelKey(factor))}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted">
-                      {t(factorHintKey(factor))}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {stage === 'secondFactor' && (
-            <div>
-              <h1 className="text-2xl font-semibold text-ink">{t('auth:login.verifyTitle')}</h1>
-              <p className="mt-2 text-sm text-muted">
-                {t(secondFactorPromptKey(secondFactorMethod))} {t('auth:login.adminLocked')}
-              </p>
-
-              <form
-                noValidate
-                onSubmit={(event) => void handleSecondFactorSubmit(event)}
-                className="mt-6 space-y-5"
+              <AuthField
+                id={FIELD.identifier}
+                label={t('auth:login.identifier')}
+                {...(visible[FIELD.identifier] === undefined
+                  ? {}
+                  : { error: visible[FIELD.identifier] })}
               >
-                {secondFactorAttempted && secondFactorCode.trim() === '' && (
-                  <div role="alert" className="border-l-2 border-danger pl-3">
-                    <p className="text-sm font-semibold text-ink">{MESSAGES.summaryTitle}</p>
-                    <p className="mt-0.5 text-sm text-muted">{MESSAGES.summaryBody}</p>
-                  </div>
+                {(field) => (
+                  <input
+                    {...field}
+                    type="text"
+                    autoComplete="username"
+                    placeholder={t('auth:login.identifierPlaceholder')}
+                    value={values.identifier}
+                    onBlur={() => {
+                      setTouched((previous) => ({ ...previous, [FIELD.identifier]: true }))
+                    }}
+                    onChange={(event) => {
+                      bump('typing')
+                      setValues((previous) => ({ ...previous, identifier: event.target.value }))
+                    }}
+                  />
                 )}
+              </AuthField>
 
-                {secondFactorMessage !== null && (
-                  <p role="alert" className="border-l-2 border-danger pl-3 text-sm text-danger">
-                    {t(secondFactorMessage)}
-                  </p>
+              <AuthField
+                id={FIELD.password}
+                label={t('auth:login.password')}
+                {...(visible[FIELD.password] === undefined
+                  ? {}
+                  : { error: visible[FIELD.password] })}
+              >
+                {(field) => (
+                  <PasswordField
+                    {...field}
+                    autoComplete="current-password"
+                    placeholder={t('auth:login.passwordPlaceholder')}
+                    value={values.password}
+                    eyeIcon={<AuthPixelIcon icon="eye" size="sm" />}
+                    eyeOffIcon={<AuthPixelIcon icon="eye-off" size="sm" />}
+                    onBlur={() => {
+                      setTouched((previous) => ({ ...previous, [FIELD.password]: true }))
+                    }}
+                    onChange={(event) => {
+                      bump('typing')
+                      setValues((previous) => ({ ...previous, password: event.target.value }))
+                    }}
+                  />
                 )}
+              </AuthField>
 
-                <Field
-                  id="second-factor-code"
-                  label={t('auth:login.code')}
-                  {...(secondFactorAttempted && secondFactorCode.trim() === ''
-                    ? { error: t('auth:login.codeRequired') }
-                    : {})}
+              {/*
+                Apilados, no en fila: es el orden y la disposicion que muestra el
+                Figma (cada enlace en su propia linea).
+              */}
+              <div className="flex flex-col items-start gap-2 text-sm">
+                <Link to="/recover" className="auth-link">
+                  {t('auth:login.forgot')}
+                </Link>
+                <Link to="/register" className="auth-link">
+                  {t('auth:login.noAccount')}
+                </Link>
+              </div>
+
+              <Button type="submit" variant="auth-primary" loading={submitting} className="w-full">
+                {t('auth:login.submit')}
+              </Button>
+            </form>
+          </div>
+        )}
+
+        {stage === 'selection' && (
+          <div className="auth-stage">
+            <h1 className="auth-title">{t('auth:login.chooseTitle')}</h1>
+            <p className="auth-subtitle">{t('auth:login.chooseBody')}</p>
+
+            <div className="mt-6 flex flex-col gap-3">
+              {availableFactors.map((factor) => (
+                <button
+                  key={factor}
+                  type="button"
+                  disabled={submitting}
+                  data-testid={`choose-factor-${factor}`}
+                  className="auth-choice"
+                  onClick={() => {
+                    void handleFactorChoice(factor)
+                  }}
                 >
-                  {(field) => (
+                  <AuthPixelIcon icon={FACTOR_ICON[factor]} size="lg" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{t(factorLabelKey(factor))}</span>
+                    <span className="auth-hint mt-0.5 block">{t(factorHintKey(factor))}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {stage === 'secondFactor' && (
+          <div className="auth-stage">
+            <h1 className="auth-title">{t('auth:login.verifyTitle')}</h1>
+            <p className="auth-subtitle">
+              {t(secondFactorPromptKey(secondFactorMethod))} {t('auth:login.adminLocked')}
+            </p>
+
+            <form
+              noValidate
+              onSubmit={(event) => void handleSecondFactorSubmit(event)}
+              className="mt-6 space-y-5"
+            >
+              {secondFactorAttempted && secondFactorCode.trim() === '' && (
+                <div role="alert" className="auth-alert">
+                  <p className="font-semibold">{MESSAGES.summaryTitle}</p>
+                  <p className="mt-0.5">{MESSAGES.summaryBody}</p>
+                </div>
+              )}
+
+              {secondFactorMessage !== null && (
+                <p role="alert" className="auth-alert">
+                  {t(secondFactorMessage)}
+                </p>
+              )}
+
+              <AuthField
+                id="second-factor-code"
+                label={t('auth:login.code')}
+                {...(secondFactorAttempted && secondFactorCode.trim() === ''
+                  ? { error: t('auth:login.codeRequired') }
+                  : {})}
+              >
+                {(field) => (
+                  <div className="auth-code">
                     <input
                       {...field}
                       type="text"
@@ -479,20 +456,21 @@ export const LoginPage = ({
                       autoComplete="one-time-code"
                       value={secondFactorCode}
                       onChange={(event) => {
+                        bump('typing')
                         setSecondFactorCode(event.target.value)
                       }}
                     />
-                  )}
-                </Field>
+                  </div>
+                )}
+              </AuthField>
 
-                <Button type="submit" loading={submitting} className="w-full">
-                  {t('auth:login.verify')}
-                </Button>
-              </form>
-            </div>
-          )}
-        </main>
-      </div>
-    </div>
+              <Button type="submit" variant="auth-primary" loading={submitting} className="w-full">
+                {t('auth:login.verify')}
+              </Button>
+            </form>
+          </div>
+        )}
+      </main>
+    </AuthScene>
   )
 }

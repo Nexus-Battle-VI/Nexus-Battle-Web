@@ -16,6 +16,8 @@ export type ButtonVariant =
   | 'missions-primary'
   | 'missions-secondary'
   | 'missions-danger'
+  | 'auth-primary'
+  | 'auth-secondary'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: ButtonVariant
@@ -64,6 +66,12 @@ const VARIANTS: Readonly<Record<ButtonVariant, string>> = {
   'missions-primary': 'msn-btn-primary text-ink',
   'missions-secondary': 'msn-btn-secondary text-ink',
   'missions-danger': 'msn-btn-danger text-ink',
+  /*
+   * Remaster visual de Autenticacion (EN-031): superficie CSS en
+   * `components/auth/auth.css` (`auth-btn-*`); aqui solo el gancho.
+   */
+  'auth-primary': 'auth-btn-primary text-ink',
+  'auth-secondary': 'auth-btn-secondary text-ink',
 }
 
 export const Button = ({
