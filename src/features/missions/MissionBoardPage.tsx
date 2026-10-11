@@ -1,18 +1,26 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import clsx from 'clsx'
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { useSession } from '@/shared/session'
 import { queryKeys } from '@/shared/query-keys'
 
 import { ActiveMissionsPanel } from './ActiveMissionsPanel'
 import { MissionArt } from './art/MissionArt'
-import { fetchMissionBoard, type MissionCategory, type PlayerMissionStatus } from './missionApi'
+import {
+  fetchMissionBoard,
+  type MissionCard as MissionBoardItem,
+  type MissionCategory,
+  type PlayerMissionStatus,
+} from './missionApi'
+import { MissionPixelIcon } from './MissionPixelIcon'
 import { categoryLabel, durationLabel, missionStatusLabel } from './missionPresentation'
-import { useTranslation } from 'react-i18next'
+import { CATEGORY_ICON, STATUS_BADGE } from './missionsRemasterPresentation'
+import './missions.css'
 
 const CATEGORIES: readonly MissionCategory[] = ['STORY', 'CHALLENGE', 'EXPLORATION']
 const STATUSES: readonly PlayerMissionStatus[] = [
@@ -23,6 +31,85 @@ const STATUSES: readonly PlayerMissionStatus[] = [
   'FAILED',
   'ABANDONED',
 ]
+
+const MissionCard = ({ mission }: { readonly mission: MissionBoardItem }): React.JSX.Element => {
+  const { t } = useTranslation()
+  return (
+    <article
+      aria-labelledby={`mision-${mission.missionId}`}
+      className={clsx('msn-card', mission.playerStatus === 'LOCKED' && 'msn-card--locked')}
+    >
+      <div className="msn-scene h-36">
+        <MissionArt imageRef={mission.imageRef} category={mission.category} className="h-full" />
+        <div className="msn-card-scene-badges">
+          <span className="msn-badge msn-badge--gold">
+            <MissionPixelIcon icon={CATEGORY_ICON[mission.category]} size="sm" />
+            {categoryLabel[mission.category]}
+          </span>
+          <span className={clsx('msn-badge', STATUS_BADGE[mission.playerStatus])}>
+            {mission.playerStatus === 'LOCKED' && <MissionPixelIcon icon="lock" size="sm" />}
+            {missionStatusLabel[mission.playerStatus]}
+          </span>
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4 text-sm">
+        <h2 id={`mision-${mission.missionId}`} className="msn-card-title">
+          {mission.name}
+        </h2>
+        <p className="text-muted">{mission.summary}</p>
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-ink">
+          <li className="flex items-center gap-1.5">
+            <MissionPixelIcon icon="timer" size="sm" />
+            {durationLabel(mission.estimatedDuration)}
+          </li>
+          {mission.recommendedPower !== null && (
+            <li className="flex items-center gap-1.5">
+              <MissionPixelIcon icon="power" size="sm" />
+              {t('missions:board.recommendedPower', { power: mission.recommendedPower })}
+            </li>
+          )}
+        </ul>
+        {mission.highlightedRewards.length > 0 && (
+          <p className="flex items-start gap-1.5 text-muted">
+            <MissionPixelIcon icon="chest" size="sm" />
+            <span>
+              {t('missions:board.rewards', {
+                list: mission.highlightedRewards.map((reward) => reward.label).join(', '),
+              })}
+            </span>
+          </p>
+        )}
+        {mission.lockReason !== null && (
+          <p className="flex items-start gap-1.5 text-ink">
+            <MissionPixelIcon icon="lock" size="sm" />
+            <span>{mission.lockReason}</span>
+          </p>
+        )}
+        <div className="mt-auto flex flex-wrap gap-2 pt-1">
+          {mission.activeEnrollmentId !== null && (
+            <Link
+              to={`/missions/progress/${encodeURIComponent(mission.activeEnrollmentId)}`}
+              className="msn-btn-link msn-btn-primary"
+            >
+              <MissionPixelIcon icon="timer" size="sm" />
+              {t('missions:board.followActive')}
+            </Link>
+          )}
+          <Link
+            to={`/missions/${encodeURIComponent(mission.missionId)}`}
+            className={clsx(
+              'msn-btn-link',
+              mission.activeEnrollmentId === null && 'msn-btn-primary',
+            )}
+          >
+            <MissionPixelIcon icon="map" size="sm" />
+            {t('missions:board.viewDetail', { mission: mission.name })}
+          </Link>
+        </div>
+      </div>
+    </article>
+  )
+}
 
 export const MissionBoardPage = (): React.JSX.Element => {
   const subject = useSession((state) => state.subject)
@@ -37,38 +124,60 @@ export const MissionBoardPage = (): React.JSX.Element => {
   const { t } = useTranslation()
 
   return (
-    <section aria-label={t('missions:board.title')} className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-ink">{t('missions:board.title')}</h1>
-        <p className="text-sm text-muted">{t('missions:board.subtitle')}</p>
-        <Link
-          to="/missions/history"
-          className="mt-2 inline-block text-sm text-brand hover:underline"
-        >
+    <section
+      aria-label={t('missions:board.title')}
+      className="msn-page msn-page--board flex flex-col gap-6"
+    >
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <p className="msn-eyebrow">{t('missions:remaster.boardEyebrow')}</p>
+          <h1 className="msn-title">{t('missions:board.title')}</h1>
+          <p className="msn-lead text-sm">{t('missions:board.subtitle')}</p>
+        </div>
+        <Link to="/missions/history" className="msn-btn-link">
+          <MissionPixelIcon icon="history" size="sm" />
           {t('missions:board.viewHistory')}
         </Link>
       </header>
 
       <ActiveMissionsPanel />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm text-ink">
-          {t('missions:board.category')}
-          <select
-            value={category ?? ''}
-            onChange={(event) => {
-              setCategory((event.target.value || null) as MissionCategory | null)
-            }}
-            className="rounded-md border border-border bg-surface px-3 py-2"
-          >
-            <option value="">{t('missions:board.all')}</option>
+      <div className="msn-panel msn-panel--strong flex flex-wrap items-end gap-4 rounded-[14px] p-4">
+        <div
+          role="group"
+          aria-label={t('missions:board.category')}
+          className="flex flex-col gap-1 text-sm"
+        >
+          <span aria-hidden="true" className="text-ink">
+            {t('missions:board.category')}
+          </span>
+          <div className="msn-tabs">
+            <button
+              type="button"
+              className="msn-tab"
+              aria-pressed={category === null}
+              onClick={() => {
+                setCategory(null)
+              }}
+            >
+              {t('missions:board.all')}
+            </button>
             {CATEGORIES.map((value) => (
-              <option key={value} value={value}>
+              <button
+                key={value}
+                type="button"
+                className="msn-tab"
+                aria-pressed={category === value}
+                onClick={() => {
+                  setCategory(value)
+                }}
+              >
+                <MissionPixelIcon icon={CATEGORY_ICON[value]} size="sm" />
                 {categoryLabel[value]}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
         <label className="flex flex-col gap-1 text-sm text-ink">
           {t('missions:board.status')}
           <select
@@ -76,7 +185,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
             onChange={(event) => {
               setStatus((event.target.value || null) as PlayerMissionStatus | null)
             }}
-            className="rounded-md border border-border bg-surface px-3 py-2"
+            className="min-h-[38px] px-3 py-2"
           >
             <option value="">{t('missions:board.allStatuses')}</option>
             {STATUSES.map((value) => (
@@ -87,7 +196,7 @@ export const MissionBoardPage = (): React.JSX.Element => {
           </select>
         </label>
         <Button
-          variant="secondary"
+          variant="missions-secondary"
           disabled={board.isFetching}
           onClick={() => void board.refetch()}
         >
@@ -101,50 +210,10 @@ export const MissionBoardPage = (): React.JSX.Element => {
         isEmpty={items.length === 0}
         emptyMessage={t('missions:board.noResults')}
       >
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {items.map((mission) => (
             <li key={mission.missionId}>
-              <Card title={mission.name} className="h-full">
-                <MissionArt
-                  imageRef={mission.imageRef}
-                  category={mission.category}
-                  className="mb-3 h-24 rounded-md"
-                />
-                <div className="flex flex-col gap-3 text-sm">
-                  <p className="text-muted">{mission.summary}</p>
-                  <p className="text-ink">
-                    {categoryLabel[mission.category]} · {missionStatusLabel[mission.playerStatus]} ·{' '}
-                    {durationLabel(mission.estimatedDuration)}
-                  </p>
-                  {mission.recommendedPower !== null && (
-                    <p className="text-muted">
-                      {t('missions:board.recommendedPower', { power: mission.recommendedPower })}
-                    </p>
-                  )}
-                  {mission.highlightedRewards.length > 0 && (
-                    <p className="text-muted">
-                      {t('missions:board.rewards', {
-                        list: mission.highlightedRewards.map((reward) => reward.label).join(', '),
-                      })}
-                    </p>
-                  )}
-                  {mission.lockReason !== null && <p className="text-ink">{mission.lockReason}</p>}
-                  {mission.activeEnrollmentId !== null && (
-                    <Link
-                      to={`/missions/progress/${encodeURIComponent(mission.activeEnrollmentId)}`}
-                      className="w-fit font-medium text-brand underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand"
-                    >
-                      {t('missions:board.followActive')}
-                    </Link>
-                  )}
-                  <Link
-                    to={`/missions/${encodeURIComponent(mission.missionId)}`}
-                    className="w-fit rounded-md text-brand underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand"
-                  >
-                    {t('missions:board.viewDetail', { mission: mission.name })}
-                  </Link>
-                </div>
-              </Card>
+              <MissionCard mission={mission} />
             </li>
           ))}
         </ul>

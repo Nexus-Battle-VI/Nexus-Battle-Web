@@ -388,5 +388,19 @@
     "PICARO_MACHETE": "Ladino Facão",
     "CHAMAN": "Xamã",
     "MEDICO": "Médico"
+  },
+  "remaster": {
+    "boardEyebrow": "Sala de comando · Quadro de missões",
+    "historyEyebrow": "Crônicas do herói",
+    "reportEyebrow": "Relatório de campanha",
+    "adminEyebrow": "Oficina do Mestre do Jogo",
+    "encounter": "Encontro {{n}}",
+    "bossEncounter": "Encontro {{n}} · Chefe",
+    "critical": "Crítico!",
+    "miss": "Errou",
+    "victory": "Vitória",
+    "defeat": "Derrota",
+    "pauseAnimation": "Pausar animação",
+    "resumeAnimation": "Retomar animação"
   }
 }

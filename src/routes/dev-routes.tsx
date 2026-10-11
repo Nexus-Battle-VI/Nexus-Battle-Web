@@ -44,6 +44,46 @@ if (import.meta.env.DEV) {
       default: module.TournamentRegistrationPreview,
     })),
   )
+  // EN-031: remaster visual de Misiones. Las pantallas reales viven tras
+  // `RequireSession` y necesitan Missions, Player-Inventory y Combat; la vista
+  // previa falsea la sesion, intercepta `fetch` y monta las paginas reales con
+  // su propio `missions-main` (sin `AppLayout`, para que ninguna ruta de
+  // desarrollo quede escrita en el layout de produccion).
+  const MissionsRemasterPreviewLazy = lazy(() =>
+    import('@/features/missions/dev/MissionsRemasterPreview').then((module) => ({
+      default: module.MissionsRemasterPreview,
+    })),
+  )
+  const MissionBoardPageLazy = lazy(() =>
+    import('@/features/missions/MissionBoardPage').then((module) => ({
+      default: module.MissionBoardPage,
+    })),
+  )
+  const MissionDetailPageLazy = lazy(() =>
+    import('@/features/missions/MissionDetailPage').then((module) => ({
+      default: module.MissionDetailPage,
+    })),
+  )
+  const MissionProgressPageLazy = lazy(() =>
+    import('@/features/missions/MissionProgressPage').then((module) => ({
+      default: module.MissionProgressPage,
+    })),
+  )
+  const MissionHistoryPageLazy = lazy(() =>
+    import('@/features/missions/MissionHistoryPage').then((module) => ({
+      default: module.MissionHistoryPage,
+    })),
+  )
+  const MissionReportPageLazy = lazy(() =>
+    import('@/features/missions/MissionReportPage').then((module) => ({
+      default: module.MissionReportPage,
+    })),
+  )
+  const MissionContentEditorPageLazy = lazy(() =>
+    import('@/features/missions/MissionContentEditorPage').then((module) => ({
+      default: module.MissionContentEditorPage,
+    })),
+  )
   const TournamentAdminPreviewLazy = lazy(() =>
     import('@/features/tournament/dev/TournamentAdminPreview').then((module) => ({
       default: module.TournamentAdminPreview,
@@ -608,6 +648,26 @@ if (import.meta.env.DEV) {
           <TournamentAdminPreviewLazy />
         </Suspense>
       ),
+    },
+    // EN-031: ver comentario junto a `MissionsRemasterPreviewLazy` arriba.
+    {
+      path: '__dev/missions',
+      element: (
+        <Suspense fallback={null}>
+          <MissionsRemasterPreviewLazy />
+        </Suspense>
+      ),
+      children: [
+        { index: true, element: <MissionBoardPageLazy /> },
+        { path: 'm/:missionId', element: <MissionDetailPageLazy /> },
+        { path: 'progress/:enrollmentId', element: <MissionProgressPageLazy /> },
+        { path: 'history', element: <MissionHistoryPageLazy /> },
+        { path: 'reports/:enrollmentId', element: <MissionReportPageLazy /> },
+        { path: 'admin', element: <MissionContentEditorPageLazy /> },
+      ].map((child) => ({
+        ...child,
+        element: <Suspense fallback={null}>{child.element}</Suspense>,
+      })),
     },
   ]
 }

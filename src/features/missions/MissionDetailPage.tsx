@@ -35,6 +35,10 @@ import {
   statLabel,
 } from './missionPresentation'
 import { useTranslation } from 'react-i18next'
+import { EnemyPortrait } from './diorama/EnemyPortrait'
+import { MissionPixelIcon } from './MissionPixelIcon'
+import { CATEGORY_ICON } from './missionsRemasterPresentation'
+import './missions.css'
 
 const isExpiredAttempt = (error: unknown): boolean =>
   error instanceof HttpError &&
@@ -75,12 +79,20 @@ const RewardsCard = ({ detail }: { readonly detail: MissionDetail }): React.JSX.
     detail.rewards.potential.length === 0 &&
     epics.length === 0
   return (
-    <Card title={t('missions:detail.rewardsTitle')}>
+    <Card title={t('missions:detail.rewardsTitle')} className="msn-panel">
       <div className="flex flex-col gap-3 text-sm text-ink">
-        {detail.rewards.experience === true && <p>{t('missions:detail.rewardsExperience')}</p>}
+        {detail.rewards.experience === true && (
+          <p className="flex items-center gap-1.5">
+            <MissionPixelIcon icon="xp" size="sm" />
+            {t('missions:detail.rewardsExperience')}
+          </p>
+        )}
         {detail.rewards.potential.length > 0 && (
           <div>
-            <h3 className="font-medium">{t('missions:detail.bossLoot')}</h3>
+            <h3 className="flex items-center gap-1.5 font-semibold">
+              <MissionPixelIcon icon="loot" size="sm" />
+              {t('missions:detail.bossLoot')}
+            </h3>
             <ul className="mt-1 list-inside list-disc">
               {detail.rewards.potential.map((reward) => (
                 <li key={reward.label}>
@@ -95,7 +107,10 @@ const RewardsCard = ({ detail }: { readonly detail: MissionDetail }): React.JSX.
         )}
         {epics.length > 0 && (
           <div>
-            <h3 className="font-medium">{t('missions:detail.masterEpics')}</h3>
+            <h3 className="flex items-center gap-1.5 font-semibold">
+              <MissionPixelIcon icon="epic" size="sm" />
+              {t('missions:detail.masterEpics')}
+            </h3>
             <ul className="mt-1 list-inside list-disc">
               {epics.map((item) => (
                 <li key={item.master}>
@@ -208,24 +223,33 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
     []
 
   return (
-    <section aria-label={t('missions:detail.label')} className="flex flex-col gap-6">
-      <Link to="/missions" className="w-fit text-sm text-brand hover:underline">
+    <section
+      aria-label={t('missions:detail.label')}
+      className="msn-page msn-page--detail flex flex-col gap-6"
+    >
+      <Link to="/missions" className="msn-link w-fit text-sm">
         {t('missions:detail.backToBoard')}
       </Link>
       <QueryState isLoading={mission.isPending} error={mission.error}>
         {detail !== undefined && (
           <>
-            <header className="flex flex-col gap-3">
-              <MissionArt
-                imageRef={detail.imageRef ?? null}
-                category={detail.category}
-                className="h-40 rounded-lg"
-              />
-              <div>
-                <p className="text-sm text-muted">{categoryLabel[detail.category]}</p>
-                <h1 className="text-2xl font-semibold text-ink">{detail.name}</h1>
-                <p className="mt-2 text-sm text-muted">{detail.narrative}</p>
-                <p className="mt-2 text-sm text-ink">
+            <header className="msn-card msn-detail-hero">
+              <div className="msn-scene msn-detail-hero-scene">
+                <MissionArt
+                  imageRef={detail.imageRef ?? null}
+                  category={detail.category}
+                  className="h-full"
+                />
+              </div>
+              <div className="flex flex-col gap-2 p-5">
+                <p className="msn-eyebrow flex items-center gap-1.5">
+                  <MissionPixelIcon icon={CATEGORY_ICON[detail.category]} size="sm" />
+                  {categoryLabel[detail.category]}
+                </p>
+                <h1 className="msn-title">{detail.name}</h1>
+                <p className="text-sm text-muted">{detail.narrative}</p>
+                <p className="flex items-center gap-1.5 text-sm text-ink">
+                  <MissionPixelIcon icon="timer" size="sm" />
                   {t('missions:detail.statusDuration', {
                     status: missionStatusLabel[detail.playerStatus],
                     duration: durationLabel(detail.estimatedDuration),
@@ -240,28 +264,35 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
             </header>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <Card title={t('missions:detail.objectivesTitle')}>
-                <ul className="list-inside list-disc space-y-2 text-sm text-ink">
+              <Card title={t('missions:detail.objectivesTitle')} className="msn-panel">
+                <ul className="space-y-2 text-sm text-ink">
                   {detail.objectives.map((objective) => (
-                    <li key={objective.id}>
-                      {objective.text}{' '}
-                      {objective.primary
-                        ? t('missions:detail.primary')
-                        : t('missions:detail.secondary')}
+                    <li key={objective.id} className="flex items-start gap-2">
+                      <MissionPixelIcon icon="objective" size="sm" />
+                      <span>
+                        {objective.text}{' '}
+                        {objective.primary
+                          ? t('missions:detail.primary')
+                          : t('missions:detail.secondary')}
+                      </span>
                     </li>
                   ))}
                 </ul>
               </Card>
-              <Card title={t('missions:detail.encountersTitle')}>
-                <ul className="list-inside list-disc space-y-2 text-sm text-ink">
+              <Card title={t('missions:detail.encountersTitle')} className="msn-panel">
+                <ul className="grid gap-2 text-sm text-ink sm:grid-cols-2">
                   {detail.enemies.map((enemy) => (
-                    <li key={enemy.name}>
-                      {enemy.name} × {enemy.count}
-                      {enemy.description === null ? '' : ` — ${enemy.description}`}
+                    <li key={enemy.name} className="msn-tile flex items-center gap-2 p-2">
+                      <EnemyPortrait name={enemy.name} role="ENEMY" />
+                      <span>
+                        {enemy.name} × {enemy.count}
+                        {enemy.description === null ? '' : ` — ${enemy.description}`}
+                      </span>
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 text-sm font-medium text-ink">
+                <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-ink">
+                  <EnemyPortrait name={detail.finalBoss.name} role="BOSS" size="lg" />
                   {t('missions:detail.finalBoss', { name: detail.finalBoss.name })}
                 </p>
                 {detail.finalBoss.description !== null && (
@@ -284,7 +315,10 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                 )}
                 {detail.masterEncounter.candidates.length > 0 && (
                   <div className="mt-3 text-sm text-ink">
-                    <h3 className="font-medium">{t('missions:detail.possibleMasters')}</h3>
+                    <h3 className="flex items-center gap-1.5 font-semibold">
+                      <MissionPixelIcon icon="master" size="sm" />
+                      {t('missions:detail.possibleMasters')}
+                    </h3>
                     <p className="text-muted">
                       {t('missions:detail.masterChanceIntro', {
                         percent: probabilityLabel(detail.masterEncounter.probability),
@@ -292,26 +326,34 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                     </p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {detail.masterEncounter.candidates.map((candidate) => (
-                        <li key={`${candidate.name}-${candidate.heroType}`}>
-                          <p className="font-medium">
-                            {candidate.name} · {heroTypeLabel(candidate.heroType)}
-                          </p>
-                          <p className="text-muted">
-                            {masterChanceLabel(candidate.probabilityByHeroType)}
-                          </p>
-                          {candidate.epic === null ? (
-                            <p className="text-muted">{t('missions:detail.epicNotDeliverable')}</p>
-                          ) : (
-                            <p className="text-muted">
-                              {t('missions:detail.epicLine', { name: candidate.epic.name })}
-                              {candidate.epic.generalEffect === null
-                                ? ''
-                                : ` · ${candidate.epic.generalEffect}`}
-                              {candidate.epic.epicEffect === null
-                                ? ''
-                                : ` · ${candidate.epic.epicEffect}`}
+                        <li
+                          key={`${candidate.name}-${candidate.heroType}`}
+                          className="msn-tile flex gap-2 p-2"
+                        >
+                          <EnemyPortrait name={candidate.name} role="MASTER" />
+                          <div>
+                            <p className="font-medium">
+                              {candidate.name} · {heroTypeLabel(candidate.heroType)}
                             </p>
-                          )}
+                            <p className="text-muted">
+                              {masterChanceLabel(candidate.probabilityByHeroType)}
+                            </p>
+                            {candidate.epic === null ? (
+                              <p className="text-muted">
+                                {t('missions:detail.epicNotDeliverable')}
+                              </p>
+                            ) : (
+                              <p className="text-muted">
+                                {t('missions:detail.epicLine', { name: candidate.epic.name })}
+                                {candidate.epic.generalEffect === null
+                                  ? ''
+                                  : ` · ${candidate.epic.generalEffect}`}
+                                {candidate.epic.epicEffect === null
+                                  ? ''
+                                  : ` · ${candidate.epic.epicEffect}`}
+                              </p>
+                            )}
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -319,18 +361,24 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                 )}
               </Card>
               <RewardsCard detail={detail} />
-              <Card title={t('missions:detail.requirementsTitle')}>
+              <Card title={t('missions:detail.requirementsTitle')} className="msn-panel">
                 {prerequisites.length === 0 ? (
                   <p className="text-sm text-muted">{t('missions:detail.noPrerequisites')}</p>
                 ) : (
-                  <ul className="list-inside list-disc text-sm text-ink">
+                  <ul className="space-y-1 text-sm text-ink">
                     {prerequisites.map((prerequisite) => (
-                      <li key={prerequisite.missionId}>{prerequisite.name}</li>
+                      <li key={prerequisite.missionId} className="flex items-center gap-1.5">
+                        <MissionPixelIcon icon="check" size="sm" />
+                        {prerequisite.name}
+                      </li>
                     ))}
                   </ul>
                 )}
                 {detail.lockReason !== null && (
-                  <p className="mt-3 text-sm text-ink">{detail.lockReason}</p>
+                  <p className="mt-3 flex items-start gap-1.5 text-sm text-ink">
+                    <MissionPixelIcon icon="lock" size="sm" />
+                    <span>{detail.lockReason}</span>
+                  </p>
                 )}
               </Card>
             </div>
@@ -338,6 +386,7 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
             <Card
               title={t('missions:detail.startTitle')}
               description={t('missions:detail.startDescription')}
+              className="msn-panel msn-panel--strong"
             >
               <div className="flex flex-col gap-5">
                 <QueryState
@@ -357,7 +406,7 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                         attemptRef.current = null
                         enrollment.reset()
                       }}
-                      className="rounded-md border border-border bg-surface px-3 py-2"
+                      className="min-h-[40px] px-3 py-2"
                     >
                       <option value="">{t('missions:detail.chooseHero')}</option>
                       {heroList.map((hero) => (
@@ -398,7 +447,10 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                   </p>
                 )}
                 {enrollment.data !== undefined && (
-                  <div role="status" className="flex flex-col gap-1 text-sm text-ink">
+                  <div
+                    role="status"
+                    className="msn-banner msn-banner--victory flex-col items-start gap-1 text-sm text-ink"
+                  >
                     <p className="font-semibold">{t('missions:detail.started')}</p>
                     {enrollment.data.endsAt !== null && (
                       <p>
@@ -409,13 +461,20 @@ const MissionDetailContent = ({ missionId }: { readonly missionId: string }): Re
                     )}
                     <Link
                       to={`/missions/progress/${encodeURIComponent(enrollment.data.enrollmentId)}`}
-                      className="w-fit font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+                      className="msn-btn-link msn-btn-primary mt-1 w-fit"
                     >
+                      <MissionPixelIcon icon="timer" size="sm" />
                       {t('missions:detail.follow')}
                     </Link>
                   </div>
                 )}
-                <Button disabled={!canSubmit} loading={enrollment.isPending} onClick={submit}>
+                <Button
+                  variant="missions-primary"
+                  className="self-start px-6"
+                  disabled={!canSubmit}
+                  loading={enrollment.isPending}
+                  onClick={submit}
+                >
                   {enrollment.isError
                     ? t('missions:detail.retryEnroll')
                     : t('missions:detail.startButton')}

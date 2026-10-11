@@ -388,5 +388,19 @@
     "PICARO_MACHETE": "Voleur Machette",
     "CHAMAN": "Chaman",
     "MEDICO": "Médecin"
+  },
+  "remaster": {
+    "boardEyebrow": "Salle de commandement · Tableau des missions",
+    "historyEyebrow": "Chroniques du héros",
+    "reportEyebrow": "Rapport de campagne",
+    "adminEyebrow": "Atelier du Maître du jeu",
+    "encounter": "Rencontre {{n}}",
+    "bossEncounter": "Rencontre {{n}} · Boss",
+    "critical": "Critique !",
+    "miss": "Raté",
+    "victory": "Victoire",
+    "defeat": "Défaite",
+    "pauseAnimation": "Mettre l’animation en pause",
+    "resumeAnimation": "Reprendre l’animation"
   }
 }

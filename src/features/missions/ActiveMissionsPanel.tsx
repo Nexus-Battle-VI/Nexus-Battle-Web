@@ -1,9 +1,11 @@
+import clsx from 'clsx'
 import { Link } from 'react-router'
 
 import { countdownLabel, useCountdown } from '@/shared/countdown'
 
 import { MissionArt } from './art/MissionArt'
 import { difficultyName } from './difficultyPresentation'
+import { MissionPixelIcon } from './MissionPixelIcon'
 import type { ActiveMission } from './missionPlayApi'
 import { useActiveMissions } from './useActiveMissions'
 import { useTranslation } from 'react-i18next'
@@ -12,9 +14,11 @@ import { useTranslation } from 'react-i18next'
 export const ProgressBar = ({
   percent,
   label,
+  tone = 'progress',
 }: {
   readonly percent: number
   readonly label: string
+  readonly tone?: 'progress' | 'health'
 }): React.JSX.Element => (
   <div
     role="progressbar"
@@ -22,10 +26,10 @@ export const ProgressBar = ({
     aria-valuemin={0}
     aria-valuemax={100}
     aria-valuenow={percent}
-    className="h-2 w-full overflow-hidden rounded-full bg-border"
+    className={clsx('msn-meter w-full', tone === 'health' && 'msn-meter--health')}
   >
     <div
-      className="h-full rounded-full bg-brand motion-safe:transition-[width] motion-safe:duration-700"
+      className="motion-safe:transition-[width] motion-safe:duration-700"
       style={{ width: `${String(percent)}%` }}
     />
   </div>
@@ -48,26 +52,34 @@ const ActiveMissionRow = ({
         : t('missions:panel.finishingUp')
 
   return (
-    <li className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface">
-      <MissionArt imageRef={mission.imageRef} category={mission.category} className="h-16" />
+    <li className="msn-card">
+      <div className="msn-scene h-20">
+        <MissionArt imageRef={mission.imageRef} category={mission.category} className="h-full" />
+      </div>
       <div className="flex flex-col gap-2 p-3 text-sm">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="font-semibold text-ink">{mission.missionName}</p>
-          <p className="text-muted">{difficultyName(mission.difficulty)}</p>
+          <p className="msn-section-title">{mission.missionName}</p>
+          <p className="msn-badge msn-badge--gold">{difficultyName(mission.difficulty)}</p>
         </div>
         {mission.heroName !== null && (
-          <p className="text-muted">{t('missions:panel.hero', { name: mission.heroName })}</p>
+          <p className="flex items-center gap-1.5 text-muted">
+            <MissionPixelIcon icon="hero" size="sm" />
+            {t('missions:panel.hero', { name: mission.heroName })}
+          </p>
         )}
         <ProgressBar
           percent={mission.progressPercent}
           label={t('missions:panel.progressOf', { mission: mission.missionName })}
         />
-        <p role="timer" aria-live="off" className="tabular-nums text-ink">
-          {timeText}
+        <p className="flex items-center gap-1.5 text-ink">
+          <MissionPixelIcon icon="timer" size="sm" />
+          <span role="timer" aria-live="off" className="tabular-nums">
+            {timeText}
+          </span>
         </p>
         <Link
           to={`/missions/progress/${encodeURIComponent(mission.enrollmentId)}`}
-          className="w-fit text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+          className="msn-btn-link msn-btn-primary w-fit"
         >
           {t('missions:panel.follow')}
         </Link>
@@ -89,7 +101,7 @@ export const ActiveMissionsPanel = (): React.JSX.Element | null => {
 
   return (
     <section aria-labelledby="misiones-en-curso" className="flex flex-col gap-3">
-      <h2 id="misiones-en-curso" className="text-lg font-semibold text-ink">
+      <h2 id="misiones-en-curso" className="msn-section-title text-xl">
         {t('missions:panel.title')}
       </h2>
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,0 +1,980 @@
+/*
+ * ============================================================
+ * MISIONES — remaster visual Sprint 3 (EN-031)
+ * Dark: "Sala de Mando" de noche (piedra, hierro, amatista, bronce)
+ * Light: "Sala de Mando" de dia (marfil, zafiro, oro)
+ * ============================================================
+ * Mismo criterio que `battle-rooms.css` y `account.css`:
+ *   - los PNG de PixelLab (`public/assets/missions/`, ver
+ *     `missionsRemasterAssets.ts`) son la PIEL; el HTML/React sigue siendo la
+ *     unica fuente de texto, estado y accesibilidad;
+ *   - todo selector vive bajo `.msn-page` (o `.missions-main`) para no tocar
+ *     ninguna otra feature; los tokens `--msn-*` son PROPIOS y no sustituyen
+ *     ningun token global;
+ *   - paneles y botones son superficie CSS (borde fino + sombra) con esquinas
+ *     ornamentales de tamano FIJO. Nunca `border-image` sobre algo de tamano
+ *     variable ni `background-size: 100% 100%`: estira los ornamentos (leccion
+ *     documentada en `battle-rooms.css`).
+ *   - el arte es pixel art: se escala con `image-rendering: pixelated`.
+ */
+@import '@fontsource/cinzel/latin-600.css';
+@import '@fontsource/cinzel/latin-ext-600.css';
+@import '@fontsource/cinzel/latin-700.css';
+@import '@fontsource/cinzel/latin-ext-700.css';
+
+.msn-page {
+  --msn-ink: #1d2236;
+  --msn-muted: #4b5470;
+  --msn-title: #17335e;
+  --msn-accent: #8a5a12;
+  --msn-accent-2: #1e4e8c;
+  --msn-danger: #8a2020;
+  --msn-success: #1f6b3a;
+  --msn-warning: #8a5a00;
+  --msn-panel-bg: rgba(251, 247, 236, 0.88);
+  --msn-panel-bg-strong: rgba(251, 247, 236, 0.97);
+  --msn-panel-border: rgba(120, 82, 20, 0.42);
+  --msn-track: rgba(60, 50, 30, 0.18);
+  --msn-shadow: 0 10px 26px rgba(40, 28, 8, 0.2);
+  --msn-overlay-top: rgba(251, 247, 236, 0.66);
+  --msn-overlay-fade: rgba(251, 247, 236, 0.12);
+  --msn-text-halo: 0 1px 2px rgba(255, 251, 240, 0.9), 0 0 10px rgba(255, 251, 240, 0.6);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 18px clamp(12px, 2vw, 28px) 48px;
+  min-height: clamp(520px, 80vh, 960px);
+  color: var(--msn-ink);
+}
+:root[data-theme='dark'] .msn-page {
+  --msn-ink: #efe4cc;
+  --msn-muted: #bdb2d6;
+  --msn-title: #e7c873;
+  --msn-accent: #d1ab52;
+  --msn-accent-2: #a77ae0;
+  --msn-danger: #ee8b84;
+  --msn-success: #7fd39a;
+  --msn-warning: #f0c060;
+  --msn-panel-bg: rgba(22, 18, 30, 0.84);
+  --msn-panel-bg-strong: rgba(18, 15, 25, 0.95);
+  --msn-panel-border: rgba(167, 122, 224, 0.38);
+  --msn-track: rgba(255, 255, 255, 0.12);
+  --msn-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  --msn-overlay-top: rgba(10, 8, 14, 0.7);
+  --msn-overlay-fade: rgba(10, 8, 14, 0.2);
+  --msn-text-halo: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.55);
+}
+
+.missions-main {
+  max-width: 1440px;
+}
+
+/* ------------------------------------------------------------------
+ * Escenario: una ilustracion por pantalla, a sangre completa del panel de
+ * pagina. `cover` nunca deforma la escena; el degradado (`::after`) solo
+ * asegura la lectura de la cabecera.
+ * ------------------------------------------------------------------ */
+.msn-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  image-rendering: pixelated;
+}
+.msn-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+    180deg,
+    var(--msn-overlay-top) 0%,
+    var(--msn-overlay-fade) 260px,
+    var(--msn-overlay-fade) 70%,
+    var(--msn-overlay-top) 100%
+  );
+}
+.msn-page--board::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-board-light.png');
+}
+.msn-page--detail::before,
+.msn-page--progress::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-detail-light.png');
+}
+.msn-page--history::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-history-light.png');
+}
+.msn-page--report::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-report-light.png');
+}
+.msn-page--admin::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-admin-light.png');
+}
+:root[data-theme='dark'] .msn-page--board::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-board-dark.png');
+}
+:root[data-theme='dark'] .msn-page--detail::before,
+:root[data-theme='dark'] .msn-page--progress::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-detail-dark.png');
+}
+:root[data-theme='dark'] .msn-page--history::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-history-dark.png');
+}
+:root[data-theme='dark'] .msn-page--report::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-report-dark.png');
+}
+:root[data-theme='dark'] .msn-page--admin::before {
+  background-image: url('/assets/missions/backgrounds/bg-missions-admin-dark.png');
+}
+
+/* Scrollbar de pagina mientras `/missions*` esta montado (mismo truco que
+ * `.account-main`). Tokens GLOBALES: los `--msn-*` no existen en `html`. */
+html:has(.missions-main) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-brand) 55%, var(--color-accent-gold))
+    var(--color-surface);
+}
+
+/* ------------------------------------------------------------------
+ * Tipografia tematica.
+ * ------------------------------------------------------------------ */
+.msn-eyebrow {
+  font-family: var(--font-game-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--msn-accent-2);
+  text-shadow: var(--msn-text-halo);
+}
+.msn-title {
+  font-family: var(--font-game-display);
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--msn-title);
+  text-shadow: var(--msn-text-halo);
+}
+@media (min-width: 640px) {
+  .msn-title {
+    font-size: 34px;
+  }
+}
+.msn-lead {
+  color: var(--msn-ink);
+  text-shadow: var(--msn-text-halo);
+}
+.msn-page .text-ink {
+  color: var(--msn-ink);
+}
+.msn-page .text-muted {
+  color: var(--msn-muted);
+}
+.msn-page .text-danger {
+  color: var(--msn-danger);
+}
+.msn-page .text-brand,
+.msn-link {
+  color: var(--msn-accent-2);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+.msn-link:hover {
+  text-decoration: underline;
+}
+.msn-page a:focus-visible,
+.msn-page button:focus-visible,
+.msn-page select:focus-visible,
+.msn-page input:focus-visible,
+.msn-page textarea:focus-visible {
+  outline: 2px solid var(--msn-accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------
+ * Paneles. Se aplican sobre `Card` con `className="msn-panel"`: la
+ * semantica (section + h2) no cambia; solo la superficie. Selectores con dos
+ * clases para ganar a las utilidades de Tailwind del propio `Card`.
+ * ------------------------------------------------------------------ */
+.msn-page .msn-panel {
+  position: relative;
+  border: 1px solid var(--msn-panel-border);
+  border-radius: 14px;
+  background: var(--msn-panel-bg);
+  box-shadow: var(--msn-shadow);
+  backdrop-filter: blur(3px);
+  color: var(--msn-ink);
+}
+.msn-page .msn-panel > h2,
+.msn-section-title {
+  font-family: var(--font-game-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--msn-accent);
+}
+.msn-page .msn-panel > h2 {
+  padding-bottom: 8px;
+  background-image: url('/assets/missions/ui/divider-light.png');
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: auto 10px;
+  image-rendering: pixelated;
+}
+:root[data-theme='dark'] .msn-page .msn-panel > h2 {
+  background-image: url('/assets/missions/ui/divider-dark.png');
+}
+.msn-page .msn-panel::before,
+.msn-page .msn-panel::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  width: 30px;
+  height: 30px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.msn-page .msn-panel::before {
+  left: -5px;
+  background-image: url('/assets/missions/ui/corner-tl-light.png');
+}
+.msn-page .msn-panel::after {
+  right: -5px;
+  background-image: url('/assets/missions/ui/corner-tr-light.png');
+}
+:root[data-theme='dark'] .msn-page .msn-panel::before {
+  background-image: url('/assets/missions/ui/corner-tl-dark.png');
+}
+:root[data-theme='dark'] .msn-page .msn-panel::after {
+  background-image: url('/assets/missions/ui/corner-tr-dark.png');
+}
+.msn-page .msn-panel--strong {
+  background: var(--msn-panel-bg-strong);
+}
+/* Bloques internos de un panel (filas, fichas): sin esquinas. */
+.msn-tile {
+  border: 1px solid var(--msn-panel-border);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--msn-panel-bg-strong) 70%, transparent);
+}
+
+/* ------------------------------------------------------------------
+ * Formularios: mismos controles nativos (labels y roles intactos), piel
+ * nueva.
+ * ------------------------------------------------------------------ */
+.msn-page select,
+.msn-page input:not([type='checkbox']):not([type='radio']),
+.msn-page textarea {
+  border: 1px solid var(--msn-panel-border);
+  border-radius: 8px;
+  background-color: var(--msn-panel-bg-strong);
+  color: var(--msn-ink);
+}
+.msn-page input[type='checkbox'],
+.msn-page input[type='radio'] {
+  accent-color: var(--msn-accent);
+}
+
+/* ------------------------------------------------------------------
+ * Botones (`Button` variantes `missions-*`) y enlaces con forma de boton.
+ * ------------------------------------------------------------------ */
+.msn-btn-primary,
+.msn-btn-secondary,
+.msn-btn-danger,
+.msn-btn-link {
+  position: relative;
+  border: 1px solid var(--msn-panel-border);
+  border-radius: 10px;
+  min-height: 40px;
+  color: var(--msn-ink);
+  background: var(--msn-panel-bg-strong);
+  box-shadow: var(--msn-shadow);
+  font-family: var(--font-game-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition:
+    filter 120ms ease-out,
+    transform 100ms ease-out;
+}
+.msn-btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+.msn-btn-primary {
+  border-color: var(--msn-accent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--msn-accent) 26%, var(--msn-panel-bg-strong)),
+    color-mix(in oklab, var(--msn-accent) 50%, var(--msn-panel-bg-strong))
+  );
+}
+.msn-btn-danger {
+  border-color: var(--msn-danger);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--msn-danger) 20%, var(--msn-panel-bg-strong)),
+    color-mix(in oklab, var(--msn-danger) 40%, var(--msn-panel-bg-strong))
+  );
+}
+.msn-btn-primary:hover:not(:disabled),
+.msn-btn-secondary:hover:not(:disabled),
+.msn-btn-danger:hover:not(:disabled),
+.msn-btn-link:hover {
+  filter: brightness(1.08);
+}
+.msn-btn-primary:active:not(:disabled),
+.msn-btn-secondary:active:not(:disabled),
+.msn-btn-danger:active:not(:disabled),
+.msn-btn-link:active {
+  transform: translateY(1px);
+}
+
+/* Filtro de categoria con forma de pestanas: son botones `aria-pressed`. */
+.msn-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.msn-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 14px;
+  border: 1px solid var(--msn-panel-border);
+  border-radius: 999px;
+  background: var(--msn-panel-bg);
+  color: var(--msn-ink);
+  font-family: var(--font-game-display);
+  font-size: 14px;
+  font-weight: 600;
+}
+.msn-tab[aria-pressed='true'] {
+  border-color: var(--msn-accent);
+  background: color-mix(in oklab, var(--msn-accent) 30%, var(--msn-panel-bg-strong));
+  box-shadow: inset 0 0 0 1px var(--msn-accent);
+}
+
+/* ------------------------------------------------------------------
+ * Insignias: estado, categoria, dificultad, riesgo. El texto siempre esta;
+ * el color solo acompana.
+ * ------------------------------------------------------------------ */
+.msn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 2px 10px 2px 6px;
+  border: 1px solid var(--msn-badge-color, var(--msn-panel-border));
+  border-radius: 999px;
+  background: color-mix(
+    in oklab,
+    var(--msn-badge-color, var(--msn-accent)) 16%,
+    var(--msn-panel-bg-strong)
+  );
+  color: var(--msn-ink);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.msn-badge--available,
+.msn-badge--good,
+.msn-badge--COMPLETED,
+.msn-badge--LOW {
+  --msn-badge-color: var(--msn-success);
+}
+.msn-badge--locked,
+.msn-badge--muted {
+  --msn-badge-color: var(--msn-muted);
+}
+.msn-badge--progress,
+.msn-badge--MEDIUM {
+  --msn-badge-color: var(--msn-accent-2);
+}
+.msn-badge--bad,
+.msn-badge--FAILED,
+.msn-badge--ABANDONED,
+.msn-badge--VOIDED,
+.msn-badge--EXTREME {
+  --msn-badge-color: var(--msn-danger);
+}
+.msn-badge--HIGH {
+  --msn-badge-color: var(--msn-warning);
+}
+.msn-badge--gold {
+  --msn-badge-color: var(--msn-accent);
+}
+
+/* ------------------------------------------------------------------
+ * Iconos y escenas.
+ * ------------------------------------------------------------------ */
+.msn-icon {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+.msn-scene {
+  position: relative;
+  overflow: hidden;
+  background: #120f18;
+}
+.msn-scene > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+/* Tarjeta del tablon: la escena arriba, la ficha debajo. */
+.msn-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--msn-panel-border);
+  border-radius: 14px;
+  background: var(--msn-panel-bg);
+  box-shadow: var(--msn-shadow);
+  backdrop-filter: blur(3px);
+  transition:
+    transform 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+.msn-card:hover {
+  transform: translateY(-2px);
+}
+.msn-card--locked .msn-scene > img,
+.msn-card--locked .msn-scene > svg {
+  filter: grayscale(0.85) brightness(0.75);
+}
+.msn-card-title {
+  font-family: var(--font-game-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--msn-title);
+}
+.msn-card-scene-badges {
+  position: absolute;
+  inset: 8px 8px auto 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* Barra de progreso / vida con piel nueva. */
+.msn-meter {
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid var(--msn-panel-border);
+  border-radius: 999px;
+  background: var(--msn-track);
+}
+.msn-meter > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--msn-accent-2), var(--msn-accent));
+}
+.msn-meter--health > div {
+  background: linear-gradient(90deg, #a52a2a, #e0544a);
+}
+
+/* Bitacora: cada linea con su tono (el texto dice lo mismo sin color). */
+.msn-log {
+  display: flex;
+  max-height: 28rem;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+.msn-log > li {
+  border-left: 4px solid var(--msn-panel-border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  background: color-mix(in oklab, var(--msn-panel-bg-strong) 60%, transparent);
+  font-size: 14px;
+}
+.msn-log > li[data-tone='hero'] {
+  border-left-color: var(--msn-accent-2);
+}
+.msn-log > li[data-tone='enemy'] {
+  border-left-color: var(--msn-danger);
+}
+.msn-log > li[data-tone='good'] {
+  border-left-color: var(--msn-success);
+}
+.msn-log > li[data-tone='bad'] {
+  border-left-color: var(--msn-warning);
+}
+
+/* Estandarte del resultado (informe). */
+.msn-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--msn-banner-color, var(--msn-accent));
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--msn-banner-color, var(--msn-accent)) 30%, var(--msn-panel-bg-strong)),
+    var(--msn-panel-bg)
+  );
+  box-shadow: var(--msn-shadow);
+}
+.msn-banner--victory {
+  --msn-banner-color: var(--msn-success);
+}
+.msn-banner--defeat {
+  --msn-banner-color: var(--msn-danger);
+}
+
+/* Silueta de lo aun no obtenido (album de epicas, logros). */
+.msn-locked-art {
+  filter: grayscale(1) brightness(0.35);
+  opacity: 0.8;
+}
+
+/* Aviso flotante de mision terminada: vive fuera de `.msn-page`, en el
+ * layout, asi que define sus propios colores con los tokens globales. */
+.msn-toast {
+  border: 1px solid color-mix(in oklab, var(--color-accent-gold) 60%, transparent);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--color-surface-raised) 94%, transparent);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+}
+.msn-toast-title {
+  font-family: var(--font-game-display);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* ------------------------------------------------------------------
+ * Retrato de enemigo (detalle, informe): primer fotograma de su tira.
+ * ------------------------------------------------------------------ */
+.msn-portrait {
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+.msn-portrait--BOSS {
+  border-color: var(--msn-danger);
+}
+.msn-portrait--MASTER {
+  border-color: var(--msn-accent-2);
+}
+
+/* ------------------------------------------------------------------
+ * Diorama de progreso. Todo es decorativo (`aria-hidden`): la bitacora
+ * accesible dice lo mismo en palabras. Coordenadas en % del escenario, que
+ * conserva la proporcion de las escenas (688x384).
+ * ------------------------------------------------------------------ */
+.msn-stage {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 688 / 384;
+  border-radius: 10px;
+  background: #120f18;
+  color: #f4ead2;
+  isolation: isolate;
+}
+.msn-stage-scene {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+.msn-stage-hud {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(10, 8, 14, 0.78), rgba(10, 8, 14, 0));
+  font-size: 12px;
+}
+.msn-stage-hud-unit {
+  display: flex;
+  min-width: 0;
+  max-width: 220px;
+  flex-direction: column;
+  gap: 3px;
+}
+.msn-stage-hud-unit:last-child {
+  justify-self: end;
+}
+.msn-stage-hud-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-game-display);
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000;
+}
+.msn-stage-encounter {
+  padding: 2px 10px;
+  border: 1px solid rgba(231, 200, 115, 0.6);
+  border-radius: 999px;
+  background: rgba(10, 8, 14, 0.7);
+  font-family: var(--font-game-display);
+  font-weight: 700;
+  white-space: nowrap;
+  color: #e7c873;
+}
+.msn-stage .msn-meter {
+  height: 8px;
+  border-color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.45);
+}
+.msn-stage .msn-meter > div {
+  transition: width 400ms ease-out;
+}
+
+/* Combatientes: el heroe abajo a la izquierda mirando al frente-derecha; el
+ * enemigo enfrente, a la derecha. Sombra en el suelo para asentarlos. */
+.msn-stage-hero,
+.msn-stage-enemy {
+  position: absolute;
+  bottom: 6%;
+  z-index: 2;
+  width: 30%;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.55));
+}
+.msn-stage-hero {
+  left: 12%;
+}
+.msn-stage-enemy {
+  right: 12%;
+}
+.msn-stage-enemy--BOSS,
+.msn-stage-enemy--MASTER {
+  width: 36%;
+  right: 8%;
+}
+.msn-stage-hero::before,
+.msn-stage-enemy::before {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 2%;
+  height: 10%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  z-index: -1;
+}
+.msn-stage-enemy-fallback {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+.msn-stage-strip {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+.msn-stage-strip--loop {
+  animation: msn-strip calc(var(--msn-frames) * 110ms) steps(var(--msn-frames-steps), jump-none)
+    infinite;
+}
+.msn-stage-strip--once {
+  animation: msn-strip calc(var(--msn-frames) * 80ms) steps(var(--msn-frames-steps), jump-none) 1
+    both;
+}
+/* Un unico fotograma (criaturas sin animacion propia): respira con CSS. */
+.msn-stage-strip--bob {
+  animation: msn-bob 1.6s ease-in-out infinite;
+}
+@keyframes msn-bob {
+  50% {
+    transform: translateY(-3%) scaleY(1.02);
+  }
+}
+@keyframes msn-strip {
+  from {
+    background-position-x: 0%;
+  }
+  to {
+    background-position-x: 100%;
+  }
+}
+
+/* Momentos: quien actua se adelanta; quien recibe tiembla y destella. */
+.msn-stage-hero[data-beat='heroStrike'],
+.msn-stage-hero[data-beat='heroMiss'] {
+  animation: msn-lunge-right 420ms ease-out;
+}
+.msn-stage-hero[data-beat='heroAbility'] {
+  animation: msn-cast 600ms ease-out;
+}
+.msn-stage-hero[data-beat='heal'] {
+  animation: msn-heal 700ms ease-out;
+}
+.msn-stage-enemy[data-beat='enemyStrike'],
+.msn-stage-enemy[data-beat='enemyMiss'] {
+  animation: msn-lunge-left 420ms ease-out;
+}
+.msn-stage-enemy[data-beat='heroStrike'] {
+  animation: msn-hurt 420ms ease-out 140ms;
+}
+.msn-stage-enemy[data-beat='appear'] {
+  animation: msn-appear 520ms ease-out;
+}
+.msn-stage-enemy--enraged {
+  filter: drop-shadow(0 0 6px rgba(230, 60, 40, 0.9)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.55));
+}
+.msn-stage-enemy--defeated {
+  animation: msn-defeat 700ms ease-in forwards;
+}
+.msn-stage-enemy--MASTER:not(.msn-stage-enemy--defeated) {
+  filter: drop-shadow(0 0 7px rgba(167, 122, 224, 0.9)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.55));
+}
+@keyframes msn-lunge-right {
+  40% {
+    transform: translateX(18%);
+  }
+}
+@keyframes msn-lunge-left {
+  40% {
+    transform: translateX(-18%);
+  }
+}
+@keyframes msn-hurt {
+  20% {
+    transform: translateX(5%);
+    filter: brightness(2.2) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.55));
+  }
+  50% {
+    transform: translateX(-4%);
+  }
+}
+@keyframes msn-cast {
+  50% {
+    filter: brightness(1.6) drop-shadow(0 0 10px rgba(167, 122, 224, 0.95));
+  }
+}
+@keyframes msn-heal {
+  50% {
+    filter: brightness(1.4) drop-shadow(0 0 10px rgba(110, 220, 130, 0.95));
+  }
+}
+@keyframes msn-appear {
+  from {
+    opacity: 0;
+    transform: translateX(20%);
+  }
+}
+@keyframes msn-defeat {
+  to {
+    opacity: 0;
+    transform: translateY(8%) rotate(8deg);
+  }
+}
+
+/* Cifras flotantes: aparecen sobre quien recibe y suben desvaneciendose. */
+.msn-float {
+  position: absolute;
+  bottom: 40%;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-game-display);
+  font-size: clamp(14px, 2.4vw, 22px);
+  font-weight: 700;
+  color: #fff3d6;
+  text-shadow:
+    0 2px 0 #000,
+    0 0 6px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  animation: msn-float 900ms ease-out both;
+}
+.msn-float--hero {
+  left: 22%;
+}
+.msn-float--enemy {
+  right: 22%;
+}
+.msn-float--damage {
+  color: #ff8c7a;
+}
+.msn-float--heal {
+  color: #8df0a2;
+}
+.msn-float--ability {
+  font-size: clamp(12px, 1.8vw, 16px);
+  color: #d8b8ff;
+}
+@keyframes msn-float {
+  from {
+    opacity: 0;
+    transform: translateY(20%);
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-90%);
+  }
+}
+
+/* Rotulos centrales: inicio de encuentro y desenlace. */
+.msn-stage-callout,
+.msn-stage-outcome {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transform: translate(-50%, -50%);
+  padding: 8px 18px;
+  border: 1px solid rgba(231, 200, 115, 0.7);
+  border-radius: 12px;
+  background: rgba(10, 8, 14, 0.78);
+  font-family: var(--font-game-display);
+  font-size: clamp(16px, 3vw, 28px);
+  font-weight: 700;
+  color: #e7c873;
+  white-space: nowrap;
+}
+.msn-stage-callout {
+  animation: msn-callout 1400ms ease-out both;
+}
+.msn-stage-outcome--victory {
+  border-color: rgba(127, 211, 154, 0.8);
+  color: #9ff0b5;
+}
+.msn-stage-outcome--defeat {
+  border-color: rgba(238, 139, 132, 0.8);
+  color: #ffb0a8;
+}
+@keyframes msn-callout {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -30%);
+  }
+  20%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* En pausa todo queda quieto; con movimiento reducido no hay animaciones. */
+.msn-stage[data-paused='true'] *,
+.msn-stage--still * {
+  animation-play-state: paused !important;
+}
+.msn-stage--still .msn-stage-strip,
+.msn-stage--still .msn-stage-hero,
+.msn-stage--still .msn-stage-enemy {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .msn-stage * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msn-card,
+  .msn-btn-primary,
+  .msn-btn-secondary,
+  .msn-btn-danger,
+  .msn-btn-link {
+    transition: none;
+  }
+  .msn-card:hover {
+    transform: none;
+  }
+}
+
+/* Album de epicas: lo obtenido brilla en oro; lo pendiente, en silueta. */
+.msn-album-entry--owned {
+  border-color: var(--msn-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--msn-accent) 45%, transparent);
+}
+.msn-album-entry--missing {
+  border-style: dashed;
+}
+.msn-stat-value {
+  font-family: var(--font-game-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--msn-title);
+}
+
+/* ------------------------------------------------------------------
+ * Componentes internos que pintan con los tokens de Tailwind (selector de
+ * dificultad, estimacion, editor de estrategia, editor de contenido): dentro
+ * de una pagina de Misiones se les remapean las superficies y bordes a la
+ * paleta del remaster, sin tocar su marcado ni sus pruebas.
+ * ------------------------------------------------------------------ */
+.msn-page .bg-surface {
+  background-color: var(--msn-panel-bg-strong);
+}
+.msn-page .bg-surface-raised {
+  background-color: var(--msn-panel-bg);
+}
+.msn-page .border-border {
+  border-color: var(--msn-panel-border);
+}
+.msn-page .border-brand {
+  border-color: var(--msn-accent);
+}
+.msn-page .bg-brand\/10 {
+  background-color: color-mix(in oklab, var(--msn-accent) 18%, var(--msn-panel-bg-strong));
+}
+.msn-page [role='radio'] {
+  font-family: inherit;
+}
+.msn-page [role='radio'] > span:first-child > span:first-child {
+  font-family: var(--font-game-display);
+  font-size: 15px;
+}
+/* El editor es un formulario largo: superficie solida para leer sin esfuerzo. */
+.msn-page--admin .msn-tile {
+  background: var(--msn-panel-bg-strong);
+  box-shadow: var(--msn-shadow);
+}
+
+/* Cabecera del detalle: escena a la izquierda, ficha a la derecha. */
+.msn-detail-hero {
+  display: grid;
+}
+.msn-detail-hero-scene {
+  height: 220px;
+}
+@media (min-width: 768px) {
+  .msn-detail-hero {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+  .msn-detail-hero-scene {
+    height: 100%;
+    min-height: 280px;
+  }
+}

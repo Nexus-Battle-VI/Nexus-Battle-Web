@@ -388,5 +388,19 @@
     "PICARO_MACHETE": "Pícaro Machete",
     "CHAMAN": "Chamán",
     "MEDICO": "Médico"
+  },
+  "remaster": {
+    "boardEyebrow": "Sala de mando · Tablón de misiones",
+    "historyEyebrow": "Crónicas del héroe",
+    "reportEyebrow": "Informe de campaña",
+    "adminEyebrow": "Taller del Maestro de Juego",
+    "encounter": "Encuentro {{n}}",
+    "bossEncounter": "Encuentro {{n}} · Jefe",
+    "critical": "¡Crítico!",
+    "miss": "Falla",
+    "victory": "Victoria",
+    "defeat": "Derrota",
+    "pauseAnimation": "Pausar animación",
+    "resumeAnimation": "Reanudar animación"
   }
 }

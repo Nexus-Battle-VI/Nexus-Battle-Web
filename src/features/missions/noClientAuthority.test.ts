@@ -14,8 +14,21 @@ import { describe, expect, it } from 'vitest'
  */
 const MISSIONS_DIR = path.resolve(__dirname)
 
+/**
+ * Carpetas del remaster visual (EN-031) que tambien se recorren: el diorama
+ * reproduce la bitacora y las escenas pintan arte, y ninguno de los dos puede
+ * convertirse en el sitio donde el cliente calcule algo. Las demas subcarpetas
+ * (`admin/`, `dev/`) quedan fuera, como antes.
+ */
+const GUARDED_SUBFOLDERS = ['diorama', 'art'] as const
+
 const productionSources = (): readonly { readonly file: string; readonly code: string }[] =>
-  readdirSync(MISSIONS_DIR)
+  ['', ...GUARDED_SUBFOLDERS]
+    .flatMap((folder) =>
+      readdirSync(path.join(MISSIONS_DIR, folder)).map((name) =>
+        folder === '' ? name : `${folder}/${name}`,
+      ),
+    )
     .filter((name) => /\.(ts|tsx)$/u.test(name))
     .filter((name) => !/\.test\.(ts|tsx)$/u.test(name) && name !== 'fixtures.ts')
     .map((name) => ({
@@ -43,6 +56,10 @@ describe('la feature de misiones recorre sus fuentes de produccion (HU-09.5)', (
         'experiencePresentation.ts',
         'MissionExperiencePanel.tsx',
         'MissionReportPage.tsx',
+        // Remaster EN-031: el diorama y las escenas tambien pasan por el guard.
+        'diorama/stage.ts',
+        'diorama/MissionDiorama.tsx',
+        'art/MissionArt.tsx',
       ]),
     )
     expect(files).not.toContain('fixtures.ts')

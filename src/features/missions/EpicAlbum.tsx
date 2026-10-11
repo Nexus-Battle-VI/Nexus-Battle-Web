@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 
+import { MissionPixelIcon } from './MissionPixelIcon'
 import { heroTypeLabel } from './missionPresentation'
 import type { MissionEpicAlbumEntry } from './missionReportApi'
 import { useTranslation } from 'react-i18next'
@@ -23,6 +24,7 @@ export const EpicAlbum = ({
 
   return (
     <Card
+      className="msn-panel"
       title={t('missions:album.title')}
       description={t('missions:album.description', {
         owned: String(owned),
@@ -34,13 +36,25 @@ export const EpicAlbum = ({
           <li
             key={entry.epicRef}
             className={clsx(
-              'flex flex-col gap-1 rounded-lg border p-3 text-sm',
-              entry.obtained ? 'border-success/60 bg-success/10' : 'border-dashed border-border',
+              'msn-tile flex flex-col gap-1 p-3 text-sm',
+              entry.obtained ? 'msn-album-entry--owned' : 'msn-album-entry--missing',
             )}
           >
             <p className="flex items-center justify-between gap-2 font-semibold text-ink">
-              <span>{entry.name}</span>
-              <span className="text-xs font-medium">
+              <span className="flex items-center gap-2">
+                <MissionPixelIcon
+                  icon="epic"
+                  size="lg"
+                  className={entry.obtained ? undefined : 'msn-locked-art'}
+                />
+                {entry.name}
+              </span>
+              <span
+                className={clsx(
+                  'msn-badge',
+                  entry.obtained ? 'msn-badge--good' : 'msn-badge--muted',
+                )}
+              >
                 {entry.obtained ? t('missions:album.obtained') : t('missions:album.pending')}
               </span>
             </p>
@@ -51,10 +65,7 @@ export const EpicAlbum = ({
             {entry.epicEffect !== null && <p className="text-ink">{entry.epicEffect}</p>}
             <p className="text-muted">
               {t('missions:album.master', { name: entry.masterName })} ·{' '}
-              <Link
-                to={`/missions/${encodeURIComponent(entry.missionId)}`}
-                className="text-brand hover:underline"
-              >
+              <Link to={`/missions/${encodeURIComponent(entry.missionId)}`} className="msn-link">
                 {entry.missionName}
               </Link>
             </p>

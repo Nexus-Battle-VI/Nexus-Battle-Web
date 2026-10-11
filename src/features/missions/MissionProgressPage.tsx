@@ -1,30 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import clsx from 'clsx'
 import { Link, useParams } from 'react-router'
 
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
+import {
+  fetchAvailableHeroes,
+  type AvailableHero,
+} from '@/features/player-inventory/heroSelectionApi'
 import { countdownLabel, useCallAt, useCountdown } from '@/shared/countdown'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 
 import { ProgressBar } from './ActiveMissionsPanel'
+import { MissionArt } from './art/MissionArt'
 import { difficultyName } from './difficultyPresentation'
+import { MissionDiorama } from './diorama/MissionDiorama'
+import { fetchMissionDetail } from './missionApi'
 import { fetchMissionProgress, type MissionProgress, type ProgressEntry } from './missionPlayApi'
-import { progressLine, type ProgressTone } from './progressPresentation'
+import { MissionPixelIcon } from './MissionPixelIcon'
+import { progressLine } from './progressPresentation'
 import { useTranslation } from 'react-i18next'
+import './missions.css'
+
+/** Una respuesta que no es una lista (servicio caido, version anterior) no rompe la escena. */
+const isHeroList = (value: unknown): value is readonly AvailableHero[] => Array.isArray(value)
 
 /** Si nada se revela antes, se vuelve a preguntar a este ritmo. */
 const FALLBACK_REFRESH_MS = 30_000
-
-const TONE: Readonly<Record<ProgressTone, string>> = {
-  info: 'border-border',
-  hero: 'border-brand/60',
-  enemy: 'border-danger/60',
-  good: 'border-success/60',
-  bad: 'border-warning/70',
-}
 
 const HeroHealth = ({
   hero,
@@ -37,7 +40,10 @@ const HeroHealth = ({
   return (
     <div className="flex flex-col gap-1 text-sm">
       <div className="flex justify-between text-ink">
-        <span>{t('missions:progressPage.heroHealth', { name })}</span>
+        <span className="flex items-center gap-1.5">
+          <MissionPixelIcon icon="heal" size="sm" />
+          {t('missions:progressPage.heroHealth', { name })}
+        </span>
         <span className="tabular-nums">
           {hero.health} / {hero.maxHealth}
         </span>
@@ -45,6 +51,7 @@ const HeroHealth = ({
       <ProgressBar
         percent={(hero.health * 100) / hero.maxHealth}
         label={t('missions:progressPage.heroHealth', { name })}
+        tone="health"
       />
     </div>
   )
@@ -67,8 +74,9 @@ const Status = ({
         {progress.reportAvailable ? (
           <Link
             to={`/missions/reports/${encodeURIComponent(progress.enrollmentId)}`}
-            className="w-fit font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+            className="msn-btn-link msn-btn-primary w-fit"
           >
+            <MissionPixelIcon icon="report" size="sm" />
             {t('missions:progressPage.viewReport')}
           </Link>
         ) : (
@@ -84,12 +92,15 @@ const Status = ({
         percent={progress.progressPercent}
         label={t('missions:progressPage.missionProgress')}
       />
-      <p role="timer" aria-live="off" className="tabular-nums text-ink">
-        {remaining === null
-          ? t('missions:panel.confirmingReservation')
-          : remaining > 0
-            ? t('missions:panel.endsIn', { time: countdownLabel(remaining) })
-            : t('missions:panel.finishingUp')}
+      <p className="flex items-center gap-1.5 text-ink">
+        <MissionPixelIcon icon="timer" size="sm" />
+        <span role="timer" aria-live="off" className="tabular-nums">
+          {remaining === null
+            ? t('missions:panel.confirmingReservation')
+            : remaining > 0
+              ? t('missions:panel.endsIn', { time: countdownLabel(remaining) })
+              : t('missions:panel.finishingUp')}
+        </span>
       </p>
     </div>
   )
@@ -138,7 +149,23 @@ const ProgressContent = ({
   // Se pregunta justo cuando Missions va a revelar lo siguiente.
   useCallAt(progress.data?.nextRevealAt ?? null, refresh)
 
+  // Solo para la escena y el sprite del heroe: rutas que el detalle ya usa.
+  // Si fallan, el diorama usa la escena de su categoria y un icono.
+  const missionId = progress.data?.missionId ?? null
+  const mission = useQuery({
+    queryKey: queryKeys.missions.detail(subject, missionId ?? ''),
+    queryFn: ({ signal }) => fetchMissionDetail(missionId ?? '', signal),
+    enabled: subject !== null && missionId !== null,
+  })
+  const heroes = useQuery({
+    queryKey: queryKeys.missions.availableHeroes(subject),
+    queryFn: ({ signal }) => fetchAvailableHeroes(signal),
+    enabled: subject !== null,
+  })
+  const heroList = isHeroList(heroes.data) ? heroes.data : []
+
   const page = progress.data
+  const heroSubtype = heroList.find((hero) => hero.heroId === page?.hero.heroId)?.subtype ?? null
   const lines = entries
     .map((entry) => ({ seq: entry.seq, line: progressLine(entry) }))
     .filter((item) => item.line !== null)
@@ -148,34 +175,49 @@ const ProgressContent = ({
     <QueryState isLoading={progress.isPending} error={progress.error}>
       {page !== undefined && (
         <div className="flex flex-col gap-6">
-          <header>
-            <p className="text-sm text-muted">{difficultyName(page.difficulty)}</p>
-            <h1 className="text-2xl font-semibold text-ink">{page.missionName}</h1>
+          <header className="flex flex-col gap-1">
+            <p className="msn-eyebrow">{difficultyName(page.difficulty)}</p>
+            <h1 className="msn-title">{page.missionName}</h1>
           </header>
 
-          <Card title={t('missions:progressPage.status')}>
-            <div className="flex flex-col gap-4">
-              <Status progress={page} receivedAt={progress.dataUpdatedAt} />
-              <HeroHealth hero={page.hero} />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            <div className="msn-card p-3">
+              <MissionDiorama
+                entries={entries}
+                scene={
+                  <MissionArt
+                    imageRef={mission.data?.imageRef ?? null}
+                    category={mission.data?.category ?? null}
+                    className="h-full"
+                  />
+                }
+                heroName={page.hero.name ?? t('missions:progressPage.yourHero')}
+                heroSubtype={heroSubtype}
+                heroMaxHealth={page.hero.maxHealth}
+              />
             </div>
-          </Card>
+            <Card title={t('missions:progressPage.status')} className="msn-panel">
+              <div className="flex flex-col gap-4">
+                <Status progress={page} receivedAt={progress.dataUpdatedAt} />
+                <HeroHealth hero={page.hero} />
+              </div>
+            </Card>
+          </div>
 
           <Card
             title={t('missions:progressPage.logTitle')}
             description={t('missions:progressPage.logDescription')}
+            className="msn-panel"
           >
             {!page.simulated ? (
               <p className="text-sm text-muted">{t('missions:progressPage.preparingHero')}</p>
             ) : lines.length === 0 ? (
               <p className="text-sm text-muted">{t('missions:progressPage.nothingYet')}</p>
             ) : (
-              <ol aria-live="polite" className="flex max-h-[28rem] flex-col gap-1 overflow-y-auto">
+              <ol aria-live="polite" className="msn-log">
                 {lines.map(({ seq, line }) =>
                   line === null ? null : (
-                    <li
-                      key={seq}
-                      className={clsx('border-l-4 py-1 pl-3 text-sm text-ink', TONE[line.tone])}
-                    >
+                    <li key={seq} data-tone={line.tone} className="text-ink">
                       {line.text}
                     </li>
                   ),
@@ -202,8 +244,11 @@ export const MissionProgressPage = (): React.JSX.Element => {
   }
 
   return (
-    <section aria-label={t('missions:progressPage.label')} className="flex flex-col gap-6">
-      <Link to="/missions" className="w-fit text-sm text-brand hover:underline">
+    <section
+      aria-label={t('missions:progressPage.label')}
+      className="msn-page msn-page--progress flex flex-col gap-6"
+    >
+      <Link to="/missions" className="msn-link w-fit text-sm">
         {t('missions:detail.backToBoard')}
       </Link>
       <ProgressContent key={enrollmentId} enrollmentId={enrollmentId} />

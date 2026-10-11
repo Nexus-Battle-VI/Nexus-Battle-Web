@@ -60,6 +60,12 @@ const FORBIDDEN_MARKERS = [
   // componente `DifficultySelector` en si si puede llegar cuando HU-70.3 lo monte.
   '__dev/hu75',
   'DifficultySelectorDevPreview',
+  // Artefactos exclusivamente DEV del remaster visual de Misiones (EN-031): la
+  // ruta `__dev/missions`, su vista previa y sus datos de ejemplo. Las
+  // paginas de Misiones en si son de produccion.
+  '__dev/missions',
+  'MissionsRemasterPreview',
+  'matricula-vista-previa',
 ]
 
 /**
