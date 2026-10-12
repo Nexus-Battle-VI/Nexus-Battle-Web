@@ -35,9 +35,22 @@ export const ShellRemasterPreview = (): React.JSX.Element => {
 
   useLayoutEffect(() => {
     const previous = useSession.getState()
-    useSession.setState({ subject: 'sujeto-armazon-vista-previa', roles: ['PLAYER'] })
+    // EN-031: con `authenticationAvailable` la cabecera pinta "Mi cuenta" y su menu.
+    useSession.setState({
+      subject: 'sujeto-armazon-vista-previa',
+      roles: ['PLAYER'],
+      authenticationAvailable: true,
+      displayName: 'Ana Guardiana',
+      email: 'ana@ejemplo.test',
+    })
     return () => {
-      useSession.setState({ subject: previous.subject, roles: previous.roles })
+      useSession.setState({
+        subject: previous.subject,
+        roles: previous.roles,
+        authenticationAvailable: previous.authenticationAvailable,
+        displayName: previous.displayName,
+        email: previous.email,
+      })
     }
   }, [])
 

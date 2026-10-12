@@ -1,5 +1,7 @@
 # Productos 2D (EN-026.4)
 
+> **Retirado en EN-031 (2026-10-11).** El render 2D de figuras se sustituyó por sprites animados de PixelLab por producto ([`../assets/pixellab-items.md`](../assets/pixellab-items.md)). Se conserva `product-catalog.ts` como lista oficial de los 72 productos; este documento queda como histórico.
+
 Documentación específica de la producción e integración de los 72 recursos visuales 2D de
 equipamiento y productos (armas, armaduras, ítems, acciones especiales y habilidades épicas).
 Complementa, sin repetir, `docs/visual-library/arquitectura-biblioteca-visual.md` (EN-026.2) y

@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { Hero3D } from './Hero3D'
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { HERO_VISUAL_SPECS_BY_ID } from './hero-definitions'
 import { heroSpriteSpec, spritePosition, spriteSequence } from './hero-sprite'
-import type { HeroSpriteSpec, SpriteDirection } from './hero-sprite'
+import type { HeroSpriteSpec, SpriteDirection, SpriteSequence } from './hero-sprite'
 import './hero-sprite.css'
 
 export interface HeroSpriteProps {
@@ -10,19 +9,47 @@ export interface HeroSpriteProps {
   readonly direction?: SpriteDirection
   /** Observed health only; visual feedback never determines damage or a result. */
   readonly health?: number | undefined
+  /**
+   * EN-031: cambia (p. ej. el `seq` del ultimo evento) cuando ESTE heroe acaba de
+   * actuar; entonces se reproduce su animacion de ataque una vez. Solo presentacion.
+   */
+  readonly attackSignal?: number | undefined
 }
+
+/** Reproduce una secuencia una sola vez sobre el fondo del sprite, sin tocar su bucle de reposo. */
+const playOnce = (
+  surface: RefObject<HTMLSpanElement | null>,
+  spec: HeroSpriteSpec,
+  sequence: SpriteSequence,
+): (() => void) => {
+  const frames = Array.from({ length: sequence.count + 1 }, (_, index) => ({
+    backgroundPosition: spritePosition(spec, sequence, Math.min(index, sequence.count - 1)),
+    offset: index / sequence.count,
+    easing: 'steps(1, end)',
+  }))
+  const animation = surface.current?.animate(frames, { duration: (sequence.count / 8) * 1000 })
+  return () => {
+    animation?.cancel()
+  }
+}
+
+const reducedMotion = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 const Sprite = ({
   heroId,
   spec,
   direction,
   health,
+  attackSignal,
 }: HeroSpriteProps & { readonly spec: HeroSpriteSpec; readonly direction: SpriteDirection }) => {
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
   const surface = useRef<HTMLSpanElement>(null)
   const previousHealth = useRef(health)
+  const previousAttack = useRef(attackSignal)
   const idle = spriteSequence(spec, direction, 'idle')
   const hit = spriteSequence(spec, direction, 'hit')
+  const attack = spriteSequence(spec, direction, 'attack')
 
   useEffect(() => {
     const previous = previousHealth.current
@@ -33,22 +60,29 @@ const Sprite = ({
       previous === undefined ||
       health >= previous ||
       hit === null ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      reducedMotion()
     ) {
       return
     }
-    const frames = Array.from({ length: hit.count + 1 }, (_, index) => ({
-      backgroundPosition: spritePosition(spec, hit, Math.min(index, hit.count - 1)),
-      offset: index / hit.count,
-      easing: 'steps(1, end)',
-    }))
-    const animation = surface.current?.animate(frames, { duration: (hit.count / 8) * 1000 })
-    return () => {
-      animation?.cancel()
-    }
+    return playOnce(surface, spec, hit)
   }, [health, hit, loaded, spec])
 
-  if (failed || idle === null) return <Hero3D heroId={heroId} />
+  useEffect(() => {
+    const previous = previousAttack.current
+    previousAttack.current = attackSignal
+    if (
+      !loaded ||
+      attackSignal === undefined ||
+      attackSignal === previous ||
+      attack === null ||
+      reducedMotion()
+    ) {
+      return
+    }
+    return playOnce(surface, spec, attack)
+  }, [attackSignal, attack, loaded, spec])
+
+  if (failed || idle === null) return <MissingHero heroId={heroId} />
   const style = {
     backgroundImage: `url("${spec.image}")`,
     backgroundSize: `${String((spec.sheet.width / spec.cell.width) * 100)}% ${String((spec.sheet.height / spec.cell.height) * 100)}%`,
@@ -90,16 +124,37 @@ const Sprite = ({
   )
 }
 
-/** Original PNG cells, at eight fps; keeps Hero3D as a safe loading-error fallback. */
+/**
+ * EN-031: si el PNG no carga (o el heroe no tiene sprite) se muestra un hueco con
+ * el nombre accesible, nunca un render 3D (Three.js se retiro).
+ */
+const MissingHero = ({ heroId }: { readonly heroId: string }): React.JSX.Element => (
+  <div
+    className="hero-sprite hero-sprite-missing"
+    role="img"
+    aria-label={HERO_VISUAL_SPECS_BY_ID.get(heroId)?.displayName ?? heroId}
+    data-hero={heroId}
+  />
+)
+
+/** Celdas del PNG (originales del export y las añadidas en EN-031), a ocho fps. */
 export const HeroSprite = ({
   heroId,
   direction = 'south-east',
   health,
+  attackSignal,
 }: HeroSpriteProps): React.JSX.Element => {
   const spec = heroSpriteSpec(heroId)
   return spec === null ? (
-    <Hero3D heroId={heroId} />
+    <MissingHero heroId={heroId} />
   ) : (
-    <Sprite key={heroId} heroId={heroId} spec={spec} direction={direction} health={health} />
+    <Sprite
+      key={heroId}
+      heroId={heroId}
+      spec={spec}
+      direction={direction}
+      health={health}
+      attackSignal={attackSignal}
+    />
   )
 }

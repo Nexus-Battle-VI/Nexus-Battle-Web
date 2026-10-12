@@ -196,7 +196,9 @@
     "currentTurn": "Turno atual",
     "turns": "Turnos",
     "turnOrder": "Ordem dos turnos",
-    "current": "Atual"
+    "current": "Atual",
+    "crashed": "A batalha teve um problema ao ser exibida. Sua partida continua no servidor.",
+    "reconnect": "Reconectar"
   },
   "turn": {
     "yours": "Seu turno",
@@ -310,7 +312,10 @@
       "UNKNOWN_SKILL": "Essa habilidade não pertence ao seu herói.",
       "UNSUPPORTED_SKILL_EFFECT": "Essa habilidade ainda não pode ser usada: seu efeito ainda não está definido para o combate.",
       "SKILL_ON_COOLDOWN": "Essa habilidade ainda está em recarga. Seu turno não foi consumido.",
-      "default": "Não foi possível usar a habilidade. Tente novamente."
+      "default": "Não foi possível usar a habilidade. Tente novamente.",
+      "SKILL_LOCKED": "Seu herói ainda não tem o nível para essa habilidade. Seu turno não foi consumido.",
+      "INVALID_HEAL_TARGET": "Essa cura só pode ser dirigida a um companheiro de equipe.",
+      "INSUFFICIENT_POWER_FOR_HEAL": "Você não tem Poder suficiente para essa cura. Seu turno não foi consumido."
     },
     "used": "{{actor}} usou {{skill}} contra {{target}}",
     "usedOn": "{{actor}} usou {{skill}} em {{target}}",
@@ -329,7 +334,12 @@
     "healTarget": "Companheiro a curar",
     "chooseHealTarget": "Em qual companheiro você quer usar {{skill}}?",
     "using": "Usando…",
-    "use": "Usar {{skill}}"
+    "use": "Usar {{skill}}",
+    "locked": "Desbloqueia no nível {{level}}",
+    "lockedShort": "Nível {{level}}",
+    "xpMissing": "faltam {{amount}} XP",
+    "usedAlone": "{{actor}} usou {{skill}}",
+    "effectApplied": "Efeito aplicado"
   },
   "result": {
     "standing": "Vida restante {{remaining}} / {{max}} ({{percent}} %)",
@@ -407,5 +417,10 @@
     "incomplete": "Entrega incompleta",
     "incompleteDetail": "Seus créditos já foram creditados, mas não conseguimos concluir a entrega da sua recompensa.",
     "added": "{{reward}} adicionada ao seu inventário ✓"
+  },
+  "music": {
+    "toggle": "Música de batalha",
+    "on": "Música ligada",
+    "off": "Música desligada"
   }
 }

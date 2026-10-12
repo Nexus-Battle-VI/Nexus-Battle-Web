@@ -1,0 +1,44 @@
+/* EN-031: sprite animado de un producto (tira horizontal de N fotogramas). */
+.item-sprite {
+  position: relative;
+  display: inline-block;
+  /* Cuadrado; quien lo pinta fija el tamano con clases (p. ej. h-12 w-12). */
+  aspect-ratio: 1;
+  width: 100%;
+  max-height: 100%;
+}
+
+.item-sprite-frame {
+  position: absolute;
+  inset: 0;
+  background-image: var(--item-sprite-image);
+  background-repeat: no-repeat;
+  background-size: calc(var(--item-sprite-count) * 100%) 100%;
+  background-position: 0% 0%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 1px rgb(0 0 0 / 35%));
+}
+
+.item-sprite-frame[data-animated='true'] {
+  animation: item-sprite-loop var(--item-sprite-duration) steps(var(--item-sprite-count), jump-none)
+    infinite;
+}
+
+@keyframes item-sprite-loop {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 100% 0%;
+  }
+}
+
+:root[data-page-hidden] .item-sprite-frame {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item-sprite-frame {
+    animation: none !important;
+  }
+}

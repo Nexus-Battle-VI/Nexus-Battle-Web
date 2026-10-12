@@ -686,7 +686,11 @@
    layout shift -- el "selected" es un anillo/corners superpuestos, nunca un
    cambio de tamano. */
 .br-combatant-target {
-  display: block;
+  /* EN-031: el sprite no tiene ancho intrinseco (el canvas 3D si lo tenia): sin
+     ancho propio, el boton se encogia a 0 y el rival seleccionable no se veia. */
+  display: flex;
+  justify-content: center;
+  width: 100%;
   border: none;
   background: transparent;
   padding: 0;
@@ -1099,6 +1103,71 @@
   background: var(--br-panel-bg-strong);
   box-shadow: var(--br-shadow);
   cursor: pointer;
+}
+/* EN-031: herramientas de la batalla (musica y chat) a la IZQUIERDA del escenario, a
+   media altura. Arriba esta el HUD, abajo a la izquierda el registro de la ultima accion
+   y abajo a la derecha las acciones (y la ayuda flotante): ahi no tapan nada. El panel
+   del chat se abre hacia la derecha de su burbuja, encima de la arena, sin empujar nada. */
+.br-stage-tools {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.br-stage-tool,
+.br-floating-chat--battle .br-floating-chat-bubble {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--br-panel-border);
+  background: var(--br-panel-bg-strong);
+  box-shadow: var(--br-shadow);
+  color: var(--br-ink);
+  cursor: pointer;
+  opacity: 0.9;
+}
+.br-stage-tool:hover,
+.br-stage-tool[aria-pressed='true'],
+.br-floating-chat--battle .br-floating-chat-bubble:hover,
+.br-floating-chat--battle .br-floating-chat-bubble[aria-expanded='true'] {
+  opacity: 1;
+}
+.br-stage-tool[aria-pressed='true'] {
+  border-color: var(--br-accent);
+  color: var(--br-accent);
+}
+.br-stage-tool:focus-visible {
+  outline: 2px solid var(--br-accent-2);
+  outline-offset: 2px;
+}
+.br-floating-chat--battle {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  flex-direction: row-reverse;
+  align-items: center;
+}
+/* El panel cuelga de la burbuja: abrirlo no mueve el boton de musica ni nada mas. */
+.br-floating-chat--battle .br-floating-chat-panel {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  translate: 0 -50%;
+  width: clamp(280px, 26vw, 380px);
+  height: clamp(280px, 50vh, 460px);
+}
+@media (max-width: 768px) {
+  .br-floating-chat--battle .br-floating-chat-panel {
+    width: min(340px, calc(100vw - 88px));
+    height: clamp(260px, 50dvh, 420px);
+  }
 }
 .br-floating-chat-bubble:focus-visible {
   outline: 2px solid var(--br-accent-2);
@@ -1797,5 +1866,71 @@ html:has(.br-main)::-webkit-scrollbar-thumb:hover {
   }
   .br-floating-log {
     width: calc(100% - 20px);
+  }
+}
+
+/* EN-031: sprite animado de la habilidad dentro del slot (mismo alto que el icono
+   de antes mas un poco: la barra no cambia de alto). */
+.br-action-slot-sprite {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+}
+
+/* EN-031: una habilidad bloqueada por nivel muestra el candado y el nivel en el
+   lugar del costo (misma linea, misma altura: la barra no cambia de tamano). */
+.br-action-slot-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--br-panel-border);
+  opacity: 1;
+}
+
+/* EN-031: el rechazo de una habilidad es un aviso FLOTANTE que se cierra solo
+   (antes era un bloque fijo dentro de la barra que se quedaba en pantalla y
+   reaparecia en cada turno). Fuera del flujo: no estira la barra de acciones. */
+.br-skill-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 112px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(92vw, 520px);
+  padding: 10px 14px;
+  border: 1px solid var(--color-danger);
+  border-radius: 12px;
+  background: var(--br-panel-bg);
+  box-shadow: var(--br-shadow);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  transform: translateX(-50%);
+  animation:
+    br-skill-toast-in 180ms ease-out,
+    br-skill-toast-out 320ms ease-in 5s forwards;
+}
+
+@keyframes br-skill-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+/* Se desvanece y deja de recibir clics; sigue en el DOM hasta que el estado lo quite. */
+@keyframes br-skill-toast-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .br-skill-toast {
+    animation: br-skill-toast-out 1ms linear 5s forwards;
   }
 }

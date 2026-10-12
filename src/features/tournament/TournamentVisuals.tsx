@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import { Card, type CardProps } from '@/components/ui/Card'
 import { Button, type ButtonProps } from '@/components/ui/Button'
 import { useTheme } from '@/shared/theme'
-import { Hero3D } from '@/shared/visual-library/heroes'
+import { HeroSprite } from '@/shared/visual-library/heroes'
 import { tournamentHeroIdentity } from './tournamentHeroIdentity'
 import { tournamentIcons, useTournamentAssets, type TournamentIconName } from './tournamentAssets'
 import './tournament-assets.css'
@@ -112,7 +112,7 @@ export const TournamentHeroFigure = ({ hero }: { readonly hero: object }): React
   return (
     <div className="tournament-hero-figure">
       {identity.modelId ? (
-        <Hero3D heroId={identity.modelId} />
+        <HeroSprite heroId={identity.modelId} />
       ) : (
         <div className="tournament-hero-unavailable" role="img" aria-label="Héroe por identificar">
           <TournamentIcon icon="team" size={44} />

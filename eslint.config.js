@@ -30,7 +30,11 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
       parserOptions: {
-        projectService: { allowDefaultProject: ['*.js', 'scripts/*.mjs'] },
+        projectService: {
+          allowDefaultProject: ['*.js', 'scripts/*.mjs'],
+          // EN-031: los scripts de arte ya pasan de los 8 ficheros que admite por defecto.
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 16,
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },

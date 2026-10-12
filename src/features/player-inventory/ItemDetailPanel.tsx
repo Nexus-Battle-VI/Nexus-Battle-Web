@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { QueryState } from '@/components/ui/QueryState'
 import { formatMoney } from '@/lib/format'
 import { formatInteger } from '@/shared/i18n/format'
-import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 
 import type { EquipmentSlotId } from './equipment/api'
 import { SLOT_META_BY_ID, slotLabel } from './equipment/slots'
@@ -109,14 +109,11 @@ export const ItemDetailPanel = ({
         {detail !== undefined && attributes !== null && (
           <>
             <div className="inventory-item-frame inventory-item-frame--large mx-auto w-full">
-              {(() => {
-                const heroId = heroIdOfProduct(detail.product.type, detail.product.sku)
-                return heroId === null ? (
-                  <ProductThumb src={detail.product.imageUrl} alt={detail.product.name} />
-                ) : (
-                  <Hero3D heroId={heroId} className="h-full [&>p]:hidden" />
-                )
-              })()}
+              <ProductVisual
+                product={detail.product}
+                className="h-full w-full"
+                fallback={<ProductThumb src={detail.product.imageUrl} alt={detail.product.name} />}
+              />
             </div>
 
             <div className="min-w-0 text-center">

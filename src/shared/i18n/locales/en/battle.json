@@ -196,7 +196,9 @@
     "currentTurn": "Current turn",
     "turns": "Turns",
     "turnOrder": "Turn order",
-    "current": "Current"
+    "current": "Current",
+    "crashed": "The battle failed to display. Your match is still running on the server.",
+    "reconnect": "Reconnect"
   },
   "turn": {
     "yours": "Your turn",
@@ -309,7 +311,10 @@
       "UNKNOWN_SKILL": "That ability doesn't belong to your hero.",
       "UNSUPPORTED_SKILL_EFFECT": "That ability can't be used yet: its effect is not yet defined for combat.",
       "SKILL_ON_COOLDOWN": "That ability is still on cooldown. Your turn wasn't used.",
-      "default": "The ability couldn't be used. Try again."
+      "default": "The ability couldn't be used. Try again.",
+      "SKILL_LOCKED": "Your hero isn't high enough level for that ability yet. Your turn was not used.",
+      "INVALID_HEAL_TARGET": "That heal can only target a teammate.",
+      "INSUFFICIENT_POWER_FOR_HEAL": "You don't have enough Power for that heal. Your turn was not used."
     },
     "used": "{{actor}} used {{skill}} on {{target}}",
     "usedOn": "{{actor}} used {{skill}} on {{target}}",
@@ -328,7 +333,12 @@
     "healTarget": "Teammate to heal",
     "chooseHealTarget": "Which teammate do you want to use {{skill}} on?",
     "using": "Using…",
-    "use": "Use {{skill}}"
+    "use": "Use {{skill}}",
+    "locked": "Unlocks at level {{level}}",
+    "lockedShort": "Level {{level}}",
+    "xpMissing": "{{amount}} XP to go",
+    "usedAlone": "{{actor}} used {{skill}}",
+    "effectApplied": "Effect applied"
   },
   "result": {
     "standing": "Remaining Health {{remaining}} / {{max}} ({{percent}}%)",
@@ -405,5 +415,10 @@
     "incomplete": "Incomplete delivery",
     "incompleteDetail": "Your credits have been credited, but we couldn't complete the delivery of your reward.",
     "added": "{{reward}} added to your inventory ✓"
+  },
+  "music": {
+    "toggle": "Battle music",
+    "on": "Music on",
+    "off": "Music off"
   }
 }

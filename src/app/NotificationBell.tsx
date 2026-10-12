@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
-import { AuthPixelIcon } from '@/components/auth/AuthPixelIcon'
 import {
   fetchPendingCatalogNotifications,
   markCatalogNotificationsRead,
@@ -34,6 +33,9 @@ const REFRESH_MS = 60_000
  * Si la consulta falla, la campana se queda sin contador; el panel lo dice.
  * Un problema de Notifications no debe romper la cabecera.
  */
+/** Generada con PixelLab (EN-031, `docs/assets/pixellab-shell.md`); la misma en Light y Dark. */
+const BELL_ICON = '/assets/shell/hud/bell.png'
+
 export const NotificationBell = (): React.JSX.Element | null => {
   const subject = useSession((state) => state.subject)
   const { t } = useTranslation()
@@ -141,9 +143,11 @@ export const NotificationBell = (): React.JSX.Element | null => {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={toggle}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="nb-hud-pill inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
-        <AuthPixelIcon icon="bell" size="md" />
+        {/* EN-031: campana propia del HUD, recta y sin placa (la de Autenticacion venia
+            inclinada y con su propio marco dentro de la pastilla). */}
+        <img src={BELL_ICON} alt="" aria-hidden="true" className="nb-bell-icon" />
         {count > 0 && (
           <span aria-hidden="true" className="nb-bell-count">
             {count > 9 ? '9+' : count}

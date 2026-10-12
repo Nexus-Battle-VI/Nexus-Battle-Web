@@ -374,3 +374,201 @@
     animation: none;
   }
 }
+
+/* ------------------------------------------------------------------
+ * EN-031 (2a entrega): la barra NUNCA hace scroll horizontal.
+ *
+ * `nb-primary-nav` es un contenedor de consulta. Cuando su ancho no
+ * alcanza para las etiquetas, cada modulo se queda en su icono: la
+ * etiqueta pasa a `sr-only` (el nombre accesible del enlace no cambia,
+ * y `title` sirve de pista visual). Con el menu de administracion hace
+ * falta mas ancho, por eso hay dos umbrales.
+ * ------------------------------------------------------------------ */
+.nb-primary-nav {
+  container: nb-nav / inline-size;
+}
+
+.nb-nav-seg[data-nav-module='console'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-console-light.png');
+}
+:root[data-theme='dark'] .nb-nav-seg[data-nav-module='console'] {
+  --nb-nav-icon: url('/assets/shell/nav/icon-console-dark.png');
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .nb-nav-seg[data-nav-module='console'] {
+    --nb-nav-icon: url('/assets/shell/nav/icon-console-dark.png');
+  }
+}
+
+@container nb-nav (max-width: 840px) {
+  .nb-nav-inner .nb-nav-rail .nb-nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .nb-nav-inner .nb-nav-rail .nb-nav-seg[data-nav-module] {
+    min-width: 2.6rem;
+    /* Sin texto, el alto lo da el icono: mismo alto que un segmento con etiqueta. */
+    min-height: 2rem;
+    padding-inline: 0.5rem;
+    background-position: center;
+  }
+}
+
+@container nb-nav (max-width: 1010px) {
+  .nb-nav-inner:has(.nb-admin-trigger) .nb-nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .nb-nav-inner:has(.nb-admin-trigger) .nb-nav-seg[data-nav-module] {
+    min-width: 2.6rem;
+    /* Sin texto, el alto lo da el icono: mismo alto que un segmento con etiqueta. */
+    min-height: 2rem;
+    padding-inline: 0.5rem;
+    background-position: center;
+  }
+  /* El disparador de administracion conserva su chevron: icono a la izquierda. */
+  .nb-nav-inner:has(.nb-admin-trigger) .nb-nav-seg.nb-admin-trigger[data-nav-module] {
+    min-width: 0;
+    min-height: 2rem;
+    padding-inline: 2.1rem 0.4rem;
+    background-position: 0.55rem center;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * EN-031: "Mi cuenta" como placa del estandarte y menus de piedra.
+ * ------------------------------------------------------------------ */
+.nb-account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.6rem 0 0.25rem;
+  border: 2px solid var(--nb-banner-gold);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--nb-banner-top), var(--nb-banner-bottom));
+  box-shadow:
+    inset 0 -2px 0 var(--nb-banner-gold-soft),
+    0 1px 0 color-mix(in oklab, var(--color-ink) 25%, transparent);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform 120ms ease-out;
+}
+.nb-account-trigger:hover {
+  transform: translateY(-1px);
+}
+.nb-account-trigger[aria-expanded='true'] {
+  transform: translateY(1px);
+}
+.nb-account-chevron {
+  color: var(--nb-banner-gold);
+}
+
+/* Marco pixel del avatar: doble borde oro/piedra sin redondeo. */
+.nb-account-avatar {
+  display: inline-grid;
+  padding: 1px;
+  border: 2px solid var(--nb-banner-gold);
+  border-radius: 4px;
+  background: var(--nb-banner-bottom);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-ink) 35%, transparent);
+}
+.nb-account-avatar > * {
+  border-radius: 2px;
+}
+
+.nb-menu-panel {
+  border: 2px solid var(--nb-banner-gold);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--nb-banner-top), var(--nb-banner-bottom));
+  box-shadow:
+    inset 0 0 0 1px var(--nb-banner-gold-soft),
+    0 18px 40px color-mix(in oklab, black 40%, transparent);
+  backdrop-filter: blur(10px);
+  transform-origin: top right;
+  animation: nb-menu-open 160ms ease-out;
+}
+.nb-menu-identity {
+  border-bottom: 1px solid var(--nb-banner-gold-soft);
+}
+.nb-menu-role {
+  border: 1px solid var(--nb-banner-gold);
+  border-radius: 3px;
+  color: var(--nb-banner-gold);
+}
+.nb-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  text-align: start;
+  transition: background-color 120ms ease-out;
+}
+.nb-menu-item:hover,
+.nb-menu-item:focus-visible {
+  background: color-mix(in oklab, var(--nb-banner-gold) 18%, transparent);
+}
+.nb-menu-item .nb-pixel-icon {
+  transition: transform 120ms ease-out;
+}
+.nb-menu-item:hover .nb-pixel-icon,
+.nb-menu-item:focus-visible .nb-pixel-icon {
+  transform: translateX(2px) scale(1.08);
+}
+.nb-menu-item-danger {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+.nb-menu-item-danger:hover,
+.nb-menu-item-danger:focus-visible {
+  background: color-mix(in oklab, var(--color-danger) 14%, transparent);
+}
+.nb-menu-divider {
+  height: 2px;
+  margin: 0.25rem 0.75rem;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--nb-banner-gold-soft) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+/* Pastillas del HUD (campana, creditos, reclamos, sonido): misma piedra y oro. */
+.nb-hud-pill {
+  border: 2px solid var(--nb-banner-gold-soft);
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--nb-banner-top), var(--nb-banner-bottom));
+  box-shadow: inset 0 -2px 0 color-mix(in oklab, var(--nb-banner-gold) 45%, transparent);
+}
+.nb-hud-pill:hover {
+  border-color: var(--nb-banner-gold);
+}
+
+@keyframes nb-menu-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nb-menu-panel {
+    animation: none;
+  }
+  .nb-account-trigger,
+  .nb-menu-item .nb-pixel-icon {
+    transition: none;
+  }
+}

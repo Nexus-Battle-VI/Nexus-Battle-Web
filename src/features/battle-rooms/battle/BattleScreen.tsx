@@ -13,8 +13,16 @@ import { HealthBar } from './HealthBar'
 import { RewardPanel } from './RewardPanel'
 import { StakePanel } from './StakePanel'
 import { BattleTimers } from './BattleTimers'
+import { BattleMusicToggle } from './BattleMusicToggle'
+import { useBattleAudio } from './useBattleAudio'
 import type { ServerClock } from './battleClock'
-import type { LastAttack, LastHealSkill, LastSkill, LastTurnTimeout } from './battleReducer'
+import type {
+  LastAttack,
+  LastEffect,
+  LastHealSkill,
+  LastSkill,
+  LastTurnTimeout,
+} from './battleReducer'
 import {
   attackableTargets,
   combatantHealth,
@@ -44,6 +52,8 @@ export interface BattleScreenProps {
    * de Management); `null` si aun no hubo ninguna.
    */
   readonly lastHealSkill?: LastHealSkill | null
+  /** EN-031: el ultimo dano directo (Agonia) o epica. */
+  readonly lastEffect?: LastEffect | null
   /**
    * Acciones de combate (HU-18). Sin ellas la pantalla es de solo lectura: se ve la Vida y
    * el turno, pero no se ofrece ningun boton.
@@ -60,6 +70,11 @@ export interface BattleScreenProps {
     readonly ended: boolean
     readonly teamNames: Readonly<Record<string, string>>
   }
+  /**
+   * EN-031: el chat de la sala durante la batalla (burbuja flotante a la izquierda del
+   * escenario, ver `.br-floating-chat--battle`). Lo decide quien monta la pantalla.
+   */
+  readonly chat?: React.ReactNode
 }
 
 const keyOf = (ref: TargetRef): string => `${ref.teamLabel}#${String(ref.seat)}`
@@ -95,11 +110,13 @@ export const BattleScreen = ({
   lastAttack = null,
   lastSkill = null,
   lastHealSkill = null,
+  lastEffect = null,
   combat,
   result = null,
   lastTurnTimeout = null,
   serverClock = null,
   spectator,
+  chat,
 }: BattleScreenProps): React.JSX.Element => {
   const finished = result !== null || spectator?.ended === true
   const { t } = useTranslation()
@@ -111,6 +128,17 @@ export const BattleScreen = ({
       }
     : describeTurn(battle, subject)
   const self = findSelf(battle, subject)
+  useBattleAudio({
+    lastAttack,
+    lastSkill,
+    lastHealSkill,
+    lastEffect,
+    result,
+    subject,
+    finished,
+    isMyTurn: turn.isMyTurn,
+    turnsCompleted: battle.turnsCompleted,
+  })
   const { allies, opponents } = groupCombatants(battle, subject)
   const allyTitle = spectator?.teamNames[allies[0]?.teamLabel ?? ''] ?? t('battle:battle.yourTeam')
   const opponentTitle =
@@ -161,11 +189,30 @@ export const BattleScreen = ({
     opponents[0]
   const enemyCompanions = opponents.filter((entry) => entry.position !== enemyFocus?.position)
 
+  // EN-031: quien actuo en la ultima accion publicada reproduce su animacion de ataque (solo
+  // presentacion: el `seq` que la dispara es el del evento que ya envio Combat).
+  const lastActions = [
+    lastAttack === null ? null : { seq: lastAttack.seq, actor: lastAttack.attacker },
+    lastSkill === null ? null : { seq: lastSkill.seq, actor: lastSkill.actor },
+    lastHealSkill === null ? null : { seq: lastHealSkill.seq, actor: lastHealSkill.actor },
+    lastEffect === null ? null : { seq: lastEffect.seq, actor: lastEffect.actor },
+  ].filter((action) => action !== null)
+  const attackOf = (entry: TurnOrderEntry): number | undefined =>
+    lastActions
+      .filter(
+        (action) => action.actor.teamLabel === entry.teamLabel && action.actor.seat === entry.seat,
+      )
+      .reduce<number | undefined>(
+        (latest, action) => (latest === undefined || action.seq > latest ? action.seq : latest),
+        undefined,
+      )
+
   const timeoutAfterActions =
     lastTurnTimeout !== null &&
     lastTurnTimeout.seq > (lastAttack?.seq ?? 0) &&
     lastTurnTimeout.seq > (lastSkill?.seq ?? 0) &&
-    lastTurnTimeout.seq > (lastHealSkill?.seq ?? 0)
+    lastTurnTimeout.seq > (lastHealSkill?.seq ?? 0) &&
+    lastTurnTimeout.seq > (lastEffect?.seq ?? 0)
   const timeoutEntry = battle.turnOrder.find(
     (entry) =>
       entry.teamLabel === lastTurnTimeout?.timedOut.teamLabel &&
@@ -182,7 +229,7 @@ export const BattleScreen = ({
         life: null,
         detail: '',
       }
-    : describeLatestAction(lastAttack, lastSkill, battle, lastHealSkill)
+    : describeLatestAction(lastAttack, lastSkill, battle, lastHealSkill, lastEffect)
 
   // 9a pasada (secciones 38-44 del brief): estado de PRESENTACION (no de
   // dominio, no reducer, no store) que solo decide cuanto tiempo se ve el
@@ -345,6 +392,7 @@ export const BattleScreen = ({
               isCurrent={isCurrent}
               direction="south-east"
               healthOf={(entry) => healthOf(entry)?.current}
+              attackOf={attackOf}
             />
           </div>
 
@@ -364,6 +412,7 @@ export const BattleScreen = ({
               isCurrent={isCurrent}
               direction="north-west"
               healthOf={(entry) => healthOf(entry)?.current}
+              attackOf={attackOf}
               isTargetable={isTargetableEntry}
               isTargetSelected={isTargetSelectedEntry}
               onSelectTarget={onSelectTarget}
@@ -458,6 +507,13 @@ export const BattleScreen = ({
             )}
           </div>
         )}
+
+        {/* EN-031: herramientas del escenario a la izquierda, a media altura (musica y chat). */}
+        <div className="br-stage-tools">
+          {/* Solo para quien juega: la pantalla de solo lectura (espectador) no ofrece botones. */}
+          {!finished && spectator === undefined && combat !== undefined && <BattleMusicToggle />}
+          {chat}
+        </div>
       </div>
     </section>
   )

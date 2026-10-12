@@ -47,7 +47,7 @@ export const AppHeader = (): React.JSX.Element => {
     // despues y por tanto queda ENCIMA. En la vitrina de e-commerce (grid de
     // tarjetas) eso tapaba visualmente el menu abierto.
     <header className="nb-banner relative z-50 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
         <MobileNavDrawer />
 
         <Link
@@ -66,7 +66,7 @@ export const AppHeader = (): React.JSX.Element => {
         {/* EN-031: por debajo de `sm` la navegacion vive en `MobileNavDrawer`. */}
         <PrimaryNav className="min-w-0 max-sm:hidden sm:flex-1" />
 
-        <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2 sm:flex-nowrap sm:gap-3">
+        <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
           <SessionControl />
           <NotificationBell />
           <PendingClaimsBadge />

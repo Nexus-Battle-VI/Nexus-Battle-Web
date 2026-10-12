@@ -1,4 +1,4 @@
-import { Hero3D, HERO_VISUAL_SPECS_BY_ID } from '@/shared/visual-library/heroes'
+import { HeroSprite, HERO_VISUAL_SPECS_BY_ID } from '@/shared/visual-library/heroes'
 
 import { heroIdFromReference, heroIdFromSubtype } from './equipment/heroSubtype'
 import type { AvailableHero } from './heroSelectionApi'
@@ -12,7 +12,8 @@ export interface HeroViewportProps {
  *
  * TRES DECISIONES QUE MERECEN EXPLICACIÓN:
  *
- * 1. **El modelo 3D solo se usa cuando existe de verdad.** `heroIdFromSubtype`
+ * 1. **El sprite animado solo se usa cuando existe de verdad** (EN-031: antes
+ *    era un modelo 3D). `heroIdFromSubtype`
  *    devuelve `null` para un héroe que la biblioteca visual no conoce, y en ese
  *    caso se muestra la imagen que publica el catálogo. Forzar un modelo
  *    cualquiera enseñaría un héroe por otro; ocultar el hueco dejaría a un
@@ -52,7 +53,9 @@ export const HeroViewport = ({ hero }: HeroViewportProps): React.JSX.Element => 
             className="max-h-72 w-auto max-w-full object-contain"
           />
         ) : (
-          <Hero3D heroId={modelId} className="w-full max-w-xs" />
+          <span className="block w-full max-w-xs">
+            <HeroSprite heroId={modelId} />
+          </span>
         )}
       </div>
 

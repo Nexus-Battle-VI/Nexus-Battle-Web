@@ -29,6 +29,12 @@ import type {
   TargetRef,
   TurnOrderEntry,
 } from '@/features/battle-rooms/battle/types'
+import { FloatingChatPanel } from '../FloatingChatPanel'
+import {
+  createPreviewChatSocketFactory,
+  previewHasSession,
+  previewTicket,
+} from './previewChatServer'
 
 /**
  * Vista previa de desarrollo del REMASTER VISUAL de "Jugar Online" — batalla
@@ -133,7 +139,7 @@ const STATS: Readonly<
   ],
 }
 
-type SkillScenario = 'ready' | 'cooldown' | 'lowPower'
+type SkillScenario = 'ready' | 'cooldown' | 'lowPower' | 'locked'
 
 /** Las habilidades de Ana (sujeto): 2 reales + una 3a SOLO en DEV (seccion
     35/68 del brief: el contrato/fixture real solo trae 2, se agrega una
@@ -156,7 +162,8 @@ const anaSkills = (scenario: SkillScenario, withThird: boolean): readonly SkillV
     chargeTurns: 3,
     cooldownRemaining: scenario === 'cooldown' ? 2 : 0,
     targetAudience: 'OPPONENT',
-    status: scenario === 'cooldown' ? 'RECHARGING' : 'READY',
+    status: scenario === 'cooldown' ? 'RECHARGING' : scenario === 'locked' ? 'LOCKED' : 'READY',
+    unlockLevel: scenario === 'locked' ? 3 : 1,
   },
   ...(withThird
     ? [
@@ -324,6 +331,7 @@ const rewardBodyOf = (scenario: RewardScenario): unknown => {
 }
 
 export const BattleRemasterPreview = (): React.JSX.Element => {
+  const [chatFactory] = useState(createPreviewChatSocketFactory)
   const [rewardScenario, setRewardScenario] = useState<RewardScenario>('first-win')
   const [skillScenario, setSkillScenario] = useState<SkillScenario>('ready')
   const [anaHealth, setAnaHealth] = useState(38)
@@ -681,7 +689,7 @@ export const BattleRemasterPreview = (): React.JSX.Element => {
               />
               3a habilidad (DEV, para probar 4 slots)
             </label>
-            {(['ready', 'cooldown', 'lowPower'] as const).map((option) => (
+            {(['ready', 'cooldown', 'lowPower', 'locked'] as const).map((option) => (
               <button
                 key={option}
                 type="button"
@@ -694,7 +702,9 @@ export const BattleRemasterPreview = (): React.JSX.Element => {
                   ? 'disponibles'
                   : option === 'cooldown'
                     ? 'una en recarga'
-                    : 'Poder insuficiente'}
+                    : option === 'lowPower'
+                      ? 'Poder insuficiente'
+                      : 'bloqueada por nivel'}
               </button>
             ))}
           </fieldset>
@@ -750,6 +760,17 @@ export const BattleRemasterPreview = (): React.JSX.Element => {
             combat={controls}
             result={result}
             serverClock={createServerClock(new Date().toISOString(), monotonicNow())}
+            chat={
+              <FloatingChatPanel
+                placement="battle"
+                channel={{ kind: 'lobby' }}
+                title="Chat de la sala"
+                description="Vista previa: servidor falso, nada sale del navegador."
+                socketFactory={chatFactory}
+                ticketProvider={previewTicket}
+                hasSession={previewHasSession}
+              />
+            }
           />
         )}
       </main>

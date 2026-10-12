@@ -22,6 +22,7 @@ import { RegistrationPage } from '@/features/account/registration/RegistrationPa
 import { BattleRoomsPage } from '@/features/battle-rooms/BattleRoomsPage'
 import { BattleRoomLobbyPage } from '@/features/battle-rooms/BattleRoomLobbyPage'
 import { BattleWithChat } from '@/features/battle-rooms/BattleWithChat'
+import { BattleRouteError } from '@/features/battle-rooms/battle/BattleRouteError'
 import { PlayerInventoryPage } from '@/features/player-inventory/PlayerInventoryPage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
@@ -363,7 +364,12 @@ export const routes: RouteObject[] = [
       // listado, nunca escribiendo la URL a mano sin un roomId real.
       { path: 'play/rooms/:roomId', element: <BattleRoomLobbyPage /> },
       // HU-17: la batalla de esa misma sala (continua el flujo, sin entrada paralela).
-      { path: 'play/rooms/:roomId/battle', element: <BattleWithChat /> },
+      {
+        path: 'play/rooms/:roomId/battle',
+        element: <BattleWithChat />,
+        // EN-031: un fallo al pintar la batalla ofrece reconectar en vez de dejarla en blanco.
+        errorElement: <BattleRouteError />,
+      },
       { path: 'missions', element: <MissionBoardPage /> },
       { path: 'missions/history', element: <MissionHistoryPage /> },
       { path: 'missions/reports/:enrollmentId', element: <MissionReportPage /> },
