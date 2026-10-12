@@ -228,7 +228,9 @@
     "unevenTeams": "Les équipes de cette salle n'ont pas la même taille et l'ordre des tours n'est défini que pour des équipes de même effectif. La bataille n'a pas commencé ; revenez à la liste des salles.",
     "ineligible": "Un participant ne remplit plus les conditions pour combattre : son héros ou son équipement a changé. La bataille n'a pas commencé ; vérifiez votre héros et revenez dans la salle.",
     "unavailable": "Le service n'a pas pu valider les participants pour le moment. Réessayez dans quelques secondes.",
-    "failed": "Impossible de lancer la bataille. Réessayez."
+    "failed": "Impossible de lancer la bataille. Réessayez.",
+    "heroBusy": "Le héros d'un participant est encore dans un autre combat. Quand ce combat se termine (ou dans quelques minutes), relancez.",
+    "heroBusyNamed": "Le héros de {{name}} est encore dans un autre combat. Quand ce combat se termine (ou dans quelques minutes), relancez."
   },
   "reject": {
     "access": "Impossible d'accéder à cette bataille."
