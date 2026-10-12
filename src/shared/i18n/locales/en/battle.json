@@ -228,7 +228,9 @@
     "unevenTeams": "This room's teams have different sizes and the turn order is only defined for teams with the same number of participants. The battle did not start; go back to the room list.",
     "ineligible": "A participant no longer meets the requirements to fight: their hero or equipment changed. The battle did not start; check your hero and return to the room.",
     "unavailable": "The service couldn't validate the participants right now. Try again in a few seconds.",
-    "failed": "The battle couldn't be started. Try again."
+    "failed": "The battle couldn't be started. Try again.",
+    "heroBusy": "A participant's hero is still in another battle. Once that match ends (or in a few minutes), start again.",
+    "heroBusyNamed": "{{name}}'s hero is still in another battle. Once that match ends (or in a few minutes), start again."
   },
   "reject": {
     "access": "This battle couldn't be accessed."
