@@ -1,29 +1,35 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router'
 
 import { AdminPageHeader, AdminPanel } from '@/components/admin-kit'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
 import { formatDateTime } from '@/lib/format'
+import { canViewAdminUsers } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
 import { ApplySanctionForm } from './ApplySanctionForm'
 import type { SanctionResponse } from './api'
 
 /**
- * Superficie de moderacion para aplicar sanciones (HU-42, §3 del cierre:
- * "proporcionar una superficie limitada de moderacion respetando sus
- * permisos"), alcanzable por Moderador sin pasar por el panel administrativo
- * completo de usuarios (`/account/admin-users`, solo Administrador).
+ * Superficie de moderacion para aplicar sanciones, alcanzable por Moderador
+ * sin pasar por el panel administrativo completo de usuarios
+ * (`/account/admin-users`, solo Administrador).
  *
  * POR QUE PIDE EL ID DIRECTAMENTE: Account no expone ninguna busqueda de
  * cuentas para Moderador -`GET /accounts` exige ADMINISTRATOR-. Lo unico que
  * Moderador puede resolver es el NOMBRE VISIBLE de un sujeto
- * (`GET /accounts/:subject/display-name`, HU-41), que ahora tambien
- * devuelve el id de Account (HU-42) para que ese flujo -identificar al autor
- * de un comentario reportado y sancionarlo- sea real. Esta pantalla no
- * duplica esa busqueda: asume que quien llega aqui ya tiene el id, tipicamente
- * desde la cola de moderacion de comentarios.
+ * (`GET /accounts/:subject/display-name`), que tambien devuelve el id de
+ * Account para que ese flujo -identificar al autor de un comentario
+ * reportado y sancionarlo- sea real. Esta pantalla no duplica esa busqueda:
+ * asume que quien llega aqui ya tiene el id, tipicamente desde la cola de
+ * moderacion de comentarios.
+ *
+ * Quien SI tiene `canViewAdminUsers` (Administrador/Super Administrador) ve
+ * ademas un enlace a `/account/admin-users`: esa pantalla ya busca por apodo
+ * o correo y aplica la sancion desde el resultado, sin necesidad de conocer
+ * el id de antemano. No se duplica esa busqueda aqui.
  */
 export const SanctionsModerationPage = (): React.JSX.Element => {
   const { t } = useTranslation()
@@ -68,6 +74,16 @@ export const SanctionsModerationPage = (): React.JSX.Element => {
             {t('admin:sanctions.lookup.submit')}
           </Button>
         </form>
+
+        {canViewAdminUsers(roles) && (
+          <p className="mt-2 text-xs text-muted">
+            {t('admin:sanctions.lookup.adminSearchHint')}{' '}
+            <Link to="/account/admin-users" className="text-brand underline">
+              {t('admin:sanctions.lookup.adminSearchLinkLabel')}
+            </Link>
+            .
+          </p>
+        )}
       </AdminPanel>
 
       {applied !== null && (

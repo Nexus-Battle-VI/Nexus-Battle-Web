@@ -21,6 +21,21 @@ describe('SanctionsModerationPage (HU-42, superficie limitada de moderacion)', (
     expect(screen.queryByRole('button', { name: 'Revisar' })).not.toBeInTheDocument()
   })
 
+  it('Moderador no ve el enlace a la busqueda completa de cuentas (no tiene acceso a esa pantalla)', () => {
+    useSession.setState({ roles: ['PLAYER', 'MODERATOR'] })
+    renderWithProviders(<SanctionsModerationPage />)
+
+    expect(screen.queryByRole('link', { name: 'Administrar usuarios' })).not.toBeInTheDocument()
+  })
+
+  it('Administrador ve un enlace a la busqueda completa de cuentas por apodo o correo', () => {
+    useSession.setState({ roles: ['PLAYER', 'ADMINISTRATOR'] })
+    renderWithProviders(<SanctionsModerationPage />)
+
+    const link = screen.getByRole('link', { name: 'Administrar usuarios' })
+    expect(link).toHaveAttribute('href', '/account/admin-users')
+  })
+
   it('con un id valido, muestra el formulario y aplica la sancion', async () => {
     useSession.setState({ roles: ['PLAYER', 'MODERATOR'] })
 
