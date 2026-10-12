@@ -70,6 +70,86 @@
     "reason": "Motif de l'action",
     "reasonPlaceholder": "Expliquez pourquoi cette action est prise…"
   },
+  "sanctions": {
+    "title": "Appliquer des sanctions",
+    "intro": "Avertissement, suspension temporaire ou bannissement définitif d'un compte, avec motif et justification (HU-42).",
+    "crumb": "Appliquer des sanctions",
+    "lookup": {
+      "title": "Identifier le compte",
+      "label": "Id du compte",
+      "hint": "L'identifiant interne d'Account, pas l'e-mail ni le pseudo. Si vous venez de la modération des commentaires, vous l'avez déjà.",
+      "submit": "Continuer"
+    },
+    "result": {
+      "title": "Sanction enregistrée",
+      "applied": "Appliqué : {{type}}. Référence {{id}}.",
+      "appealDeadline": "Le compte peut faire appel jusqu'au : {{date}}."
+    },
+    "form": {
+      "title": "Sanctionner le compte {{id}}",
+      "reasonCode": "Motif",
+      "selectPlaceholder": "Sélectionnez une option",
+      "type": "Type de sanction",
+      "duration": "Durée (minutes)",
+      "durationHint": "Uniquement pour une suspension temporaire.",
+      "reason": "Justification",
+      "reasonHint": "Incluse dans la notification envoyée au compte sanctionné.",
+      "continue": "Vérifier",
+      "cancel": "Annuler",
+      "selectRequired": "Sélectionnez le motif et le type de sanction.",
+      "reasonRequired": "La justification est obligatoire.",
+      "durationRequired": "Indiquez une durée valide en minutes."
+    },
+    "review": {
+      "target": "Compte",
+      "type": "Type",
+      "reasonCode": "Motif",
+      "duration": "Durée",
+      "durationMinutes": "{{minutes}} minutes",
+      "banConfirm": "Je confirme avoir compris que le bannissement définitif est permanent.",
+      "confirm": "Appliquer la sanction",
+      "back": "Retour"
+    },
+    "types": {
+      "WARNING": "Avertissement",
+      "TEMPORARY_SUSPENSION": "Suspension temporaire",
+      "PERMANENT_BAN": "Bannissement définitif"
+    },
+    "reasonCodes": {
+      "OFFENSIVE_LANGUAGE": "Langage offensant ou abusif",
+      "HARASSMENT": "Harcèlement d'autres joueurs",
+      "FRAUD_OR_MANIPULATION": "Fraude ou manipulation du système",
+      "UNAUTHORIZED_SOFTWARE_OR_CHEATING": "Logiciel non autorisé ou triche",
+      "IDENTITY_IMPERSONATION": "Usurpation d'identité",
+      "PRIVACY_POLICY_VIOLATION": "Violation de la politique de confidentialité",
+      "TERMS_OF_SERVICE_VIOLATION": "Non-respect des conditions d'utilisation",
+      "LEGAL_RELATIONSHIP_TERMINATION": "Fin de la relation légale",
+      "AUCTION_TERMS_VIOLATION": "Non-respect des conditions des enchères",
+      "OTHER": "Autre motif"
+    }
+  },
+  "appeals": {
+    "title": "Examiner les appels",
+    "intro": "Appels en attente d'une décision finale (HU-42).",
+    "crumb": "Examiner les appels",
+    "empty": "Aucun appel en attente d'examen.",
+    "meta": "Sanction {{sanctionId}} · Compte {{accountId}} · Soumis le {{date}}",
+    "decisionDueAt": "Date de référence pour la décision : {{date}}",
+    "resolveAction": "Résoudre",
+    "decisions": {
+      "UPHELD": "La sanction est maintenue",
+      "OVERTURNED": "La sanction est annulée"
+    },
+    "form": {
+      "decision": "Décision",
+      "notes": "Justification de la décision",
+      "notesHint": "Communiquée au compte ayant fait appel.",
+      "submit": "Enregistrer la décision",
+      "cancel": "Annuler",
+      "decisionRequired": "Sélectionnez une décision.",
+      "notesRequired": "La justification est obligatoire."
+    }
+  },
   "products": {
     "types": {
       "HEROE": "Héros",
@@ -757,7 +837,9 @@
       "chatbot-knowledge": "Entrées auxquelles le chatbot sait répondre.",
       "chatbot-analytics": "Ce qui est demandé et ce qui reste sans réponse.",
       "chatbot-tickets": "Questions transmises par le chatbot.",
-      "roles": "Attribuez et retirez les rôles des comptes."
+      "roles": "Attribuez et retirez les rôles des comptes.",
+      "security": "Avertissement, suspension ou bannissement, avec motif et justification.",
+      "pending": "Appels en attente d'une décision finale."
     },
     "sections": "Sections"
   }

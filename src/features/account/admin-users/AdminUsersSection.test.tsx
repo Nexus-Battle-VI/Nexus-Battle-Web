@@ -6,6 +6,8 @@ import { HttpError } from '@/lib/http'
 import { queryKeys } from '@/shared/query-keys'
 import { useSession } from '@/shared/session'
 import { createTestQueryClient, renderWithProviders } from '@/test/render'
+import * as sanctionsApi from '@/features/admin/sanctions/api'
+import type { SanctionResponse } from '@/features/admin/sanctions/api'
 import { AdminUsersSection } from './AdminUsersSection'
 import type { AdminAccountsResponse } from './api'
 
@@ -387,5 +389,41 @@ describe('AdminUsersSection', () => {
       'No se pudo exportar el resultado. Intenta de nuevo más tarde.',
     )
     expect(document.body.textContent).not.toMatch(/StackTrace|SQL|subject|token/u)
+  })
+
+  it('HU-42: permite sancionar un resultado de busqueda desde el panel administrativo', async () => {
+    const sanction: SanctionResponse = {
+      id: 'sancion-1',
+      targetAccountId: 'acc-panel-admin',
+      actorAccountId: 'actor-1',
+      type: 'WARNING',
+      reason: 'Conducta reportada',
+      reasonCode: 'HARASSMENT',
+      createdAt: '2026-10-11T12:00:00.000Z',
+      expiresAt: null,
+      appealDeadline: '2026-11-10T12:00:00.000Z',
+    }
+    vi.spyOn(sanctionsApi, 'applySanction').mockResolvedValue(sanction)
+
+    const user = userEvent.setup()
+    renderPanel()
+
+    await screen.findByText('Capitana Panel')
+    const [sanctionButton] = screen.getAllByRole('button', { name: 'Sancionar' })
+    expect(sanctionButton).toBeDefined()
+    await user.click(sanctionButton!)
+
+    await user.selectOptions(screen.getByLabelText(/^causal/iu), 'HARASSMENT')
+    await user.selectOptions(screen.getByLabelText(/^tipo de sanción/iu), 'WARNING')
+    await user.type(screen.getByLabelText(/^motivo/iu), 'Conducta reportada')
+    await user.click(screen.getByRole('button', { name: 'Revisar' }))
+    await user.click(screen.getByRole('button', { name: 'Aplicar sanción' }))
+
+    expect(sanctionsApi.applySanction).toHaveBeenCalledWith('acc-panel-admin', {
+      type: 'WARNING',
+      reasonCode: 'HARASSMENT',
+      reason: 'Conducta reportada',
+    })
+    expect(await screen.findByText('Sanción aplicada: Advertencia.')).toBeInTheDocument()
   })
 })

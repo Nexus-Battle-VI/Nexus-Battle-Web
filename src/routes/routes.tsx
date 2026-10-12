@@ -44,6 +44,9 @@ import { CreateProductPage } from '@/features/admin/products/CreateProductPage'
 import { AdjustInventoryPage } from '@/features/admin/products/AdjustInventoryPage'
 import { ProductManagementPage } from '@/features/admin/products/ProductManagementPage'
 import { ModerationQueuePage } from '@/features/admin/comments/ModerationQueuePage'
+import { SanctionsModerationPage } from '@/features/admin/sanctions/SanctionsModerationPage'
+import { AppealsReviewPage } from '@/features/admin/sanctions/AppealsReviewPage'
+import { AppealPage } from '@/features/account/appeal/AppealPage'
 import { BannerManagementPage } from '@/features/notifications/admin/BannerManagementPage'
 import { ModelAdminPage } from '@/features/admin/chatbot/ModelAdminPage'
 import { AuctionMetricsPage } from '@/features/admin/auction-metrics/AuctionMetricsPage'
@@ -191,6 +194,20 @@ export const ADMIN_NAVIGATION: readonly NavigationItem[] = [
     label: 'Moderación de comentarios',
     requiredPrimaryRole: 'MODERATOR',
   },
+  // HU-42: superficie limitada de moderacion para aplicar sanciones.
+  // Visible desde MODERATOR -igual que la moderacion de comentarios-; la
+  // autoridad real sobre que tipo de sancion puede aplicar cada rol vive en
+  // `SanctionPolicy` (Account), no aqui.
+  {
+    path: '/admin/sanctions',
+    label: 'Aplicar sanciones',
+    requiredPrimaryRole: 'MODERATOR',
+  },
+  {
+    path: '/admin/appeals',
+    label: 'Revisar apelaciones',
+    requiredPrimaryRole: 'MODERATOR',
+  },
 ]
 
 /**
@@ -272,6 +289,12 @@ export const routes: RouteObject[] = [
       </PublicOnlyRoute>
     ),
   },
+  // HU-42, §6: identidad restringida para apelar. NO se envuelve en
+  // `PublicOnlyRoute` -a diferencia de `/login`-: una cuenta suspendida o
+  // baneada puede llegar aqui incluso con un testimonio de sesion normal
+  // todavia vigente (la ventana de hasta 15 minutos de ADR-004), y esta
+  // pantalla no debe redirigirla a otro lugar por tener sesion.
+  { path: '/appeal', element: <AppealPage /> },
   // HU-01 real: valida nombres, apellidos, correo, contrasena, apodo (incluida
   // la lista negra), avatar, preguntas de seguridad y terminos, y envia el
   // registro a Account.
@@ -473,6 +496,25 @@ export const routes: RouteObject[] = [
             element: (
               <RequireModerator>
                 <ModerationQueuePage />
+              </RequireModerator>
+            ),
+          },
+          // HU-42: Moderador, Administrador y Super Administrador. Igual que
+          // `admin/comments/moderation`, `RequireModerator` es la puerta real
+          // -el backend valida de nuevo y responde 403 por su cuenta.
+          {
+            path: 'admin/sanctions',
+            element: (
+              <RequireModerator>
+                <SanctionsModerationPage />
+              </RequireModerator>
+            ),
+          },
+          {
+            path: 'admin/appeals',
+            element: (
+              <RequireModerator>
+                <AppealsReviewPage />
               </RequireModerator>
             ),
           },

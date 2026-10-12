@@ -7,6 +7,7 @@ import { statusLabel } from '@/lib/format'
 import { useLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
 import { AccountPixelIcon } from './AccountPixelIcon'
+import { MySanctionStatus } from './sanctions/MySanctionStatus'
 import { validateDisplayName, type OwnAccount, type OwnAccountEdit } from './api'
 import { useAccountContext } from './outletContext'
 import { useUpdateOwnAccount } from './useOwnAccount'
@@ -98,6 +99,8 @@ export const ProfileSection = ({ save }: ProfileSectionProps = {}): React.JSX.El
         <AccountPixelIcon icon="profile" size="md" />
         <h2 className="account-title text-lg font-semibold">{t('account:sections.profile')}</h2>
       </div>
+
+      <MySanctionStatus />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <ReadonlyRow label={t('account:profile.firstNames')} value={account.firstNames} />

@@ -29,6 +29,8 @@ const DETAILS: Readonly<Record<string, Omit<AdminSection, 'path' | 'label'>>> = 
   '/admin/auction-metrics': { icon: 'metrics', group: 'commerce' },
   '/auction/publish-official': { icon: 'official-auction', group: 'commerce' },
   '/admin/comments/moderation': { icon: 'moderation', group: 'community', badge: 'moderation' },
+  '/admin/sanctions': { icon: 'security', group: 'security' },
+  '/admin/appeals': { icon: 'pending', group: 'security' },
   '/admin/chatbot': { icon: 'chatbot-model', group: 'assistant' },
   '/admin/chatbot/knowledge': { icon: 'chatbot-knowledge', group: 'assistant' },
   '/admin/chatbot/analytics': { icon: 'chatbot-analytics', group: 'assistant' },

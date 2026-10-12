@@ -311,6 +311,52 @@
     "paginationPending": "La pagination sera disponible lorsque le contrat backend exposera la page et le total.",
     "export": "Exporter les résultats",
     "registered": "Inscrit :",
-    "noRole": "Aucun rôle"
+    "noRole": "Aucun rôle",
+    "sanctionAction": "Sanctionner",
+    "sanctionApplied": "Sanction appliquée : {{type}}."
+  },
+  "mySanction": {
+    "types": {
+      "TEMPORARY_SUSPENSION": "Votre compte est temporairement suspendu",
+      "PERMANENT_BAN": "Votre compte est définitivement banni"
+    },
+    "remainingMinutes_one": "Il reste {{value}} minute de suspension.",
+    "remainingMinutes_many": "Il reste {{value}} de minutes de suspension.",
+    "remainingMinutes_other": "Il reste {{value}} minutes de suspension.",
+    "appealDeadline": "Vous pouvez faire appel jusqu'au : {{date}}.",
+    "reference": "Référence : {{id}}",
+    "appealLink": "Faire appel de cette sanction"
+  },
+  "appeal": {
+    "identify": {
+      "title": "Faire appel d'une sanction",
+      "subtitle": "Utilisez votre e-mail ou pseudo et votre mot de passe habituels. Cela fonctionne même si votre compte est suspendu ou banni.",
+      "identifier": "E-mail ou pseudo",
+      "password": "Mot de passe",
+      "submit": "Continuer",
+      "backToLogin": "Votre compte est actif ? Connectez-vous normalement",
+      "invalidCredentials": "E-mail, pseudo ou mot de passe incorrect.",
+      "serviceError": "Le service n'est pas disponible pour le moment. Réessayez plus tard."
+    },
+    "form": {
+      "title": "Soumettre ou consulter un appel",
+      "subtitle": "Indiquez la référence de la sanction (reçue par e-mail) et expliquez pourquoi vous pensez qu'elle n'est pas justifiée.",
+      "sanctionId": "Référence de la sanction",
+      "sanctionIdHint": "Elle figure dans l'e-mail reçu lors de l'application de la sanction.",
+      "statement": "Justification",
+      "submit": "Soumettre l'appel",
+      "submitted": "Appel soumis. Référence : {{id}}.",
+      "required": "Renseignez la référence de la sanction et la justification.",
+      "rejected": "L'appel n'a pas pu être soumis. Vérifiez la référence et réessayez."
+    },
+    "status": {
+      "sanction": "Sanction {{id}}",
+      "submitted": "En cours d'examen. Date de référence pour la décision : {{date}}.",
+      "resolved": "Résolu : {{decision}}."
+    },
+    "decisions": {
+      "UPHELD": "La sanction est maintenue",
+      "OVERTURNED": "La sanction a été annulée"
+    }
   }
 }

@@ -311,6 +311,52 @@
     "paginationPending": "La paginación estará disponible cuando el contrato backend exponga página y total.",
     "export": "Exportar resultados",
     "registered": "Registrado:",
-    "noRole": "Sin rol"
+    "noRole": "Sin rol",
+    "sanctionAction": "Sancionar",
+    "sanctionApplied": "Sanción aplicada: {{type}}."
+  },
+  "mySanction": {
+    "types": {
+      "TEMPORARY_SUSPENSION": "Tu cuenta está suspendida temporalmente",
+      "PERMANENT_BAN": "Tu cuenta está baneada definitivamente"
+    },
+    "remainingMinutes_one": "Queda {{value}} minuto de suspensión.",
+    "remainingMinutes_many": "Quedan {{value}} de minutos de suspensión.",
+    "remainingMinutes_other": "Quedan {{value}} minutos de suspensión.",
+    "appealDeadline": "Puedes apelar hasta: {{date}}.",
+    "reference": "Referencia: {{id}}",
+    "appealLink": "Apelar esta sanción"
+  },
+  "appeal": {
+    "identify": {
+      "title": "Apelar una sanción",
+      "subtitle": "Usa tu correo o apodo y tu contraseña habituales. Funciona incluso si tu cuenta está suspendida o baneada.",
+      "identifier": "Correo o apodo",
+      "password": "Contraseña",
+      "submit": "Continuar",
+      "backToLogin": "¿Tu cuenta está activa? Inicia sesión normalmente",
+      "invalidCredentials": "Correo, apodo o contraseña incorrectos.",
+      "serviceError": "El servicio no está disponible en este momento. Inténtalo de nuevo más tarde."
+    },
+    "form": {
+      "title": "Presentar o consultar una apelación",
+      "subtitle": "Indica la referencia de la sanción (la recibiste por correo) y explica por qué consideras que no corresponde.",
+      "sanctionId": "Referencia de la sanción",
+      "sanctionIdHint": "Aparece en el correo que recibiste al aplicarse la sanción.",
+      "statement": "Justificación",
+      "submit": "Presentar apelación",
+      "submitted": "Apelación presentada. Referencia: {{id}}.",
+      "required": "Completa la referencia de la sanción y la justificación.",
+      "rejected": "No se pudo presentar la apelación. Revisa la referencia e inténtalo de nuevo."
+    },
+    "status": {
+      "sanction": "Sanción {{id}}",
+      "submitted": "En revisión. Fecha de referencia para la decisión: {{date}}.",
+      "resolved": "Resuelta: {{decision}}."
+    },
+    "decisions": {
+      "UPHELD": "Se mantiene la sanción",
+      "OVERTURNED": "Se revirtió la sanción"
+    }
   }
 }

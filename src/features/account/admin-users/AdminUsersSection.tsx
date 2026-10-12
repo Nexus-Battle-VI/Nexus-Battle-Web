@@ -9,6 +9,8 @@ import { HttpError, type HttpDownload } from '@/lib/http'
 import { primaryRole, roleLabel } from '@/shared/rbac'
 import { useSession } from '@/shared/session'
 import { AccountPixelIcon } from '../AccountPixelIcon'
+import { ApplySanctionForm } from '@/features/admin/sanctions/ApplySanctionForm'
+import type { SanctionResponse } from '@/features/admin/sanctions/api'
 import {
   saveAdminAccountsDownload,
   type AdminAccountQueryCriteria,
@@ -113,12 +115,20 @@ const AdminStatusBadge = ({ status }: { readonly status: string }): React.JSX.El
   return <span className={className}>{statusLabel(status)}</span>
 }
 
-const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): React.JSX.Element => {
+const AdminResult = ({
+  account,
+  sanctioning,
+  onToggleSanction,
+}: {
+  readonly account: AdminAccountSummary
+  readonly sanctioning: boolean
+  readonly onToggleSanction: () => void
+}): React.JSX.Element => {
   const role = primaryRole(account.roles)
   const { t } = useTranslation()
 
   return (
-    <li className="account-admin-result grid min-w-0 gap-3 border-t p-4 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+    <div className="account-admin-result grid min-w-0 gap-3 border-t p-4 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
       <div className="min-w-0">
         <p className="account-title break-words text-sm font-semibold">{account.displayName}</p>
         <p className="mt-1 break-all text-xs text-muted">ID: {account.id}</p>
@@ -132,7 +142,15 @@ const AdminResult = ({ account }: { readonly account: AdminAccountSummary }): Re
         {role === null ? t('account:adminUsers.noRole') : roleLabel(role)}
       </span>
       <AdminStatusBadge status={account.status} />
-    </li>
+      <Button
+        type="button"
+        variant="account-secondary"
+        aria-expanded={sanctioning}
+        onClick={onToggleSanction}
+      >
+        {t('account:adminUsers.sanctionAction')}
+      </Button>
+    </div>
   )
 }
 
@@ -161,6 +179,8 @@ export const AdminUsersSection = ({
   // Ambos guardan la CLAVE del aviso; se traduce al pintar (cambia con el idioma).
   const [validationMessage, setValidationMessage] = useState<string | null>(null)
   const [exportFeedback, setExportFeedback] = useState<string | null>(null)
+  const [sanctioningId, setSanctioningId] = useState<string | null>(null)
+  const [sanctionApplied, setSanctionApplied] = useState<SanctionResponse | null>(null)
   const query = useAdminAccounts(appliedCriteria, loadAccounts)
   const exportMutation = useAdminAccountsExport(exportAccounts)
 
@@ -488,11 +508,52 @@ export const AdminUsersSection = ({
             ) : (
               <ul>
                 {query.data.items.map((account) => (
-                  <AdminResult key={account.id} account={account} />
+                  <li key={account.id}>
+                    <AdminResult
+                      account={account}
+                      sanctioning={sanctioningId === account.id}
+                      onToggleSanction={() => {
+                        setSanctionApplied(null)
+                        setSanctioningId((current) => (current === account.id ? null : account.id))
+                      }}
+                    />
+                    {sanctioningId === account.id && (
+                      <div className="border-t p-4">
+                        <ApplySanctionForm
+                          targetAccountId={account.id}
+                          targetLabel={account.displayName}
+                          actorRoles={roles}
+                          buttonVariants={{
+                            primary: 'account-primary',
+                            secondary: 'account-secondary',
+                            danger: 'account-danger',
+                          }}
+                          onApplied={(sanction) => {
+                            setSanctionApplied(sanction)
+                            setSanctioningId(null)
+                          }}
+                          onCancel={() => {
+                            setSanctioningId(null)
+                          }}
+                        />
+                      </div>
+                    )}
+                  </li>
                 ))}
               </ul>
             )}
           </section>
+
+          {sanctionApplied !== null && (
+            <p
+              role="status"
+              className="rounded-md border border-brand bg-brand/10 p-3 text-sm text-ink"
+            >
+              {t('account:adminUsers.sanctionApplied', {
+                type: t(`admin:sanctions.types.${sanctionApplied.type}`),
+              })}
+            </p>
+          )}
 
           <nav aria-label={t('account:adminUsers.pagination')} className="space-y-2">
             <div className="flex gap-2">
