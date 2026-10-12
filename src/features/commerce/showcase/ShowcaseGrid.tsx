@@ -4,13 +4,10 @@ import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { ProductImage } from '@/features/commerce/ProductImage'
 import { MarketplacePixelIcon } from '@/features/commerce/marketplace/MarketplacePixelIcon'
-import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import type { MarketplaceIconName } from '@/features/commerce/marketplace/marketplaceAssets'
 import { PRODUCT_TYPE_LABELS, type ProductType, type ShowcaseProduct } from './api'
 import { ProductPrice } from './ProductPrice'
-
-const heroIdOf = (product: ShowcaseProduct): string | null =>
-  heroIdOfProduct(product.type, product.sku, product.attributes.values)
 
 /** Icono PixelLab de categoria por tipo de producto (`Icons/ecommerce-icons-categories-*`). */
 const TYPE_ICON: Readonly<Record<ProductType, MarketplaceIconName>> = {
@@ -105,21 +102,18 @@ export const ShowcaseGrid = ({
                 }}
                 className="commerce-product-heading text-left focus-visible:outline-2 focus-visible:outline-brand"
               >
-                {(() => {
-                  const heroId = heroIdOf(product)
-                  return heroId === null ? (
+                {/* EN-031: heroe, objeto, habilidad o epica con su sprite animado. */}
+                <ProductVisual
+                  product={product}
+                  className="commerce-product-image"
+                  fallback={
                     <ProductImage
                       source={product.imageUrl}
                       name={product.name}
                       className="commerce-product-image rounded-lg bg-surface object-contain"
                     />
-                  ) : (
-                    // El nombre ya lo muestra la propia tarjeta justo al lado
-                    // (`commerce-product-name`); se oculta la etiqueta que
-                    // `Hero3D` repite por defecto para no duplicarlo.
-                    <Hero3D heroId={heroId} className="commerce-product-image [&>p]:hidden" />
-                  )
-                })()}
+                  }
+                />
                 <span className="min-w-0">
                   <span
                     className="commerce-product-name text-sm font-semibold text-ink"

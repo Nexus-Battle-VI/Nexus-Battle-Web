@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { formatMoney } from '@/lib/format'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import { ProductImage } from '@/features/commerce/ProductImage'
 import { MarketplacePixelIcon } from '@/features/commerce/marketplace/MarketplacePixelIcon'
 import { countLabel } from '@/shared/i18n/format'
@@ -198,10 +199,17 @@ export const CartPanel = ({
                   key={line.sku}
                   className="flex flex-wrap items-center gap-3 border-b border-border pb-3 last:border-b-0 last:pb-0"
                 >
-                  <ProductImage
-                    {...(line.imageUrl === undefined ? {} : { source: line.imageUrl })}
-                    name={line.name ?? line.sku}
-                    className="size-12 shrink-0 rounded border border-border bg-surface object-cover"
+                  <ProductVisual
+                    product={{ name: line.name ?? line.sku, sku: line.sku }}
+                    className="size-12 shrink-0 rounded border border-border bg-surface"
+                    animated={false}
+                    fallback={
+                      <ProductImage
+                        {...(line.imageUrl === undefined ? {} : { source: line.imageUrl })}
+                        name={line.name ?? line.sku}
+                        className="size-12 shrink-0 rounded border border-border bg-surface object-cover"
+                      />
+                    }
                   />
 
                   <div className="min-w-0 flex-1">

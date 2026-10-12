@@ -4,8 +4,7 @@ import type { RouteObject } from 'react-router'
 
 /**
  * Harnesses de verificacion tecnica, no pantallas del producto (ver
- * `src/shared/visual-library/heroes/HeroesDevPreview.tsx` para EN-026.3 y
- * `src/shared/visual-library/products/ProductsDevPreview.tsx` para EN-026.4).
+ * `src/routes/ItemsDevPreview.tsx` para los sprites de EN-031).
  *
  * Cada importacion perezosa y cada definicion de ruta vive dentro de la rama
  * `import.meta.env.DEV`. Vite elimina la rama completa en produccion, incluidos
@@ -103,19 +102,12 @@ if (import.meta.env.DEV) {
       default: module.TournamentAdminPreview,
     })),
   )
-  const [
-    { HeroesDevPreviewLazy },
-    { ProductsDevPreviewLazy },
-    { accountPreviewChildren },
-    { FIXED_ROOM_ID },
-    { FIXED_ROOM_ID: FIXED_ROOM_ID_REMASTER },
-  ] = await Promise.all([
-    import('./HeroesDevPreviewLazy'),
-    import('./ProductsDevPreviewLazy'),
-    import('@/features/account/dev/previewRoutes'),
-    import('@/features/battle-rooms/dev/BattleRoomLobbyDevPreview'),
-    import('@/features/battle-rooms/dev/RoomRemasterPreview'),
-  ])
+  const [{ accountPreviewChildren }, { FIXED_ROOM_ID }, { FIXED_ROOM_ID: FIXED_ROOM_ID_REMASTER }] =
+    await Promise.all([
+      import('@/features/account/dev/previewRoutes'),
+      import('@/features/battle-rooms/dev/BattleRoomLobbyDevPreview'),
+      import('@/features/battle-rooms/dev/RoomRemasterPreview'),
+    ])
   const AccountDevPreviewLazy = lazy(() =>
     import('@/features/account/dev/AccountDevPreview').then((module) => ({
       default: module.AccountDevPreview,
@@ -284,24 +276,14 @@ if (import.meta.env.DEV) {
     import('@/app/AppLayout').then((module) => ({ default: module.AppLayout })),
   )
 
-  resolvedDevRoutes = [
-    {
-      path: '__dev/visual-library/heroes',
-      element: (
-        <Suspense fallback={null}>
-          <HeroesDevPreviewLazy />
-        </Suspense>
-      ),
-    },
-    {
-      path: '__dev/visual-library/products',
-      element: (
-        <Suspense fallback={null}>
-          <ProductsDevPreviewLazy />
-        </Suspense>
-      ),
-    },
-  ]
+  // EN-031: los heroes 3D y los productos 2D se retiraron; una sola vista con
+  // todos los sprites animados (heroes, productos, habilidades y epicas).
+  const ItemsDevPreviewLazy = lazy(() =>
+    import('./ItemsDevPreview').then((module) => ({ default: module.ItemsDevPreview })),
+  )
+
+  // No necesita sesion: es arte estatico, asi que vive con las vistas publicas.
+  resolvedDevRoutes = []
 
   const AdminRemasterPreviewLazy = lazy(() =>
     import('@/features/admin/chatbot/dev/AdminRemasterPreview').then((module) => ({
@@ -310,6 +292,14 @@ if (import.meta.env.DEV) {
   )
 
   resolvedPublicDevRoutes = [
+    {
+      path: '__dev/visual-library/items',
+      element: (
+        <Suspense fallback={null}>
+          <ItemsDevPreviewLazy />
+        </Suspense>
+      ),
+    },
     {
       path: '__dev/tournament/formats',
       element: (

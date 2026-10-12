@@ -43,3 +43,13 @@
     animation: none !important;
   }
 }
+
+/* EN-031: sin sprite (PNG que no carga): un hueco discreto, sin render 3D. */
+.hero-sprite-missing {
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--color-ink) 12%, transparent),
+    transparent 70%
+  );
+}

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button'
 import type { RealtimeConnectionState } from '../realtime'
 
 import '../battle-rooms.css'
+import { ItemSprite } from '@/shared/visual-library/items/ItemSprite'
+import { itemSpriteFor } from '@/shared/visual-library/items/item-sprites'
 import { BattlePixelIcon } from '../BattlePixelIcon'
 import { combatantHealth, combatantName, findSelf, healableAllies } from './presentation'
 import type { SkillIntentState } from './skillIntent'
@@ -236,6 +238,7 @@ const SkillRow = ({
   const hintId = useId()
   const stateId = useId()
   const { t } = useTranslation()
+  const sprite = itemSpriteFor({ name: skill.name })
 
   return (
     <li
@@ -263,7 +266,14 @@ const SkillRow = ({
           }
         }}
       >
-        <BattlePixelIcon icon="skill" size="sm" className="h-4 w-auto shrink-0" />
+        {/* EN-031: el sprite animado de la habilidad (por su nombre); si no tiene, el icono generico. */}
+        {sprite === null ? (
+          <BattlePixelIcon icon="skill" size="sm" className="h-4 w-auto shrink-0" />
+        ) : (
+          <span className="br-action-slot-sprite" aria-hidden="true">
+            <ItemSprite spec={sprite} label={skill.name} />
+          </span>
+        )}
         <span className="w-full min-w-0 truncate">{skill.name}</span>
         <span className="br-action-slot-cost">{describePowerCost(skill.powerCost)}</span>
       </Button>
