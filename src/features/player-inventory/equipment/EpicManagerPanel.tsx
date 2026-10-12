@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { QueryState } from '@/components/ui/QueryState'
 
 import type { HeroEpic, HeroEpicState } from './epicApi'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import { ProductThumb } from '../ProductThumb'
 import { describeEquipmentEffect } from './effectPresentation'
 
@@ -121,7 +122,15 @@ export const EpicManagerPanel = ({
 
               <div className="flex items-start gap-3">
                 <span className="block size-11 shrink-0">
-                  <ProductThumb src={current?.imageUrl ?? null} alt={current?.name ?? ''} />
+                  {current === null ? (
+                    <ProductThumb src={null} alt="" />
+                  ) : (
+                    <ProductVisual
+                      product={current}
+                      className="size-full"
+                      fallback={<ProductThumb src={current.imageUrl} alt={current.name} />}
+                    />
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   {current === null ? (

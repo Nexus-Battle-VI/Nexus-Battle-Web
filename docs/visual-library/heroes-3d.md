@@ -1,5 +1,7 @@
 # Héroes 3D (EN-026.3)
 
+> **Retirado en EN-031 (2026-10-11).** Los héroes son sprites animados de PixelLab en todas las pantallas ([`heroes-sprites.md`](./heroes-sprites.md)). `Hero3D`, los módulos de Three.js y la dependencia `three` se eliminaron; este documento queda como histórico.
+
 Documentación específica de la producción e integración de los ocho héroes 3D reutilizables con
 Three.js. Complementa, sin repetir, `docs/visual-library/arquitectura-biblioteca-visual.md`
 (EN-026.2): este documento explica las decisiones propias de esta Task; el diseño general de la

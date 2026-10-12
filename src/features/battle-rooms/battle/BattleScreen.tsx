@@ -170,6 +170,24 @@ export const BattleScreen = ({
     opponents[0]
   const enemyCompanions = opponents.filter((entry) => entry.position !== enemyFocus?.position)
 
+  // EN-031: quien actuo en la ultima accion publicada reproduce su animacion de ataque (solo
+  // presentacion: el `seq` que la dispara es el del evento que ya envio Combat).
+  const lastActions = [
+    lastAttack === null ? null : { seq: lastAttack.seq, actor: lastAttack.attacker },
+    lastSkill === null ? null : { seq: lastSkill.seq, actor: lastSkill.actor },
+    lastHealSkill === null ? null : { seq: lastHealSkill.seq, actor: lastHealSkill.actor },
+    lastEffect === null ? null : { seq: lastEffect.seq, actor: lastEffect.actor },
+  ].filter((action) => action !== null)
+  const attackOf = (entry: TurnOrderEntry): number | undefined =>
+    lastActions
+      .filter(
+        (action) => action.actor.teamLabel === entry.teamLabel && action.actor.seat === entry.seat,
+      )
+      .reduce<number | undefined>(
+        (latest, action) => (latest === undefined || action.seq > latest ? action.seq : latest),
+        undefined,
+      )
+
   const timeoutAfterActions =
     lastTurnTimeout !== null &&
     lastTurnTimeout.seq > (lastAttack?.seq ?? 0) &&
@@ -355,6 +373,7 @@ export const BattleScreen = ({
               isCurrent={isCurrent}
               direction="south-east"
               healthOf={(entry) => healthOf(entry)?.current}
+              attackOf={attackOf}
             />
           </div>
 
@@ -374,6 +393,7 @@ export const BattleScreen = ({
               isCurrent={isCurrent}
               direction="north-west"
               healthOf={(entry) => healthOf(entry)?.current}
+              attackOf={attackOf}
               isTargetable={isTargetableEntry}
               isTargetSelected={isTargetSelectedEntry}
               onSelectTarget={onSelectTarget}

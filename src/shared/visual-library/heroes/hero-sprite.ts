@@ -29,7 +29,7 @@ export const heroSpriteSpec = (id: string): HeroSpriteSpec | null =>
 export const spriteSequence = (
   spec: HeroSpriteSpec,
   direction: SpriteDirection,
-  kind: 'idle' | 'hit',
+  kind: 'idle' | 'hit' | 'attack',
 ): SpriteSequence | null =>
   spec.animations.find((animation) => animation.kind === kind)?.directions[direction] ??
   (kind === 'idle'

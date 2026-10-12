@@ -19,6 +19,8 @@ interface CombatantCardProps {
   readonly sideSize: number
   readonly direction: SpriteDirection
   readonly health?: number | undefined
+  /** EN-031: cambia cuando este combatiente acaba de actuar (reproduce su ataque). */
+  readonly attackSignal?: number | undefined
   /** `true` si este combatiente es un objetivo valido para el ataque actual (HU-18/21). */
   readonly isTargetable: boolean
   readonly isTargetSelected: boolean
@@ -67,6 +69,7 @@ const CombatantCard = ({
   sideSize,
   direction,
   health,
+  attackSignal,
   isTargetable,
   isTargetSelected,
   onSelectTarget,
@@ -86,7 +89,12 @@ const CombatantCard = ({
           {name.charAt(0).toUpperCase()}
         </div>
       ) : (
-        <HeroSprite heroId={modelId} direction={direction} health={health} />
+        <HeroSprite
+          heroId={modelId}
+          direction={direction}
+          health={health}
+          attackSignal={attackSignal}
+        />
       )}
     </div>
   )
@@ -157,6 +165,8 @@ export interface ArenaSideProps {
   readonly isCurrent: (entry: TurnOrderEntry) => boolean
   readonly direction?: SpriteDirection
   readonly healthOf?: (entry: TurnOrderEntry) => number | undefined
+  /** EN-031: `seq` de la ultima accion de este combatiente, si la hubo. */
+  readonly attackOf?: (entry: TurnOrderEntry) => number | undefined
   /** HU-18/21 (remaster 2a pasada): objetivo seleccionable directamente sobre el heroe. */
   readonly isTargetable?: (entry: TurnOrderEntry) => boolean
   readonly isTargetSelected?: (entry: TurnOrderEntry) => boolean
@@ -174,6 +184,7 @@ export const ArenaSide = ({
   isCurrent,
   direction = 'south-east',
   healthOf,
+  attackOf,
   isTargetable,
   isTargetSelected,
   onSelectTarget,
@@ -231,6 +242,7 @@ export const ArenaSide = ({
             sideSize={entries.length}
             direction={direction}
             health={healthOf?.(entry)}
+            attackSignal={attackOf?.(entry)}
             isTargetable={isTargetable?.(entry) ?? false}
             isTargetSelected={isTargetSelected?.(entry) ?? false}
             onSelectTarget={onSelectTarget}

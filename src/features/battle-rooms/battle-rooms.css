@@ -1800,6 +1800,15 @@ html:has(.br-main)::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* EN-031: sprite animado de la habilidad dentro del slot (mismo alto que el icono
+   de antes mas un poco: la barra no cambia de alto). */
+.br-action-slot-sprite {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+}
+
 /* EN-031: una habilidad bloqueada por nivel muestra el candado y el nivel en el
    lugar del costo (misma linea, misma altura: la barra no cambia de tamano). */
 .br-action-slot-locked {
