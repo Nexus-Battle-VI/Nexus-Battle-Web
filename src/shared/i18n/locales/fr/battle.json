@@ -417,5 +417,10 @@
     "incomplete": "Remise incomplète",
     "incompleteDetail": "Vos crédits ont été crédités, mais nous n'avons pas pu finaliser la remise de votre récompense.",
     "added": "{{reward}} ajoutée à votre inventaire ✓"
+  },
+  "music": {
+    "toggle": "Musique de combat",
+    "on": "Musique activée",
+    "off": "Musique coupée"
   }
 }

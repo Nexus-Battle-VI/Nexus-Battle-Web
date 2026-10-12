@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import clsx from 'clsx'
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -6,7 +7,13 @@ import './battle-rooms.css'
 import { BattlePixelIcon } from './BattlePixelIcon'
 import { ChatPanel, type ChatPanelProps } from './ChatPanel'
 
-export type FloatingChatPanelProps = ChatPanelProps
+export interface FloatingChatPanelProps extends ChatPanelProps {
+  /**
+   * EN-031: `corner` (lobby y sala de espera, abajo a la derecha) o `battle` (a la
+   * izquierda del escenario, a media altura: ni el HUD, ni el registro, ni las acciones).
+   */
+  readonly placement?: 'corner' | 'battle'
+}
 
 /**
  * Chat como burbuja flotante (remaster visual Sprint 3, 3a pasada, secciones
@@ -16,19 +23,22 @@ export type FloatingChatPanelProps = ChatPanelProps
  *
  * Reutiliza `ChatPanel` TAL CUAL por dentro (mismo protocolo, mismo estado,
  * mismo `useChat`) -- este componente solo decide DONDE y CUANDO se ve, no
- * duplica logica de chat. Pensado para Lobby y Sala de espera; la Batalla
- * activa NO lo usa (ver `BattleWithChat`).
+ * duplica logica de chat. Lobby y Sala de espera lo llevan en la esquina; la
+ * batalla activa, a la izquierda del escenario (EN-031, `placement="battle"`).
  *
  * `open`/`closed` es estado de UI PURO (`useState` local): no hay backend
  * involucrado en abrir o cerrar el panel.
  */
-export const FloatingChatPanel = (props: FloatingChatPanelProps): React.JSX.Element => {
+export const FloatingChatPanel = ({
+  placement = 'corner',
+  ...props
+}: FloatingChatPanelProps): React.JSX.Element => {
   const [open, setOpen] = useState(false)
   const bubbleRef = useRef<HTMLButtonElement>(null)
   const { t } = useTranslation()
 
   return (
-    <div className="br-floating-chat">
+    <div className={clsx('br-floating-chat', placement === 'battle' && 'br-floating-chat--battle')}>
       {open && (
         <div role="dialog" aria-label={props.title} className="br-floating-chat-panel">
           <button

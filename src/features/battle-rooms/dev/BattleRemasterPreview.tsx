@@ -29,6 +29,12 @@ import type {
   TargetRef,
   TurnOrderEntry,
 } from '@/features/battle-rooms/battle/types'
+import { FloatingChatPanel } from '../FloatingChatPanel'
+import {
+  createPreviewChatSocketFactory,
+  previewHasSession,
+  previewTicket,
+} from './previewChatServer'
 
 /**
  * Vista previa de desarrollo del REMASTER VISUAL de "Jugar Online" — batalla
@@ -325,6 +331,7 @@ const rewardBodyOf = (scenario: RewardScenario): unknown => {
 }
 
 export const BattleRemasterPreview = (): React.JSX.Element => {
+  const [chatFactory] = useState(createPreviewChatSocketFactory)
   const [rewardScenario, setRewardScenario] = useState<RewardScenario>('first-win')
   const [skillScenario, setSkillScenario] = useState<SkillScenario>('ready')
   const [anaHealth, setAnaHealth] = useState(38)
@@ -753,6 +760,17 @@ export const BattleRemasterPreview = (): React.JSX.Element => {
             combat={controls}
             result={result}
             serverClock={createServerClock(new Date().toISOString(), monotonicNow())}
+            chat={
+              <FloatingChatPanel
+                placement="battle"
+                channel={{ kind: 'lobby' }}
+                title="Chat de la sala"
+                description="Vista previa: servidor falso, nada sale del navegador."
+                socketFactory={chatFactory}
+                ticketProvider={previewTicket}
+                hasSession={previewHasSession}
+              />
+            }
           />
         )}
       </main>
