@@ -68,6 +68,86 @@
     "reason": "Reason for the action",
     "reasonPlaceholder": "Explain why this action is taken…"
   },
+  "sanctions": {
+    "title": "Apply sanctions",
+    "intro": "Warning, temporary suspension, or permanent ban on an account, with a reason and justification (HU-42).",
+    "crumb": "Apply sanctions",
+    "lookup": {
+      "title": "Identify the account",
+      "label": "Account id",
+      "hint": "Account's internal identifier, not the email or nickname. If you came from comment moderation, you already have it.",
+      "submit": "Continue"
+    },
+    "result": {
+      "title": "Sanction recorded",
+      "applied": "Applied: {{type}}. Reference {{id}}.",
+      "appealDeadline": "The account can appeal until: {{date}}."
+    },
+    "form": {
+      "title": "Sanction account {{id}}",
+      "reasonCode": "Reason",
+      "selectPlaceholder": "Select an option",
+      "type": "Sanction type",
+      "duration": "Duration (minutes)",
+      "durationHint": "Only for temporary suspension.",
+      "reason": "Justification",
+      "reasonHint": "Included in the notification sent to the sanctioned account.",
+      "continue": "Review",
+      "cancel": "Cancel",
+      "selectRequired": "Select the reason and the sanction type.",
+      "reasonRequired": "The justification is required.",
+      "durationRequired": "Enter a valid duration in minutes."
+    },
+    "review": {
+      "target": "Account",
+      "type": "Type",
+      "reasonCode": "Reason",
+      "duration": "Duration",
+      "durationMinutes": "{{minutes}} minutes",
+      "banConfirm": "I confirm that I understand the permanent ban is permanent.",
+      "confirm": "Apply sanction",
+      "back": "Back"
+    },
+    "types": {
+      "WARNING": "Warning",
+      "TEMPORARY_SUSPENSION": "Temporary suspension",
+      "PERMANENT_BAN": "Permanent ban"
+    },
+    "reasonCodes": {
+      "OFFENSIVE_LANGUAGE": "Offensive or abusive language",
+      "HARASSMENT": "Harassment of other players",
+      "FRAUD_OR_MANIPULATION": "Fraud or manipulation of the system",
+      "UNAUTHORIZED_SOFTWARE_OR_CHEATING": "Unauthorized software or cheating",
+      "IDENTITY_IMPERSONATION": "Identity impersonation",
+      "PRIVACY_POLICY_VIOLATION": "Privacy policy violation",
+      "TERMS_OF_SERVICE_VIOLATION": "Breach of terms and conditions",
+      "LEGAL_RELATIONSHIP_TERMINATION": "Termination of the legal relationship",
+      "AUCTION_TERMS_VIOLATION": "Breach of auction terms",
+      "OTHER": "Other reason"
+    }
+  },
+  "appeals": {
+    "title": "Review appeals",
+    "intro": "Appeals pending a final decision (HU-42).",
+    "crumb": "Review appeals",
+    "empty": "There are no appeals pending review.",
+    "meta": "Sanction {{sanctionId}} · Account {{accountId}} · Submitted on {{date}}",
+    "decisionDueAt": "Reference date for the decision: {{date}}",
+    "resolveAction": "Resolve",
+    "decisions": {
+      "UPHELD": "The sanction is upheld",
+      "OVERTURNED": "The sanction is overturned"
+    },
+    "form": {
+      "decision": "Decision",
+      "notes": "Justification for the decision",
+      "notesHint": "Communicated to the account that appealed.",
+      "submit": "Record decision",
+      "cancel": "Cancel",
+      "decisionRequired": "Select a decision.",
+      "notesRequired": "The justification is required."
+    }
+  },
   "products": {
     "types": {
       "HEROE": "Hero",
@@ -751,7 +831,9 @@
       "chatbot-knowledge": "Entries the chatbot can answer.",
       "chatbot-analytics": "What gets asked and what goes unanswered.",
       "chatbot-tickets": "Questions the chatbot handed over.",
-      "roles": "Grant and revoke account roles."
+      "roles": "Grant and revoke account roles.",
+      "security": "Warning, suspension, or ban, with a reason and justification.",
+      "pending": "Appeals pending a final decision."
     },
     "sections": "Sections"
   }

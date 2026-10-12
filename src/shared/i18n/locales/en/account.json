@@ -311,6 +311,51 @@
     "paginationPending": "Pagination will be available when the backend contract exposes page and total.",
     "export": "Export results",
     "registered": "Registered:",
-    "noRole": "No role"
+    "noRole": "No role",
+    "sanctionAction": "Sanction",
+    "sanctionApplied": "Sanction applied: {{type}}."
+  },
+  "mySanction": {
+    "types": {
+      "TEMPORARY_SUSPENSION": "Your account is temporarily suspended",
+      "PERMANENT_BAN": "Your account is permanently banned"
+    },
+    "remainingMinutes_one": "{{value}} minute of suspension left.",
+    "remainingMinutes_other": "{{value}} minutes of suspension left.",
+    "appealDeadline": "You can appeal until: {{date}}.",
+    "reference": "Reference: {{id}}",
+    "appealLink": "Appeal this sanction"
+  },
+  "appeal": {
+    "identify": {
+      "title": "Appeal a sanction",
+      "subtitle": "Use your usual email or nickname and password. This works even if your account is suspended or banned.",
+      "identifier": "Email or nickname",
+      "password": "Password",
+      "submit": "Continue",
+      "backToLogin": "Is your account active? Sign in normally",
+      "invalidCredentials": "Incorrect email, nickname, or password.",
+      "serviceError": "The service is not available right now. Please try again later."
+    },
+    "form": {
+      "title": "Submit or check an appeal",
+      "subtitle": "Enter the sanction reference (you received it by email) and explain why you believe it is not warranted.",
+      "sanctionId": "Sanction reference",
+      "sanctionIdHint": "It appears in the email you received when the sanction was applied.",
+      "statement": "Justification",
+      "submit": "Submit appeal",
+      "submitted": "Appeal submitted. Reference: {{id}}.",
+      "required": "Fill in the sanction reference and the justification.",
+      "rejected": "The appeal could not be submitted. Check the reference and try again."
+    },
+    "status": {
+      "sanction": "Sanction {{id}}",
+      "submitted": "Under review. Reference date for the decision: {{date}}.",
+      "resolved": "Resolved: {{decision}}."
+    },
+    "decisions": {
+      "UPHELD": "The sanction is upheld",
+      "OVERTURNED": "The sanction was overturned"
+    }
   }
 }

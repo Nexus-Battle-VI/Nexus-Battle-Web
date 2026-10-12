@@ -81,7 +81,7 @@ describe('Consola del Consejo (EN-031)', () => {
     expect(screen.getByRole('region', { name: 'Seguridad' })).toBeInTheDocument()
   })
 
-  it('un Moderador solo ve moderacion y solo consulta la cola de moderacion', async () => {
+  it('un Moderador ve moderacion y sanciones (HU-42), pero no roles, y solo consulta la cola de moderacion', async () => {
     useSession.setState({ subject: 'ana', roles: ['MODERATOR'] })
     const get = answer(5, 9)
     renderConsole()
@@ -103,7 +103,16 @@ describe('Consola del Consejo (EN-031)', () => {
       expect(get).toHaveBeenCalled()
     })
     expect(get.mock.calls.map(([path]) => path)).not.toContain('/v1/chatbot/admin/tickets')
-    expect(screen.queryByRole('region', { name: 'Seguridad' })).not.toBeInTheDocument()
+
+    // HU-42: la superficie limitada de moderacion (sanciones y apelaciones)
+    // SI aparece para Moderador -a diferencia de "Gestionar roles"-, aunque
+    // ambas vivan en el mismo grupo "Seguridad".
+    const security = screen.getByRole('region', { name: 'Seguridad' })
+    expect(within(security).getByRole('link', { name: /Aplicar sanciones/u })).toBeInTheDocument()
+    expect(within(security).getByRole('link', { name: /Revisar apelaciones/u })).toBeInTheDocument()
+    expect(
+      within(security).queryByRole('link', { name: /Gestionar roles/u }),
+    ).not.toBeInTheDocument()
   })
 
   it('un Administrador no ve "Gestionar roles"', () => {

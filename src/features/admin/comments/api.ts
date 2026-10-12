@@ -114,5 +114,9 @@ export const editComment = (commentId: string, input: EditCommentInput): Promise
  * visible del autor de un comentario, sin correo, nombre legal, estado ni
  * roles -esta pantalla exige MODERATOR, no ADMINISTRATOR-.
  */
-export const fetchAccountDisplayName = (accountId: string): Promise<{ displayName: string }> =>
-  httpClient.get<{ displayName: string }>(`/accounts/${encodeURIComponent(accountId)}/display-name`)
+export const fetchAccountDisplayName = (
+  accountId: string,
+): Promise<{ displayName: string; id: string }> =>
+  httpClient.get<{ displayName: string; id: string }>(
+    `/accounts/${encodeURIComponent(accountId)}/display-name`,
+  )

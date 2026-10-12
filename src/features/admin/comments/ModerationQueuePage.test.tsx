@@ -73,7 +73,10 @@ describe('ModerationQueuePage', () => {
 
   it('resuelve autor y producto a su nombre visible, no al identificador crudo', async () => {
     const listQueue = vi.fn().mockResolvedValue(page([entry()]))
-    vi.spyOn(api, 'fetchAccountDisplayName').mockResolvedValue({ displayName: 'Ana Ramirez' })
+    vi.spyOn(api, 'fetchAccountDisplayName').mockResolvedValue({
+      displayName: 'Ana Ramirez',
+      id: 'account-ana',
+    })
     vi.spyOn(showcaseApi, 'fetchProduct').mockResolvedValue({
       productId: PRODUCT_ID,
       sku: 'chaman-3e1a5a81',

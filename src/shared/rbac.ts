@@ -71,6 +71,22 @@ export const canModerateComments = (roles: readonly string[]): boolean => {
 }
 
 /**
+ * Presentacion de HU-42: quien puede aplicar sanciones y revisar apelaciones
+ * comparte el mismo piso que moderar comentarios (Moderador en adelante).
+ * Account es la autoridad real: `SanctionPolicy.canApply` decide ahi, por rol
+ * y por tipo de sancion, qué sanción concreta puede aplicar cada uno.
+ */
+export const canAccessSanctionTools = canModerateComments
+
+/**
+ * Solo Administrador y Super Administrador pueden aplicar o revisar un baneo
+ * definitivo (Account, `SanctionPolicy`). Presentacion unicamente: oculta la
+ * opcion en vez de mostrarla para que el backend la rechace despues.
+ */
+export const canApplyPermanentBan = (roles: readonly string[]): boolean =>
+  ADMIN_USER_PRIMARY_ROLES.some((allowedRole) => allowedRole === primaryRole(roles))
+
+/**
  * Presentacion de HU-66; Auction sigue siendo la autoridad (rol MAS subject
  * configurado, HU-66.1) y valida el testimonio.
  *
