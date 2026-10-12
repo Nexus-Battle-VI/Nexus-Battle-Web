@@ -415,5 +415,10 @@
     "incomplete": "Incomplete delivery",
     "incompleteDetail": "Your credits have been credited, but we couldn't complete the delivery of your reward.",
     "added": "{{reward}} added to your inventory ✓"
+  },
+  "music": {
+    "toggle": "Battle music",
+    "on": "Music on",
+    "off": "Music off"
   }
 }
