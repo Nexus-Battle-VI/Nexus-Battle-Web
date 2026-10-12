@@ -92,6 +92,9 @@ describe('ADMIN_NAVIGATION', () => {
       '/admin/roles',
       '/admin/auction-metrics',
       '/admin/comments/moderation',
+      // HU-42: superficie limitada de moderacion (sanciones y apelaciones).
+      '/admin/sanctions',
+      '/admin/appeals',
     ])
     expect(new Set(paths).size).toBe(paths.length)
   })

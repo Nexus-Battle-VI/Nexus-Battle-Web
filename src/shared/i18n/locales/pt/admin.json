@@ -70,6 +70,86 @@
     "reason": "Motivo da ação",
     "reasonPlaceholder": "Explique por que esta ação é tomada…"
   },
+  "sanctions": {
+    "title": "Aplicar sanções",
+    "intro": "Advertência, suspensão temporária ou banimento definitivo de uma conta, com motivo e justificativa (HU-42).",
+    "crumb": "Aplicar sanções",
+    "lookup": {
+      "title": "Identificar a conta",
+      "label": "Id da conta",
+      "hint": "O identificador interno do Account, não o e-mail nem o apelido. Se você veio da moderação de comentários, já o tem.",
+      "submit": "Continuar"
+    },
+    "result": {
+      "title": "Sanção registrada",
+      "applied": "Aplicado: {{type}}. Referência {{id}}.",
+      "appealDeadline": "A conta pode recorrer até: {{date}}."
+    },
+    "form": {
+      "title": "Sancionar conta {{id}}",
+      "reasonCode": "Motivo",
+      "selectPlaceholder": "Selecione uma opção",
+      "type": "Tipo de sanção",
+      "duration": "Duração (minutos)",
+      "durationHint": "Apenas para suspensão temporária.",
+      "reason": "Justificativa",
+      "reasonHint": "Incluída na notificação enviada à conta sancionada.",
+      "continue": "Revisar",
+      "cancel": "Cancelar",
+      "selectRequired": "Selecione o motivo e o tipo de sanção.",
+      "reasonRequired": "A justificativa é obrigatória.",
+      "durationRequired": "Informe uma duração válida em minutos."
+    },
+    "review": {
+      "target": "Conta",
+      "type": "Tipo",
+      "reasonCode": "Motivo",
+      "duration": "Duração",
+      "durationMinutes": "{{minutes}} minutos",
+      "banConfirm": "Confirmo que entendo que o banimento definitivo é permanente.",
+      "confirm": "Aplicar sanção",
+      "back": "Voltar"
+    },
+    "types": {
+      "WARNING": "Advertência",
+      "TEMPORARY_SUSPENSION": "Suspensão temporária",
+      "PERMANENT_BAN": "Banimento definitivo"
+    },
+    "reasonCodes": {
+      "OFFENSIVE_LANGUAGE": "Linguagem ofensiva ou abusiva",
+      "HARASSMENT": "Assédio a outros jogadores",
+      "FRAUD_OR_MANIPULATION": "Fraude ou manipulação do sistema",
+      "UNAUTHORIZED_SOFTWARE_OR_CHEATING": "Software não autorizado ou trapaça",
+      "IDENTITY_IMPERSONATION": "Falsificação de identidade",
+      "PRIVACY_POLICY_VIOLATION": "Violação das políticas de privacidade",
+      "TERMS_OF_SERVICE_VIOLATION": "Descumprimento dos termos e condições",
+      "LEGAL_RELATIONSHIP_TERMINATION": "Encerramento da relação legal",
+      "AUCTION_TERMS_VIOLATION": "Descumprimento dos termos de leilão",
+      "OTHER": "Outro motivo"
+    }
+  },
+  "appeals": {
+    "title": "Revisar recursos",
+    "intro": "Recursos pendentes de decisão final (HU-42).",
+    "crumb": "Revisar recursos",
+    "empty": "Não há recursos pendentes de revisão.",
+    "meta": "Sanção {{sanctionId}} · Conta {{accountId}} · Enviado em {{date}}",
+    "decisionDueAt": "Data de referência para a decisão: {{date}}",
+    "resolveAction": "Resolver",
+    "decisions": {
+      "UPHELD": "A sanção é mantida",
+      "OVERTURNED": "A sanção é revertida"
+    },
+    "form": {
+      "decision": "Decisão",
+      "notes": "Justificativa da decisão",
+      "notesHint": "Comunicada à conta que recorreu.",
+      "submit": "Registrar decisão",
+      "cancel": "Cancelar",
+      "decisionRequired": "Selecione uma decisão.",
+      "notesRequired": "A justificativa é obrigatória."
+    }
+  },
   "products": {
     "types": {
       "HEROE": "Herói",
@@ -757,7 +837,9 @@
       "chatbot-knowledge": "Entradas que o chatbot sabe responder.",
       "chatbot-analytics": "O que é perguntado e o que fica sem resposta.",
       "chatbot-tickets": "Perguntas que o chatbot encaminhou.",
-      "roles": "Atribua e retire papéis das contas."
+      "roles": "Atribua e retire papéis das contas.",
+      "security": "Advertência, suspensão ou banimento, com motivo e justificativa.",
+      "pending": "Recursos pendentes de decisão final."
     },
     "sections": "Seções"
   }

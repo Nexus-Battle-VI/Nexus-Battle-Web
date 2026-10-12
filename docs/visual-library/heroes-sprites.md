@@ -47,3 +47,21 @@ El pack contiene 13 animaciones en 38 secuencias direccionales y 64 poses.
 Faltan sprites de ataque, lanzamiento de habilidades y muerte; tampoco incluye
 efectos, audio o armas/ítems separados. Esta entrega visual no acredita la
 aceptación funcional de torneos, pagos, premios o cuentas operativas.
+
+## JcE Online
+
+La arena no selecciona otra identidad para la IA. Convierte exclusivamente el
+`turnOrder[].heroSubtype` publicado por Combat mediante `heroIdFromSubtype` y
+monta `HeroSprite` con dirección `north-west`. Los seis subtipos ofensivos
+oficiales tienen una entrada en el manifiesto; un subtipo conocido no cae en el
+marcador genérico.
+
+`CombatantView.level`, cuando está disponible, se muestra junto al nombre del
+héroe (`Oponente IA / Mago de Fuego · Nivel 3`). El nivel no se calcula en Web.
+Las vistas y eventos anteriores que no publiquen nivel siguen siendo válidos y
+simplemente omiten esa segunda línea.
+
+El PR #252 se integró en `develop` durante esta corrección. La rama se rebasó
+sobre ese cambio y conserva su `attackSignal`, animaciones de ataque/golpe y
+manifiestos PixelLab, además de añadir identidad y nivel autoritativos para la
+IA. No incorpora Three.js nuevo.

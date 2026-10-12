@@ -26,6 +26,7 @@ import type {
 import {
   attackableTargets,
   combatantHealth,
+  combatantLevel,
   combatantName,
   describeTurn,
   findSelf,
@@ -151,6 +152,7 @@ export const BattleScreen = ({
   const withHealth = hasCombatState(battle)
   const healthOf = (entry: TurnOrderEntry): HealthView | null | undefined =>
     withHealth ? combatantHealth(battle, entry) : undefined
+  const levelOf = (entry: TurnOrderEntry): number | null => combatantLevel(battle, entry)
 
   // Objetivo de ataque: estado UNICO, compartido entre el heroe rival (clic directo sobre la
   // arena) y el chip del `AttackPanel` -- seleccionar en cualquiera de los dos actualiza el
@@ -393,6 +395,7 @@ export const BattleScreen = ({
               direction="south-east"
               healthOf={(entry) => healthOf(entry)?.current}
               attackOf={attackOf}
+              levelOf={levelOf}
             />
           </div>
 
@@ -413,6 +416,7 @@ export const BattleScreen = ({
               direction="north-west"
               healthOf={(entry) => healthOf(entry)?.current}
               attackOf={attackOf}
+              levelOf={levelOf}
               isTargetable={isTargetableEntry}
               isTargetSelected={isTargetSelectedEntry}
               onSelectTarget={onSelectTarget}
