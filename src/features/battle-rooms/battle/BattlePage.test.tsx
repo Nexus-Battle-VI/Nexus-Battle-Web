@@ -165,6 +165,35 @@ describe('BattlePage — HU-17: la batalla solo se pinta cuando Combat la public
     expect(screen.queryByText('Preparando la batalla…')).not.toBeInTheDocument()
   })
 
+  it('quien participa tiene el chat de la sala durante la batalla, cerrado hasta que lo abre (EN-031)', async () => {
+    const { sockets } = montar(ANA)
+    const socket = await connect(sockets)
+
+    deliver(socket, snapshot(1, 'IN_BATTLE', battle(0)), ready(1))
+
+    const bubble = await screen.findByRole('button', { name: 'Chat de la sala' })
+    expect(bubble).toHaveAttribute('aria-expanded', 'false')
+    // Cerrado no abre una segunda conexion ni tapa la arena.
+    expect(screen.queryByRole('dialog', { name: 'Chat de la sala' })).not.toBeInTheDocument()
+
+    act(() => {
+      bubble.click()
+    })
+
+    expect(screen.getByRole('dialog', { name: 'Chat de la sala' })).toBeInTheDocument()
+    expect(screen.getByRole('log', { name: 'Mensajes de chat de la sala' })).toBeInTheDocument()
+  })
+
+  it('quien no tiene asiento en la cola no ve el chat de la sala', async () => {
+    const { sockets } = montar('sujeto-ajeno')
+    const socket = await connect(sockets)
+
+    deliver(socket, snapshot(1, 'IN_BATTLE', battle(0)), ready(1))
+
+    expect(await screen.findByText('Turno de Bruno')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Chat de la sala' })).not.toBeInTheDocument()
+  })
+
   it('los DOS clientes ven la MISMA cola: quien mira como Bruno lee "Tu turno" y como Ana "Turno de Bruno"', async () => {
     const bruno = montar(BRUNO)
     const socketBruno = await connect(bruno.sockets)

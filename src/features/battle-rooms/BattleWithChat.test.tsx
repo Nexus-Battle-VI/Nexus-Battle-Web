@@ -29,12 +29,10 @@ describe('BattleWithChat (HU-17)', () => {
     expect(screen.getByText('Pantalla de batalla')).toBeInTheDocument()
   })
 
-  // Remaster visual Sprint 3 (3a pasada, seccion 55 del brief): la batalla
-  // activa ya NO muestra el chat de la sala -- compite visualmente con el
-  // HUD de combate y el requisito real es coordinarse ANTES de pelear (eso
-  // vive en el chat flotante del lobby/sala de espera, HU-13 sigue intacta
-  // ahi). El protocolo de chat NO se elimino: solo se dejo de montar aqui.
-  it('NO monta el chat de la sala durante la batalla activa', () => {
+  // EN-031: el chat vuelve a la batalla, pero lo monta la propia pantalla (como burbuja
+  // dentro del escenario y solo para quien participa, ver BattlePage.test). Este envoltorio
+  // no pinta un segundo panel encima.
+  it('no pinta un panel de chat propio alrededor de la batalla', () => {
     montar(`/play/rooms/${ROOM}/battle`, '/play/rooms/:roomId/battle')
 
     expect(screen.queryByRole('heading', { name: 'Chat de la sala' })).not.toBeInTheDocument()

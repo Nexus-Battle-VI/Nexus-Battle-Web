@@ -76,6 +76,15 @@ const hasGesture = (): boolean =>
   gestured ||
   (maybe.navigator as Partial<Navigator> | undefined)?.userActivation?.hasBeenActive === true
 
+/**
+ * Las mismas tres primeras reglas de arriba, para quien reproduce audio por su
+ * cuenta (la musica y los efectos de batalla con Howler, `battleAudio.ts`).
+ */
+export const canPlaySound = (): boolean =>
+  useSfxSettings.getState().enabled &&
+  !(typeof document !== 'undefined' && document.hidden) &&
+  hasGesture()
+
 const audioContextConstructor = (): (new () => AudioContext) | undefined => maybe.AudioContext
 
 export const playSfx = (name: SfxName): void => {

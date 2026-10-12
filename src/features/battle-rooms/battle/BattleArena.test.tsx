@@ -205,6 +205,17 @@ describe('battle-rooms.css -- guardas de la formacion inmutable (10a pasada)', (
     expect(css.slice(start, end)).toContain('min-width: 0')
   })
 
+  it('.br-combatant-target ocupa todo el ancho: el sprite no tiene ancho propio (EN-031)', () => {
+    // Sin esto el boton del rival seleccionable se encogia a 0x0 y su heroe no se veia.
+    const start = css.indexOf('.br-combatant-target {')
+    const end = css.indexOf('}', start)
+    if (start === -1 || end === -1) {
+      throw new Error('No se encontro la regla .br-combatant-target en battle-rooms.css.')
+    }
+
+    expect(css.slice(start, end)).toContain('width: 100%')
+  })
+
   it('los offsets de formacion (nth-child / data-side-size) nunca dependen de turno, target ni pending', () => {
     const start = css.indexOf('@media (min-width: 640px) {\n  .br-arena-side ul > li:nth-child(1)')
     const end = css.indexOf('/* El heroe se ve SOLO sobre la arena')
