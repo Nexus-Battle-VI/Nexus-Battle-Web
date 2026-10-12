@@ -63,7 +63,9 @@ describe('ApplySanctionForm (HU-42)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Revisar' }))
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Selecciona la causal y el tipo de sanción.')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Selecciona la causal y el tipo de sanción.',
+    )
   })
 
   it('exige una duracion valida para una suspension temporal', async () => {

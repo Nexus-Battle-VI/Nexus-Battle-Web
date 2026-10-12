@@ -23,7 +23,11 @@ const SUSPENDED: MySanctionStatusResponse = {
   remainingSeconds: 3_600,
 }
 
-const NONE: MySanctionStatusResponse = { hasActiveSanctions: false, sanctions: [], remainingSeconds: null }
+const NONE: MySanctionStatusResponse = {
+  hasActiveSanctions: false,
+  sanctions: [],
+  remainingSeconds: null,
+}
 
 describe('MySanctionStatus (HU-42, §7.3.2)', () => {
   it('no muestra nada cuando la cuenta no tiene sanciones activas', async () => {

@@ -24,7 +24,9 @@ describe('AppealsReviewPage (HU-42, §7.3.2)', () => {
   it('muestra el estado vacio cuando no hay apelaciones pendientes', async () => {
     renderWithProviders(<AppealsReviewPage listAppeals={vi.fn().mockResolvedValue([])} />)
 
-    expect(await screen.findByText('No hay apelaciones pendientes de revisión.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('No hay apelaciones pendientes de revisión.'),
+    ).toBeInTheDocument()
   })
 
   it('lista una apelacion pendiente y permite resolverla', async () => {
@@ -60,6 +62,8 @@ describe('AppealsReviewPage (HU-42, §7.3.2)', () => {
       decision: 'OVERTURNED',
       notes: 'La evidencia desvirtua la causal.',
     })
-    expect(await screen.findByText('No hay apelaciones pendientes de revisión.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('No hay apelaciones pendientes de revisión.'),
+    ).toBeInTheDocument()
   })
 })

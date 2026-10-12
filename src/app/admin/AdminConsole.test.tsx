@@ -109,9 +109,7 @@ describe('Consola del Consejo (EN-031)', () => {
     // ambas vivan en el mismo grupo "Seguridad".
     const security = screen.getByRole('region', { name: 'Seguridad' })
     expect(within(security).getByRole('link', { name: /Aplicar sanciones/u })).toBeInTheDocument()
-    expect(
-      within(security).getByRole('link', { name: /Revisar apelaciones/u }),
-    ).toBeInTheDocument()
+    expect(within(security).getByRole('link', { name: /Revisar apelaciones/u })).toBeInTheDocument()
     expect(
       within(security).queryByRole('link', { name: /Gestionar roles/u }),
     ).not.toBeInTheDocument()

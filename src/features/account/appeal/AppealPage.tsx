@@ -139,11 +139,7 @@ export const AppealPage = ({
             <h1 className="auth-title text-center">{t('account:appeal.identify.title')}</h1>
             <p className="auth-subtitle text-center">{t('account:appeal.identify.subtitle')}</p>
 
-            <form
-              noValidate
-              onSubmit={handleIdentify}
-              className="mt-6 space-y-5"
-            >
+            <form noValidate onSubmit={handleIdentify} className="mt-6 space-y-5">
               {authMessage !== null && (
                 <p role="alert" className="auth-alert">
                   {authMessage}
@@ -230,11 +226,7 @@ export const AppealPage = ({
               </ul>
             )}
 
-            <form
-              noValidate
-              onSubmit={handleSubmitAppeal}
-              className="mt-6 space-y-5"
-            >
+            <form noValidate onSubmit={handleSubmitAppeal} className="mt-6 space-y-5">
               <TextField
                 label={t('account:appeal.form.sanctionId')}
                 hint={t('account:appeal.form.sanctionIdHint')}

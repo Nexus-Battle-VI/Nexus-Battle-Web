@@ -48,7 +48,8 @@ const REASON_CODE_TRANSLATION_KEY: Readonly<Record<SanctionReasonCode, string>> 
   OFFENSIVE_LANGUAGE: 'admin:sanctions.reasonCodes.OFFENSIVE_LANGUAGE',
   HARASSMENT: 'admin:sanctions.reasonCodes.HARASSMENT',
   FRAUD_OR_MANIPULATION: 'admin:sanctions.reasonCodes.FRAUD_OR_MANIPULATION',
-  UNAUTHORIZED_SOFTWARE_OR_CHEATING: 'admin:sanctions.reasonCodes.UNAUTHORIZED_SOFTWARE_OR_CHEATING',
+  UNAUTHORIZED_SOFTWARE_OR_CHEATING:
+    'admin:sanctions.reasonCodes.UNAUTHORIZED_SOFTWARE_OR_CHEATING',
   IDENTITY_IMPERSONATION: 'admin:sanctions.reasonCodes.IDENTITY_IMPERSONATION',
   PRIVACY_POLICY_VIOLATION: 'admin:sanctions.reasonCodes.PRIVACY_POLICY_VIOLATION',
   TERMS_OF_SERVICE_VIOLATION: 'admin:sanctions.reasonCodes.TERMS_OF_SERVICE_VIOLATION',
@@ -141,7 +142,9 @@ export const ApplySanctionForm = ({
       type,
       reasonCode,
       reason: reason.trim(),
-      ...(type === 'TEMPORARY_SUSPENSION' ? { suspensionDurationMinutes: Number(durationMinutes) } : {}),
+      ...(type === 'TEMPORARY_SUSPENSION'
+        ? { suspensionDurationMinutes: Number(durationMinutes) }
+        : {}),
     }
 
     mutation.mutate(input, {

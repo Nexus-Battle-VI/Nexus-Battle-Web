@@ -40,7 +40,8 @@ export interface SanctionResponse {
 export const applySanction = (
   targetAccountId: string,
   input: ApplySanctionInput,
-): Promise<SanctionResponse> => httpClient.post(`/accounts/${encodeURIComponent(targetAccountId)}/sanctions`, input)
+): Promise<SanctionResponse> =>
+  httpClient.post(`/accounts/${encodeURIComponent(targetAccountId)}/sanctions`, input)
 
 export type AppealStatus = 'SUBMITTED' | 'RESOLVED'
 export type AppealDecision = 'UPHELD' | 'OVERTURNED'

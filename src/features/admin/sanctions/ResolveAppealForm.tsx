@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/Button'
 import { TextareaField } from '@/components/ui/form/TextareaField'
 import { describeFailure } from '@/shared/i18n/errors'
 import { useLanguage } from '@/shared/i18n/language'
-import { resolveAppeal as resolveAppealDefault, type AppealDecision, type AppealResponse } from './api'
+import {
+  resolveAppeal as resolveAppealDefault,
+  type AppealDecision,
+  type AppealResponse,
+} from './api'
 
 export type ResolveAppealTransport = typeof resolveAppealDefault
 

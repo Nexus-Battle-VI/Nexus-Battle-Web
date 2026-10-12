@@ -72,6 +72,8 @@ describe('AppealPage (HU-42, §6 "identidad restringida")', () => {
       sanctionId: 'sancion-2',
       statement: 'Nueva justificacion.',
     })
-    expect(await screen.findByText('Apelación presentada. Referencia: apelacion-2.')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Apelación presentada. Referencia: apelacion-2.'),
+    ).toBeInTheDocument()
   })
 })
