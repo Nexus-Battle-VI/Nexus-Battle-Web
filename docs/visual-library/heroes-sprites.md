@@ -1,5 +1,7 @@
 # Sprites originales de héroes en la arena
 
+> **EN-031 (2026-10-11).** Los sprites ya se usan en todas las pantallas (vitrina, inventario, Consola, torneo, subasta y carrito) mediante `ProductVisual`; no queda ningún render 3D. Se añadieron ataque en sureste y noroeste para los ocho héroes, reposo y golpe a la Médica, y los golpes y reposos que faltaban, como filas nuevas en `en031-<héroe>.png` (el export original sigue intacto). La arena reproduce el ataque de quien acaba de actuar. Detalle en [`../assets/pixellab-items.md`](../assets/pixellab-items.md).
+
 La arena de Jugar Online y la vista de espectador usan los ocho PNG de
 `Nexus-Heroes-Showcase.zip`, entregado por el usuario el 8 de octubre de 2026.
 `HeroSprite` consume un catálogo derivado de sus JSON originales, con los mismos

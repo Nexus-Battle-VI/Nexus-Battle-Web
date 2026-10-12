@@ -133,7 +133,7 @@ const STATS: Readonly<
   ],
 }
 
-type SkillScenario = 'ready' | 'cooldown' | 'lowPower'
+type SkillScenario = 'ready' | 'cooldown' | 'lowPower' | 'locked'
 
 /** Las habilidades de Ana (sujeto): 2 reales + una 3a SOLO en DEV (seccion
     35/68 del brief: el contrato/fixture real solo trae 2, se agrega una
@@ -156,7 +156,8 @@ const anaSkills = (scenario: SkillScenario, withThird: boolean): readonly SkillV
     chargeTurns: 3,
     cooldownRemaining: scenario === 'cooldown' ? 2 : 0,
     targetAudience: 'OPPONENT',
-    status: scenario === 'cooldown' ? 'RECHARGING' : 'READY',
+    status: scenario === 'cooldown' ? 'RECHARGING' : scenario === 'locked' ? 'LOCKED' : 'READY',
+    unlockLevel: scenario === 'locked' ? 3 : 1,
   },
   ...(withThird
     ? [
@@ -681,7 +682,7 @@ export const BattleRemasterPreview = (): React.JSX.Element => {
               />
               3a habilidad (DEV, para probar 4 slots)
             </label>
-            {(['ready', 'cooldown', 'lowPower'] as const).map((option) => (
+            {(['ready', 'cooldown', 'lowPower', 'locked'] as const).map((option) => (
               <button
                 key={option}
                 type="button"
@@ -694,7 +695,9 @@ export const BattleRemasterPreview = (): React.JSX.Element => {
                   ? 'disponibles'
                   : option === 'cooldown'
                     ? 'una en recarga'
-                    : 'Poder insuficiente'}
+                    : option === 'lowPower'
+                      ? 'Poder insuficiente'
+                      : 'bloqueada por nivel'}
               </button>
             ))}
           </fieldset>

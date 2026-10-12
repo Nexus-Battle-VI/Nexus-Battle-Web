@@ -28,6 +28,7 @@ import {
   isCommandRejectedMessage,
   isResumeOkMessage,
   isSnapshotMessage,
+  isUnrecognizedBattleEvent,
   type TargetRef,
 } from './types'
 
@@ -185,13 +186,32 @@ export const useBattleRealtime = (
               // habilidad: cierra la intencion de habilidad.
               attackDispatch({ type: 'resolved', commandId: message.commandId })
               skillDispatch({ type: 'resolved', commandId: message.commandId })
-            } else if (message.type === 'skillUsed') {
+            } else if (
+              message.type === 'skillUsed' ||
+              message.type === 'healSkillUsed' ||
+              message.type === 'directDamageSkillUsed' ||
+              message.type === 'epicUsed'
+            ) {
+              // EN-031: TODO resultado de habilidad cierra la intencion. Antes solo `skillUsed`:
+              // tras una curacion o Agonia la intencion quedaba pendiente para siempre y la barra
+              // de acciones bloqueada hasta recargar la pagina.
               skillDispatch({ type: 'resolved', commandId: message.commandId })
             } else if (message.type === 'battleFinished') {
               // HU-21: la accion pendiente (si la habia) ya no aplica; el
               // resultado es el que acaba de llegar.
               attackDispatch({ type: 'finished' })
               skillDispatch({ type: 'finished' })
+            }
+          }
+        } else if (isUnrecognizedBattleEvent(message)) {
+          // EN-031: un tipo de evento que esta version no conoce. Se aplica su vista para no
+          // quedarse atras (y su `commandId`, si es el mio, cierra la intencion pendiente).
+          if (message.roomId === roomId) {
+            dispatch({ type: 'unrecognizedEvent', message })
+
+            if (message.commandId !== undefined) {
+              attackDispatch({ type: 'resolved', commandId: message.commandId })
+              skillDispatch({ type: 'resolved', commandId: message.commandId })
             }
           }
         } else if (isResumeOkMessage(message)) {
@@ -232,7 +252,13 @@ export const useBattleRealtime = (
               })
             }
           } else if (message.command === undefined) {
-            setRejected(message.code)
+            if (message.code === 'INTERNAL_ERROR') {
+              // EN-031: un fallo transitorio al reanudar NO hace la batalla inaccesible (antes
+              // reemplazaba la pantalla hasta recargar): se pide la instantanea completa.
+              sendRef.current?.({ type: 'resume', roomId })
+            } else {
+              setRejected(message.code)
+            }
           }
         }
       },
@@ -243,6 +269,17 @@ export const useBattleRealtime = (
       sendRef.current = null
     }
   }, [roomId, socketFactory, ticketProvider])
+
+  // EN-031: al cambiar el turno, el aviso de un rechazo anterior ya no aplica; antes se quedaba
+  // guardado y reaparecia en cada turno propio hasta pulsar «Entendido».
+  const turnsCompleted = state.battle?.turnsCompleted ?? null
+
+  useEffect(() => {
+    if (turnsCompleted !== null) {
+      attackDispatch({ type: 'dismissed' })
+      skillDispatch({ type: 'dismissed' })
+    }
+  }, [turnsCompleted])
 
   // Un salto de `seq` (mensajes perdidos) se recupera con `resume` por el mismo
   // socket; nunca reconstruyendo el estado localmente.

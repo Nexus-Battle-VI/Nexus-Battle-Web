@@ -42,10 +42,10 @@ export const PendingClaimsBadge = (): React.JSX.Element | null => {
       to="/auction/pending-claims"
       aria-label={t('app:pendingClaims.label', { total: count })}
       title={t('app:pendingClaims.label', { total: count })}
-      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 text-sm font-semibold tabular-nums text-ink hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      className="nb-hud-pill inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 text-sm font-semibold tabular-nums text-ink hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       <Package aria-hidden="true" className="h-4 w-4 text-brand" />
-      <span className="hidden sm:inline">{t('app:pendingClaims.short')}</span>
+      <span className="hidden 2xl:inline">{t('app:pendingClaims.short')}</span>
       <span>{count}</span>
     </Link>
   )

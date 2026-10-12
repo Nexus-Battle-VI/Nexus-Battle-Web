@@ -5,12 +5,9 @@ import { NAVIGATION } from './routes'
 import { devRoutes, publicDevRoutes } from './dev-routes'
 
 describe('devRoutes', () => {
-  it('declara unicamente los harnesses de heroes (EN-026.3) y productos (EN-026.4), fuera de NAVIGATION', () => {
-    expect(devRoutes).toHaveLength(2)
-    expect(devRoutes.map((route) => route.path)).toEqual([
-      '__dev/visual-library/heroes',
-      '__dev/visual-library/products',
-    ])
+  it('el harness de sprites (EN-031) es publico de desarrollo y queda fuera de NAVIGATION', () => {
+    expect(devRoutes).toHaveLength(0)
+    expect(publicDevRoutes.map((route) => route.path)).toContain('__dev/visual-library/items')
     expect(NAVIGATION.some((item) => item.path.includes('__dev'))).toBe(false)
   })
 
@@ -39,6 +36,7 @@ describe('devRoutes', () => {
     // catalogo local no siempre tiene salas/heroes suficientes para
     // inspeccionar cada estado.
     expect(publicDevRoutes.map((route) => route.path)).toEqual([
+      '__dev/visual-library/items',
       '__dev/tournament/formats',
       '__dev/chatbot-admin',
       '__dev/ecommerce/marketplace-preview',
@@ -88,19 +86,22 @@ describe('devRoutes', () => {
     expect(import.meta.env.DEV).toBe(true)
   })
 
-  it('el harness perezoso de heroes resuelve y muestra los 8/8 heroes con nombre visible', async () => {
-    const route = devRoutes[0]
+  it('el harness perezoso de sprites muestra los 8 heroes y el arte de todos los productos oficiales', async () => {
+    const route = publicDevRoutes.find((entry) => entry.path === '__dev/visual-library/items')
     if (!route) {
-      throw new Error('se esperaba que devRoutes declarara el harness de heroes en modo test (DEV)')
+      throw new Error(
+        'se esperaba que devRoutes declarara el harness de sprites en modo test (DEV)',
+      )
     }
 
     render(route.element)
 
     expect(
-      await screen.findByText(/vista previa de héroes 3d \(8\/8\)/iu, {}, { timeout: 10000 }),
+      await screen.findByText(/vista previa en-031 · sprites/iu, {}, { timeout: 10000 }),
     ).toBeInTheDocument()
+    expect(screen.getByText(/0 productos oficiales sin arte/iu)).toBeInTheDocument()
 
-    const officialNames = [
+    for (const name of [
       'Guerrero Tanque',
       'Guerrero Armas',
       'Mago Fuego',
@@ -109,36 +110,10 @@ describe('devRoutes', () => {
       'Pícaro Machete',
       'Chamán',
       'Médico',
-    ]
-    for (const name of officialNames) {
+    ]) {
       expect(screen.getByRole('img', { name })).toBeInTheDocument()
     }
-  })
-
-  it('el harness perezoso de productos resuelve y muestra los 72/72 productos agrupados por familia', async () => {
-    const route = devRoutes[1]
-    if (!route) {
-      throw new Error(
-        'se esperaba que devRoutes declarara el harness de productos en modo test (DEV)',
-      )
-    }
-
-    render(route.element)
-
-    expect(
-      await screen.findByText(
-        /recursos visuales de productos \(72\/72\)/iu,
-        {},
-        { timeout: 10000 },
-      ),
-    ).toBeInTheDocument()
-    expect(screen.getByText(/armas \(16\/16\)/iu)).toBeInTheDocument()
-    expect(screen.getByText(/armaduras \(16\/16\)/iu)).toBeInTheDocument()
-    expect(screen.getByText(/ítems \(8\/8\)/iu)).toBeInTheDocument()
-    expect(screen.getByText(/acciones \(24\/24\)/iu)).toBeInTheDocument()
-    expect(screen.getByText(/épicas \(8\/8\)/iu)).toBeInTheDocument()
-
-    expect(screen.getByRole('img', { name: 'Espada de una mano' })).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'Reanimador 3000' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'espada-de-una-mano' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'reanimador-3000' })).toBeInTheDocument()
   })
 })

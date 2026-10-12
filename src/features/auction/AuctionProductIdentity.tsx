@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
 import { Package } from '@/components/ui/icons'
+import { ItemSprite } from '@/shared/visual-library/items/ItemSprite'
+import { itemSpriteFor } from '@/shared/visual-library/items/item-sprites'
 
 export interface AuctionProductIdentityProps {
   readonly name: string
@@ -26,6 +28,7 @@ export const AuctionProductIdentity = ({
   const [imageFailed, setImageFailed] = useState(false)
   const source = imageUrl?.trim()
   const showImage = source !== undefined && source.length > 0 && !imageFailed
+  const sprite = itemSpriteFor({ name })
 
   return (
     <span
@@ -33,7 +36,10 @@ export const AuctionProductIdentity = ({
       data-product-type={type}
       aria-hidden="true"
     >
-      {showImage ? (
+      {/* EN-031: el sprite animado del producto si existe; si no, su imagen. */}
+      {sprite !== null ? (
+        <ItemSprite spec={sprite} label={name} className="auction-product-identity-image" />
+      ) : showImage ? (
         <img
           src={source}
           alt=""

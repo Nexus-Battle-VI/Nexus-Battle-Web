@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import { formatMoney } from '@/lib/format'
 import { HttpError } from '@/lib/http'
 import { countLabel, formatInteger } from '@/shared/i18n/format'
@@ -276,13 +277,19 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                     <h1 className="auction-title">{t('auction:crumbs.detail')}</h1>
                     {product !== undefined && (
                       <div className="auction-product-summary mt-2 flex min-w-0 items-center gap-3">
-                        {product.imageUrl !== '' && (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="auction-product-image size-12 shrink-0 rounded-md object-cover"
-                          />
-                        )}
+                        <ProductVisual
+                          product={product}
+                          className="auction-product-image size-12 shrink-0"
+                          fallback={
+                            product.imageUrl !== '' && (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="auction-product-image size-12 shrink-0 rounded-md object-cover"
+                              />
+                            )
+                          }
+                        />
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-ink">{product.name}</p>
                           <p className="line-clamp-2 text-sm text-muted">{product.description}</p>

@@ -10,7 +10,7 @@ import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 import { TextareaField } from '@/components/ui/form/TextareaField'
 import { ProductImage } from '@/components/ui/ProductImage'
-import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { formatMoney } from '@/lib/format'
 import { countLabel, formatInteger } from '@/shared/i18n/format'
@@ -333,18 +333,17 @@ export const ProductManagementPage = ({
                 <div className="ak-panel">
                   <div className="flex flex-wrap items-start gap-4">
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border">
-                      {(() => {
-                        const heroId = heroIdOfProduct(product.type, product.sku)
-                        return heroId === null ? (
+                      <ProductVisual
+                        product={product}
+                        className="size-full"
+                        fallback={
                           <ProductImage
                             source={product.imageUrl}
                             name={product.name}
                             className="size-full object-contain"
                           />
-                        ) : (
-                          <Hero3D heroId={heroId} className="size-full [&>p]:hidden" />
-                        )
-                      })()}
+                        }
+                      />
                     </div>
 
                     <div className="min-w-0 flex-1">

@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 
 import type { EquipmentCapacity } from '../heroSelectionApi'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import { ProductThumb } from '../ProductThumb'
 import type { EquipmentSlotId, HeroEquipment } from './api'
 import { SLOT_META, slotLabel, type SlotMeta } from './slots'
@@ -210,7 +211,11 @@ export const SlotGroupList = ({
                     </span>
                   ) : (
                     <span className="block size-full p-2">
-                      <ProductThumb src={equipped.imageUrl} alt={equipped.name} />
+                      <ProductVisual
+                        product={equipped}
+                        className="size-full"
+                        fallback={<ProductThumb src={equipped.imageUrl} alt={equipped.name} />}
+                      />
                     </span>
                   )}
                 </span>

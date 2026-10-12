@@ -5,7 +5,7 @@ import { describeFailure } from '@/shared/i18n/errors'
 import { countLabel } from '@/shared/i18n/format'
 import { i18n } from '@/shared/i18n/i18n'
 import { useLanguage } from '@/shared/i18n/language'
-import { Hero3D, HERO_VISUAL_SPECS_BY_ID, type HeroId } from '@/shared/visual-library/heroes'
+import { HeroSprite, HERO_VISUAL_SPECS_BY_ID, type HeroId } from '@/shared/visual-library/heroes'
 
 import { heroRoleEmblemSlug, heroRoleLabel } from '../heroRole'
 import type {
@@ -232,9 +232,9 @@ export const HeroManagerPanel = ({
 
           {/* Escenario del heroe + armadura real alrededor (3 ranuras a cada
            * lado desde `lg`; apiladas en pantallas angostas) + armas/items
-           * debajo. Nunca se repite el nombre del heroe dentro del escenario
-           * (`[&>p]:hidden` oculta el label que `Hero3D` repite por
-           * defecto): el nombre vive UNA sola vez, en la info de abajo. */}
+           * debajo. Nunca se repite el nombre del heroe dentro del escenario:
+           * el nombre vive UNA sola vez, en la info de abajo. EN-031: el heroe
+           * es su sprite animado de PixelLab (ya no un modelo 3D). */}
           <div className="inventory-hero-equip-grid">
             <div className="inventory-hero-equip-grid__armor-left">
               <SlotGroupList
@@ -258,7 +258,9 @@ export const HeroManagerPanel = ({
                  * center`) para que quede aire real arriba/lados/abajo y el
                  * fondo del escenario se reconozca sin esfuerzo.
                  */}
-                <Hero3D heroId={activeModel} className="h-[48%] w-auto [&>p]:hidden" />
+                <span className="inventory-hero-sprite block aspect-square h-[62%]">
+                  <HeroSprite heroId={activeModel} />
+                </span>
               </div>
             </div>
 

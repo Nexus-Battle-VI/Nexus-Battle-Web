@@ -80,6 +80,10 @@ const FORBIDDEN_MARKERS = [
   '__dev/admin/console',
   'AdminConsolePreview',
   'consejo-vista-previa',
+  // EN-031: vista previa de los sprites animados de productos y heroes.
+  '__dev/visual-library',
+  'ItemsDevPreview',
+  'sprites-vista-previa',
 ]
 
 /**

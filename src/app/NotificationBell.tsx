@@ -141,7 +141,7 @@ export const NotificationBell = (): React.JSX.Element | null => {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={toggle}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="nb-hud-pill inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <AuthPixelIcon icon="bell" size="md" />
         {count > 0 && (

@@ -67,3 +67,25 @@ export const fetchBattleReward = (
 
 /** El saldo vive en `@/shared/wallet`; se reexporta para los consumidores de Jugar Online. */
 export { fetchWallet, type WalletSnapshot } from '@/shared/wallet'
+
+/**
+ * EN-031: progreso de los heroes del jugador autenticado (`GET /inventories/me/heroes`,
+ * Player-Inventory). Es el MISMO recurso y la MISMA respuesta que lee Mi Inventario, por eso
+ * comparte su clave de cache; aqui solo se declara lo que la batalla lee: la XP del heroe propio
+ * para decir cuanto falta para desbloquear una habilidad.
+ */
+export interface HeroProgressEntry {
+  readonly heroId: string
+  readonly progression: {
+    readonly level: number
+    readonly currentXp: number
+    readonly nextLevel:
+      | { readonly status: 'AVAILABLE'; readonly forNextLevel: number; readonly amount: number }
+      | { readonly status: 'MAX_LEVEL'; readonly forNextLevel: null; readonly amount: null }
+  }
+}
+
+export const fetchMyHeroesProgress = (
+  signal?: AbortSignal,
+): Promise<readonly HeroProgressEntry[]> =>
+  httpClient.get<readonly HeroProgressEntry[]>('/inventories/me/heroes', signal)

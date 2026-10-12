@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { QueryState } from '@/components/ui/QueryState'
 import { queryKeys } from '@/shared/query-keys'
 import { ProductImage } from '@/features/commerce/ProductImage'
-import { Hero3D, heroIdOfProduct } from '@/shared/visual-library/heroes'
+import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import {
   ProductCommentsAndRating,
   type PublishCommentTransport,
@@ -31,13 +31,6 @@ const heroAbilityIds = (
   if (values?.kind !== 'HEROE' || !Array.isArray(values.abilities)) return []
   return values.abilities.filter((entry): entry is string => typeof entry === 'string')
 }
-
-const heroIdOf = (
-  type: string | undefined,
-  sku: string | undefined,
-  values: Readonly<Record<string, unknown>> | undefined,
-): string | null =>
-  type === undefined || sku === undefined ? null : heroIdOfProduct(type, sku, values)
 
 export interface ProductDetailProps {
   readonly reference: string
@@ -121,24 +114,17 @@ export const ProductDetail = ({
               corta el boton de cerrar ni oculta contenido.
             */}
             <div className="commerce-detail-head">
-              {(() => {
-                const heroId = heroIdOf(
-                  query.data.type,
-                  query.data.sku,
-                  query.data.attributes.values,
-                )
-                return heroId === null ? (
+              <ProductVisual
+                product={query.data}
+                className="commerce-detail-image"
+                fallback={
                   <ProductImage
                     source={query.data.imageUrl}
                     name={query.data.name}
                     className="commerce-detail-image rounded object-contain"
                   />
-                ) : (
-                  // El nombre ya se muestra debajo (`query.data.name`); se
-                  // oculta la etiqueta que `Hero3D` repite por defecto.
-                  <Hero3D heroId={heroId} className="commerce-detail-image [&>p]:hidden" />
-                )
-              })()}
+                }
+              />
               <div className="commerce-detail-main">
                 <h3 className="font-game-display text-xl font-semibold text-ink">
                   {query.data.name}

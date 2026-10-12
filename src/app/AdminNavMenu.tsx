@@ -94,14 +94,16 @@ export const AdminNavMenu = (): React.JSX.Element | null => {
           playSfx(isOpen ? 'menuClose' : 'menuOpen')
           setIsOpen((prev) => !prev)
         }}
+        data-nav-module="console"
+        title={t('app:nav.administrator')}
         className={clsx(
-          'nb-nav-seg flex items-center gap-1 rounded-md px-3 py-1.5 text-sm whitespace-nowrap',
+          'nb-nav-seg nb-admin-trigger flex items-center gap-1 rounded-md px-3 py-1.5 text-sm whitespace-nowrap',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
           isActive ? 'font-medium text-brand-ink' : 'text-muted',
         )}
         data-testid="admin-nav-trigger"
       >
-        <span>{t('app:nav.administrator')}</span>
+        <span className="nb-nav-label">{t('app:nav.administrator')}</span>
         <ChevronDown
           className={clsx('h-4 w-4 transition-transform duration-200', isOpen && 'rotate-180')}
           aria-hidden="true"
@@ -112,7 +114,7 @@ export const AdminNavMenu = (): React.JSX.Element | null => {
         <div
           role="menu"
           aria-label={t('app:nav.adminMenuLabel')}
-          className="absolute left-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-surface-raised py-1 shadow-2xl backdrop-blur-md"
+          className="nb-menu-panel absolute right-0 top-full z-50 mt-2 w-60 py-1"
           data-testid="admin-nav-dropdown"
         >
           {/* EN-031: entrada a la Consola del Consejo, con todas las secciones. */}

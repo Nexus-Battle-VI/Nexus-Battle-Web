@@ -1,0 +1,410 @@
+{
+  "agonia": {
+    "image": "/assets/items/agonia.png",
+    "frames": 9
+  },
+  "anillo-para-piro-explosion": {
+    "image": "/assets/items/anillo-para-piro-explosion.png",
+    "frames": 17
+  },
+  "arco-del-destino": {
+    "image": "/assets/items/arco-del-destino.png",
+    "frames": 9
+  },
+  "atadura-carmesi": {
+    "image": "/assets/items/atadura-carmesi.png",
+    "frames": 17
+  },
+  "baculo-de-permafrost": {
+    "image": "/assets/items/baculo-de-permafrost.png",
+    "frames": 17
+  },
+  "baston-de-dragon": {
+    "image": "/assets/items/baston-de-dragon.png",
+    "frames": 9
+  },
+  "bata-de-cirujano": {
+    "image": "/assets/items/bata-de-cirujano.png",
+    "frames": 17
+  },
+  "benditas": {
+    "image": "/assets/items/benditas.png",
+    "frames": 17
+  },
+  "bola-de-hielo": {
+    "image": "/assets/items/bola-de-hielo.png",
+    "frames": 9
+  },
+  "botas-de-anclaje": {
+    "image": "/assets/items/botas-de-anclaje.png",
+    "frames": 9
+  },
+  "botas-de-plata": {
+    "image": "/assets/items/botas-de-plata.png",
+    "frames": 9
+  },
+  "brazalete-de-hierro": {
+    "image": "/assets/items/brazalete-de-hierro.png",
+    "frames": 9
+  },
+  "brazalete-de-plata": {
+    "image": "/assets/items/brazalete-de-plata.png",
+    "frames": 9
+  },
+  "brazalete-de-slime": {
+    "image": "/assets/items/brazalete-de-slime.png",
+    "frames": 9
+  },
+  "brazaletes-muralla": {
+    "image": "/assets/items/brazaletes-muralla.png",
+    "frames": 9
+  },
+  "caida-de-fuego": {
+    "image": "/assets/items/caida-de-fuego.png",
+    "frames": 17
+  },
+  "canto-del-bosque": {
+    "image": "/assets/items/canto-del-bosque.png",
+    "frames": 9
+  },
+  "casco-de-ecos-ancestrales": {
+    "image": "/assets/items/casco-de-ecos-ancestrales.png",
+    "frames": 17
+  },
+  "casco-de-hierro": {
+    "image": "/assets/items/casco-de-hierro.png",
+    "frames": 9
+  },
+  "casco-de-plata": {
+    "image": "/assets/items/casco-de-plata.png",
+    "frames": 9
+  },
+  "changua-curativa": {
+    "image": "/assets/items/changua-curativa.png",
+    "frames": 9
+  },
+  "changua-curativa-pro": {
+    "image": "/assets/items/changua-curativa-pro.png",
+    "frames": 9
+  },
+  "cierra-sangrienta": {
+    "image": "/assets/items/cierra-sangrienta.png",
+    "frames": 17
+  },
+  "cono-de-hielo": {
+    "image": "/assets/items/cono-de-hielo.png",
+    "frames": 9
+  },
+  "corona-de-hielo": {
+    "image": "/assets/items/corona-de-hielo.png",
+    "frames": 17
+  },
+  "cortada": {
+    "image": "/assets/items/cortada.png",
+    "frames": 9
+  },
+  "curacion-directa": {
+    "image": "/assets/items/curacion-directa.png",
+    "frames": 9
+  },
+  "daga-de-fuego": {
+    "image": "/assets/items/daga-de-fuego.png",
+    "frames": 9
+  },
+  "daga-purulenta": {
+    "image": "/assets/items/daga-purulenta.png",
+    "frames": 17
+  },
+  "defensa-del-enfurecido": {
+    "image": "/assets/items/defensa-del-enfurecido.png",
+    "frames": 17
+  },
+  "defensa-feroz": {
+    "image": "/assets/items/defensa-feroz.png",
+    "frames": 9
+  },
+  "embate-sangriento": {
+    "image": "/assets/items/embate-sangriento.png",
+    "frames": 9
+  },
+  "empunadura-de-furia": {
+    "image": "/assets/items/empunadura-de-furia.png",
+    "frames": 17
+  },
+  "epica-de-muertacular": {
+    "image": "/assets/items/epica-de-muertacular.png",
+    "frames": 9
+  },
+  "epica-de-veneno": {
+    "image": "/assets/items/epica-de-veneno.png",
+    "frames": 9
+  },
+  "escudo-de-dragon": {
+    "image": "/assets/items/escudo-de-dragon.png",
+    "frames": 17
+  },
+  "espada-de-dos-manos": {
+    "image": "/assets/items/espada-de-dos-manos.png",
+    "frames": 17
+  },
+  "espada-de-fuego": {
+    "image": "/assets/items/espada-de-fuego.png",
+    "frames": 9
+  },
+  "espada-de-hielo": {
+    "image": "/assets/items/espada-de-hielo.png",
+    "frames": 9
+  },
+  "espada-de-plata": {
+    "image": "/assets/items/espada-de-plata.png",
+    "frames": 9
+  },
+  "espada-de-una-mano": {
+    "image": "/assets/items/espada-de-una-mano.png",
+    "frames": 17
+  },
+  "espada-relampago": {
+    "image": "/assets/items/espada-relampago.png",
+    "frames": 9
+  },
+  "flor-de-loto": {
+    "image": "/assets/items/flor-de-loto.png",
+    "frames": 9
+  },
+  "frio-concentrado": {
+    "image": "/assets/items/frio-concentrado.png",
+    "frames": 9
+  },
+  "fuego-fatuo": {
+    "image": "/assets/items/fuego-fatuo.png",
+    "frames": 17
+  },
+  "golpe-con-escudo": {
+    "image": "/assets/items/golpe-con-escudo.png",
+    "frames": 9
+  },
+  "golpe-de-defensa": {
+    "image": "/assets/items/golpe-de-defensa.png",
+    "frames": 9
+  },
+  "golpe-de-tormenta": {
+    "image": "/assets/items/golpe-de-tormenta.png",
+    "frames": 9
+  },
+  "grebas-del-centinela": {
+    "image": "/assets/items/grebas-del-centinela.png",
+    "frames": 9
+  },
+  "guanteletes-bastion": {
+    "image": "/assets/items/guanteletes-bastion.png",
+    "frames": 9
+  },
+  "guantes-de-cuero": {
+    "image": "/assets/items/guantes-de-cuero.png",
+    "frames": 9
+  },
+  "guantes-de-hierro": {
+    "image": "/assets/items/guantes-de-hierro.png",
+    "frames": 9
+  },
+  "guantes-de-plata": {
+    "image": "/assets/items/guantes-de-plata.png",
+    "frames": 9
+  },
+  "intimidacion-sangrienta": {
+    "image": "/assets/items/intimidacion-sangrienta.png",
+    "frames": 9
+  },
+  "kit-de-urgencias": {
+    "image": "/assets/items/kit-de-urgencias.png",
+    "frames": 9
+  },
+  "lanza-de-los-dioses": {
+    "image": "/assets/items/lanza-de-los-dioses.png",
+    "frames": 9
+  },
+  "libro-de-la-ventisca-helada": {
+    "image": "/assets/items/libro-de-la-ventisca-helada.png",
+    "frames": 17
+  },
+  "lluvia-de-hielo": {
+    "image": "/assets/items/lluvia-de-hielo.png",
+    "frames": 9
+  },
+  "luz-cegadora": {
+    "image": "/assets/items/luz-cegadora.png",
+    "frames": 9
+  },
+  "machetazo": {
+    "image": "/assets/items/machetazo.png",
+    "frames": 9
+  },
+  "machete-vendito": {
+    "image": "/assets/items/machete-vendito.png",
+    "frames": 17
+  },
+  "magma-ardiente": {
+    "image": "/assets/items/magma-ardiente.png",
+    "frames": 17
+  },
+  "mancuerna-yugular": {
+    "image": "/assets/items/mancuerna-yugular.png",
+    "frames": 9
+  },
+  "mano-de-piedra": {
+    "image": "/assets/items/mano-de-piedra.png",
+    "frames": 9
+  },
+  "mano-del-desterrado": {
+    "image": "/assets/items/mano-del-desterrado.png",
+    "frames": 17
+  },
+  "misiles-de-magma": {
+    "image": "/assets/items/misiles-de-magma.png",
+    "frames": 9
+  },
+  "neutralizacion-de-efectos": {
+    "image": "/assets/items/neutralizacion-de-efectos.png",
+    "frames": 9
+  },
+  "orbe-de-manos-ardientes": {
+    "image": "/assets/items/orbe-de-manos-ardientes.png",
+    "frames": 17
+  },
+  "pantalon-de-expedicion-medica": {
+    "image": "/assets/items/pantalon-de-expedicion-medica.png",
+    "frames": 17
+  },
+  "pantalon-de-plata": {
+    "image": "/assets/items/pantalon-de-plata.png",
+    "frames": 9
+  },
+  "pantalones-de-cuero": {
+    "image": "/assets/items/pantalones-de-cuero.png",
+    "frames": 9
+  },
+  "pantalones-de-hierro": {
+    "image": "/assets/items/pantalones-de-hierro.png",
+    "frames": 9
+  },
+  "pare-de-fuego": {
+    "image": "/assets/items/pare-de-fuego.png",
+    "frames": 9
+  },
+  "pechera-de-plata": {
+    "image": "/assets/items/pechera-de-plata.png",
+    "frames": 9
+  },
+  "pecho-de-hierro": {
+    "image": "/assets/items/pecho-de-hierro.png",
+    "frames": 9
+  },
+  "pie-de-atleta": {
+    "image": "/assets/items/pie-de-atleta.png",
+    "frames": 17
+  },
+  "piedra-de-afilar": {
+    "image": "/assets/items/piedra-de-afilar.png",
+    "frames": 17
+  },
+  "piel-de-caminante-del-bosque": {
+    "image": "/assets/items/piel-de-caminante-del-bosque.png",
+    "frames": 17
+  },
+  "pinchos-de-escudo": {
+    "image": "/assets/items/pinchos-de-escudo.png",
+    "frames": 9
+  },
+  "piquete": {
+    "image": "/assets/items/piquete.png",
+    "frames": 9
+  },
+  "planazo": {
+    "image": "/assets/items/planazo.png",
+    "frames": 9
+  },
+  "pluma-sanadora": {
+    "image": "/assets/items/pluma-sanadora.png",
+    "frames": 17
+  },
+  "puno-lucido": {
+    "image": "/assets/items/puno-lucido.png",
+    "frames": 17
+  },
+  "punos-en-llamas": {
+    "image": "/assets/items/punos-en-llamas.png",
+    "frames": 17
+  },
+  "raiz-china": {
+    "image": "/assets/items/raiz-china.png",
+    "frames": 17
+  },
+  "reanimacion": {
+    "image": "/assets/items/reanimacion.png",
+    "frames": 9
+  },
+  "reanimador": {
+    "image": "/assets/items/reanimador.png",
+    "frames": 9
+  },
+  "reanimador-3000": {
+    "image": "/assets/items/reanimador-3000.png",
+    "frames": 9
+  },
+  "sangre-cruel": {
+    "image": "/assets/items/sangre-cruel.png",
+    "frames": 17
+  },
+  "segundo-impulso": {
+    "image": "/assets/items/segundo-impulso.png",
+    "frames": 9
+  },
+  "te-changua": {
+    "image": "/assets/items/te-changua.png",
+    "frames": 9
+  },
+  "toma-y-lleva": {
+    "image": "/assets/items/toma-y-lleva.png",
+    "frames": 9
+  },
+  "toque-de-la-vida": {
+    "image": "/assets/items/toque-de-la-vida.png",
+    "frames": 9
+  },
+  "tunica-arcana": {
+    "image": "/assets/items/tunica-arcana.png",
+    "frames": 17
+  },
+  "venas-heladas": {
+    "image": "/assets/items/venas-heladas.png",
+    "frames": 17
+  },
+  "veneno-lacerante": {
+    "image": "/assets/items/veneno-lacerante.png",
+    "frames": 17
+  },
+  "ventisca": {
+    "image": "/assets/items/ventisca.png",
+    "frames": 17
+  },
+  "vinculo-natural": {
+    "image": "/assets/items/vinculo-natural.png",
+    "frames": 9
+  },
+  "vision-borrosa": {
+    "image": "/assets/items/vision-borrosa.png",
+    "frames": 17
+  },
+  "vulcano": {
+    "image": "/assets/items/vulcano.png",
+    "frames": 9
+  },
+  "yerbabuena": {
+    "image": "/assets/items/yerbabuena.png",
+    "frames": 9
+  },
+  "zapatos-de-hierro": {
+    "image": "/assets/items/zapatos-de-hierro.png",
+    "frames": 9
+  }
+}
