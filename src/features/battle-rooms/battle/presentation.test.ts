@@ -161,6 +161,28 @@ describe('describeStartBattleFailure: textos propios por codigo, sin filtrar el 
     }
   })
 
+  it('EN-031: 409 HERO_IN_ANOTHER_BATTLE dice de quien es el heroe ocupado y que hacer', () => {
+    expect(
+      describeStartBattleFailure(
+        new HttpError(409, 'El heroe de Dabji sigue en otra batalla.', {
+          code: 'HERO_IN_ANOTHER_BATTLE',
+          displayName: 'Dabji',
+        }),
+      ),
+    ).toBe(
+      'El héroe de Dabji sigue en otra batalla. Cuando termine esa partida (o en unos minutos), vuelve a iniciar.',
+    )
+    expect(
+      describeStartBattleFailure(
+        new HttpError(409, 'x', { code: 'HERO_IN_ANOTHER_BATTLE', displayName: null }),
+      ),
+    ).toContain('El héroe de un participante sigue en otra batalla.')
+    // Otro 409 sigue siendo el de estado de la sala.
+    expect(describeStartBattleFailure(new HttpError(409, 'x', { code: 'OTRO' }))).toContain(
+      'no está lista para comenzar',
+    )
+  })
+
   it('un error que no es HttpError (red caida) tambien es legible', () => {
     expect(describeStartBattleFailure(new TypeError('Failed to fetch'))).toBe(
       'No fue posible iniciar la batalla. Inténtalo de nuevo.',

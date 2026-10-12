@@ -82,6 +82,18 @@ const isUnsupportedTeamComposition = (body: unknown): boolean =>
   body.code === UNSUPPORTED_TEAM_COMPOSITION
 
 /**
+ * EN-031: el 409 de Combat cuando el heroe de un participante sigue en otra batalla
+ * (p. ej. una partida contra la IA sin terminar). Trae el nombre visible de la sala.
+ */
+const heroInAnotherBattle = (body: unknown): { readonly name: string | null } | null => {
+  if (typeof body !== 'object' || body === null || !('code' in body)) return null
+  if (body.code !== 'HERO_IN_ANOTHER_BATTLE') return null
+  const name = 'displayName' in body ? body.displayName : null
+
+  return { name: typeof name === 'string' && name.trim() !== '' ? name : null }
+}
+
+/**
  * Mensaje legible para un fallo al iniciar la batalla. Textos propios por codigo,
  * nunca el texto crudo de Combat: los 409 interpolan el `roomId` y los 422 pueden
  * arrastrar detalles tecnicos.
@@ -100,8 +112,17 @@ export const describeStartBattleFailure = (error: unknown): string => {
         return i18n.t('battle:start.forbidden')
       case 404:
         return i18n.t('battle:roomGone')
-      case 409:
+      case 409: {
+        const busy = heroInAnotherBattle(error.body)
+
+        if (busy !== null) {
+          return busy.name === null
+            ? i18n.t('battle:start.heroBusy')
+            : i18n.t('battle:start.heroBusyNamed', { name: busy.name })
+        }
+
         return i18n.t('battle:start.conflict')
+      }
       case 422:
         if (isUnsupportedTeamComposition(error.body)) {
           return i18n.t('battle:start.unevenTeams')

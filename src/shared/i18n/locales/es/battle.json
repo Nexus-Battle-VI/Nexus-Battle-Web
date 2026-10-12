@@ -228,7 +228,9 @@
     "unevenTeams": "Los equipos de esta sala tienen distinto tamaño y el orden de turnos solo está definido para equipos con el mismo número de participantes. La batalla no comenzó; vuelve a la lista de salas.",
     "ineligible": "Un participante ya no cumple los requisitos para combatir: su héroe o su equipamiento cambió. La batalla no comenzó; revisa tu héroe y vuelve a la sala.",
     "unavailable": "El servicio no pudo validar a los participantes en este momento. Inténtalo de nuevo en unos segundos.",
-    "failed": "No fue posible iniciar la batalla. Inténtalo de nuevo."
+    "failed": "No fue posible iniciar la batalla. Inténtalo de nuevo.",
+    "heroBusy": "El héroe de un participante sigue en otra batalla. Cuando termine esa partida (o en unos minutos), vuelve a iniciar.",
+    "heroBusyNamed": "El héroe de {{name}} sigue en otra batalla. Cuando termine esa partida (o en unos minutos), vuelve a iniciar."
   },
   "reject": {
     "access": "No fue posible acceder a esta batalla."
