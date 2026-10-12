@@ -1,5 +1,5 @@
 import type { RealtimeConnectionState } from '../realtime'
-import type { LastAttack, LastHealSkill, LastSkill } from './battleReducer'
+import type { LastAttack, LastEffect, LastHealSkill, LastSkill } from './battleReducer'
 import {
   DETAIL_SEPARATOR,
   attackVersusDefense,
@@ -66,7 +66,40 @@ export const describeSkillStatus = (skill: SkillView): string => {
       return i18n.t('battle:skills.availableIn', { turns: describeTurns(skill.cooldownRemaining) })
     case 'UNSUPPORTED':
       return i18n.t('battle:skills.unsupported')
+    case 'LOCKED':
+      return i18n.t('battle:skills.locked', { level: String(skill.unlockLevel ?? 1) })
   }
+}
+
+/**
+ * EN-031: progreso del heroe propio, tal como lo publica Player-Inventory (`progression`). Solo
+ * sirve para decir cuanta XP falta cuando la habilidad se desbloquea en el SIGUIENTE nivel: la tabla
+ * de umbrales vive en Player-Inventory y Web no la reimplementa.
+ */
+export interface HeroUnlockProgress {
+  readonly currentXp: number
+  /** Siguiente nivel y su umbral ABSOLUTO de XP; `null` en el nivel maximo. */
+  readonly nextLevel: number | null
+  readonly nextLevelXp: number | null
+}
+
+/** «Se desbloquea en nivel 3 · faltan 120 XP» (la XP solo si es el siguiente nivel). */
+export const describeLockedSkill = (
+  skill: SkillView,
+  progress: HeroUnlockProgress | null,
+): string => {
+  const level = skill.unlockLevel ?? 1
+  const base = describeSkillStatus(skill)
+
+  if (progress?.nextLevel !== level || progress.nextLevelXp === null) {
+    return base
+  }
+
+  // Diferencia de dos datos de Player-Inventory; si ya alcanzo el umbral, faltan 0.
+  const missing =
+    progress.nextLevelXp > progress.currentXp ? progress.nextLevelXp - progress.currentXp : 0
+
+  return `${base}${DETAIL_SEPARATOR}${i18n.t('battle:skills.xpMissing', { amount: formatInteger(missing) })}`
 }
 
 /**
@@ -100,6 +133,8 @@ export interface SkillAvailabilityInput {
   readonly pending: boolean
   readonly target: TargetRef | null
   readonly skill: SkillView
+  /** EN-031: progreso del heroe propio para el texto de una habilidad bloqueada. */
+  readonly progress?: HeroUnlockProgress | null
 }
 
 /**
@@ -113,7 +148,12 @@ export const skillAvailability = ({
   pending,
   target,
   skill,
+  progress = null,
 }: SkillAvailabilityInput): SkillAvailability => {
+  if (skill.status === 'LOCKED') {
+    return { enabled: false, hint: `${describeLockedSkill(skill, progress)}.` }
+  }
+
   if (skill.status === 'UNSUPPORTED') {
     return { enabled: false, hint: `${describeSkillStatus(skill)}.` }
   }
@@ -162,6 +202,12 @@ export const describeSkillRejection = (code: string): string => {
       return i18n.t('battle:skills.errors.UNSUPPORTED_SKILL_EFFECT')
     case 'SKILL_ON_COOLDOWN':
       return i18n.t('battle:skills.errors.SKILL_ON_COOLDOWN')
+    case 'SKILL_LOCKED':
+      return i18n.t('battle:skills.errors.SKILL_LOCKED')
+    case 'INVALID_HEAL_TARGET':
+      return i18n.t('battle:skills.errors.INVALID_HEAL_TARGET')
+    case 'INSUFFICIENT_POWER_FOR_HEAL':
+      return i18n.t('battle:skills.errors.INSUFFICIENT_POWER_FOR_HEAL')
     case 'NOT_A_PARTICIPANT':
       return i18n.t('battle:notParticipant')
     case 'ROOM_NOT_FOUND':
@@ -257,6 +303,59 @@ export const describeLastHealSkill = (last: LastHealSkill, battle: BattleView): 
 }
 
 /**
+ * EN-031: texto del ultimo dano directo (Agonia) o epica, SOLO con lo que Combat envio. Sin
+ * resolucion de golpe: ninguna de las dos compara Ataque con Defensa.
+ */
+export const describeLastEffect = (last: LastEffect, battle: BattleView): SkillFeedback => {
+  const actor = nameOf(findEntry(battle, last.actor), i18n.t('battle:aParticipant'))
+  const target =
+    last.target === null
+      ? null
+      : nameOf(findEntry(battle, last.target), i18n.t('battle:theirTarget'))
+  const headline =
+    target === null
+      ? i18n.t('battle:skills.usedAlone', { actor, skill: last.name })
+      : i18n.t(last.healed !== null ? 'battle:skills.usedOn' : 'battle:skills.used', {
+          actor,
+          skill: last.name,
+          target,
+        })
+  const life =
+    target === null || last.targetHealth === null
+      ? null
+      : lifeChange(target, last.targetHealth.before, last.targetHealth.after)
+  const detail = [
+    i18n.t('battle:skills.powerChange', {
+      before: String(last.power.before),
+      after: String(last.power.after),
+    }),
+    i18n.t('battle:skills.rechargeTurns', { turns: describeTurns(last.cooldown.remainingTurns) }),
+  ].join(DETAIL_SEPARATOR)
+
+  if (last.healed !== null) {
+    return {
+      headline,
+      impact: i18n.t('battle:skills.heal', { amount: String(last.healed) }),
+      tone: 'heal',
+      life,
+      detail,
+    }
+  }
+
+  if (last.appliedDamage !== null) {
+    return {
+      headline,
+      impact: damageImpact(last.appliedDamage),
+      tone: last.appliedDamage > 0 ? 'damage' : 'neutral',
+      life,
+      detail,
+    }
+  }
+
+  return { headline, impact: i18n.t('battle:skills.effectApplied'), tone: 'neutral', life, detail }
+}
+
+/**
  * Lo ultimo que paso, sea un ataque basico, una habilidad, una curacion (excepcion de HU-12) o un
  * ataque basico que sustituyo a una habilidad: gana el de `seq` mayor (el servidor los numera en
  * orden). `null` si no hubo ninguno.
@@ -266,10 +365,16 @@ export const describeLatestAction = (
   lastSkill: LastSkill | null,
   battle: BattleView,
   lastHealSkill: LastHealSkill | null = null,
+  lastEffect: LastEffect | null = null,
 ): SkillFeedback | null => {
   const attackSeq = lastAttack?.seq ?? 0
   const skillSeq = lastSkill?.seq ?? 0
   const healSeq = lastHealSkill?.seq ?? 0
+  const effectSeq = lastEffect?.seq ?? 0
+
+  if (lastEffect !== null && effectSeq > attackSeq && effectSeq > skillSeq && effectSeq > healSeq) {
+    return describeLastEffect(lastEffect, battle)
+  }
 
   if (lastHealSkill !== null && healSeq > attackSeq && healSeq > skillSeq) {
     return describeLastHealSkill(lastHealSkill, battle)

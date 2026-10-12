@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import clsx from 'clsx'
+import { Lock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
@@ -18,6 +19,7 @@ import {
   describeSkillRejection,
   describeSkillStatus,
   skillAvailability,
+  type HeroUnlockProgress,
 } from './skillPresentation'
 import type { BattleView, SkillView, TargetRef, TurnOrderEntry } from './types'
 
@@ -38,6 +40,8 @@ export interface SkillListProps {
   /** Reenvia la intencion pendiente con el MISMO `commandId`. */
   readonly onRetry: () => void
   readonly onDismissRejection: () => void
+  /** EN-031: progreso del heroe propio (XP que falta para la siguiente habilidad). */
+  readonly progress?: HeroUnlockProgress | null
 }
 
 /**
@@ -76,6 +80,7 @@ export const SkillList = ({
   onUse,
   onRetry,
   onDismissRejection,
+  progress = null,
 }: SkillListProps): React.JSX.Element | null => {
   const headingId = useId()
   const noteId = useId()
@@ -143,6 +148,7 @@ export const SkillList = ({
                 pending,
                 target: effectiveTarget,
                 skill: entry,
+                progress,
               })}
               busy={using?.abilityId === entry.abilityId}
               noteId={noteId}
@@ -200,10 +206,13 @@ export const SkillList = ({
         </div>
       )}
 
+      {/* EN-031: aviso flotante que se desvanece solo (animacion CSS, sin temporizador: los
+          temporizadores de esta pantalla son solo los de `BattleTimers`) y que el turno siguiente
+          descarta (`useBattleRealtime`). Antes se quedaba fijo y reaparecia en cada turno. */}
       {skill.rejection !== null && (
-        <div role="alert" className="flex flex-col items-start gap-2 text-sm text-danger">
+        <div role="alert" className="br-skill-toast">
           <p>{describeSkillRejection(skill.rejection)}</p>
-          <Button variant="battle-secondary" className="min-h-11" onClick={onDismissRejection}>
+          <Button variant="battle-secondary" className="min-h-9" onClick={onDismissRejection}>
             {t('battle:understood')}
           </Button>
         </div>
@@ -246,6 +255,7 @@ const SkillRow = ({
         'flex shrink-0 flex-col items-center gap-1',
         skill.status !== 'READY' && 'opacity-70',
       )}
+      data-skill-status={skill.status}
     >
       {/* 7a pasada (secciones 31-33 del brief): el slot entero ES el boton
           (mismo lenguaje que "Ataque básico" en `.br-action-slot`) -- ya no
@@ -275,7 +285,17 @@ const SkillRow = ({
           </span>
         )}
         <span className="w-full min-w-0 truncate">{skill.name}</span>
-        <span className="br-action-slot-cost">{describePowerCost(skill.powerCost)}</span>
+        {skill.status === 'LOCKED' ? (
+          <span
+            className="br-action-slot-cost br-action-slot-locked"
+            title={availability.hint ?? undefined}
+          >
+            <Lock aria-hidden="true" className="h-3 w-3" />
+            {t('battle:skills.lockedShort', { level: String(skill.unlockLevel ?? 1) })}
+          </span>
+        ) : (
+          <span className="br-action-slot-cost">{describePowerCost(skill.powerCost)}</span>
+        )}
       </Button>
       {/* Hotfix post-despliegue: este parrafo ("Disponible en 1 turno · 1
           turno de recarga"...) era la CAUSA RAIZ del layout shift de la

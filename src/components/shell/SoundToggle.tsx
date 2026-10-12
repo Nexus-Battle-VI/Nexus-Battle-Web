@@ -34,7 +34,7 @@ export const SoundToggle = ({
         if (!enabled) playSfx('click')
       }}
       className={clsx(
-        'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+        'nb-hud-pill inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
         className,
       )}
     >

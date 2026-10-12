@@ -196,7 +196,9 @@
     "currentTurn": "Turno actual",
     "turns": "Turnos",
     "turnOrder": "Orden de turnos",
-    "current": "Actual"
+    "current": "Actual",
+    "crashed": "La batalla tuvo un problema al mostrarse. Tu partida sigue en el servidor.",
+    "reconnect": "Reconectar"
   },
   "turn": {
     "yours": "Tu turno",
@@ -310,7 +312,10 @@
       "UNKNOWN_SKILL": "Esa habilidad no pertenece a tu héroe.",
       "UNSUPPORTED_SKILL_EFFECT": "Esa habilidad todavía no se puede usar: su efecto aún no está definido para el combate.",
       "SKILL_ON_COOLDOWN": "Esa habilidad sigue en recarga. Tu turno no se consumió.",
-      "default": "No fue posible usar la habilidad. Inténtalo de nuevo."
+      "default": "No fue posible usar la habilidad. Inténtalo de nuevo.",
+      "SKILL_LOCKED": "Tu héroe todavía no tiene el nivel para esa habilidad. Tu turno no se consumió.",
+      "INVALID_HEAL_TARGET": "Esa curación solo puede dirigirse a un compañero de tu equipo.",
+      "INSUFFICIENT_POWER_FOR_HEAL": "No tienes Poder suficiente para esa curación. Tu turno no se consumió."
     },
     "used": "{{actor}} usó {{skill}} contra {{target}}",
     "usedOn": "{{actor}} usó {{skill}} sobre {{target}}",
@@ -329,7 +334,12 @@
     "healTarget": "Compañero a curar",
     "chooseHealTarget": "¿A qué compañero quieres aplicar {{skill}}?",
     "using": "Usando…",
-    "use": "Usar {{skill}}"
+    "use": "Usar {{skill}}",
+    "locked": "Se desbloquea en nivel {{level}}",
+    "lockedShort": "Nivel {{level}}",
+    "xpMissing": "faltan {{amount}} XP",
+    "usedAlone": "{{actor}} usó {{skill}}",
+    "effectApplied": "Efecto aplicado"
   },
   "result": {
     "standing": "Vida restante {{remaining}} / {{max}} ({{percent}} %)",
