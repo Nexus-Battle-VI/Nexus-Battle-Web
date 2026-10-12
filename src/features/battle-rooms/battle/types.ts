@@ -60,8 +60,9 @@ export type PowerCost =
 /**
  * Estado de una habilidad segun Combat: `RECHARGING` si le faltan turnos propios de recarga,
  * `UNSUPPORTED` si su efecto todavia no se puede ejecutar, si no `READY`. El Poder no lo cambia.
+ * EN-031: `LOCKED` si el nivel del heroe aun no la desbloquea (`unlockLevel`).
  */
-export const SKILL_STATUSES = ['READY', 'RECHARGING', 'UNSUPPORTED'] as const
+export const SKILL_STATUSES = ['READY', 'RECHARGING', 'UNSUPPORTED', 'LOCKED'] as const
 
 export type SkillStatus = (typeof SKILL_STATUSES)[number]
 
@@ -86,6 +87,8 @@ export interface SkillView {
   readonly cooldownRemaining: number
   readonly targetAudience: SkillTargetAudience
   readonly status: SkillStatus
+  /** EN-031: nivel del heroe desde el que se puede usar; ausente en un Combat anterior. */
+  readonly unlockLevel?: number
 }
 
 /**
@@ -269,12 +272,59 @@ export interface HealSkillUsedMessage {
   readonly battle: BattleView
 }
 
+/**
+ * HU-19 v2 (contrato §3): dano directo (Agonia) sin resolucion de Ataque/Defensa, por eso
+ * sin `resolution` ni `bonus`. EN-031: Web lo descartaba y la pantalla se quedaba sin avanzar.
+ */
+export interface DirectDamageSkillUsedMessage {
+  readonly type: 'directDamageSkillUsed'
+  readonly seq: number
+  readonly roomId: string
+  readonly occurredAt: string
+  readonly commandId: string
+  readonly completedPosition: number
+  readonly actor: TargetRef
+  readonly target: TargetRef
+  readonly skill: SkillUsedMessage['skill']
+  readonly power: { readonly before: number; readonly after: number }
+  readonly cooldown: { readonly remainingTurns: number }
+  readonly damage: { readonly calculatedDamage: number; readonly appliedDamage: number }
+  readonly targetHealth: { readonly before: number; readonly after: number }
+  readonly battle: BattleView
+}
+
+/**
+ * Correccion HU-19/HU-31: la epica equipada ejecutada (hoy solo la usa la IA). `target`,
+ * `damage`, `heal`, `targetHealth` y `affected` aparecen SOLO cuando aplican.
+ */
+export interface EpicUsedMessage {
+  readonly type: 'epicUsed'
+  readonly seq: number
+  readonly roomId: string
+  readonly occurredAt: string
+  readonly commandId: string
+  readonly completedPosition: number
+  readonly actor: TargetRef
+  readonly target?: TargetRef
+  readonly epic: { readonly epicProductId: string; readonly name: string }
+  readonly power: { readonly before: number; readonly after: number }
+  readonly cooldown: { readonly remainingTurns: number }
+  readonly appliedEffects: number
+  readonly damage?: { readonly calculatedDamage: number; readonly appliedDamage: number }
+  readonly heal?: { readonly amount: number }
+  readonly targetHealth?: { readonly before: number; readonly after: number }
+  readonly affected?: readonly TargetRef[]
+  readonly battle: BattleView
+}
+
 export type BattleEventMessage =
   | BattleStartedMessage
   | TurnAdvancedMessage
   | BasicAttackResolvedMessage
   | SkillUsedMessage
   | HealSkillUsedMessage
+  | DirectDamageSkillUsedMessage
+  | EpicUsedMessage
   | TurnTimedOutMessage
   | BattleFinishedMessage
 
@@ -460,6 +510,8 @@ const isSkill = (value: unknown): value is SkillView =>
   isNonNegativeInteger(value.cooldownRemaining) &&
   isSkillTargetAudience(value.targetAudience) &&
   isSkillStatus(value.status) &&
+  (value.unlockLevel === undefined ||
+    (isNonNegativeInteger(value.unlockLevel) && value.unlockLevel >= 1)) &&
   (value.status === 'READY'
     ? value.cooldownRemaining === 0
     : value.status === 'RECHARGING'
@@ -840,6 +892,106 @@ export const isHealSkillUsedMessage = (value: unknown): value is HealSkillUsedMe
   isInQueue(value.battle, value.actor) &&
   isInQueue(value.battle, value.target)
 
+const isPowerChange = (value: unknown): value is { before: number; after: number } =>
+  isRecord(value) &&
+  isNonNegativeInteger(value.before) &&
+  isNonNegativeInteger(value.after) &&
+  value.after <= value.before
+
+const isDamage = (value: unknown): value is { calculatedDamage: number; appliedDamage: number } =>
+  isRecord(value) &&
+  isNonNegativeInteger(value.calculatedDamage) &&
+  isNonNegativeInteger(value.appliedDamage)
+
+/** `directDamageSkillUsed` (Agonia): mismo criterio estricto que `skillUsed`, con `damage`. */
+export const isDirectDamageSkillUsedMessage = (
+  value: unknown,
+): value is DirectDamageSkillUsedMessage =>
+  isRecord(value) &&
+  value.type === 'directDamageSkillUsed' &&
+  hasEventEnvelope(value) &&
+  isCommandId(value.commandId) &&
+  isNonNegativeInteger(value.completedPosition) &&
+  isTargetRef(value.actor) &&
+  isTargetRef(value.target) &&
+  isRecord(value.skill) &&
+  isNonEmptyString(value.skill.abilityId) &&
+  isNonEmptyString(value.skill.name) &&
+  isPowerCost(value.skill.powerCost) &&
+  isNonNegativeInteger(value.skill.chargeTurns) &&
+  value.skill.chargeTurns >= 1 &&
+  isPowerChange(value.power) &&
+  isRecord(value.cooldown) &&
+  isNonNegativeInteger(value.cooldown.remainingTurns) &&
+  isDamage(value.damage) &&
+  isTargetHealth(value.targetHealth) &&
+  isBattleView(value.battle) &&
+  isInQueue(value.battle, value.actor) &&
+  isInQueue(value.battle, value.target)
+
+/** `epicUsed`: los campos opcionales se validan solo si vienen. */
+export const isEpicUsedMessage = (value: unknown): value is EpicUsedMessage =>
+  isRecord(value) &&
+  value.type === 'epicUsed' &&
+  hasEventEnvelope(value) &&
+  isCommandId(value.commandId) &&
+  isNonNegativeInteger(value.completedPosition) &&
+  isTargetRef(value.actor) &&
+  (value.target === undefined || isTargetRef(value.target)) &&
+  isRecord(value.epic) &&
+  isNonEmptyString(value.epic.epicProductId) &&
+  isNonEmptyString(value.epic.name) &&
+  isPowerChange(value.power) &&
+  isRecord(value.cooldown) &&
+  isNonNegativeInteger(value.cooldown.remainingTurns) &&
+  isNonNegativeInteger(value.appliedEffects) &&
+  (value.damage === undefined || isDamage(value.damage)) &&
+  (value.heal === undefined || (isRecord(value.heal) && isNonNegativeInteger(value.heal.amount))) &&
+  (value.targetHealth === undefined ||
+    (isRecord(value.targetHealth) &&
+      isNonNegativeInteger(value.targetHealth.before) &&
+      isNonNegativeInteger(value.targetHealth.after))) &&
+  (value.affected === undefined ||
+    (Array.isArray(value.affected) && value.affected.every(isTargetRef))) &&
+  isBattleView(value.battle) &&
+  isInQueue(value.battle, value.actor)
+
+/**
+ * EN-031, red de seguridad: un evento con `seq` y una vista valida cuyo TIPO Web aun no conoce
+ * (Combat mas nuevo). Su detalle no se presenta, pero su `battle` se aplica igual: descartarlo
+ * dejaba `lastSeq` atras, `resume` lo repetia y la pantalla se quedaba congelada.
+ */
+export interface UnrecognizedBattleEvent {
+  readonly type: string
+  readonly seq: number
+  readonly roomId: string
+  readonly commandId?: string
+  readonly battle: BattleView
+}
+
+/** Tipos que Web SI conoce: uno de estos mal formado se IGNORA, nunca se aplica a medias. */
+const KNOWN_EVENT_TYPES: readonly string[] = [
+  'battleStarted',
+  'turnAdvanced',
+  'basicAttackResolved',
+  'skillUsed',
+  'healSkillUsed',
+  'directDamageSkillUsed',
+  'epicUsed',
+  'turnTimedOut',
+  'battleFinished',
+  'snapshot',
+  'resume.ok',
+  'command.rejected',
+]
+
+export const isUnrecognizedBattleEvent = (value: unknown): value is UnrecognizedBattleEvent =>
+  isRecord(value) &&
+  isNonEmptyString(value.type) &&
+  !KNOWN_EVENT_TYPES.includes(value.type) &&
+  hasEventEnvelope(value) &&
+  (value.commandId === undefined || typeof value.commandId === 'string')
+
 export const isBattleEventMessage = (value: unknown): value is BattleEventMessage =>
   isRecord(value) &&
   ((hasEventEnvelope(value) &&
@@ -848,6 +1000,8 @@ export const isBattleEventMessage = (value: unknown): value is BattleEventMessag
     isBasicAttackResolvedMessage(value) ||
     isSkillUsedMessage(value) ||
     isHealSkillUsedMessage(value) ||
+    isDirectDamageSkillUsedMessage(value) ||
+    isEpicUsedMessage(value) ||
     isTurnTimedOutMessage(value) ||
     isBattleFinishedMessage(value))
 

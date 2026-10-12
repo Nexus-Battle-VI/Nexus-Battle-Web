@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { useSession } from '@/shared/session'
 import { playSfx } from '@/shared/sound'
 import { primaryRole, roleLabel } from '@/shared/rbac'
-import { ChevronDown, LogOut, Package, User } from '@/components/ui/icons'
+import { ChevronDown } from '@/components/ui/icons'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { Avatar } from '@/components/ui/Avatar'
 import { useOwnAccount } from '@/features/account/useOwnAccount'
 import { useAccountLanguageSync } from '@/shared/i18n/useAccountLanguageSync'
@@ -128,13 +129,15 @@ export const SessionControl = (): React.JSX.Element | null => {
           playSfx(isOpen ? 'menuClose' : 'menuOpen')
           setIsOpen((prev) => !prev)
         }}
-        className="flex items-center gap-2 rounded-lg border border-brand/60 bg-brand/12 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-brand/20"
+        className="nb-account-trigger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         data-testid="user-menu-trigger"
       >
-        <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="sm" />
-        <span className="text-sm font-medium text-ink">{t('app:session.myAccount')}</span>
+        <span className="nb-account-avatar">
+          <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="sm" />
+        </span>
+        <span className="nb-account-label max-xl:sr-only">{t('app:session.myAccount')}</span>
         <ChevronDown
-          className={`h-4 w-4 text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`nb-account-chevron h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
@@ -143,19 +146,21 @@ export const SessionControl = (): React.JSX.Element | null => {
         <div
           role="menu"
           aria-label={t('app:session.menuOptions')}
-          className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-surface-raised py-1 shadow-2xl backdrop-blur-md"
+          className="nb-menu-panel absolute right-0 top-full z-50 mt-2 w-64 py-1"
           data-testid="user-menu-dropdown"
         >
           {/* Cabecera del usuario */}
-          <div className="flex items-center gap-3 border-b border-border p-3">
-            <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="md" />
+          <div className="nb-menu-identity flex items-center gap-3 p-3">
+            <span className="nb-account-avatar nb-account-avatar-lg">
+              <Avatar avatarUrl={avatarUrl} alt={avatarAlt} initials={initials} size="md" />
+            </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink">
                 {displayName ?? t('app:session.fallbackName')}
               </p>
               <p className="truncate text-xs text-muted">{userHandle}</p>
               {role !== null && (
-                <span className="mt-0.5 inline-block rounded-full bg-brand/20 px-1.5 py-0.2 text-[10px] font-medium text-brand">
+                <span className="nb-menu-role mt-1 inline-block px-1.5 text-[10px] font-semibold uppercase tracking-wider">
                   {roleLabel(role)}
                 </span>
               )}
@@ -170,9 +175,9 @@ export const SessionControl = (): React.JSX.Element | null => {
               onClick={() => {
                 setIsOpen(false)
               }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-brand/10"
+              className="nb-menu-item"
             >
-              <User className="h-5 w-5 text-muted" aria-hidden="true" />
+              <NavPixelIcon icon="account" size="md" />
               <span>{t('app:session.myAccount')}</span>
             </Link>
             <Link
@@ -181,15 +186,15 @@ export const SessionControl = (): React.JSX.Element | null => {
               onClick={() => {
                 setIsOpen(false)
               }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-ink transition-colors hover:bg-brand/10"
+              className="nb-menu-item"
             >
-              <Package className="h-5 w-5 text-muted" aria-hidden="true" />
+              <NavPixelIcon icon="inventory" size="md" />
               <span>{t('app:session.myInventory')}</span>
             </Link>
           </div>
 
           {/* Divisor */}
-          <div className="mx-3 my-1 h-px bg-border" aria-hidden="true" />
+          <div className="nb-menu-divider" aria-hidden="true" />
 
           {/* Accion de cierre de sesion (HU-03 / Figma) */}
           <button
@@ -198,10 +203,10 @@ export const SessionControl = (): React.JSX.Element | null => {
             onClick={() => {
               void handleLogout()
             }}
-            className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+            className="nb-menu-item nb-menu-item-danger w-full"
             data-testid="logout-button"
           >
-            <LogOut className="h-5 w-5 text-danger" aria-hidden="true" />
+            <NavPixelIcon icon="logout" size="md" />
             <span>{t('app:session.signOut')}</span>
           </button>
         </div>

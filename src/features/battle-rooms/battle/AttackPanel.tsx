@@ -11,6 +11,7 @@ import { SkillList } from './SkillList'
 import { initialSkillIntentState, type SkillIntentState } from './skillIntent'
 import { skillsVisible } from './skillPresentation'
 import { attackableTargets, attackAvailability, describeAttackRejection } from './presentation'
+import type { HeroUnlockProgress } from './skillPresentation'
 import type { BattleView, TargetRef } from './types'
 
 /** Lo que la pantalla necesita para atacar; lo aporta `useBattleRealtime`. */
@@ -31,6 +32,8 @@ export interface CombatControls {
   /** Reenvia la habilidad pendiente con el MISMO `commandId`. */
   readonly onRetrySkill?: () => void
   readonly onDismissSkillRejection?: () => void
+  /** EN-031: progreso del heroe propio, para decir cuanta XP falta para desbloquear. */
+  readonly skillProgress?: HeroUnlockProgress | null
 }
 
 export interface AttackPanelProps {
@@ -175,6 +178,7 @@ export const AttackPanel = ({
               onUse={combat.onUseSkill}
               onRetry={combat.onRetrySkill ?? noop}
               onDismissRejection={combat.onDismissSkillRejection ?? noop}
+              progress={combat.skillProgress ?? null}
             />
           )}
         </div>

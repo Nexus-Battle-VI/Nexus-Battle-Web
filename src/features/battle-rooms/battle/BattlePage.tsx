@@ -6,8 +6,10 @@ import type { CommandIdFactory } from '../commandId'
 import type { SocketFactory, TicketProvider } from '../realtime'
 
 import { BattleScreen } from './BattleScreen'
-import { describeRejection } from './presentation'
+import { describeRejection, findSelf } from './presentation'
+import { combatantSkills } from './skillPresentation'
 import { useBattleRealtime } from './useBattleRealtime'
+import { useHeroUnlockProgress } from './useHeroUnlockProgress'
 
 export interface BattlePageProps {
   /** Inyectables para pruebas (mismo patron que `useBattleRoomRealtime`). */
@@ -80,6 +82,12 @@ export const BattlePage = ({
   const subject = useSession((state) => state.subject)
   const { t } = useTranslation()
   const realtime = useBattleRealtime(roomId, socketFactory, ticketProvider, createCommandId)
+  const self = realtime.battle === null ? null : findSelf(realtime.battle, subject)
+  const hasLockedSkill =
+    realtime.battle !== null &&
+    self !== null &&
+    combatantSkills(realtime.battle, self).some((entry) => entry.status === 'LOCKED')
+  const skillProgress = useHeroUnlockProgress(self?.heroId ?? null, hasLockedSkill)
 
   if (roomId === null) {
     return <Notice alert>{t('battle:battle.none')}</Notice>
@@ -109,6 +117,7 @@ export const BattlePage = ({
         lastAttack={realtime.lastAttack}
         lastSkill={realtime.lastSkill}
         lastHealSkill={realtime.lastHealSkill}
+        lastEffect={realtime.lastEffect}
         result={realtime.result}
         lastTurnTimeout={realtime.lastTurnTimeout}
         serverClock={realtime.serverClock}
@@ -121,6 +130,7 @@ export const BattlePage = ({
           onUseSkill: realtime.sendSkill,
           onRetrySkill: realtime.retrySkill,
           onDismissSkillRejection: realtime.dismissSkillRejection,
+          skillProgress,
         }}
       />
     )
