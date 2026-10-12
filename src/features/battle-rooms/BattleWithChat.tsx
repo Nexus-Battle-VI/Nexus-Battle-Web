@@ -16,6 +16,10 @@ export interface BattleWithChatProps {
 /**
  * La pantalla de batalla de una sala (HU-17).
  *
+ * EN-031: el chat de la sala vuelve a la batalla, pero lo monta `BattlePage`
+ * como burbuja dentro del escenario (solo para quien participa). Lo de abajo
+ * explica por que ESTE envoltorio dejo de pintar el panel fijo.
+ *
  * Remaster visual Sprint 3 (3a pasada, seccion 55 del brief): el chat de la
  * sala YA NO se muestra aqui. Combat sigue exponiendo el canal de chat de la
  * sala durante `PREPARING`/`IN_BATTLE` (el protocolo no cambia en absoluto),
