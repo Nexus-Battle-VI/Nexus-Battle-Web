@@ -37,6 +37,44 @@ const formationClassesOf = (li: Element): string =>
     .join(' ')
 
 describe('ArenaSide/BattleArena -- formacion inmutable ante cambios de currentTurn (10a pasada)', () => {
+  it.each([
+    ['GUERRERO_TANQUE', 'guerrero-tanque'],
+    ['GUERRERO_ARMAS', 'guerrero-armas'],
+    ['MAGO_FUEGO', 'mago-fuego'],
+    ['MAGO_HIELO', 'mago-hielo'],
+    ['PICARO_VENENO', 'picaro-veneno'],
+    ['PICARO_MACHETE', 'picaro-machete'],
+  ] as const)(
+    'pinta la identidad ofensiva %s que envio Combat, sin marcador generico',
+    (subtype, heroId) => {
+      const ai = entry(0, {
+        kind: 'AI',
+        playerId: null,
+        displayName: null,
+        heroId: 'catalog-product-id',
+        heroSubtype: subtype,
+      })
+
+      const { container } = render(
+        <ArenaSide
+          title="Rival"
+          entries={[ai]}
+          isSelf={() => false}
+          isCurrent={() => false}
+          direction="north-west"
+          levelOf={() => 3}
+        />,
+      )
+
+      expect(container.querySelector('.hero-sprite')).toHaveAttribute('data-hero', heroId)
+      expect(container.querySelector('.hero-sprite')).toHaveAttribute(
+        'data-direction',
+        'north-west',
+      )
+      expect(screen.getByText(/Nivel 3/iu)).toBeInTheDocument()
+    },
+  )
+
   it('el <ul> del lado conserva el mismo data-side-size y las mismas clases de ancho/columnas sin importar quien tiene el turno', () => {
     const renderWithActive = (activePosition: number) =>
       render(
