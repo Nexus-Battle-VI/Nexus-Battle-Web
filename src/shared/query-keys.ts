@@ -135,6 +135,12 @@ export const queryKeys = {
     adminUsers: (criteriaKey: string) => ['account', 'admin-users', criteriaKey] as const,
     /** Solo el nombre visible (HU-41, `GET /accounts/:id/display-name`), no `detail`. */
     displayName: (accountId: string) => ['account', accountId, 'display-name'] as const,
+    /** Estado propio de sancion activa (HU-42, `GET /accounts/me/sanctions/active`). */
+    mySanctionStatus: ['account', 'me', 'sanctions', 'active'] as const,
+    /** Apelaciones pendientes de decision (HU-42, panel de revision). */
+    pendingAppeals: ['account', 'appeals', 'pending'] as const,
+    /** Apelaciones de la propia cuenta, bajo la identidad restringida (HU-42). */
+    myAppeals: ['account', 'me', 'appeals'] as const,
   },
   auction: {
     /** Detalle de una subasta y su puja lider (HU-63.6, `GET /v1/auctions/:auctionId`). */
