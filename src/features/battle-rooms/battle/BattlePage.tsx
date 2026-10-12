@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useSession } from '@/shared/session'
 import type { CommandIdFactory } from '../commandId'
+import { FloatingChatPanel } from '../FloatingChatPanel'
 import type { SocketFactory, TicketProvider } from '../realtime'
 
 import { BattleScreen } from './BattleScreen'
@@ -121,6 +122,18 @@ export const BattlePage = ({
         result={realtime.result}
         lastTurnTimeout={realtime.lastTurnTimeout}
         serverClock={realtime.serverClock}
+        chat={
+          // EN-031: el chat de la sala vuelve a la batalla, solo para quien participa
+          // (Combat sigue siendo quien autoriza leer y escribir en el canal).
+          self === null ? undefined : (
+            <FloatingChatPanel
+              placement="battle"
+              channel={{ kind: 'room', roomId }}
+              title={t('battle:room.chat')}
+              description={t('battle:room.chatDescription')}
+            />
+          )
+        }
         combat={{
           attack: realtime.attack,
           onAttack: realtime.sendAttack,

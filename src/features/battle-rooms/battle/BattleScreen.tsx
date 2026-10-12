@@ -13,6 +13,8 @@ import { HealthBar } from './HealthBar'
 import { RewardPanel } from './RewardPanel'
 import { StakePanel } from './StakePanel'
 import { BattleTimers } from './BattleTimers'
+import { BattleMusicToggle } from './BattleMusicToggle'
+import { useBattleAudio } from './useBattleAudio'
 import type { ServerClock } from './battleClock'
 import type {
   LastAttack,
@@ -68,6 +70,11 @@ export interface BattleScreenProps {
     readonly ended: boolean
     readonly teamNames: Readonly<Record<string, string>>
   }
+  /**
+   * EN-031: el chat de la sala durante la batalla (burbuja flotante a la izquierda del
+   * escenario, ver `.br-floating-chat--battle`). Lo decide quien monta la pantalla.
+   */
+  readonly chat?: React.ReactNode
 }
 
 const keyOf = (ref: TargetRef): string => `${ref.teamLabel}#${String(ref.seat)}`
@@ -109,6 +116,7 @@ export const BattleScreen = ({
   lastTurnTimeout = null,
   serverClock = null,
   spectator,
+  chat,
 }: BattleScreenProps): React.JSX.Element => {
   const finished = result !== null || spectator?.ended === true
   const { t } = useTranslation()
@@ -120,6 +128,17 @@ export const BattleScreen = ({
       }
     : describeTurn(battle, subject)
   const self = findSelf(battle, subject)
+  useBattleAudio({
+    lastAttack,
+    lastSkill,
+    lastHealSkill,
+    lastEffect,
+    result,
+    subject,
+    finished,
+    isMyTurn: turn.isMyTurn,
+    turnsCompleted: battle.turnsCompleted,
+  })
   const { allies, opponents } = groupCombatants(battle, subject)
   const allyTitle = spectator?.teamNames[allies[0]?.teamLabel ?? ''] ?? t('battle:battle.yourTeam')
   const opponentTitle =
@@ -488,6 +507,13 @@ export const BattleScreen = ({
             )}
           </div>
         )}
+
+        {/* EN-031: herramientas del escenario a la izquierda, a media altura (musica y chat). */}
+        <div className="br-stage-tools">
+          {/* Solo para quien juega: la pantalla de solo lectura (espectador) no ofrece botones. */}
+          {!finished && spectator === undefined && combat !== undefined && <BattleMusicToggle />}
+          {chat}
+        </div>
       </div>
     </section>
   )

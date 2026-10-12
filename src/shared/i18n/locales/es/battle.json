@@ -417,5 +417,10 @@
     "incomplete": "Entrega incompleta",
     "incompleteDetail": "Tus créditos ya se acreditaron, pero no pudimos completar la entrega de tu recompensa.",
     "added": "{{reward}} añadida a tu inventario ✓"
+  },
+  "music": {
+    "toggle": "Música de batalla",
+    "on": "Música encendida",
+    "off": "Música apagada"
   }
 }
