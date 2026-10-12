@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next'
 import { Avatar } from '@/components/ui/Avatar'
 import { heroIdFromSubtype } from '@/features/player-inventory/equipment/heroSubtype'
 import { avatarPathForSubject } from '@/shared/avatar'
-import { HeroSprite, type SpriteDirection } from '@/shared/visual-library/heroes'
+import {
+  HERO_VISUAL_SPECS_BY_ID,
+  HeroSprite,
+  type SpriteDirection,
+} from '@/shared/visual-library/heroes'
 
 import '../battle-rooms.css'
 import { combatantName } from './presentation'
@@ -21,6 +25,7 @@ interface CombatantCardProps {
   readonly health?: number | undefined
   /** EN-031: cambia cuando este combatiente acaba de actuar (reproduce su ataque). */
   readonly attackSignal?: number | undefined
+  readonly level?: number | null | undefined
   /** `true` si este combatiente es un objetivo valido para el ataque actual (HU-18/21). */
   readonly isTargetable: boolean
   readonly isTargetSelected: boolean
@@ -70,12 +75,14 @@ const CombatantCard = ({
   direction,
   health,
   attackSignal,
+  level,
   isTargetable,
   isTargetSelected,
   onSelectTarget,
 }: CombatantCardProps): React.JSX.Element => {
   const modelId = entry.heroSubtype === null ? null : heroIdFromSubtype(entry.heroSubtype)
   const name = combatantName(entry)
+  const heroName = modelId === null ? null : HERO_VISUAL_SPECS_BY_ID.get(modelId)?.displayName
   const { t } = useTranslation()
 
   const model = (
@@ -134,7 +141,14 @@ const CombatantCard = ({
           initials={name.charAt(0).toUpperCase()}
           size="sm"
         />
-        <span className="min-w-0 truncate font-semibold">{name}</span>
+        <span className="min-w-0 truncate font-semibold">
+          {name}
+          {entry.kind === 'AI' && heroName !== null && heroName !== undefined && level != null && (
+            <span className="block truncate text-[10px] font-normal text-muted">
+              {heroName} · {t('battle:skills.lockedShort', { level })}
+            </span>
+          )}
+        </span>
         {isSelf && (
           <span
             style={{ color: 'var(--br-accent)' }}
@@ -167,6 +181,7 @@ export interface ArenaSideProps {
   readonly healthOf?: (entry: TurnOrderEntry) => number | undefined
   /** EN-031: `seq` de la ultima accion de este combatiente, si la hubo. */
   readonly attackOf?: (entry: TurnOrderEntry) => number | undefined
+  readonly levelOf?: (entry: TurnOrderEntry) => number | null | undefined
   /** HU-18/21 (remaster 2a pasada): objetivo seleccionable directamente sobre el heroe. */
   readonly isTargetable?: (entry: TurnOrderEntry) => boolean
   readonly isTargetSelected?: (entry: TurnOrderEntry) => boolean
@@ -185,6 +200,7 @@ export const ArenaSide = ({
   direction = 'south-east',
   healthOf,
   attackOf,
+  levelOf,
   isTargetable,
   isTargetSelected,
   onSelectTarget,
@@ -243,6 +259,7 @@ export const ArenaSide = ({
             direction={direction}
             health={healthOf?.(entry)}
             attackSignal={attackOf?.(entry)}
+            level={levelOf?.(entry)}
             isTargetable={isTargetable?.(entry) ?? false}
             isTargetSelected={isTargetSelected?.(entry) ?? false}
             onSelectTarget={onSelectTarget}

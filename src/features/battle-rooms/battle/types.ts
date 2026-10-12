@@ -31,7 +31,7 @@ export interface TurnOrderEntry {
   readonly playerId: string | null
   readonly displayName: string | null
   readonly heroId: string | null
-  /** Subtipo canonico para elegir el modelo visual; `null` para `AI`. */
+  /** Subtipo canonico para elegir el sprite; presente tambien para una IA preparada por Combat. */
   readonly heroSubtype: string | null
 }
 
@@ -97,6 +97,8 @@ export interface SkillView {
  * esos casos); ambos AUSENTES en un Combat anterior a HU-19.
  */
 export interface CombatantView extends TargetRef {
+  /** Nivel congelado por Combat; ausente en servidores anteriores y `null` en snapshots antiguos. */
+  readonly level?: number | null
   readonly health: HealthView | null
   readonly power?: PowerView | null
   readonly skills?: readonly SkillView[]
@@ -532,9 +534,15 @@ const hasValidSkillState = (value: Record<string, unknown>): boolean =>
       value.skills.every(isSkill) &&
       hasUniqueAbilities(value.skills)))
 
+const hasValidCombatantLevel = (value: Record<string, unknown>): boolean =>
+  value.level === undefined ||
+  value.level === null ||
+  (isNonNegativeInteger(value.level) && value.level >= 1 && value.level <= 8)
+
 const isCombatant = (value: unknown): value is CombatantView =>
   isTargetRef(value) &&
   'health' in value &&
+  hasValidCombatantLevel(value as unknown as Record<string, unknown>) &&
   (value.health === null || isHealth(value.health)) &&
   hasValidSkillState(value as unknown as Record<string, unknown>)
 

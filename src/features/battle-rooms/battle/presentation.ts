@@ -142,6 +142,10 @@ export const findEntry = (battle: BattleView, ref: TargetRef): TurnOrderEntry | 
 export const combatantHealth = (battle: BattleView, ref: TargetRef): HealthView | null =>
   battle.combatants?.find((combatant) => sameRef(combatant, ref))?.health ?? null
 
+/** Nivel autoritativo congelado por Combat; nunca se deriva de la cuenta ni del cliente. */
+export const combatantLevel = (battle: BattleView, ref: TargetRef): number | null =>
+  battle.combatants?.find((combatant) => sameRef(combatant, ref))?.level ?? null
+
 /** La batalla trae Vida: si no (iniciada antes de HU-18) no admite acciones de combate. */
 export const hasCombatState = (battle: BattleView): boolean =>
   battle.combatants !== undefined && battle.combatants.length > 0
