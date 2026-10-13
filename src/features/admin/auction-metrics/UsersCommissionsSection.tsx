@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { User } from '@/components/ui/icons'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 
 import { formatCount, formatCredits } from './metricsFormat'
 import {
@@ -18,6 +19,14 @@ import {
 import { reasonText, type ReasonScope } from './reasons'
 import type { UnavailableMetric, UsersAndCommissions } from './types'
 
+/** Monto en creditos con la gema canonica antepuesta (nunca para dinero real). */
+const CreditsAmount = ({ value }: { readonly value: string }): React.JSX.Element => (
+  <span className="inline-flex items-center justify-end gap-1">
+    <NavPixelIcon icon="gem" size="sm" />
+    {value}
+  </span>
+)
+
 const UserTotal = ({
   label,
   value,
@@ -25,11 +34,12 @@ const UserTotal = ({
   readonly label: string
   readonly value: number
 }): React.JSX.Element => (
-  <div className="am-subpanel p-3">
-    <p className="text-xs text-muted">{label}</p>
-    <p className="am-big mt-0.5 text-2xl leading-8 font-semibold tabular-nums">
-      {formatCount(value)}
-    </p>
+  <div className="auction-kpi-card">
+    <User aria-hidden="true" className="auction-kpi-icon size-5" />
+    <div className="min-w-0">
+      <p className="auction-kpi-value">{formatCount(value)}</p>
+      <p className="auction-kpi-label">{label}</p>
+    </div>
   </div>
 )
 
@@ -134,22 +144,22 @@ export const UsersCommissionsSection = ({
             <KeyValueList>
               <KeyValue
                 label={t('auctionMetrics:users.gross')}
-                value={formatCredits(commissions.gross)}
+                value={<CreditsAmount value={formatCredits(commissions.gross)} />}
               />
               <KeyValue
                 label={t('auctionMetrics:users.refunded')}
-                value={formatCredits(commissions.refunded)}
+                value={<CreditsAmount value={formatCredits(commissions.refunded)} />}
               />
               <KeyValue
                 strong
                 label={t('auctionMetrics:users.net')}
-                value={formatCredits(commissions.net)}
+                value={<CreditsAmount value={formatCredits(commissions.net)} />}
               />
               <KeyValue
                 label={t('auctionMetrics:users.pendingRefunds', {
                   value: formatCount(commissions.pendingRefunds.count),
                 })}
-                value={formatCredits(commissions.pendingRefunds.amount)}
+                value={<CreditsAmount value={formatCredits(commissions.pendingRefunds.amount)} />}
               />
             </KeyValueList>
 

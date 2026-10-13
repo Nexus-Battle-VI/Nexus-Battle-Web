@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { formatMoney } from '@/lib/format'
 import { queryKeys } from '@/shared/query-keys'
 import { countLabel } from '@/shared/i18n/format'
@@ -105,16 +106,12 @@ export const OfficialAuctionPublisher = (): React.JSX.Element => {
       aria-labelledby="official-auction-title"
       className="auction-shell auction-page space-y-4"
     >
-      <header className="auction-hero">
-        <div>
-          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
-          <div className="flex items-center gap-3">
-            <ShieldCheck aria-hidden="true" className="size-6 text-brand" />
-            <h1 id="official-auction-title" className="auction-title">
-              {t('auction:official.title')}
-            </h1>
-          </div>
-          <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:official.subtitle')}</p>
+      <header className="auction-hero auction-hero--centered">
+        <div className="flex items-center gap-3">
+          <NavPixelIcon icon="auction" size="md" />
+          <h1 id="official-auction-title" className="auction-title">
+            {t('auction:official.title')}
+          </h1>
         </div>
       </header>
       <form

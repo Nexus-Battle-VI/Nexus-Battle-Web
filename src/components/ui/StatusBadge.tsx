@@ -28,6 +28,7 @@ const TONE: Readonly<Record<string, string>> = {
   // reales del mismo `BattleRoomStatus`, sin cobertura previa aqui.
   IN_BATTLE: 'bg-success/15 text-success',
   FINISHED: 'bg-border text-muted',
+  SOLD: 'bg-border text-muted',
   // Rareza de producto (`printRunMode` de Catalog), remaster visual
   // E-commerce Sprint 3. Usa el acento dorado del sistema en vez de
   // exito/peligro/advertencia: la rareza no es un estado de exito ni de error.

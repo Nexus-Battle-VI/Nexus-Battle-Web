@@ -8,6 +8,7 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { QueryState } from '@/components/ui/QueryState'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { fetchCanonicalProduct } from '@/features/catalog/api'
 import { ProductVisual } from '@/shared/visual-library/ProductVisual'
 import { formatMoney } from '@/lib/format'
@@ -272,9 +273,20 @@ export const AuctionDetailPage = (): React.JSX.Element => {
             {auction !== undefined && (
               <>
                 <header className="auction-hero">
-                  <div>
-                    <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
-                    <h1 className="auction-title">{t('auction:crumbs.detail')}</h1>
+                  <div className="min-w-0">
+                    {/*
+                     * Sign-off final (seccion 5): el kicker "DETALLE" se
+                     * elimina por decision del usuario -ya no compite con
+                     * nada, el nombre del producto es ahora el unico <h1>
+                     * del hero-. `auction-detail-title` reduce ligeramente
+                     * el tamano frente al `.auction-title` generico (sigue
+                     * siendo un hero title, no body text).
+                     */}
+                    {product !== undefined && (
+                      <h1 className="auction-title auction-detail-title truncate">
+                        {product.name}
+                      </h1>
+                    )}
                     {product !== undefined && (
                       <div className="auction-product-summary mt-2 flex min-w-0 items-center gap-3">
                         <ProductVisual
@@ -290,10 +302,9 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                             )
                           }
                         />
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-ink">{product.name}</p>
-                          <p className="line-clamp-2 text-sm text-muted">{product.description}</p>
-                        </div>
+                        <p className="line-clamp-2 min-w-0 text-sm text-muted">
+                          {product.description}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -320,11 +331,19 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                   </div>
                   <div className="flex items-baseline gap-2">
                     <dt className="text-muted">{t('auction:market.minimumPrice')}</dt>
-                    <dd className="font-semibold text-ink">{minimumPriceLabel(auction)}</dd>
+                    <dd className="flex items-center gap-1 font-semibold text-ink">
+                      {auction.priceKind === 'CREDITS' && (
+                        <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
+                      )}
+                      {minimumPriceLabel(auction)}
+                    </dd>
                   </div>
                   <div className="flex items-baseline gap-2">
                     <dt className="text-muted">{t('auction:market.buyNow')}</dt>
-                    <dd className="font-semibold text-ink">
+                    <dd className="flex items-center gap-1 font-semibold text-ink">
+                      {auction.priceKind === 'CREDITS' && buyNowPriceLabel(auction) !== null && (
+                        <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
+                      )}
                       {buyNowPriceLabel(auction) ?? t('auction:market.buyNowNone')}
                     </dd>
                   </div>
@@ -418,7 +437,11 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                   </p>
                 )}
                 <div className="auction-detail-workspace">
-                  <aside className="auction-detail-rail">
+                  <div className="auction-detail-main">
+                    <AuctionBidHistory auctionId={auction.id} />
+                  </div>
+
+                  <div className="auction-detail-operations">
                     {
                       /*
                        * `transaction` manda sobre `auction.status`: al completar la
@@ -540,10 +563,6 @@ export const AuctionDetailPage = (): React.JSX.Element => {
                           {...(availableCredits === undefined ? {} : { availableCredits })}
                         />
                       )}
-                  </aside>
-
-                  <div className="auction-detail-main">
-                    <AuctionBidHistory auctionId={auction.id} />
                   </div>
                 </div>
               </>

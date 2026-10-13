@@ -122,6 +122,45 @@
     inset 0 1px rgb(255 255 255 / 12%);
 }
 
+/*
+ * Centrado real del hero (secciones 10, 13.1[watchlist]/18[publish]/19[claims]/
+ * 20[official]): "centrado" significa el CENTRO DEL HERO COMPLETO, no el
+ * espacio sobrante tras un boton lateral. `grid-template-columns: 1fr auto
+ * 1fr` crea dos espaciadores simetricos a los lados del titulo -su ancho es
+ * siempre igual entre si, haya o no un boton en la tercera columna-, asi el
+ * titulo queda opticamente centrado en vez de ser empujado a la izquierda
+ * por `justify-content: space-between`.
+ */
+.auction-hero--centered {
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.auction-hero--centered > *:first-child {
+  grid-column: 2;
+  justify-self: center;
+  text-align: center;
+}
+
+.auction-hero--centered > *:last-child:not(:only-child) {
+  grid-column: 3;
+  justify-self: end;
+}
+
+/*
+ * Sign-off final (seccion 4, Marketplace): aqui NO queremos centrado
+ * simetrico completo -los 3 botones de la derecha (Mi actividad/Mis
+ * subastas seguidas/Publicar mi subasta) son anchos y un centrado absoluto
+ * los empujaria o dejaria el titulo descompensado-. En vez de eso, el
+ * titulo se centra DENTRO de su propia columna (`minmax(0,1fr)`, que ya
+ * termina justo donde empieza la columna `auto` de los botones): se mueve
+ * moderadamente a la derecha, gana centro optico en el espacio disponible,
+ * y conserva separacion clara de los botones sin tocarlos.
+ */
+.auction-hero--balanced > *:first-child {
+  justify-self: center;
+  text-align: center;
+}
+
 .auction-hero::before,
 .auction-hero::after {
   position: absolute;
@@ -146,13 +185,57 @@
   border-bottom: 2px solid;
 }
 
+/*
+ * Pulido final (seccion 3/15/16): "Cinzel" por si solo no es un acabado -
+ * faltaba la jerarquia metalica/diamante pedida. Dark usa un degradado
+ * oro-marfil con leve glow; Light un degradado zafiro-azul real con
+ * highlight superior, ambos via `background-clip: text` sobre el mismo
+ * Cinzel ya cargado (ningun font-family nuevo).
+ */
 .auction-title {
   font-family: var(--auction-font-display);
-  color: var(--color-ink);
+  background: linear-gradient(180deg, #f6e7bb 0%, var(--auction-gold) 52%, #b9872c 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
   font-size: var(--auction-text-page);
   font-weight: var(--auction-weight-display);
   letter-spacing: 0.025em;
   line-height: 1.15;
+  text-shadow:
+    0 1px 1px rgb(0 0 0 / 40%),
+    0 0 20px color-mix(in srgb, var(--auction-gold) 28%, transparent);
+}
+
+:root[data-theme='light'] .auction-title {
+  /*
+   * Sign-off final (seccion 3): aun con el oscurecimiento previo, el azul
+   * seguia leyendose "lavado" frente al marfil -el primer stop claro (28%
+   * del bloque) dominaba demasiado el area visible del texto-. El destello
+   * de diamante ahora es un filo de 1 caracter (8%), el resto del glifo es
+   * zafiro real oscuro, y el peso sube un escalon para mas presencia.
+   */
+  background: linear-gradient(180deg, #4a84cc 0%, #0f3e75 14%, #081d3f 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  font-weight: 750;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 35%),
+    0 0 8px color-mix(in srgb, var(--auction-accent) 10%, transparent);
+}
+
+/* Nombres de producto (cards de Marketplace/Watchlist/Activity): Cinzel con
+   color solido -nunca el degradado del hero, competiria con el titulo-. */
+.auction-product-name {
+  font-family: var(--auction-font-display);
+  color: var(--color-ink);
+  font-size: 1rem;
+  font-weight: var(--auction-weight-heading);
+  letter-spacing: 0.015em;
+  line-height: 1.3;
 }
 
 .auction-kicker {
@@ -312,16 +395,29 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+/*
+ * Rediseno EN-029 (fase 2): el Historial de pujas ocupa el ancho principal
+ * completo y las tres operaciones (Compra inmediata, Registrar puja, Puja
+ * automatica) quedan DEBAJO en una fila, en vez de columna lateral angosta
+ * con scroll vertical excesivo. `auction-detail-workspace` ahora es solo un
+ * stack vertical; `auction-detail-operations` es el grid responsive de las
+ * operaciones.
+ */
 .auction-detail-workspace {
-  display: grid;
-  gap: 16px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
-.auction-detail-main,
-.auction-detail-rail {
+.auction-detail-main {
   display: grid;
   min-width: 0;
   gap: 16px;
+}
+.auction-detail-operations {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
 }
 .auction-history-list {
   overflow: clip;
@@ -352,6 +448,20 @@
 .auction-claims-page [role='group'] {
   border-color: var(--auction-line) !important;
   background: var(--auction-panel) !important;
+}
+
+/*
+ * Seccion 20.3/20.4: las selection cards (producto elegible, duracion) no
+ * deben verse como "borde azul generico". El radio real sigue funcionando;
+ * el estado seleccionado ahora usa el glow oro/violeta (Dark) o zafiro/oro
+ * (Light) del resto del sistema en vez del `--color-brand` por defecto.
+ */
+.auction-publish-page label:has(input:checked) {
+  border-color: var(--auction-gold) !important;
+  background: color-mix(in srgb, var(--auction-gold) 14%, var(--auction-panel)) !important;
+  box-shadow:
+    0 0 0 1px var(--auction-gold),
+    0 0 14px color-mix(in srgb, var(--auction-accent) 32%, transparent) !important;
 }
 
 .auction-flow-card,
@@ -418,16 +528,14 @@
   .auction-claims-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
-  .auction-detail-workspace {
-    grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.75fr);
+  .auction-detail-operations {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .auction-detail-main {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .auction-detail-rail {
-    grid-column: 2;
-    grid-row: 1;
+}
+
+@media (min-width: 641px) and (max-width: 1179px) {
+  .auction-detail-operations {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -657,23 +765,98 @@
   background: var(--auction-surface-level-3) !important;
 }
 
+/*
+ * Estrategia B (seccion 9/25): `--auction-art-field`/`--auction-art-search`
+ * tienen proporcion fija y el ancho real del input es variable segun el
+ * layout -el PNG se deformaba al estirarse con `100% 100%`-. Se reemplaza
+ * por un marco 100% CSS: borde + superficie + inset highlight, consistente
+ * con el resto del sistema (`--auction-surface-level-3`). El `<input>`/
+ * `<select>` real sigue siendo el control funcional, sin overlay de imagen.
+ */
 .auction-shell :is(input[type='text'], input[type='search'], input[type='number'], select) {
-  padding-inline: 3rem;
-  border-color: transparent !important;
-  background:
-    var(--auction-art-field) center / 100% 100% no-repeat,
-    var(--auction-panel) !important;
+  min-height: 42px;
+  padding-inline: 1rem;
+  border: 1px solid var(--auction-line) !important;
+  border-radius: 10px;
+  background: var(--auction-surface-level-3) !important;
+  box-shadow: inset 0 1px rgb(255 255 255 / 10%);
   color: var(--color-ink);
 }
 
-.auction-filters input[type='search'],
-.auction-filters input[type='text'] {
-  background-image: var(--auction-art-search) !important;
-  padding-inline: 4.25rem;
+.auction-shell .auction-filters input[type='search'],
+.auction-shell .auction-filters input[type='text'] {
+  padding-inline-start: 2.75rem;
 }
 
-.auction-shell .auction-filters select {
-  padding-inline: 3.25rem 3.5rem;
+.auction-shell select {
+  padding-inline-end: 2.5rem;
+}
+
+.auction-shell :is(input, select):hover:not(:disabled, :focus-visible) {
+  border-color: color-mix(in srgb, var(--auction-gold) 55%, var(--auction-line)) !important;
+}
+
+/*
+ * Seccion 22: checkbox/radio deben dejar de sentirse "default del navegador"
+ * sin perder de ser inputs reales -appearance:none + pseudo-elemento para el
+ * glifo, pero `checked`/teclado/foco siguen siendo del input nativo-.
+ */
+.auction-shell :is(input[type='checkbox'], input[type='radio']) {
+  display: inline-grid;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  place-content: center;
+  border: 1.5px solid var(--auction-line);
+  background: var(--auction-surface-level-3);
+  cursor: pointer;
+  appearance: none;
+}
+
+.auction-shell input[type='checkbox'] {
+  border-radius: 5px;
+}
+
+.auction-shell input[type='radio'] {
+  border-radius: 999px;
+}
+
+.auction-shell input[type='checkbox']::before {
+  width: 10px;
+  height: 10px;
+  background: var(--auction-gold);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  content: '';
+  transition: transform var(--auction-motion-fast) ease;
+  transform: scale(0);
+}
+
+.auction-shell input[type='radio']::before {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--auction-gold);
+  content: '';
+  transition: transform var(--auction-motion-fast) ease;
+  transform: scale(0);
+}
+
+.auction-shell :is(input[type='checkbox'], input[type='radio']):checked {
+  border-color: var(--auction-gold) !important;
+  background: color-mix(
+    in srgb,
+    var(--auction-gold) 16%,
+    var(--auction-surface-level-3)
+  ) !important;
+}
+
+.auction-shell :is(input[type='checkbox'], input[type='radio']):checked::before {
+  transform: scale(1);
+}
+
+.auction-shell :is(input[type='checkbox'], input[type='radio']):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--auction-gold) 70%, var(--auction-line));
 }
 
 .auction-shell :is(button, .auction-link) {
@@ -714,23 +897,56 @@
   min-height: 42px;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0.875rem;
+  padding: 0.5rem 1.25rem;
   border-radius: 0.375rem;
   font-family: var(--auction-font-ui);
   font-size: 0.875rem;
   font-weight: 650;
   line-height: 1.25;
+  white-space: nowrap;
 }
 
+/*
+ * Estrategia B (seccion 9/10 del master prompt): `--auction-art-button` tiene
+ * una proporcion fija y el CTA es de ancho variable ("Publicar mi subasta",
+ * "Configurar puja automatica", "Publicar producto oficial"). Estirar ese PNG
+ * con `background-size: 100% 100%` lo deforma de forma distinta en cada
+ * boton. Se reemplaza por un acabado 100% CSS que sigue el lenguaje visual
+ * de las referencias Nexus (oro/violeta en Dark, marfil/oro en Light) sin
+ * depender de ningun asset de proporcion fija.
+ */
 .auction-shell .auction-button-primary {
-  border-color: transparent !important;
-  background-color: var(--auction-accent) !important;
-  background-image: var(--auction-art-button) !important;
-  background-position: center !important;
-  background-size: calc(100% - 4px) calc(100% - 4px) !important;
-  background-repeat: no-repeat !important;
+  border: 1px solid color-mix(in srgb, var(--auction-gold) 70%, transparent) !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--auction-accent) 92%, white 4%),
+    color-mix(in srgb, var(--auction-accent) 72%, black 22%)
+  ) !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 20%),
+    0 10px 22px rgb(0 0 0 / 20%) !important;
   color: var(--auction-button-primary-ink) !important;
   text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+}
+
+:root[data-theme='light'] .auction-shell .auction-button-primary {
+  border-color: color-mix(in srgb, #8a5a1f 55%, var(--auction-gold) 45%) !important;
+  background-image: linear-gradient(180deg, #f6e9c8, #e3c687) !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 55%),
+    0 8px 18px rgb(120 90 20 / 20%) !important;
+  color: #3c2a0d !important;
+  text-shadow: none;
+}
+
+.auction-shell .auction-button-primary:not(:disabled):hover {
+  border-color: var(--auction-gold) !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 24%),
+    0 0 0 1px var(--auction-gold),
+    0 0 16px color-mix(in srgb, var(--auction-gold) 45%, transparent),
+    0 12px 26px rgb(0 0 0 / 24%) !important;
 }
 
 .auction-shell .auction-button-secondary {
@@ -740,8 +956,14 @@
   text-shadow: none;
 }
 
+/*
+ * Seccion 13/23 (continuacion): "Dejar de seguir" se veia como texto suelto
+ * -color sin forma de boton-. Mantiene su identidad discreta (no debe
+ * competir con el secundario), pero ahora lleva un borde punteado propio en
+ * reposo para comunicar "esto es clicable" sin necesitar el hover.
+ */
 .auction-shell .auction-button-tertiary {
-  border-color: transparent !important;
+  border: 1px dashed color-mix(in srgb, var(--auction-accent) 45%, transparent) !important;
   background: transparent !important;
   color: var(--auction-accent) !important;
   box-shadow: none;
@@ -828,14 +1050,28 @@
   line-height: 1.45;
 }
 
+/*
+ * Pulido final (seccion 4.3/5.3): "1d 02h 55m 45s" seguia apretandose contra
+ * el reloj -el icono estaba `position:absolute` justo donde empezaba el
+ * padding, y el fondo PNG se estiraba `100% 100%` a un ancho variable segun
+ * el formato (corto vs largo), deformandose distinto cada vez-. Mismo
+ * Estrategia B que badges/botones/inputs: pill 100% CSS, icono devuelto al
+ * flujo flex normal (el `gap: 6px` de la regla base ya separa icono/texto).
+ */
 .auction-countdown {
   position: relative;
-  isolation: isolate;
   justify-content: center;
-  min-width: 196px;
+  min-width: 176px;
   min-height: 34px;
-  padding: 6px 42px;
-  background: none;
+  padding: 7px 18px;
+  border: 1px solid color-mix(in srgb, var(--auction-gold) 45%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--auction-panel-strong) 92%, white 4%) 0%,
+    var(--auction-surface-level-3) 100%
+  );
+  box-shadow: inset 0 1px rgb(255 255 255 / 12%);
   font-family: var(--auction-font-ui);
   font-size: var(--auction-text-timer);
   font-weight: var(--auction-weight-emphasis);
@@ -844,32 +1080,47 @@
 }
 
 .auction-countdown::before {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: var(--auction-art-timer) center / 100% 100% no-repeat;
-  opacity: 0.78;
-  content: '';
-  pointer-events: none;
+  display: none;
 }
 
 .auction-countdown .auction-icon {
-  position: absolute;
-  left: 24px;
+  position: static;
   display: block;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 
+/*
+ * EN-029 continuacion: el 9-slice de la ronda anterior ya no recortaba texto,
+ * pero seguia siendo un liston/banner grafico -justo lo que el master prompt
+ * pide eliminar (seccion 6). Se reemplaza por el MISMO patron que ya aprobo
+ * Mi Cuenta para su badge "Obtenido" (`account.css`, `.account-achievement-
+ * badge`): pill 100% CSS, sin imagen, con acabado metalico/diamante distinto
+ * por tema. Aqui se adapta a la paleta de Auction (oro/violeta en Dark,
+ * zafiro/oro en Light) y se añaden variantes de tono para los data-stage/
+ * data-tone reales de Bidding, Auto Bid e Immediate Purchase.
+ */
 .auction-official-mark,
 .auction-state-badge,
 .bid-badge,
 .auto-bid-badge {
-  min-height: 30px;
-  padding: 6px 18px !important;
-  border: 0 !important;
-  background: var(--auction-art-warning) center / 100% 100% no-repeat !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 4px 14px !important;
+  border: 1px solid color-mix(in srgb, var(--auction-gold) 45%, transparent) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--auction-panel-strong) 92%, white 4%) 0%,
+    var(--auction-surface-level-3) 100%
+  ) !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 14%),
+    0 1px 3px rgb(0 0 0 / 12%) !important;
+  color: var(--color-ink) !important;
   line-height: 1.15;
   font-family: var(--auction-font-ui);
   font-size: var(--auction-text-badge) !important;
@@ -877,10 +1128,116 @@
   white-space: nowrap;
 }
 
-/* Los marcos ya comunican el tono. Quitar el punto decorativo deja el texto
-   geometricamente centrado dentro del badge. */
+/* El fondo ya comunica el tono; el punto decorativo heredado de bidding.css
+   queda redundante y descentra el texto. */
 .auction-shell :is(.bid-badge, .auto-bid-badge)::before {
   display: none;
+}
+
+/* --- Tono success: Oferta lider, Activa/Configurada, Premium/Oficial --- */
+.auction-state-badge[data-tone='success'],
+.bid-badge[data-stage='leading'],
+.auto-bid-badge[data-stage='configured'],
+.auction-official-mark {
+  color: #0d4a3f !important;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, #eef6ff 92%, transparent) 0%,
+    color-mix(in oklab, #bcd9ef 85%, transparent) 55%,
+    color-mix(in oklab, #7fb8d8 75%, transparent) 100%
+  ) !important;
+  border-color: color-mix(in oklab, var(--auction-accent) 55%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    0 1px 2px color-mix(in oklab, #1c2541 25%, transparent) !important;
+}
+:root[data-theme='dark']
+  :is(
+    .auction-state-badge[data-tone='success'],
+    .bid-badge[data-stage='leading'],
+    .auto-bid-badge[data-stage='configured'],
+    .auction-official-mark
+  ) {
+  color: #d9f7e8 !important;
+  background: linear-gradient(160deg, #1d6e52 0%, #0f4a37 55%, #0a3528 100%) !important;
+  border-color: color-mix(in oklab, var(--auction-gold) 55%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, #7fe8bd 45%, transparent),
+    0 1px 3px color-mix(in oklab, black 45%, transparent) !important;
+}
+
+/* --- Tono warning: Registrando/Guardando, Superada, Sin configurar, Pendiente de retiro --- */
+.auction-state-badge[data-tone='warning'],
+.bid-badge[data-stage='processing'],
+.bid-badge[data-stage='outbid'],
+.auto-bid-badge[data-stage='ready'],
+.auto-bid-badge[data-stage='processing'] {
+  color: #5b3b06 !important;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, #fff6e2 92%, transparent) 0%,
+    color-mix(in oklab, #f0d28f 85%, transparent) 55%,
+    color-mix(in oklab, #d9a84a 75%, transparent) 100%
+  ) !important;
+  border-color: color-mix(in oklab, #a9761c 55%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    0 1px 2px color-mix(in oklab, #3a2606 25%, transparent) !important;
+}
+:root[data-theme='dark']
+  :is(
+    .auction-state-badge[data-tone='warning'],
+    .bid-badge[data-stage='processing'],
+    .bid-badge[data-stage='outbid'],
+    .auto-bid-badge[data-stage='ready'],
+    .auto-bid-badge[data-stage='processing']
+  ) {
+  color: #fde9c2 !important;
+  background: linear-gradient(160deg, #8a5a14 0%, #5c3a0b 55%, #3c2507 100%) !important;
+  border-color: color-mix(in oklab, var(--auction-gold) 60%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, #ffd98a 45%, transparent),
+    0 1px 3px color-mix(in oklab, black 45%, transparent) !important;
+}
+
+/* --- Tono danger: Rechazada, propia subasta, limite, cooldown, inactiva --- */
+.auction-state-badge[data-tone='danger'],
+.bid-badge[data-stage='rejected'],
+.bid-badge[data-stage='own-auction'],
+.bid-badge[data-stage='cooldown'],
+.bid-badge[data-stage='limit'],
+.auto-bid-badge[data-stage='rejected'],
+.auto-bid-badge[data-stage='own-auction'],
+.auto-bid-badge[data-stage='auction-not-active'] {
+  color: #4a0e16 !important;
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, #fbeef0 92%, transparent) 0%,
+    color-mix(in oklab, #e8b9c2 85%, transparent) 55%,
+    color-mix(in oklab, #c97a8a 75%, transparent) 100%
+  ) !important;
+  border-color: color-mix(in oklab, var(--auction-status-danger) 50%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    0 1px 2px color-mix(in oklab, #3a0a10 25%, transparent) !important;
+}
+:root[data-theme='dark']
+  :is(
+    .auction-state-badge[data-tone='danger'],
+    .bid-badge[data-stage='rejected'],
+    .bid-badge[data-stage='own-auction'],
+    .bid-badge[data-stage='cooldown'],
+    .bid-badge[data-stage='limit'],
+    .auto-bid-badge[data-stage='rejected'],
+    .auto-bid-badge[data-stage='own-auction'],
+    .auto-bid-badge[data-stage='auction-not-active']
+  ) {
+  color: #ffd9de !important;
+  background: linear-gradient(160deg, #7a1f2b 0%, #4f1119 55%, #330a10 100%) !important;
+  border-color: color-mix(in oklab, var(--auction-gold) 50%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, #ff9aa8 40%, transparent),
+    0 1px 3px color-mix(in oklab, black 45%, transparent) !important;
 }
 
 .auction-product-identity {
@@ -898,7 +1255,10 @@
 .auction-product-identity-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* Regla critica (seccion 12/20): nunca `cover` sobre artwork real de
+     producto -recorta y deforma-. `contain` conserva la pieza completa; el
+     contenedor `.auction-product-identity` aporta el fondo. */
+  object-fit: contain;
 }
 
 .auction-product-identity-fallback {
@@ -995,6 +1355,40 @@
   }
 }
 
+/*
+ * Seccion 18.2: los 3 pasos de Publicar (Producto elegible / Duracion y
+ * precios / Confirmacion) se veian como `<legend>`/`<h2>` HTML genericos sin
+ * identidad Nexus. Cinzel moderado (no el tamano de un titulo de hero) +
+ * pequeno divisor dorado para dar jerarquia ceremonial sin competir con el
+ * heading principal de la pagina.
+ */
+.auction-step-heading {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 4px;
+  padding-bottom: 6px;
+  font-family: var(--auction-font-display);
+  font-size: 1.05rem;
+  font-weight: var(--auction-weight-heading);
+  letter-spacing: 0.02em;
+  color: var(--auction-gold);
+}
+
+.auction-step-heading::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 46px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--auction-gold), transparent);
+  content: '';
+}
+
+:root[data-theme='light'] .auction-step-heading {
+  color: var(--auction-accent);
+}
+
 .auction-shell :is(.auction-history, .auction-activity-section, .auction-form, .auction-section) h2,
 .auction-shell :is(.bid-title, .auto-bid-title),
 .auction-functional-heading {
@@ -1029,20 +1423,6 @@
   ) {
   font-size: var(--auction-text-meta) !important;
   line-height: 1.45;
-}
-
-.bid-badge[data-stage='leading'],
-.auto-bid-badge[data-stage='configured'],
-.auction-state-badge[data-tone='success'] {
-  background-image: var(--auction-art-success) !important;
-}
-
-.bid-badge[data-stage='rejected'],
-.bid-badge[data-stage='own-auction'],
-.auto-bid-badge[data-stage='rejected'],
-.auto-bid-badge[data-stage='own-auction'],
-.auction-state-badge[data-tone='danger'] {
-  background-image: var(--auction-art-danger) !important;
 }
 
 .auction-history::after,
@@ -1102,6 +1482,72 @@
   }
 }
 
+/*
+ * Fila de Historial (seccion 7.4): "Comision de publicacion"/"Reserva de
+ * puja" se sentian dashboard generico (`divide-y` + `border` plano). Reusa
+ * el lenguaje de las selection cards de Publish -borde + superficie + leve
+ * profundidad- sin convertir la fila en un boton.
+ */
+.auction-history-row {
+  padding: 12px 14px;
+  border: 1px solid var(--auction-line);
+  border-radius: 10px;
+  background: var(--auction-surface-level-2);
+  box-shadow: inset 0 1px rgb(255 255 255 / 8%);
+}
+
+:root[data-theme='light'] .auction-history-row {
+  border-color: color-mix(in srgb, var(--auction-gold) 45%, var(--auction-accent) 20%);
+  background: var(--auction-content-surface);
+}
+
+/*
+ * Mini KPI card con identidad Nexus (secciones 16.5/21H): reemplaza filas
+ * HTML desnudas (`owned-active`/`owned-finished`, "Usuarios activos" en
+ * Metrics) por una superficie translucida con acento oro/violeta (Dark) o
+ * marfil/zafiro-oro (Light). El VALOR sigue viniendo tal cual del contrato
+ * -solo cambia la presentacion-.
+ */
+.auction-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--auction-gold) 35%, var(--auction-line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--auction-gold) 7%, var(--auction-surface-level-3));
+  box-shadow: inset 0 1px rgb(255 255 255 / 10%);
+}
+
+.auction-kpi-icon {
+  flex: none;
+  color: var(--auction-gold);
+}
+
+.auction-kpi-value {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1.25rem;
+  font-weight: var(--auction-weight-emphasis);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.auction-kpi-label {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--auction-text-meta);
+}
+
+:root[data-theme='light'] .auction-kpi-card {
+  border-color: color-mix(in srgb, var(--auction-accent) 30%, var(--auction-gold) 30%);
+  background: color-mix(in srgb, var(--auction-accent) 6%, var(--auction-content-surface));
+}
+
+:root[data-theme='light'] .auction-kpi-icon {
+  color: var(--auction-accent);
+}
+
 /* Auction V2 module-wide container cleanup.
    The approved art is the visible outer shell. Readability surfaces stay
    inset, borderless and subordinate, so no generic Card silhouette remains
@@ -1140,6 +1586,28 @@
   box-shadow: none !important;
 }
 
+/*
+ * Detail title (seccion 5.2 sign-off): mismo acabado que `.auction-title`
+ * -gradiente/Cinzel/shadow heredados-, solo un tamano ligeramente menor para
+ * que quepa con aire arriba/abajo sin rozar la cinta decorativa del hero ni
+ * competir con "Volver al marketplace". Sigue siendo un hero title, no body
+ * text -clamp mantiene el suelo/techo razonables en cualquier ancho-.
+ */
+.auction-detail-title {
+  font-size: clamp(1.15rem, 1.7vw, 1.55rem);
+}
+
+/*
+ * El listón decorativo del hero dibuja su punto mas bajo justo en el centro
+ * (donde cuelga la gema). Un titulo largo como un nombre de producto cruza
+ * ese ancho central y su borde superior rozaba la cinta. Un poco de aire
+ * extra arriba, solo para Detail -el resto de heros usan textos cortos que
+ * no llegan a ese rango-.
+ */
+.auction-hero:has(.auction-detail-title) {
+  padding-top: 104px;
+}
+
 .auction-hero::before {
   position: absolute;
   z-index: 0;
@@ -1161,18 +1629,10 @@
   z-index: 1;
 }
 
-/* button-frame is the complete visible primary button skin. */
+/* El CTA primario ya es 100% CSS (ver regla de Estrategia B mas arriba);
+   solo necesita radio de borde consistente con el resto del sistema. */
 .auction-shell .auction-button-primary {
-  border: 0 !important;
-  border-radius: 0;
-  background-color: transparent !important;
-  background-size: 100% 100% !important;
-  box-shadow: none !important;
-}
-
-.auction-shell .auction-button-primary:hover:not(:disabled),
-.auction-shell .auction-button-primary:active:not(:disabled) {
-  background-color: transparent !important;
+  border-radius: 10px;
 }
 
 /* Search/filter grouping and claim selection use operation-panel as their

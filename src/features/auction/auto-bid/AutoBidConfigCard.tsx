@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { formatDateTime } from '@/lib/format'
 import { i18n } from '@/shared/i18n/i18n'
 import { formatInteger } from '@/shared/i18n/format'
@@ -59,13 +60,19 @@ const Alert = ({
 const KeyValue = ({
   label,
   value,
+  credits = false,
 }: {
   readonly label: string
   readonly value: string
+  /** Antepone la gema canonica cuando `value` es un monto en creditos. */
+  readonly credits?: boolean
 }): React.JSX.Element => (
   <div className="auto-bid-kv">
     <dt>{label}</dt>
-    <dd>{value}</dd>
+    <dd className="inline-flex items-center gap-1">
+      {credits && <NavPixelIcon icon="gem" size="sm" className="auction-icon" />}
+      {value}
+    </dd>
   </div>
 )
 
@@ -148,6 +155,7 @@ export const AutoBidConfigCard = ({
                 <KeyValue
                   label={t('auction:availableCredits')}
                   value={formatCredits(availableCredits)}
+                  credits
                 />
               </dl>
             </>
@@ -196,6 +204,7 @@ export const AutoBidConfigCard = ({
               <KeyValue
                 label={t('auction:autoBid.limit')}
                 value={formatCredits(maxAmountCredits)}
+                credits
               />
             )}
             {configuredAt !== undefined && (

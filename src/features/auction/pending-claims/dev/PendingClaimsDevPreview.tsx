@@ -191,9 +191,45 @@ const handlePendingClaimsRequest = (input: string, init?: RequestInit): Response
   return jsonResponse({ message: 'Ruta no simulada en este preview.' }, 404)
 }
 
+/**
+ * Instala el mock de `fetch` al EVALUAR este modulo (arriba, fuera de
+ * cualquier componente), no en un render ni en un `useEffect`.
+ *
+ * `PendingClaimsPage` dispara su query en un efecto propio en cuanto se
+ * monta, y React 19 en modo Strict puede montar/descartar/montar de nuevo
+ * un limite Suspense antes de comprometerse a la version final: un mock
+ * instalado durante ese primer montaje descartable (en un `useEffect` o
+ * incluso en el cuerpo del render, guardado por `ref`) se perdia --
+ * `globalThis.fetch` volvia a ser el nativo antes de que la query real
+ * llegara a dispararse, y ademas el linter de pureza de React prohibe mutar
+ * `globalThis.fetch` dentro de un render. El codigo de modulo evita ambos
+ * problemas: corre exactamente una vez, cuando Vite carga el chunk
+ * perezoso, sin que el ciclo de montaje de React pueda deshacerlo.
+ */
+const originalFetchBeforePendingClaimsMock = globalThis.fetch
+
+globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const url =
+    typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+
+  if (
+    url.includes('/api/v1/auctions/me/pending-claims') ||
+    url.includes('/api/v1/catalog/products/')
+  ) {
+    return Promise.resolve(handlePendingClaimsRequest(url, init))
+  }
+
+  return originalFetchBeforePendingClaimsMock(input, init)
+}
+
 export const PendingClaimsDevPreview = (): React.JSX.Element => {
+  // La sesion de Zustand SI puede seguir fijandose en un efecto (y
+  // restaurarse en su limpieza): ninguna consulta depende de su orden
+  // relativo al mock de `fetch`, y mutar ese store durante el render de
+  // otro componente dispara un error de React ("Cannot update a component
+  // while rendering a different component").
   useEffect(() => {
-    const previous = useSession.getState()
+    const previousSession = useSession.getState()
 
     useSession.setState({
       subject: 'jugador-preview',
@@ -202,29 +238,7 @@ export const PendingClaimsDevPreview = (): React.JSX.Element => {
     })
 
     return () => {
-      useSession.setState(previous)
-    }
-  }, [])
-
-  useEffect(() => {
-    const original = globalThis.fetch
-
-    globalThis.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const url =
-        typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
-
-      if (
-        url.includes('/api/v1/auctions/me/pending-claims') ||
-        url.includes('/api/v1/catalog/products/')
-      ) {
-        return Promise.resolve(handlePendingClaimsRequest(url, init))
-      }
-
-      return original(input, init)
-    }
-
-    return () => {
-      globalThis.fetch = original
+      useSession.setState(previousSession)
     }
   }, [])
 
