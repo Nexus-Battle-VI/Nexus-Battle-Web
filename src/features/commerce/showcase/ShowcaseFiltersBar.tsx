@@ -24,7 +24,6 @@ const toAmount = (raw: string): number | null =>
 /** Icono PixelLab de categoria por tipo (`Icons/ecommerce-icons-categories-*`). */
 const TYPE_ICON: Readonly<Record<ShowcaseProductType, MarketplaceIconName>> = {
   HEROE: 'hero',
-  HABILIDAD: 'ability',
   ARMA: 'weapon',
   ARMADURA: 'armor',
 }

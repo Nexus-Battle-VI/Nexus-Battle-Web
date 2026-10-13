@@ -208,20 +208,17 @@ describe('Paginacion visible de 12 sobre el contrato HTTP de 16', () => {
   )
 })
 
-describe('ITEM y EPICA nunca son candidatos de compra en la vitrina', () => {
-  it.each(['HEROE', 'HABILIDAD', 'ARMA', 'ARMADURA'] as const)(
-    '%s es un tipo comercializable',
-    (type) => {
-      expect(isShowcaseType(type)).toBe(true)
-    },
-  )
+describe('ITEM, EPICA y HABILIDAD nunca son candidatos de compra en la vitrina', () => {
+  it.each(['HEROE', 'ARMA', 'ARMADURA'] as const)('%s es un tipo comercializable', (type) => {
+    expect(isShowcaseType(type)).toBe(true)
+  })
 
-  it.each(['ITEM', 'EPICA'] as const)('%s nunca es comercializable', (type) => {
+  it.each(['ITEM', 'EPICA', 'HABILIDAD'] as const)('%s nunca es comercializable', (type) => {
     expect(isShowcaseType(type)).toBe(false)
   })
 
-  it('SHOWCASE_PRODUCT_TYPES es exactamente HEROE, HABILIDAD, ARMA y ARMADURA', () => {
-    expect(SHOWCASE_PRODUCT_TYPES).toEqual(['HEROE', 'HABILIDAD', 'ARMA', 'ARMADURA'])
+  it('SHOWCASE_PRODUCT_TYPES es exactamente HEROE, ARMA y ARMADURA', () => {
+    expect(SHOWCASE_PRODUCT_TYPES).toEqual(['HEROE', 'ARMA', 'ARMADURA'])
   })
 
   it('excluye ITEM y EPICA de un lote sin filtro de tipo, sin descartar los demas', () => {
