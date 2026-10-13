@@ -5,7 +5,9 @@ import { useTranslation } from 'react-i18next'
 
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
 import { QueryState } from '@/components/ui/QueryState'
-import { StatusBadge } from '@/components/ui/StatusBadge'
+import { AuctionStatusBadge } from '../AuctionStatusBadge'
+import { Eye } from '@/components/ui/icons'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { formatDateTime } from '@/lib/format'
 import { countLabel, formatInteger } from '@/shared/i18n/format'
 import { queryKeys } from '@/shared/query-keys'
@@ -137,24 +139,22 @@ export const AuctionActivityPage = (): React.JSX.Element => {
           { label: t('auction:activity.title') },
         ]}
       />
-      <header className="auction-hero flex flex-wrap items-start justify-between gap-4">
+      <header className="auction-hero auction-hero--centered">
         <div>
-          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
           <h1 className="auction-title">{t('auction:activity.title')}</h1>
-          <p className="mt-1 max-w-3xl text-sm text-muted">{t('auction:activity.subtitle')}</p>
         </div>
         <nav
           aria-label={t('auction:activity.related')}
           className="auction-nav flex flex-wrap gap-2"
         >
           <Link
-            className={`${linkClass} auction-link auction-button-tertiary`}
+            className={`${linkClass} auction-link auction-button-secondary`}
             to="/auction/watchlist"
           >
             {t('auction:activity.watchlist')}
           </Link>
           <Link
-            className={`${linkClass} auction-link auction-button-tertiary`}
+            className={`${linkClass} auction-link auction-button-secondary`}
             to="/auction/pending-claims"
           >
             {t('auction:activity.pendingClaims')}
@@ -181,18 +181,22 @@ export const AuctionActivityPage = (): React.JSX.Element => {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <AuctionProductSummary productId={auction.productId} />
-                    <StatusBadge status={auction.status} />
+                    <AuctionStatusBadge status={auction.status} />
                   </div>
                   <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <dt className="text-muted">{t('auction:activity.minimumBid')}</dt>
-                      <dd className="font-medium text-ink">
+                      <dd className="flex items-center gap-1 font-medium text-ink">
+                        <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
                         {countLabel(t, 'common:count.credits', auction.minimumBidCredits)}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-muted">{t('auction:activity.currentBid')}</dt>
-                      <dd className="font-medium text-ink">
+                      <dd className="flex items-center gap-1 font-medium text-ink">
+                        {auction.currentBidCredits !== null && (
+                          <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
+                        )}
                         {auction.currentBidCredits === null
                           ? t('auction:activity.noBids')
                           : countLabel(t, 'common:count.credits', auction.currentBidCredits)}
@@ -263,13 +267,17 @@ export const AuctionActivityPage = (): React.JSX.Element => {
                   <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <dt className="text-muted">{t('auction:activity.bids.mine')}</dt>
-                      <dd className="font-medium text-ink">
+                      <dd className="flex items-center gap-1 font-medium text-ink">
+                        <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
                         {countLabel(t, 'common:count.credits', bid.ownLatestBidCredits)}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-muted">{t('auction:activity.currentBid')}</dt>
-                      <dd className="font-medium text-ink">
+                      <dd className="flex items-center gap-1 font-medium text-ink">
+                        {bid.currentBidCredits !== null && (
+                          <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
+                        )}
                         {bid.currentBidCredits === null
                           ? t('auction:activity.noBids')
                           : countLabel(t, 'common:count.credits', bid.currentBidCredits)}
@@ -304,11 +312,11 @@ export const AuctionActivityPage = (): React.JSX.Element => {
             isEmpty={transactions.data?.items.length === 0}
             emptyMessage={t('auction:activity.transactions.empty')}
           >
-            <ul className="divide-y divide-border rounded-lg border border-border bg-surface-raised">
+            <ul className="flex flex-col gap-2">
               {transactions.data?.items.map((transaction) => (
                 <li
                   key={transaction.id}
-                  className="flex flex-wrap items-start justify-between gap-3 p-4"
+                  className="auction-history-row flex flex-wrap items-start justify-between gap-3"
                 >
                   <div>
                     <p className="font-medium text-ink">{transactionLabel(transaction.type, t)}</p>
@@ -317,9 +325,10 @@ export const AuctionActivityPage = (): React.JSX.Element => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <StatusBadge status={transaction.status} />
+                    <AuctionStatusBadge status={transaction.status} />
                     {transaction.value !== null && (
-                      <p className="mt-1 text-sm font-semibold text-ink">
+                      <p className="mt-1 flex items-center justify-end gap-1 text-sm font-semibold text-ink">
+                        <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
                         {countLabel(t, 'common:count.credits', transaction.value.amount)}
                       </p>
                     )}
@@ -346,14 +355,16 @@ export const AuctionActivityPage = (): React.JSX.Element => {
                 {t('auction:activity.statistics.unavailable')}
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {statistics.data?.metrics.map((metric) => (
-                  <li
-                    key={metric.auctionId}
-                    className="flex justify-between rounded-lg border border-border bg-surface-raised p-3 text-sm"
-                  >
-                    <span className="text-muted">{metric.auctionId}</span>
-                    <strong className="text-ink">{formatInteger(metric.views)}</strong>
+                  <li key={metric.auctionId} className="auction-kpi-card">
+                    <Eye aria-hidden="true" className="auction-kpi-icon size-5" />
+                    <div className="min-w-0">
+                      <p className="auction-kpi-value">{formatInteger(metric.views)}</p>
+                      <p className="auction-kpi-label truncate" title={metric.auctionId}>
+                        {metric.auctionId}
+                      </p>
+                    </div>
                   </li>
                 ))}
               </ul>

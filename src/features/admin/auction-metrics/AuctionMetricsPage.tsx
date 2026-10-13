@@ -279,10 +279,9 @@ export const AuctionMetricsPage = ({
         ]}
       />
 
-      <header className="auction-hero">
+      <header className="auction-hero auction-hero--centered">
         <div>
           <h1 className="auction-title font-semibold text-ink">{t('auctionMetrics:title')}</h1>
-          <p className="mt-1 text-sm text-muted">{t('auctionMetrics:subtitle')}</p>
         </div>
       </header>
 
