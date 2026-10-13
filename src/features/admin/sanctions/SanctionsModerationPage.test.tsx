@@ -21,19 +21,38 @@ describe('SanctionsModerationPage (HU-42, superficie limitada de moderacion)', (
     expect(screen.queryByRole('button', { name: 'Revisar' })).not.toBeInTheDocument()
   })
 
-  it('Moderador no ve el enlace a la busqueda completa de cuentas (no tiene acceso a esa pantalla)', () => {
+  it('Moderador no ve el listado de cuentas, sigue pidiendo el id (no tiene acceso a esa busqueda)', () => {
     useSession.setState({ roles: ['PLAYER', 'MODERATOR'] })
     renderWithProviders(<SanctionsModerationPage />)
 
-    expect(screen.queryByRole('link', { name: 'Administrar usuarios' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/id de la cuenta/iu)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Panel administrativo de usuarios' }),
+    ).not.toBeInTheDocument()
   })
 
-  it('Administrador ve un enlace a la busqueda completa de cuentas por apodo o correo', () => {
+  it('Administrador ve directamente el listado buscable de cuentas, sin pedir el id primero', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            items: [],
+            statusCounts: { pendingVerification: 0, active: 0, suspended: 0 },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      ),
+    )
     useSession.setState({ roles: ['PLAYER', 'ADMINISTRATOR'] })
     renderWithProviders(<SanctionsModerationPage />)
 
-    const link = screen.getByRole('link', { name: 'Administrar usuarios' })
-    expect(link).toHaveAttribute('href', '/account/admin-users')
+    expect(
+      await screen.findByRole('heading', { name: 'Panel administrativo de usuarios' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/id de la cuenta/iu)).not.toBeInTheDocument()
+
+    vi.unstubAllGlobals()
   })
 
   it('con un id valido, muestra el formulario y aplica la sancion', async () => {
