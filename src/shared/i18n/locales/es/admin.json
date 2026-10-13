@@ -72,13 +72,15 @@
   },
   "sanctions": {
     "title": "Aplicar sanciones",
-    "intro": "Advertencia, suspensión temporal o baneo definitivo sobre una cuenta, con causal y motivo (HU-42).",
+    "intro": "Advertencia, suspensión temporal o baneo definitivo sobre una cuenta, con causal y motivo.",
     "crumb": "Aplicar sanciones",
     "lookup": {
       "title": "Identificar la cuenta",
       "label": "Id de la cuenta",
       "hint": "El identificador interno de Account, no el correo ni el apodo. Si llegaste desde la moderación de comentarios, ya lo tienes.",
-      "submit": "Continuar"
+      "submit": "Continuar",
+      "adminSearchHint": "¿No tienes el id a mano? Búscala por apodo o correo en",
+      "adminSearchLinkLabel": "Administrar usuarios"
     },
     "result": {
       "title": "Sanción registrada",
@@ -130,7 +132,7 @@
   },
   "appeals": {
     "title": "Revisar apelaciones",
-    "intro": "Apelaciones pendientes de decisión final (HU-42).",
+    "intro": "Apelaciones pendientes de decisión final.",
     "crumb": "Revisar apelaciones",
     "empty": "No hay apelaciones pendientes de revisión.",
     "meta": "Sanción {{sanctionId}} · Cuenta {{accountId}} · Presentada el {{date}}",
