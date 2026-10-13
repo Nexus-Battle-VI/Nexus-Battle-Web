@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { CheckboxField } from '@/components/ui/form/CheckboxField'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { countLabel } from '@/shared/i18n/format'
 import { AuctionProductIdentity } from '../AuctionProductIdentity'
 import { formatCredits } from './formatCredits'
@@ -124,13 +125,19 @@ const Alert = ({
 const KeyValue = ({
   label,
   value,
+  credits = false,
 }: {
   readonly label: string
   readonly value: string
+  /** Antepone la gema canonica cuando `value` es un monto en creditos. */
+  readonly credits?: boolean
 }): React.JSX.Element => (
   <div className="flex flex-col gap-1">
     <dt className="auction-meta font-medium text-muted">{label}</dt>
-    <dd className="auction-value m-0 font-semibold text-ink">{value}</dd>
+    <dd className="auction-value m-0 inline-flex items-center gap-1 font-semibold text-ink">
+      {credits && <NavPixelIcon icon="gem" size="sm" className="auction-icon" />}
+      {value}
+    </dd>
   </div>
 )
 
@@ -260,12 +267,17 @@ export const ImmediatePurchaseCard = ({
           <hr className="m-0 h-px border-0 bg-border" />
           <dl className="m-0 flex flex-col gap-2.5">
             {priceCredits !== undefined && (
-              <KeyValue label={t('auction:purchase.price')} value={formatCredits(priceCredits)} />
+              <KeyValue
+                label={t('auction:purchase.price')}
+                value={formatCredits(priceCredits)}
+                credits
+              />
             )}
             {availableCredits !== undefined && (
               <KeyValue
                 label={t('auction:purchase.availableCredits')}
                 value={formatCredits(availableCredits)}
+                credits
               />
             )}
           </dl>
@@ -308,10 +320,12 @@ export const ImmediatePurchaseCard = ({
             <KeyValue
               label={t('auction:purchase.debited')}
               value={`-${formatCredits(transaction.debitedCredits)}`}
+              credits
             />
             <KeyValue
               label={t('auction:purchase.remaining')}
               value={formatCredits(transaction.remainingCredits)}
+              credits
             />
           </dl>
           <Button
@@ -351,18 +365,24 @@ export const ImmediatePurchaseCard = ({
           )}
           <dl className="m-0 flex flex-col gap-2.5">
             {priceCredits !== undefined && (
-              <KeyValue label={t('auction:purchase.price')} value={formatCredits(priceCredits)} />
+              <KeyValue
+                label={t('auction:purchase.price')}
+                value={formatCredits(priceCredits)}
+                credits
+              />
             )}
             {availableCredits !== undefined && (
               <KeyValue
                 label={t('auction:purchase.availableCredits')}
                 value={formatCredits(availableCredits)}
+                credits
               />
             )}
             {missingCredits !== undefined && (
               <KeyValue
                 label={t('auction:purchase.missing')}
                 value={formatCredits(missingCredits)}
+                credits
               />
             )}
           </dl>

@@ -51,6 +51,8 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   CLOSED: 'Cerrado',
   PENDING_VERIFICATION: 'Pendiente de verificacion',
   ACTIVE: 'Activa',
+  FINISHED: 'Finalizada',
+  SOLD: 'Vendida',
   SUSPENDED: 'Suspendida',
   RECEIVED: 'Recibida',
   // Estado de moderacion de un comentario (HU-41).

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/form/TextField'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { i18n } from '@/shared/i18n/i18n'
 import { formatInteger } from '@/shared/i18n/format'
 import { AuctionProductIdentity } from '../AuctionProductIdentity'
@@ -68,6 +69,7 @@ const Alert = ({
   </div>
 )
 
+/** Todos los valores que muestra esta tarjeta son montos en creditos. */
 const KeyValue = ({
   label,
   value,
@@ -77,7 +79,10 @@ const KeyValue = ({
 }): React.JSX.Element => (
   <div className="bid-kv">
     <dt>{label}</dt>
-    <dd>{value}</dd>
+    <dd className="inline-flex items-center gap-1">
+      <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
+      {value}
+    </dd>
   </div>
 )
 

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { Coins } from '@/components/ui/icons'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 
 import { formatCount, formatCredits, formatRealMoney } from './metricsFormat'
 import {
@@ -32,14 +33,23 @@ export const PricesSection = ({ data }: { readonly data: AveragePrices }): React
         {t('auctionMetrics:prices.title')}
       </SectionHeading>
 
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))]">
+      {/*
+       * Bug real confirmado en Chrome: con `auto-fit` y una sola tarjeta de
+       * creditos en la fila 1, la columna sobrante quedaba vacia (la
+       * tarjeta de dinero real ya fuerza `grid-column:1/-1` y cae a la
+       * fila 2 de todas formas). Credito y dinero real siguen en tarjetas
+       * separadas -nunca se mezclan-, pero ambas usan ahora el ancho
+       * completo disponible en vez de dejar una columna fantasma vacia.
+       */}
+      <div className="grid gap-4">
         <MetricCard
           title={t('auctionMetrics:prices.playerTitle')}
           badge={<Badge tone="ok">{t('auctionMetrics:badges.creditsSalePrice')}</Badge>}
         >
           <div className="grid gap-4">
             <div>
-              <p className="am-big text-3xl leading-9 font-semibold tabular-nums">
+              <p className="am-big flex items-center gap-2 text-3xl leading-9 font-semibold tabular-nums">
+                <NavPixelIcon icon="gem" size="md" />
                 {formatCredits(credits.average)}
               </p>
               <p className="mt-1 text-xs text-muted">

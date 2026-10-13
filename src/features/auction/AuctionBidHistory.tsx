@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { queryKeys } from '@/shared/query-keys'
 import { countLabel, formatLocale } from '@/shared/i18n/format'
 import { i18n } from '@/shared/i18n/i18n'
@@ -65,7 +66,8 @@ export const AuctionBidHistory = ({ auctionId }: AuctionBidHistoryProps): React.
               key={item.id}
               className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm"
             >
-              <span className="font-medium text-ink">
+              <span className="inline-flex items-center gap-1 font-medium text-ink">
+                <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
                 {countLabel(i18n.t, 'common:count.credits', item.amountCredits)}
               </span>
               <span className="text-muted">{dateTimeOf(item.placedAt)}</span>
