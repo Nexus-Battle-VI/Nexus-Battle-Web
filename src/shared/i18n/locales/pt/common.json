@@ -23,6 +23,8 @@
     "CLOSED": "Fechado",
     "PENDING_VERIFICATION": "Verificação pendente",
     "ACTIVE": "Ativa",
+    "FINISHED": "Finalizada",
+    "SOLD": "Vendida",
     "SUSPENDED": "Suspensa",
     "RECEIVED": "Recebida",
     "PENDING": "Pendente",

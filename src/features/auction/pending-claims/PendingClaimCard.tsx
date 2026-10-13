@@ -11,6 +11,7 @@ import type { PendingClaim } from './api'
 import { i18n } from '@/shared/i18n/i18n'
 import { formatInteger } from '@/shared/i18n/format'
 import { AuctionProductIdentity } from '../AuctionProductIdentity'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 
 /** `2500` -> `2.500 créditos`. Misma duplicacion local que `auto-bid`/`bidding`: una feature no importa de otra. */
 const formatCredits = (amount: number): string => {
@@ -44,11 +45,16 @@ export interface PendingClaimCardProps {
   readonly onClaim: (auctionId: string) => void
 }
 
-/** `label` es la clave de traduccion de la etiqueta. */
+/**
+ * `label` es la clave de traduccion de la etiqueta (texto propio de Claims,
+ * no se toca). `tone` ahora mapea al MISMO sistema semantico de badge que ya
+ * aprobaron Bidding/Auto Bid/Immediate Purchase (`.auction-state-badge`
+ * `data-tone`), en vez del pill plano Tailwind que usaba antes.
+ */
 const STATUS_META: Readonly<Record<PendingClaimDisplayStatus, { label: string; tone: string }>> = {
-  PENDING: { label: 'auction:claims.status.PENDING', tone: 'bg-warning/15 text-warning' },
-  CLAIMED: { label: 'auction:claims.status.CLAIMED', tone: 'bg-success/15 text-success' },
-  EXPIRED: { label: 'auction:claims.status.EXPIRED', tone: 'bg-danger/15 text-danger' },
+  PENDING: { label: 'auction:claims.status.PENDING', tone: 'warning' },
+  CLAIMED: { label: 'auction:claims.status.CLAIMED', tone: 'success' },
+  EXPIRED: { label: 'auction:claims.status.EXPIRED', tone: 'danger' },
 }
 
 const PendingClaimStatusBadge = ({
@@ -60,12 +66,7 @@ const PendingClaimStatusBadge = ({
   const { t } = useTranslation()
 
   return (
-    <span
-      className={clsx(
-        'inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium',
-        meta.tone,
-      )}
-    >
+    <span className="auction-state-badge" data-tone={meta.tone}>
       {t(meta.label)}
     </span>
   )
@@ -150,7 +151,8 @@ export const PendingClaimCard = ({
           </div>
         </div>
 
-        <p className="auction-claim-value text-sm font-semibold tabular-nums text-ink">
+        <p className="auction-claim-value inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-ink">
+          <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
           {formatCredits(claim.finalAmountCredits)}
         </p>
 

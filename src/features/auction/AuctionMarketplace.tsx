@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
-import { BadgeDollarSign } from 'lucide-react'
+import { BadgeDollarSign, Search } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { SelectField } from '@/components/ui/form/SelectField'
 import { TextField } from '@/components/ui/form/TextField'
 import { formatMoney } from '@/lib/format'
@@ -33,7 +34,6 @@ import { i18n } from '@/shared/i18n/i18n'
 import { countLabel, formatInteger, formatLocale } from '@/shared/i18n/format'
 import { AuctionCountdown } from './AuctionCountdown'
 import { AuctionProductSummary } from './AuctionProductSummary'
-import { auctionRemasterAssets } from './auctionRemasterAssets'
 import './auction-remaster.css'
 
 const priceOf = (auction: ActiveAuction): string =>
@@ -89,19 +89,17 @@ const AuctionCard = ({ auction }: { readonly auction: ActiveAuction }): React.JS
             {official ? (
               <BadgeDollarSign aria-hidden="true" className="size-4 text-brand" />
             ) : (
-              <img
-                aria-hidden="true"
-                alt=""
-                src={auctionRemasterAssets.shared.icons.credits}
-                className="auction-icon auction-icon-sm"
-              />
+              <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
             )}
             {priceOf(auction)}
           </dd>
         </div>
         <div>
           <dt className="text-muted">{t('auction:market.buyNow')}</dt>
-          <dd className="font-semibold text-ink">
+          <dd className="flex items-center gap-1 font-semibold text-ink">
+            {buyNowPrice !== null && !official && (
+              <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
+            )}
             {buyNowPrice ?? t('auction:market.buyNowNone')}
           </dd>
         </div>
@@ -345,15 +343,11 @@ export const AuctionMarketplace = (): React.JSX.Element => {
       aria-labelledby="active-auctions-title"
       className="auction-shell auction-page space-y-4"
     >
-      <header className="auction-hero">
+      <header className="auction-hero auction-hero--balanced">
         <div>
-          <p className="auction-kicker" aria-hidden="true">
-            Nexus Battles VI
-          </p>
           <h1 id="active-auctions-title" className="auction-title font-semibold text-ink">
             {t('auction:market.title')}
           </h1>
-          <p className="mt-1 text-sm text-muted">{t('auction:market.subtitle')}</p>
         </div>
         {/*
          * Enlaces contextuales, no un acceso nuevo en NAVIGATION (HU-02 fija
@@ -361,10 +355,10 @@ export const AuctionMarketplace = (): React.JSX.Element => {
          * sirve moverse a su seguimiento o a publicar la suya.
          */}
         <nav aria-label={t('auction:market.otherViews')} className="auction-nav">
-          <Link to="/auction/activity" className="auction-link auction-button-tertiary">
+          <Link to="/auction/activity" className="auction-link auction-button-secondary">
             {t('auction:market.myActivity')}
           </Link>
-          <Link to="/auction/watchlist" className="auction-link auction-button-tertiary">
+          <Link to="/auction/watchlist" className="auction-link auction-button-secondary">
             {t('auction:market.myFollowed')}
           </Link>
           <Link to="/auction/publish" className="auction-link auction-button-primary">
@@ -384,6 +378,10 @@ export const AuctionMarketplace = (): React.JSX.Element => {
       >
         <div className="flex flex-wrap items-end gap-3">
           <div ref={comboboxRef} className="relative w-full sm:max-w-md">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-[0.7rem] left-3 size-4 text-muted"
+            />
             <TextField
               label={t('auction:market.searchLabel')}
               placeholder={t('auction:market.searchPlaceholder')}
@@ -582,7 +580,10 @@ export const AuctionMarketplace = (): React.JSX.Element => {
           ))}
         </div>
         {query.data !== undefined && query.data.total > pageSize && (
-          <nav aria-label={t('auction:market.pagination')} className="mt-4 flex items-center gap-3">
+          <nav
+            aria-label={t('auction:market.pagination')}
+            className="mt-4 flex items-center justify-center gap-3"
+          >
             <Button
               className="auction-button-utility"
               variant="secondary"

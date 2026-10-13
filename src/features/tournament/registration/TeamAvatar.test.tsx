@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import { useSession } from '@/shared/session'
+import { HttpError } from '@/lib/http'
 import { TeamAvatar, type AvatarDownload } from './TeamAvatar'
 
 afterEach(() => {
@@ -49,6 +50,27 @@ describe('avatar existente con autorización y ausencia explícita', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar avatar' }))
     expect(await screen.findByRole('img')).toBeInTheDocument()
     expect(download).toHaveBeenCalledTimes(2)
+  })
+  it('404 de Account (sin avatar recuperable): muestra el respaldo, sin reintento ni mensaje de error', async () => {
+    const download = vi
+      .fn<AvatarDownload>()
+      .mockRejectedValue(new HttpError(404, 'La cuenta no tiene avatar disponible', null))
+    renderWithProviders(<TeamAvatar subject="A" avatarSubject="B" download={download} />)
+    expect(await screen.findByText('Sin avatar.')).toBeInTheDocument()
+    expect(screen.getByText('?')).toBeInTheDocument()
+    expect(screen.queryByText('Avatar no disponible.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reintentar avatar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(download).toHaveBeenCalledTimes(1)
+  })
+  it('un 500 de Account sigue siendo transitorio: informa y permite reintentar', async () => {
+    const download = vi
+      .fn<AvatarDownload>()
+      .mockRejectedValueOnce(new HttpError(500, 'Fallo interno', null))
+    renderWithProviders(<TeamAvatar subject="A" avatarSubject="B" download={download} />)
+    expect(await screen.findByText('Avatar no disponible.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reintentar avatar' })).toBeInTheDocument()
+    expect(screen.queryByText('Sin avatar.')).not.toBeInTheDocument()
   })
   it('no conserva imagen anterior al cambiar el sujeto y rechaza contenido no imagen', async () => {
     vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:account'), revokeObjectURL: vi.fn() })

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock3, Coins, Gavel, PackageCheck } from 'lucide-react'
+import { Clock3, PackageCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/Button'
 import { QueryState } from '@/components/ui/QueryState'
 import { TextField } from '@/components/ui/form/TextField'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { queryKeys } from '@/shared/query-keys'
 import { describeAuctionError, publishAuction, type AuctionPublication } from './api'
 import { validateAuctionForm, type AuctionFormValues } from './validation'
@@ -58,13 +59,15 @@ const ActiveAuctionResult = ({ auction }: { auction: AuctionPublication }): Reac
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
         <div>
           <dt className="text-muted">{t('auction:publish.feeCharged')}</dt>
-          <dd className="font-semibold text-ink">
+          <dd className="flex items-center gap-1 font-semibold text-ink">
+            <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
             {countLabel(t, 'common:count.credits', auction.publicationFeeCredits)}
           </dd>
         </div>
         <div>
           <dt className="text-muted">{t('auction:publish.minimumPrice')}</dt>
-          <dd className="font-semibold text-ink">
+          <dd className="flex items-center gap-1 font-semibold text-ink">
+            <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
             {countLabel(t, 'common:count.credits', auction.minimumBidCredits)}
           </dd>
         </div>
@@ -135,16 +138,12 @@ export const PublishAuctionPage = (): React.JSX.Element => {
       aria-labelledby="auction-title"
       className="auction-shell auction-page auction-publish-page"
     >
-      <header className="auction-hero">
-        <div>
-          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
-          <div className="flex items-center gap-3">
-            <Gavel aria-hidden="true" className="size-6 text-brand" />
-            <h1 id="auction-title" className="auction-title">
-              {t('auction:publish.title')}
-            </h1>
-          </div>
-          <p className="mt-2 max-w-3xl text-sm text-muted">{t('auction:publish.subtitle')}</p>
+      <header className="auction-hero auction-hero--centered">
+        <div className="flex items-center gap-3">
+          <NavPixelIcon icon="auction" size="md" />
+          <h1 id="auction-title" className="auction-title">
+            {t('auction:publish.title')}
+          </h1>
         </div>
       </header>
 
@@ -174,7 +173,7 @@ export const PublishAuctionPage = (): React.JSX.Element => {
         >
           <div className="flex flex-col gap-4">
             <fieldset className="rounded-xl border border-border bg-surface-raised p-5">
-              <legend className="px-1 font-semibold text-ink">{t('auction:publish.step1')}</legend>
+              <legend className="auction-step-heading px-1">{t('auction:publish.step1')}</legend>
               <QueryState
                 isLoading={inventory.isLoading}
                 error={inventory.error}
@@ -220,7 +219,7 @@ export const PublishAuctionPage = (): React.JSX.Element => {
             </fieldset>
 
             <fieldset className="rounded-xl border border-border bg-surface-raised p-5">
-              <legend className="px-1 font-semibold text-ink">{t('auction:publish.step2')}</legend>
+              <legend className="auction-step-heading px-1">{t('auction:publish.step2')}</legend>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {([24, 48] as const).map((hours) => (
                   <label
@@ -281,7 +280,7 @@ export const PublishAuctionPage = (): React.JSX.Element => {
           </div>
 
           <aside className="rounded-xl border border-border bg-surface-raised p-5 lg:sticky lg:top-4">
-            <h2 className="font-semibold text-ink">{t('auction:publish.step3')}</h2>
+            <h2 className="auction-step-heading">{t('auction:publish.step3')}</h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between gap-3">
                 <dt className="text-muted">{t('auction:publish.product')}</dt>
@@ -298,7 +297,7 @@ export const PublishAuctionPage = (): React.JSX.Element => {
               <div className="flex justify-between gap-3">
                 <dt className="text-muted">{t('auction:publish.feeLabel')}</dt>
                 <dd className="flex items-center gap-1 font-semibold text-ink">
-                  <Coins aria-hidden="true" className="size-4 text-brand" />
+                  <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
                   {countLabel(t, 'common:count.credits', fee)}
                 </dd>
               </div>
