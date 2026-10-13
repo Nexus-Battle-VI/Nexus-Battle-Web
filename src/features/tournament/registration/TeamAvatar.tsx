@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { TournamentButton as Button } from '../TournamentVisuals'
-import { httpClient, type HttpDownload } from '@/lib/http'
+import { Avatar } from '@/components/ui/Avatar'
+import { HttpError, httpClient, type HttpDownload } from '@/lib/http'
 import { avatarPathForSubject } from '@/shared/avatar'
 
 export type AvatarDownload = (path: string) => Promise<HttpDownload>
@@ -16,9 +17,13 @@ export const TeamAvatar = ({
 }): React.JSX.Element => {
   const [attempt, setAttempt] = useState(0)
   const key = JSON.stringify([subject, avatarSubject, attempt])
-  const [loaded, setLoaded] = useState<{ key: string; url: string | null; error: boolean } | null>(
-    null,
-  )
+  const [loaded, setLoaded] = useState<{
+    key: string
+    url: string | null
+    error: boolean
+    // 404: la cuenta no tiene avatar recuperable. Es permanente: reintentar no lo arregla.
+    missing: boolean
+  } | null>(null)
   useEffect(() => {
     const path = avatarPathForSubject(avatarSubject)
     if (path === null) return
@@ -28,14 +33,17 @@ export const TeamAvatar = ({
       .then(({ content, mediaType }) => {
         if (!active) return
         if (!mediaType.startsWith('image/')) {
-          setLoaded({ key, url: null, error: true })
+          setLoaded({ key, url: null, error: true, missing: false })
           return
         }
         objectUrl = URL.createObjectURL(content)
-        setLoaded({ key, url: objectUrl, error: false })
+        setLoaded({ key, url: objectUrl, error: false, missing: false })
       })
-      .catch(() => {
-        if (active) setLoaded({ key, url: null, error: true })
+      .catch((error: unknown) => {
+        if (active) {
+          const missing = error instanceof HttpError && error.isNotFound
+          setLoaded({ key, url: null, error: true, missing })
+        }
       })
     return () => {
       active = false
@@ -43,6 +51,17 @@ export const TeamAvatar = ({
     }
   }, [key, avatarSubject, download])
   const current = loaded?.key === key ? loaded : null
+  if (current?.missing) {
+    // Sin avatar en Account (404): mismo respaldo que el resto de la app, sin boton de reintento.
+    return (
+      <div className="flex min-w-0 items-center gap-3">
+        <Avatar avatarUrl={null} alt="" initials="?" size="lg" />
+        <p className="text-sm text-muted" role="status">
+          Sin avatar.
+        </p>
+      </div>
+    )
+  }
   return (
     <div className="flex min-w-0 items-center gap-3">
       {current?.url && !current.error ? (
@@ -51,7 +70,7 @@ export const TeamAvatar = ({
           alt="Avatar de cuenta elegido para el equipo"
           src={current.url}
           onError={() => {
-            setLoaded({ ...current, error: true })
+            setLoaded({ ...current, error: true, missing: false })
           }}
         />
       ) : (
