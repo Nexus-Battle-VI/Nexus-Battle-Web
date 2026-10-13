@@ -72,13 +72,15 @@
   },
   "sanctions": {
     "title": "Appliquer des sanctions",
-    "intro": "Avertissement, suspension temporaire ou bannissement définitif d'un compte, avec motif et justification (HU-42).",
+    "intro": "Avertissement, suspension temporaire ou bannissement définitif d'un compte, avec motif et justification.",
     "crumb": "Appliquer des sanctions",
     "lookup": {
       "title": "Identifier le compte",
       "label": "Id du compte",
       "hint": "L'identifiant interne d'Account, pas l'e-mail ni le pseudo. Si vous venez de la modération des commentaires, vous l'avez déjà.",
-      "submit": "Continuer"
+      "submit": "Continuer",
+      "adminSearchHint": "Vous n'avez pas l'id sous la main ? Recherchez-le par pseudo ou e-mail dans",
+      "adminSearchLinkLabel": "Gérer les utilisateurs"
     },
     "result": {
       "title": "Sanction enregistrée",
@@ -130,7 +132,7 @@
   },
   "appeals": {
     "title": "Examiner les appels",
-    "intro": "Appels en attente d'une décision finale (HU-42).",
+    "intro": "Appels en attente d'une décision finale.",
     "crumb": "Examiner les appels",
     "empty": "Aucun appel en attente d'examen.",
     "meta": "Sanction {{sanctionId}} · Compte {{accountId}} · Soumis le {{date}}",
