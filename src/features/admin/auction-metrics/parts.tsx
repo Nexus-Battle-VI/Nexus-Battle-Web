@@ -18,21 +18,25 @@ const DEPTH_HOVER =
   'motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100'
 
 /** Encabezado de seccion: icono decorativo + titulo. */
+/**
+ * El texto de este heading SIEMPRE repite, literal, el label visible de la
+ * pestana activa justo encima (`MetricsTabs`) -seccion 21C del master
+ * prompt: esa repeticion es redundante. Se mantiene como `<h2>` real para
+ * que `aria-labelledby` del `<section>` siga teniendo un nombre accesible,
+ * pero visualmente oculto (`sr-only`); el icono -tambien duplicado del icono
+ * de la pestana- no se pinta dos veces.
+ */
 export const SectionHeading = ({
-  icon: Icon,
   id,
   children,
 }: {
-  readonly icon: IconType
+  readonly icon?: IconType
   readonly id: string
   readonly children: ReactNode
 }): React.JSX.Element => (
-  <div className="flex items-center gap-2">
-    <Icon aria-hidden className="am-heading-icon h-4 w-4" />
-    <h2 id={id} className="text-base font-semibold text-ink">
-      {children}
-    </h2>
-  </div>
+  <h2 id={id} className="sr-only">
+    {children}
+  </h2>
 )
 
 /** Tarjeta de cifra: icono, etiqueta, valor grande tabular y pie opcional. */

@@ -282,9 +282,17 @@
   text-shadow: none;
 }
 
+/*
+ * Bug real confirmado en Chrome: el reset transversal
+ * `.auction-shell :is(button, .auction-link) { border-color: transparent
+ * !important }` (auction-remaster.css) gana sobre este borde -esa regla solo
+ * se "repara" despues para `.auction-button-secondary`, pero Metrics usa su
+ * propio nombre `.am-btn-secondary`, que nunca recibia la reparacion-. Sin
+ * `!important` aqui "Actualizar" se veia como texto plano sin borde.
+ */
 .am-page .am-btn-secondary {
   min-height: 42px;
-  border: 1px solid var(--auction-button-secondary-border);
+  border: 1px solid var(--auction-button-secondary-border) !important;
   background: var(--auction-surface-level-3);
   color: var(--color-ink);
 }
