@@ -70,13 +70,15 @@
   },
   "sanctions": {
     "title": "Apply sanctions",
-    "intro": "Warning, temporary suspension, or permanent ban on an account, with a reason and justification (HU-42).",
+    "intro": "Warning, temporary suspension, or permanent ban on an account, with a reason and justification.",
     "crumb": "Apply sanctions",
     "lookup": {
       "title": "Identify the account",
       "label": "Account id",
       "hint": "Account's internal identifier, not the email or nickname. If you came from comment moderation, you already have it.",
-      "submit": "Continue"
+      "submit": "Continue",
+      "adminSearchHint": "Don't have the id handy? Look it up by nickname or email in",
+      "adminSearchLinkLabel": "Manage users"
     },
     "result": {
       "title": "Sanction recorded",
@@ -128,7 +130,7 @@
   },
   "appeals": {
     "title": "Review appeals",
-    "intro": "Appeals pending a final decision (HU-42).",
+    "intro": "Appeals pending a final decision.",
     "crumb": "Review appeals",
     "empty": "There are no appeals pending review.",
     "meta": "Sanction {{sanctionId}} · Account {{accountId}} · Submitted on {{date}}",
