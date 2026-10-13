@@ -20,7 +20,20 @@
  * Dark; marfil/oro/zafiro en Light).
  */
 
-.account-page {
+/* `.account-tokens` separa la PALETA (variables + color de texto) del
+ * escenario de pagina completa de `.account-page` (fondo, recorte, relleno,
+ * layout en columna). HU-42 necesito reusar `AdminUsersSection` -y sus
+ * clases `.account-panel`/`.account-stat-card`/etc., todas dependientes de
+ * estas variables- dentro de `/admin/sanctions`, que nunca monta
+ * `AccountPage` y por tanto nunca define `.account-page`: sin un ancestro
+ * que declare estas custom properties quedan indefinidas, `color-mix()` con
+ * un argumento indefinido invalida toda la declaracion, y el navegador la
+ * descarta en silencio -el panel se ve blanco y sin texto legible, no es un
+ * fallback intencional-. Envolver ese fragmento en `.account-tokens` (sin el
+ * fondo escenico, que no tiene sentido fuera de una pagina completa) resuelve
+ * las variables sin arrastrar el arte de Mi Cuenta a otra pantalla. */
+.account-page,
+.account-tokens {
   /* Tokens propios de Mi Cuenta -mismo criterio que `--br-ink`/`--br-accent`
    * en battle-rooms.css-: valores EXPLICITOS por tema (no derivados de
    * `color-mix` con el brand generico), porque Light (Royal Archive:
@@ -41,6 +54,9 @@
   --account-gold: var(--color-accent-gold);
   --account-title-glow: color-mix(in oklab, var(--account-accent) 35%, transparent);
 
+  color: var(--account-ink);
+}
+.account-page {
   position: relative;
   isolation: isolate;
   border-radius: 20px;
@@ -49,9 +65,9 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
-  color: var(--account-ink);
 }
-:root[data-theme='dark'] .account-page {
+:root[data-theme='dark'] .account-page,
+:root[data-theme='dark'] .account-tokens {
   --account-ink: #f1e6cf;
   --account-muted: #c3b7e0;
   --account-accent: #c9a646;
