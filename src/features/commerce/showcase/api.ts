@@ -14,20 +14,22 @@ export const PRODUCT_TYPE_LABELS: Readonly<Record<ProductType, string>> = locali
 })
 
 /**
- * Tipos que el dominio de E-commerce puede comercializar (PDF §7.2.2 +
- * aclaracion del PO 2026-09-24; ver "Elegibilidad de comercializacion premium"
- * en `docs/contracts/ecommerce-integration-v1.md` de Infrastructure). `ITEM` y
- * `EPICA` siguen existiendo en Catalog/Player-Inventory/Missions -la epica se
- * obtiene por Mision/Master, no por compra- pero nunca son candidatos de
- * compra: la vitrina no debe ofrecerlos ni como filtro ni como tarjeta.
+ * Tipos que el dominio de E-commerce puede comercializar (PDF §7.2.2,
+ * aclaracion del PO 2026-09-24 y aclaracion del cliente/profesor 2026-09-27;
+ * ver "Elegibilidad de comercializacion premium" en
+ * `docs/contracts/ecommerce-integration-v1.md` de Infrastructure). `ITEM`,
+ * `EPICA` y, desde el 2026-09-27, `HABILIDAD` siguen existiendo en
+ * Catalog/Player-Inventory/Missions -la epica se obtiene por Mision/Master,
+ * no por compra, y la habilidad es intrinseca del heroe, viene incluida al
+ * adquirirlo- pero ninguno de los tres es candidato de compra: la vitrina no
+ * debe ofrecerlos ni como filtro ni como tarjeta.
  *
  * La autoridad de esta regla es Commerce, no esta constante: aqui solo se usa
- * para no listar dos tipos que el propio dominio del E-commerce nunca vende,
+ * para no listar los tipos que el propio dominio del E-commerce nunca vende,
  * con el campo `type` que Catalog ya entrega por producto.
  */
 export const SHOWCASE_PRODUCT_TYPES = [
   'HEROE',
-  'HABILIDAD',
   'ARMA',
   'ARMADURA',
 ] as const satisfies readonly ProductType[]
