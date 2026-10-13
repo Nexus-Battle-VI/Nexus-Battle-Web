@@ -108,6 +108,7 @@ export const showcaseQuery = (filters: ShowcaseFilters, page: number): string =>
   const query = new URLSearchParams({ page: String(page), premium: 'true' })
   if (filters.term.trim() !== '') query.set('query', filters.term.trim())
   if (filters.type !== null) query.set('type', filters.type)
+  else query.set('types', SHOWCASE_PRODUCT_TYPES.join(','))
   if (filters.minPrice !== null) query.set('minPrice', String(filters.minPrice))
   if (filters.maxPrice !== null) query.set('maxPrice', String(filters.maxPrice))
   if (filters.currency !== null) query.set('currency', filters.currency)
@@ -142,14 +143,13 @@ export const fetchShowcase = async (query: string, signal?: AbortSignal): Promis
     items.push(...second.items.slice(0, SHOWCASE_PAGE_SIZE - firstCount))
   }
 
-  // `premium=true` (arriba, en showcaseQuery) hace que Catalog pagine SOLO
-  // sobre productos comercializables: sin ese filtro, una pagina de 16 podia
+  // `premium=true` y `types=HEROE,ARMA,ARMADURA` hacen que Catalog filtre
+  // ANTES de calcular total/paginar: sin esos filtros, una pagina de 16 podia
   // llegar casi vacia si la mayoria eran habilidades base de un heroe u otros
   // productos no premium (bug reportado por el cliente el 2026-09-26). Catalog
-  // no impide que un ITEM/EPICA se marque premium por error administrativo, asi
-  // que esta segunda linea de defensa se mantiene: nunca listar tipos que el
-  // dominio del E-commerce no vende (ver `isShowcaseType`), aunque ya no deberia
-  // producir paginas con huecos en el caso normal.
+  // La segunda linea de defensa se mantiene por compatibilidad durante un
+  // despliegue escalonado, pero ya no determina los limites de pagina ni el
+  // total: ambos vienen del conjunto elegible filtrado por Catalog.
   const visible = items.filter((item) => isShowcaseType(item.type))
 
   return { items: visible, page, pageSize: SHOWCASE_PAGE_SIZE, total: first.total }

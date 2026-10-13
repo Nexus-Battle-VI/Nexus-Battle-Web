@@ -50,6 +50,26 @@ const requestPages = (fetcher: ReturnType<typeof setup>) =>
  * entero seguro) rechazada antes de pedir nada.
  */
 describe('Paginacion visible de 12 sobre el contrato HTTP de 16', () => {
+  it('pide al backend solo tipos comercializables antes de paginar', async () => {
+    const fetcher = setup()
+
+    await fetchShowcase(showcaseQuery(NO_FILTERS, 1))
+
+    const url = new URL(fetcher.mock.calls[0]?.[0] ?? '', globalThis.location.origin)
+    expect(url.searchParams.get('types')).toBe('HEROE,ARMA,ARMADURA')
+    expect(url.searchParams.has('type')).toBe(false)
+  })
+
+  it('usa el filtro de tipo individual sin enviar a la vez el conjunto de tipos', async () => {
+    const fetcher = setup()
+
+    await fetchShowcase(showcaseQuery({ ...NO_FILTERS, type: 'ARMA' }, 1))
+
+    const url = new URL(fetcher.mock.calls[0]?.[0] ?? '', globalThis.location.origin)
+    expect(url.searchParams.get('type')).toBe('ARMA')
+    expect(url.searchParams.has('types')).toBe(false)
+  })
+
   it.each([
     { page: 1, requests: ['1'], from: 0, to: 12 },
     { page: 2, requests: ['1', '2'], from: 12, to: 24 },
