@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link } from 'react-router'
 
+import { useTheme } from '@/shared/theme'
+
 import './chat.css'
 
 import {
   askChat,
   chatHistory,
   chatPreferences,
-  clearChatHistory,
   openSupportTicket,
   rateChat,
-  saveChatPreferences,
   viewFromPath,
   type ChatTurn,
 } from './api'
@@ -64,17 +64,16 @@ const turnsToBubbles = (turns: readonly ChatTurn[], empty: string): readonly Bub
 export const ChatWidget = (): React.JSX.Element => {
   const { t } = useTranslation()
   const { pathname } = useLocation()
+  const theme = useTheme((state) => state.theme)
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [bubbles, setBubbles] = useState<readonly Bubble[]>([])
-  const [suggestions, setSuggestions] = useState<readonly string[]>([])
   const [attachment, setAttachment] = useState<string | null>(null)
   const [handoff, setHandoff] = useState(false)
   const [ticketId, setTicketId] = useState<string | null>(null)
-  const [prefsOpen, setPrefsOpen] = useState(false)
   const [showTime, setShowTime] = useState(
     () => globalThis.sessionStorage.getItem(TIME_KEY) !== '0',
   )
@@ -102,13 +101,6 @@ export const ChatWidget = (): React.JSX.Element => {
       .catch(() => undefined)
   }, [open, t])
 
-  const topics = [
-    t('chat:topicRules'),
-    t('chat:topicMission'),
-    t('chat:topicAuction'),
-    t('chat:topicAccount'),
-  ]
-
   const send = (raw: string): void => {
     const text = raw.trim()
     if (text.length === 0 || pending) {
@@ -132,7 +124,6 @@ export const ChatWidget = (): React.JSX.Element => {
     void askChat(text, viewFromPath(pathname), sessionId)
       .then((reply) => {
         setSessionId(reply.sessionId)
-        setSuggestions(reply.suggestions)
         setTicketId(reply.ticketId ?? null)
         setBubbles((current) => [
           ...current,
@@ -181,15 +172,6 @@ export const ChatWidget = (): React.JSX.Element => {
       })
   }
 
-  const clear = (): void => {
-    void clearChatHistory(sessionId).finally(() => {
-      setBubbles([])
-      setSuggestions([])
-      setTicketId(null)
-      setHandoff(false)
-    })
-  }
-
   if (!open) {
     return (
       <div className="help-dock">
@@ -203,7 +185,11 @@ export const ChatWidget = (): React.JSX.Element => {
           }}
         >
           <img
-            src="/assets/chat/ayuda-mascota.png"
+            src={
+              theme === 'light'
+                ? '/assets/admin/icons/icon-chatbot-model-light.png'
+                : '/assets/admin/icons/icon-chatbot-model-dark.png'
+            }
             alt=""
             aria-hidden="true"
             className="help-launcher-face"
@@ -311,37 +297,6 @@ export const ChatWidget = (): React.JSX.Element => {
             <p className="text-xs text-muted">{t('chat:attached', { name: attachment })}</p>
           ) : null}
         </div>
-        {suggestions.length > 0 ? (
-          <ul aria-label={t('chat:suggestions')} className="help-topics">
-            {suggestions.map((item) => (
-              <li key={item}>
-                <button
-                  type="button"
-                  className="help-btn"
-                  onClick={() => {
-                    send(item)
-                  }}
-                >
-                  {item}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <div className="help-topics" aria-label={t('chat:topics')}>
-          {topics.map((topic) => (
-            <button
-              key={topic}
-              type="button"
-              className="help-btn"
-              onClick={() => {
-                setDraft(topic)
-              }}
-            >
-              {topic}
-            </button>
-          ))}
-        </div>
         <form
           className="help-panel-form"
           onSubmit={(event) => {
@@ -351,7 +306,6 @@ export const ChatWidget = (): React.JSX.Element => {
         >
           <input
             aria-label={t('chat:placeholder')}
-            list="chat-topics"
             value={draft}
             className="help-field"
             placeholder={t('chat:placeholder')}
@@ -359,59 +313,35 @@ export const ChatWidget = (): React.JSX.Element => {
               setDraft(event.target.value)
             }}
           />
-          <datalist id="chat-topics">
-            {topics.map((topic) => (
-              <option key={topic} value={topic} />
-            ))}
-          </datalist>
           <button type="submit" className="help-btn help-btn-primary" disabled={pending}>
             {t('chat:send')}
           </button>
         </form>
         <footer className="help-panel-footer">
-          <label className="cursor-pointer">
-            {t('chat:attach')}
+          <label className="help-icon-btn">
+            +
             <input
               type="file"
               accept="image/*"
               className="sr-only"
+              aria-label={t('chat:attach')}
               onChange={(event) => {
                 setAttachment(event.target.files?.[0]?.name ?? null)
               }}
             />
           </label>
-          <button type="button" className="help-btn" onClick={clear}>
-            {t('chat:clear')}
-          </button>
-          <button type="button" className="help-btn" onClick={transfer}>
-            {t('chat:transfer')}
-          </button>
           <button
             type="button"
-            className="help-btn"
-            onClick={() => {
-              setPrefsOpen((current) => !current)
-            }}
+            className="help-icon-btn"
+            aria-label={t('chat:transfer')}
+            onClick={transfer}
           >
-            {t('chat:preferences')}
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="help-icon-person">
+              <circle cx="12" cy="8" r="3.2" fill="currentColor" />
+              <path d="M5.5 19.2c.8-3.2 3.2-5 6.5-5s5.7 1.8 6.5 5" fill="currentColor" />
+            </svg>
           </button>
         </footer>
-        {prefsOpen ? (
-          <label className="flex items-center gap-2 px-3 pb-3 text-xs">
-            <input
-              type="checkbox"
-              checked={showTime}
-              onChange={(event) => {
-                setShowTime(event.target.checked)
-                globalThis.sessionStorage.setItem(TIME_KEY, event.target.checked ? '1' : '0')
-                void saveChatPreferences(event.target.checked, sessionId).catch(() => {
-                  setFailed(true)
-                })
-              }}
-            />
-            {t('chat:showTime')}
-          </label>
-        ) : null}
       </section>
     </div>
   )

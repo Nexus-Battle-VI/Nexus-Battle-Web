@@ -51,17 +51,14 @@ describe('ChatWidget', () => {
     expect(await screen.findByText('El turno dura 30 segundos.')).toBeInTheDocument()
     expect(screen.getByText('cuanto dura el turno')).toBeInTheDocument()
     expect(ask).toHaveBeenCalledWith('cuanto dura el turno', 'misiones', null)
-    await user.click(screen.getByRole('button', { name: '¿Cuánto dura la batalla?' }))
-    expect(ask).toHaveBeenLastCalledWith('¿Cuánto dura la batalla?', 'misiones', 'session-1')
   })
 
-  it('limpia el historial, adjunta una captura y abre la transferencia', async () => {
+  it('adjunta una captura y abre la transferencia', async () => {
     vi.spyOn(chatApi, 'askChat').mockResolvedValue(reply)
     const openTicket = vi.spyOn(chatApi, 'openSupportTicket').mockResolvedValue({
       id: 'ticket-9',
       sessionId: 'session-1',
     })
-    const clear = vi.spyOn(chatApi, 'clearChatHistory').mockResolvedValue(null)
     const user = userEvent.setup()
     renderWithProviders(<ChatWidget />, { route: '/ecommerce' })
 
@@ -78,19 +75,12 @@ describe('ChatWidget', () => {
     expect(openTicket).toHaveBeenCalledWith('hola', 'catalogo', 'session-1')
     expect(await screen.findByText('Consulta registrada: ticket-9')).toBeInTheDocument()
     expect(screen.getByText(/Listo para pasar a soporte/)).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Limpiar historial' }))
-    expect(clear).toHaveBeenCalledWith('session-1')
-    expect(screen.queryByText('El turno dura 30 segundos.')).not.toBeInTheDocument()
   })
 
   it('se minimiza y recuerda ocultar la hora', async () => {
     const user = userEvent.setup()
     renderWithProviders(<ChatWidget />, { route: '/account' })
     await user.click(screen.getByRole('button', { name: 'Abrir ayuda' }))
-    await user.click(screen.getByRole('button', { name: 'Preferencias' }))
-    await user.click(screen.getByRole('checkbox', { name: 'Mostrar la hora' }))
-    expect(sessionStorage.getItem('chat-show-time')).toBe('0')
     await user.click(screen.getByRole('button', { name: 'Cerrar ayuda' }))
     expect(screen.getByRole('button', { name: 'Abrir ayuda' })).toHaveAttribute(
       'aria-expanded',
