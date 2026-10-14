@@ -221,7 +221,7 @@ describe('Vitrina canonica', () => {
       .at(-1)!
     expect(
       Object.fromEntries(new URL(lastRequest[0], globalThis.location.origin).searchParams),
-    ).toEqual({ page: '1', premium: 'true' })
+    ).toEqual({ page: '1', premium: 'true', types: 'HEROE,ARMA,ARMADURA' })
   })
   it('abre un detalle modal por UUID con los atributos completos y permite cerrarlo', async () => {
     const fetcher = setup()

@@ -34,7 +34,7 @@ export const CreateTournamentPanel = ({
     try {
       const value: unknown = JSON.parse(operation.intent?.fingerprint ?? 'null')
       return Array.isArray(value) &&
-        value.length === 10 &&
+        (value.length === 10 || value.length === 11) &&
         value.every((part) => typeof part === 'string')
         ? value
         : []
@@ -43,6 +43,7 @@ export const CreateTournamentPanel = ({
     }
   })()
   const [name, setName] = useState(draft[0] ?? '')
+  const [isTest, setIsTest] = useState(draft[10] === 'TEST')
   const [policyKind, setPolicyKind] = useState(draft[1] ?? '')
   const [credits, setCredits] = useState(draft[2] ?? '')
   const [money, setMoney] = useState(draft[3] ?? '')
@@ -69,6 +70,7 @@ export const CreateTournamentPanel = ({
     closesAt,
     startsAt,
     mode,
+    ...(isTest ? ['TEST'] : []),
   ])
   const locked = operation.busy || operation.intent !== null || created !== null
   const submit = async (): Promise<void> => {
@@ -118,6 +120,7 @@ export const CreateTournamentPanel = ({
         closesAt: closing.toISOString(),
         startsAt: start.toISOString(),
         tournamentMode: mode,
+        ...(isTest ? { isTest: true } : {}),
       }),
     )
     if (result !== null) {
@@ -150,6 +153,24 @@ export const CreateTournamentPanel = ({
             }}
           />
           <p>{modalities[mode].summary}. La modalidad queda fija al crear.</p>
+          <label className="flex items-center gap-3 text-ink">
+            <input
+              type="checkbox"
+              checked={isTest}
+              disabled={locked}
+              onChange={(event) => {
+                setIsTest(event.target.checked)
+                if (event.target.checked) setPolicyKind('FREE')
+              }}
+            />
+            Torneo de prueba · gratuito y sin recompensas
+          </label>
+          {isTest && (
+            <p role="status" className="text-sm text-muted">
+              Peleas con cuentas reales. Sin créditos, experiencia, premios ni transferencia de
+              objetos. Puedes programarlo hoy; no ocupa el calendario oficial.
+            </p>
+          )}
           <TextField
             label="Nombre del torneo"
             value={name}
@@ -163,7 +184,7 @@ export const CreateTournamentPanel = ({
             label="Política de inscripción"
             value={policyKind}
             required
-            disabled={locked}
+            disabled={locked || isTest}
             placeholder="Elige la política"
             options={[
               { value: 'FREE', label: 'Gratuita' },
@@ -300,7 +321,11 @@ export const CreateTournamentPanel = ({
               loading={operation.busy}
               disabled={operation.intent?.phase === 'REJECTED'}
             >
-              {operation.intent === null ? 'Crear torneo' : 'Comprobar creación'}
+              {operation.intent === null
+                ? isTest
+                  ? 'Crear torneo de prueba'
+                  : 'Crear torneo'
+                : 'Comprobar creación'}
             </Button>
           ) : (
             <p role="status">Torneo creado: {created}.</p>

@@ -11,6 +11,7 @@ import { describeRejection, findSelf } from './presentation'
 import { combatantSkills } from './skillPresentation'
 import { useBattleRealtime } from './useBattleRealtime'
 import { useHeroUnlockProgress } from './useHeroUnlockProgress'
+import { useTournamentBattleContext } from './useTournamentBattleContext'
 
 export interface BattlePageProps {
   /** Inyectables para pruebas (mismo patron que `useBattleRoomRealtime`). */
@@ -81,6 +82,7 @@ export const BattlePage = ({
 }: BattlePageProps): React.JSX.Element => {
   const { roomId = null } = useParams<{ roomId: string }>()
   const subject = useSession((state) => state.subject)
+  const tournament = useTournamentBattleContext(roomId, subject)
   const { t } = useTranslation()
   const realtime = useBattleRealtime(roomId, socketFactory, ticketProvider, createCommandId)
   const self = realtime.battle === null ? null : findSelf(realtime.battle, subject)
@@ -120,6 +122,7 @@ export const BattlePage = ({
         lastHealSkill={realtime.lastHealSkill}
         lastEffect={realtime.lastEffect}
         result={realtime.result}
+        {...(tournament ? { tournament } : {})}
         lastTurnTimeout={realtime.lastTurnTimeout}
         serverClock={realtime.serverClock}
         chat={
@@ -170,9 +173,17 @@ export const BattlePage = ({
     return (
       <section aria-label={t('battle:battle.label')} className="flex flex-col items-start gap-3">
         <p role="status" className="text-sm text-muted">
-          {t('battle:battle.preparing')}
+          {tournament
+            ? 'Conectando a los jugadores. Tu batalla comenzará aquí.'
+            : t('battle:battle.preparing')}
         </p>
-        <BackToRooms />
+        {tournament ? (
+          <Link to={`/tournament?torneo=${encodeURIComponent(tournament.tournamentId)}`}>
+            Volver al torneo
+          </Link>
+        ) : (
+          <BackToRooms />
+        )}
       </section>
     )
   }

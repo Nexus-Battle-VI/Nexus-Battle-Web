@@ -60,7 +60,13 @@ export const SanctionsModerationPage = (): React.JSX.Element => {
       </AdminPageHeader>
 
       {canViewAdminUsers(roles) ? (
-        <AdminUsersSection />
+        // `.account-tokens`: AdminUsersSection depende de las variables de
+        // color de account.css, que normalmente solo define `AccountPage`.
+        // Sin este wrapper el panel se ve blanco/sin contraste (ver
+        // account.css, comentario de `.account-tokens`).
+        <div className="account-tokens">
+          <AdminUsersSection />
+        </div>
       ) : (
         <>
           <AdminPanel title={t('admin:sanctions.lookup.title')}>

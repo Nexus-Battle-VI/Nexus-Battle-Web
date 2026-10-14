@@ -9,6 +9,7 @@ import { PowerMeter } from '../PowerMeter'
 import { AttackPanel, type CombatControls } from './AttackPanel'
 import { ArenaSide } from './BattleArena'
 import { BattleResultView } from './BattleResultView'
+import type { TournamentBattleContext } from './useTournamentBattleContext'
 import { HealthBar } from './HealthBar'
 import { RewardPanel } from './RewardPanel'
 import { StakePanel } from './StakePanel'
@@ -38,6 +39,7 @@ import { combatantPower, describeLatestAction } from './skillPresentation'
 import type { BattleResult, BattleView, HealthView, TargetRef, TurnOrderEntry } from './types'
 
 export interface BattleScreenProps {
+  readonly tournament?: TournamentBattleContext
   readonly battle: BattleView
   /** `sub` verificado de la sesion: solo sirve para decir "tu turno" y marcar "tú". */
   readonly subject: string | null
@@ -117,6 +119,7 @@ export const BattleScreen = ({
   lastTurnTimeout = null,
   serverClock = null,
   spectator,
+  tournament,
   chat,
 }: BattleScreenProps): React.JSX.Element => {
   const finished = result !== null || spectator?.ended === true
@@ -434,8 +437,14 @@ export const BattleScreen = ({
             {/* 5a pasada (secciones 61/64 del brief): gap reducido (mas
                 densidad vertical); el ANCHO (`max-w-[820px]`) no se toca. */}
             <div className="flex w-full max-w-[820px] flex-col items-stretch gap-2">
-              <BattleResultView result={result} subject={subject} />
-              <RewardPanel battleId={battle.battleId} subject={subject} />
+              <BattleResultView
+                result={result}
+                subject={subject}
+                {...(tournament ? { tournament } : {})}
+              />
+              {tournament?.isTest !== true && (
+                <RewardPanel battleId={battle.battleId} subject={subject} />
+              )}
               {/* HU-23: la apuesta propia, solo si la hubo (el panel no se renderiza
                   cuando no hay nada que contar). */}
               <StakePanel roomId={battle.battleId} subject={subject} />

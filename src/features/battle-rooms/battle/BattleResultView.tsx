@@ -11,9 +11,13 @@ import {
   describeResult,
   participantOutcomeName,
   winnerLine,
+  resultTeamName,
   type ResultTone,
 } from './resultPresentation'
 import type { BattleResult, ParticipantResult } from './types'
+import type { TournamentBattleContext } from './useTournamentBattleContext'
+import { TournamentResultNext } from './TournamentResultNext'
+import { rememberTournamentBattleResult } from './tournamentBattleResults'
 
 const TONE_CLASS: Readonly<Record<ResultTone, string>> = {
   won: 'text-success',
@@ -29,6 +33,7 @@ const RESULT_TEXT: Readonly<Record<ParticipantResult, string>> = localizedMessag
 })
 
 export interface BattleResultViewProps {
+  readonly tournament?: TournamentBattleContext
   readonly result: BattleResult
   /** Sujeto autenticado (el `sub` de la sesion); `null` si no se conoce. */
   readonly subject: string | null
@@ -45,15 +50,24 @@ export interface BattleResultViewProps {
  * solo refuerza (siempre hay texto). La animacion de entrada respeta
  * `prefers-reduced-motion`.
  */
-export const BattleResultView = ({ result, subject }: BattleResultViewProps): React.JSX.Element => {
+export const BattleResultView = ({
+  result,
+  subject,
+  tournament,
+}: BattleResultViewProps): React.JSX.Element => {
   const presentation = describeResult(result, subject)
-  const winners = winnerLine(result)
+  const winners = tournament ? null : winnerLine(result)
   const headlineRef = useRef<HTMLHeadingElement>(null)
   const { t } = useTranslation()
 
   useEffect(() => {
     headlineRef.current?.focus()
   }, [])
+
+  useEffect(() => {
+    if (tournament && subject !== null && result.participants.some((p) => p.playerId === subject))
+      rememberTournamentBattleResult(subject, tournament)
+  }, [tournament, subject, result])
 
   return (
     <section
@@ -85,6 +99,9 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
         {presentation.headline}
       </h2>
       <div className="flex flex-col gap-0.5 text-center">
+        {tournament?.isTest && (
+          <p className="text-sm text-muted">Torneo de prueba · sin recompensas</p>
+        )}
         <p className="text-sm text-ink">{presentation.cause}</p>
         {winners !== null && <p className="text-sm font-semibold text-ink">{winners}</p>}
         {presentation.detail !== null && (
@@ -110,7 +127,9 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
               {isWinner && <BattlePixelIcon icon="victory" size="sm" />}
               {standing.eliminated && <BattlePixelIcon icon="defeat" size="sm" />}
               <span className="text-sm font-bold text-ink">
-                {t('battle:team', { team: standing.teamLabel })}
+                {/^[AB]$/.test(standing.teamLabel)
+                  ? t('battle:team', { team: standing.teamLabel })
+                  : resultTeamName(result, standing.teamLabel)}
               </span>
               <span className="text-xs tabular-nums text-muted">{standing.text}</span>
               {isWinner && (
@@ -120,7 +139,7 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
               )}
               {standing.eliminated && (
                 <span className="text-xs font-semibold text-danger">
-                  {t('battle:result.eliminated')}
+                  {tournament ? 'Derrotado' : t('battle:result.eliminated')}
                 </span>
               )}
             </li>
@@ -135,20 +154,32 @@ export const BattleResultView = ({ result, subject }: BattleResultViewProps): Re
           >
             <span className="text-ink">{participantOutcomeName(participant)}</span>
             <span className="text-xs font-semibold text-muted">
-              {t('battle:result.participantLine', {
-                team: participant.teamLabel,
-                result: RESULT_TEXT[participant.result],
-              })}
+              {/^[AB]$/.test(participant.teamLabel)
+                ? t('battle:result.participantLine', {
+                    team: participant.teamLabel,
+                    result: RESULT_TEXT[participant.result],
+                  })
+                : RESULT_TEXT[participant.result]}
             </span>
           </li>
         ))}
       </ul>
+      {tournament && (
+        <TournamentResultNext context={tournament} result={result} subject={subject} />
+      )}
       <div className="flex justify-center">
         <Link
-          to="/play"
-          className="br-btn-primary inline-flex items-center justify-center text-sm font-semibold text-ink"
+          to={
+            tournament
+              ? `/tournament?torneo=${encodeURIComponent(tournament.tournamentId)}&vista=llaves`
+              : '/play'
+          }
+          className={clsx(
+            'br-btn-primary inline-flex items-center justify-center text-sm font-semibold text-ink',
+            tournament && 'tournament-battle-cta',
+          )}
         >
-          {t('battle:backToPlay')}
+          {tournament ? 'Volver al torneo' : t('battle:backToPlay')}
         </Link>
       </div>
     </section>
