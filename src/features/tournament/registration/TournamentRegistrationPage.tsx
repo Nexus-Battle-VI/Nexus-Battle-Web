@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArenaIcon as Crown,
@@ -96,7 +97,8 @@ const RegistrationContent = ({
 }): React.JSX.Element => {
   const client = useQueryClient()
   const assetStyles = useTournamentAssets()
-  const [chosenId, setChosenId] = useState('')
+  const [params] = useSearchParams()
+  const [chosenId, setChosenId] = useState(params.get('torneo') ?? '')
   const [creating, setCreating] = useState(false)
   const list = useQuery({
     queryKey: ['tournament-registration', subject, 'list'],
@@ -165,7 +167,10 @@ const RegistrationContent = ({
             <SelectField
               label="Torneo"
               value={selected}
-              options={list.data.map((t) => ({ value: t.id, label: t.name }))}
+              options={list.data.map((t) => ({
+                value: t.id,
+                label: t.isTest ? 'Prueba · ' + t.name : t.name,
+              }))}
               onChange={(event) => {
                 setChosenId(event.target.value)
               }}
@@ -219,10 +224,21 @@ const TournamentContent = ({
 } & Props): React.JSX.Element => {
   const client = useQueryClient()
   const [selectedMatchId, chooseMatch] = useState('')
+  const [params] = useSearchParams()
+  const chosenTab = useRef(params.has('vista'))
   const [tab, setTab] = useState<
     'arena' | 'equipo' | 'llaves' | 'encuentros' | 'premio' | 'directo'
-  >(roles.includes('PLAYER') ? 'equipo' : 'arena')
+  >(
+    params.get('vista') === 'llaves'
+      ? 'llaves'
+      : params.get('vista') === 'encuentros'
+        ? 'encuentros'
+        : roles.includes('PLAYER')
+          ? 'equipo'
+          : 'arena',
+  )
   const openMatch = (matchId: string): void => {
+    chosenTab.current = true
     chooseMatch(matchId)
     setTab('encuentros')
   }
@@ -241,6 +257,12 @@ const TournamentContent = ({
         : 10000,
   })
   const snapshot = view.data
+  useEffect(() => {
+    if (snapshot?.tournament.bracketPublished && !chosenTab.current) {
+      chosenTab.current = true
+      setTab('arena')
+    }
+  }, [snapshot?.tournament.bracketPublished])
   const active = snapshot?.teams.find(
     (t) => t.status !== 'CANCELLED' && membersOf(t).some((member) => member.subject === subject),
   )
@@ -301,6 +323,9 @@ const TournamentContent = ({
                 </p>
               )}
               <h2 className="font-game-display text-xl">{snapshot.tournament.name}</h2>
+              {snapshot.tournament.isTest && (
+                <p className="tournament-eyebrow">Torneo de prueba · gratuito · sin recompensas</p>
+              )}
               <p className="text-sm text-muted">
                 {String(snapshot.capacity.confirmed)} de 8 {format.slots} confirmados ·{' '}
                 {snapshot.tournament.open ? 'Inscripciones abiertas' : 'Inscripciones cerradas'}
@@ -311,7 +336,7 @@ const TournamentContent = ({
           <nav aria-label="Secciones del torneo" className="tournament-tabs">
             {(
               [
-                ['arena', 'Arena', Crown],
+                ['arena', 'Mi batalla', Crown],
                 ['equipo', 'Mi equipo', Users],
                 ['llaves', 'Llaves', Swords],
                 ['encuentros', 'Justas e historial', Ticket],
@@ -325,6 +350,7 @@ const TournamentContent = ({
                 aria-current={tab === value ? 'page' : undefined}
                 onClick={() => {
                   setTab(value)
+                  chosenTab.current = true
                 }}
               >
                 <Icon size={18} aria-hidden="true" />
@@ -332,29 +358,27 @@ const TournamentContent = ({
               </button>
             ))}
           </nav>
-          {tab === 'arena' && (
+          {tab === 'arena' && !snapshot.tournament.bracketPublished && (
             <div className="tournament-overview">
               <Card>
                 <h3 className="font-game-display text-xl">Tu siguiente paso</h3>
                 <p className="mt-2 font-semibold">
-                  {snapshot.tournament.bracketPublished
-                    ? 'Consulta las llaves y el registro de tu próxima justa.'
-                    : active?.status === 'AWAITING_CONSENT'
-                      ? membersOf(active).find((member) => member.subject === subject)
-                          ?.consentAt === null
-                        ? 'Acepta participar con tu equipo para continuar.'
-                        : 'Cada compañero pendiente debe aceptar antes de confirmar el cupo.'
-                      : active?.status === 'PENDING_PAYMENT'
-                        ? active.ownerId === subject
-                          ? 'Revisa el precio y confirma el cupo de tu equipo.'
-                          : 'El creador del equipo debe confirmar el cupo.'
-                        : active?.status === 'PAYMENT_PENDING' || active?.status === 'COMPENSATING'
-                          ? 'La operación está en comprobación. Consulta su estado antes de continuar.'
-                          : active?.status === 'CONFIRMED'
-                            ? 'Tu equipo está inscrito. Consulta las llaves cuando se publiquen.'
-                            : snapshot.tournament.open && roles.includes('PLAYER')
-                              ? `Registra tu participación ${format.label} para continuar.`
-                              : 'Consulta las justas y los accesos a la transmisión.'}
+                  {active?.status === 'AWAITING_CONSENT'
+                    ? membersOf(active).find((member) => member.subject === subject)?.consentAt ===
+                      null
+                      ? 'Acepta participar con tu equipo para continuar.'
+                      : 'Cada compañero pendiente debe aceptar antes de confirmar el cupo.'
+                    : active?.status === 'PENDING_PAYMENT'
+                      ? active.ownerId === subject
+                        ? 'Revisa el precio y confirma el cupo de tu equipo.'
+                        : 'El creador del equipo debe confirmar el cupo.'
+                      : active?.status === 'PAYMENT_PENDING' || active?.status === 'COMPENSATING'
+                        ? 'La operación está en comprobación. Consulta su estado antes de continuar.'
+                        : active?.status === 'CONFIRMED'
+                          ? 'Tu equipo está inscrito. Consulta las llaves cuando se publiquen.'
+                          : snapshot.tournament.open && roles.includes('PLAYER')
+                            ? `Registra tu participación ${format.label} para continuar.`
+                            : 'Consulta las justas y los accesos a la transmisión.'}
                 </p>
                 {snapshot.tournament.entryPolicy.free ? (
                   <p className="mt-2">Inscripción gratuita · sin cobro</p>
@@ -396,10 +420,10 @@ const TournamentContent = ({
                 <Button
                   className="mt-3 ml-2"
                   onClick={() => {
-                    setTab(snapshot.tournament.bracketPublished ? 'llaves' : 'equipo')
+                    setTab('equipo')
                   }}
                 >
-                  {snapshot.tournament.bracketPublished ? 'Consultar llaves' : 'Ir a mi equipo'}
+                  Ir a mi equipo
                 </Button>
               </Card>
               {snapshot.tournament.roundSchedule &&
@@ -437,16 +461,18 @@ const TournamentContent = ({
                 )}
             </div>
           )}
-          {(tab === 'arena' || tab === 'encuentros') &&
-            roles.includes('PLAYER') &&
+          {roles.includes('PLAYER') &&
             snapshot.tournament.acceptancePolicy === 'ROUND_ACCEPTANCE_V1' &&
             snapshot.tournament.bracketPublished && (
-              <TournamentAcceptancePanel
-                id={id}
-                subject={subject}
-                {...(encounters ? { encounters } : {})}
-                {...(acceptance ? { api: acceptance } : {})}
-              />
+              <div hidden={tab !== 'arena' && tab !== 'encuentros'}>
+                <TournamentAcceptancePanel
+                  id={id}
+                  subject={subject}
+                  isTest={snapshot.tournament.isTest === true}
+                  {...(encounters ? { encounters } : {})}
+                  {...(acceptance ? { api: acceptance } : {})}
+                />
+              </div>
             )}
           {tab === 'equipo' && (
             <>
@@ -542,12 +568,18 @@ const TournamentContent = ({
         <TournamentEncountersPanel
           id={id}
           subject={subject}
+          isTest={snapshot?.tournament.isTest === true}
           {...(encounters ? { api: encounters } : {})}
           selectedMatchId={selectedMatchId}
           onChooseMatch={openMatch}
         />
       )}
-      {tab === 'premio' && (
+      {tab === 'premio' && snapshot?.tournament.isTest === true && (
+        <Card>
+          <p>Este torneo es de prueba: no entrega créditos, experiencia, premios ni objetos.</p>
+        </Card>
+      )}
+      {tab === 'premio' && snapshot?.tournament.isTest !== true && (
         <TournamentPrizePanel
           id={id}
           identity={{ subject, roles }}

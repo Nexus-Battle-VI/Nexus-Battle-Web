@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { TournamentButton as Button } from '../TournamentVisuals'
 import { TournamentCard as Card } from '../TournamentVisuals'
 import { bracketApi, type BracketApi, type PublishedBracket } from './bracketApi'
-import { dateLabel } from './presentation'
 import { useOperation } from './useOperation'
 import { progressApi, type ProgressApi } from './progressApi'
 import { BracketTree } from './BracketTree'
@@ -130,7 +129,7 @@ export const TournamentBracketPanel = ({
         )}
         {bracket != null && (
           <>
-            <p>Llaves publicadas · ocho equipos humanos · inscripción cerrada.</p>
+            <p className="text-sm text-muted">8 equipos · Doble eliminación</p>
             {progression.isPending && <p role="status">Consultando avance del torneo…</p>}
             {progression.isError && (
               <div role="alert">
@@ -147,13 +146,7 @@ export const TournamentBracketPanel = ({
               <p className="font-semibold">
                 Campeón confirmado · {progression.data.champion.teamName}
               </p>
-            ) : progression.data !== undefined && !progression.isError ? (
-              <p>La final todavía no confirma un campeón.</p>
             ) : null}
-            <p className="text-sm text-muted">
-              {bracket.version === 3 ? 'Primera aceptación' : 'Inicio programado'}:{' '}
-              {dateLabel(bracket.startsAt)} · Una sola final.
-            </p>
             <BracketTree
               bracket={bracket}
               selection={selection}
