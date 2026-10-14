@@ -1,7 +1,7 @@
 /*
  * Ayuda flotante. Mismo lenguaje que el remaster de Ecommerce, Jugar Online
  * y Mi Cuenta: marco con border-image y botones de sprite. La cara del
- * lanzador es la mascota de ayuda.
+ * lanzador es el icono del chatbot que ya trae el remaster.
  *
  * La esquina inferior derecha ya la ocupan el carrito y la burbuja de la
  * sala. Este lanzador queda por encima de esa franja.
@@ -122,13 +122,6 @@
   background: color-mix(in oklab, var(--color-surface) 70%, var(--color-surface-raised));
 }
 
-.help-topics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px 0;
-}
-
 .help-panel-form {
   display: flex;
   gap: 8px;
@@ -153,9 +146,26 @@
 
 .help-panel-footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   padding-top: 8px;
+}
+.help-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, var(--color-brand) 45%, var(--color-border));
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--color-brand) 8%, var(--color-surface-raised));
+  color: var(--color-ink);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.help-icon-person {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .help-btn {

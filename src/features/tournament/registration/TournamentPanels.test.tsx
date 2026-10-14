@@ -86,18 +86,17 @@ describe('llaves del servidor, permisos y ocho humanos', () => {
       />,
     )
     await userEvent.click(await screen.findByRole('button', { name: 'Publicar llaves' }))
-    expect(
-      await screen.findByText('Llaves publicadas · ocho equipos humanos · inscripción cerrada.'),
-    ).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: /^Todas/u }))
+    expect(await screen.findByText('8 equipos · Doble eliminación')).toBeInTheDocument()
+    await userEvent.click(screen.getByText('Opciones de vista'))
     await userEvent.click(screen.getByRole('button', { name: 'Ver árbol' }))
-    for (const name of ['Árbol de ganadores', 'Árbol de perdedores', 'Final'])
+    for (const name of ['Llave de ganadores', 'Final del torneo'])
       expect(screen.getByRole('region', { name })).toBeInTheDocument()
     expect(
-      within(screen.getByRole('region', { name: 'Árbol de ganadores' })).getAllByRole('button'),
+      within(screen.getByRole('region', { name: 'Llave de ganadores' })).getAllByRole('button'),
     ).toHaveLength(7)
+    await userEvent.click(screen.getByRole('button', { name: 'Llave de perdedores' }))
     expect(
-      within(screen.getByRole('region', { name: 'Árbol de perdedores' })).getAllByRole('button'),
+      within(screen.getByRole('region', { name: 'Llave de perdedores' })).getAllByRole('button'),
     ).toHaveLength(6)
     await userEvent.click(screen.getByRole('button', { name: /E9 · Ronda/u }))
     await userEvent.click(screen.getByRole('link', { name: 'Ver registro de E9' }))
@@ -130,9 +129,7 @@ describe('llaves del servidor, permisos y ocho humanos', () => {
     await user.click(await screen.findByRole('button', { name: 'Publicar llaves' }))
     await user.click(await screen.findByRole('button', { name: 'Comprobar publicación' }))
     expect(publish.mock.calls[1]?.[1]).toBe(publish.mock.calls[0]?.[1])
-    expect(
-      await screen.findByText('Llaves publicadas · ocho equipos humanos · inscripción cerrada.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('8 equipos · Doble eliminación')).toBeInTheDocument()
     expect(screen.queryByText('Publicación incierta')).not.toBeInTheDocument()
   })
 })
@@ -332,7 +329,7 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
     expect(
       within(screen.getByRole('list', { name: 'Eventos del combate' })).getAllByRole('listitem'),
     ).toHaveLength(101)
-    expect(screen.getByText('Ganador informado por Combat: Motor A')).toBeInTheDocument()
+    expect(screen.getByText('Ganador: Resultado por confirmar')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ver siguientes eventos' })).not.toBeInTheDocument()
   })
   it('finalizada NO_WINNER no inventa campeón', async () => {

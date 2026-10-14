@@ -33,6 +33,7 @@ export type EntryPolicy =
   | { readonly version: 1; readonly free: true; readonly methods: readonly [] }
   | { readonly version: 1; readonly free: false; readonly methods: readonly PaidMethod[] }
 export interface EntryTournament {
+  readonly isTest?: boolean
   readonly contractVersion?: string
   readonly tournamentMode?: TournamentMode
   readonly teamSize?: TeamSize
@@ -136,6 +137,7 @@ export interface EntryInput {
   readonly card?: SimulatedCard
 }
 export interface CreateTournamentInput {
+  readonly isTest?: boolean
   readonly tournamentMode?: TournamentMode
   readonly operationId: string
   readonly name: string

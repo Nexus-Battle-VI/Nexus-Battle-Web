@@ -60,7 +60,7 @@ describe('aceptación personal · contrato v3 y reloj del servidor', () => {
         }),
     )
     setup(calendarMatchFixture(), accept)
-    const button = await screen.findByRole('button', { name: 'Aceptar mi justa' })
+    const button = await screen.findByRole('button', { name: 'Aceptar batalla' })
     await waitFor(() => {
       expect(button).toBeEnabled()
     })
@@ -68,17 +68,24 @@ describe('aceptación personal · contrato v3 y reloj del servidor', () => {
     fireEvent.click(button)
     expect(accept).toHaveBeenCalledTimes(1)
     expect(accept).toHaveBeenCalledWith(CALENDAR_ID, 'E1', expect.any(String))
-    expect(screen.getByText(/Lado A: 2\/3 · Lado B: 3\/3/u)).toBeVisible()
+    expect(screen.getByText('2 / 3 listos')).toBeVisible()
+    expect(screen.getByText('3 / 3 listos')).toBeVisible()
     expect(
-      screen.queryByText('Tu aceptación de esta justa está confirmada.'),
+      screen.queryByText(
+        '¡Estás listo! Mantén esta pantalla abierta: entrarás a tu batalla automáticamente cuando esté lista.',
+      ),
     ).not.toBeInTheDocument()
     await act(() => {
       complete?.(acceptanceReceiptFixture())
       return Promise.resolve()
     })
-    expect(await screen.findByText('Tu aceptación de esta justa está confirmada.')).toBeVisible()
-    expect(screen.queryByRole('button', { name: 'Aceptar mi justa' })).not.toBeInTheDocument()
-    expect(screen.getByText(/Lado A: 2\/3 · Lado B: 3\/3/u)).toBeVisible()
+    expect(
+      await screen.findByText(
+        '¡Estás listo! Mantén esta pantalla abierta: entrarás a tu batalla automáticamente cuando esté lista.',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Aceptar batalla' })).not.toBeInTheDocument()
+    expect(screen.getByText('2 / 3 listos')).toBeVisible()
   })
   it.each([
     ['apertura exacta', '2026-10-07T19:00:00Z', true],
@@ -91,7 +98,7 @@ describe('aceptación personal · contrato v3 y reloj del servidor', () => {
       vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2037-01-01T00:00:00Z'))
       vi.spyOn(performance, 'now').mockReturnValue(100)
       const { accept } = setup(calendarMatchFixture({ serverNow }))
-      const button = await screen.findByRole('button', { name: 'Aceptar mi justa' })
+      const button = await screen.findByRole('button', { name: 'Aceptar batalla' })
       await waitFor(() => {
         if (enabled) expect(button).toBeEnabled()
         else expect(button).toBeDisabled()
@@ -122,14 +129,14 @@ describe('aceptación personal · contrato v3 y reloj del servidor', () => {
   it('una cuenta fuera del roster no obtiene una acción para aceptar por otro', async () => {
     const { accept } = setup(calendarMatchFixture({ registeredTeams: [] }))
     expect(await screen.findByText(/Todavía no hay una próxima justa/u)).toBeVisible()
-    expect(screen.queryByRole('button', { name: /Aceptar mi justa/u })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Aceptar batalla/u })).not.toBeInTheDocument()
     expect(accept).not.toHaveBeenCalled()
   })
   it('revalida el límite al hacer click aunque todavía no haya ocurrido el siguiente tick visual', async () => {
     let monotonic = 100
     vi.spyOn(performance, 'now').mockImplementation(() => monotonic)
     const { accept } = setup(calendarMatchFixture({ serverNow: '2026-10-07T19:01:59.999Z' }))
-    const button = await screen.findByRole('button', { name: 'Aceptar mi justa' })
+    const button = await screen.findByRole('button', { name: 'Aceptar batalla' })
     await waitFor(() => {
       expect(button).toBeEnabled()
     })
@@ -151,24 +158,26 @@ describe('aceptación personal · contrato v3 y reloj del servidor', () => {
         }),
       )
       setup(calendarMatchFixture(), accept)
-      await userEvent.click(await screen.findByRole('button', { name: 'Aceptar mi justa' }))
+      await userEvent.click(await screen.findByRole('button', { name: 'Aceptar batalla' }))
       expect(await screen.findByRole('alert')).toHaveTextContent(message)
-      await userEvent.click(screen.getByRole('button', { name: 'Comprobar mi aceptación' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Comprobar aceptación' }))
       expect(accept.mock.calls[0]).toEqual(accept.mock.calls[1])
       expect(
-        screen.queryByText('Tu aceptación de esta justa está confirmada.'),
+        screen.queryByText(
+          '¡Estás listo! Mantén esta pantalla abierta: entrarás a tu batalla automáticamente cuando esté lista.',
+        ),
       ).not.toBeInTheDocument()
     },
   )
   it('al reconectar consulta la nueva hora, el conteo y mi recibo antes de permitir otra aceptación', async () => {
     const { list, accept } = setup()
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Aceptar mi justa' })).toBeEnabled()
+      expect(screen.getByRole('button', { name: 'Aceptar batalla' })).toBeEnabled()
     })
     act(() => {
       onlineManager.setOnline(false)
     })
-    expect(screen.getByRole('button', { name: 'Aceptar mi justa' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Aceptar batalla' })).toBeDisabled()
     list.mockResolvedValue([
       calendarMatchFixture({
         serverNow: '2026-10-07T19:02:00Z',
@@ -180,8 +189,12 @@ describe('aceptación personal · contrato v3 y reloj del servidor', () => {
     act(() => {
       onlineManager.setOnline(true)
     })
-    expect(await screen.findByText('Tu aceptación de esta justa está confirmada.')).toBeVisible()
-    expect(screen.getByText(/Lado A: 3\/3 · Lado B: 3\/3/u)).toBeVisible()
+    expect(
+      await screen.findByText(
+        '¡Estás listo! Mantén esta pantalla abierta: entrarás a tu batalla automáticamente cuando esté lista.',
+      ),
+    ).toBeVisible()
+    expect(screen.getAllByText('3 / 3 listos')).toHaveLength(2)
     expect(list).toHaveBeenCalledTimes(2)
     expect(accept).not.toHaveBeenCalled()
   })
@@ -192,9 +205,9 @@ describe('aceptación personal · contrato v3 y reloj del servidor', () => {
         .fn<MatchAcceptanceApi['accept']>()
         .mockResolvedValue({ ...acceptanceReceiptFixture(), subject: 'otra-persona' }),
     )
-    await userEvent.click(await screen.findByRole('button', { name: 'Aceptar mi justa' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Aceptar batalla' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo comprobar tu recibo')
-    expect(screen.getByRole('button', { name: 'Comprobar mi aceptación' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Comprobar aceptación' })).toBeEnabled()
   })
 })
 describe('resoluciones y administración · datos del servidor', () => {
@@ -235,7 +248,7 @@ describe('resoluciones y administración · datos del servidor', () => {
         }}
       />,
     )
-    await userEvent.click(await screen.findByRole('button', { name: 'Arena' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Mi batalla' }))
     const table = screen.getByRole('table', { name: /Calendario confirmado/u })
     expect(table).toHaveTextContent(dateLabel(window.acceptanceOpensAt))
     expect(table).toHaveTextContent(dateLabel(window.scheduledStartAt))
@@ -269,7 +282,7 @@ describe('resoluciones y administración · datos del servidor', () => {
         api={{ list: () => Promise.resolve([view]), detail: () => Promise.resolve(view) }}
       />,
     )
-    expect(await screen.findByText('Ganador informado por Combat: A')).toBeVisible()
+    expect(await screen.findByText(/^Ganador:/)).toBeVisible()
     expect(screen.queryByText('Sin resultado final confirmado.')).not.toBeInTheDocument()
   })
   it.each(['ONE_COMPLETE', 'HIGHER_ACCEPTANCE_COUNT', 'TIED_ACCEPTANCE_COUNT'] as const)(
@@ -435,6 +448,7 @@ describe('resoluciones y administración · datos del servidor', () => {
       />,
     )
     const region = await screen.findByRole('region', { name: 'Registro del combate E1' })
+    await userEvent.click(within(region).getByText('Héroes de la batalla'))
     const participants = within(region).getAllByRole('list', { name: /^Participantes de Combat/u })
     expect(participants).toHaveLength(2)
     expect(participants.map((list) => within(list).getAllByRole('listitem').length)).toEqual([3, 3])

@@ -139,6 +139,13 @@ export const participantOutcomeName = (participant: ParticipantOutcome): string 
     ? i18n.t('battle:ai')
     : (participant.displayName ?? i18n.t('battle:seat', { seat: String(participant.seat + 1) }))
 
+/** La identidad del motor se conserva para comparar; en pantalla se muestran personas. */
+export const resultTeamName = (result: BattleResult, label: string): string => {
+  const names = result.participants.filter((p) => p.teamLabel === label).map(participantOutcomeName)
+  if (names.length > 0) return names.join(' y ')
+  return /^[AB]$/.test(label) ? i18n.t('battle:team', { team: label }) : 'Equipo'
+}
+
 /**
  * "Ganador: Equipo B (Ana, Beto) · Perdedor: Equipo A (Carla)", con el equipo
  * ganador que publico Combat. `null` sin ganador (empate): el titular ya lo dice.
@@ -153,6 +160,7 @@ export const winnerLine = (result: BattleResult): string | null => {
       .filter((participant) => participant.teamLabel === label)
       .map(participantOutcomeName)
 
+    if (!/^[AB]$/.test(label)) return resultTeamName(result, label)
     return names.length === 0
       ? i18n.t('battle:team', { team: label })
       : i18n.t('battle:result.teamNames', { team: label, names: names.join(', ') })

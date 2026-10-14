@@ -1,4 +1,4 @@
-import { act, screen, within } from '@testing-library/react'
+import { act, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
@@ -41,21 +41,23 @@ const setup = async (transform: (view: ProgressView) => ProgressView = (view) =>
   await screen.findByText(
     view.champion
       ? `Campeón confirmado · ${view.champion.teamName}`
-      : 'La final todavía no confirma un campeón.',
+      : '8 equipos · Doble eliminación',
   )
   return { snapshot, view, progress, choose, queryClient: rendered.queryClient }
 }
 describe('HU-80: avance en las llaves existentes, con respuestas de prueba', () => {
   it('distingue espera y equipos resueltos de preparación real y enlaza por encounterId', async () => {
     const { snapshot, choose } = await setup()
-    await userEvent.click(screen.getByRole('button', { name: /^Todas/u }))
+    await userEvent.click(screen.getByText('Opciones de vista'))
     await userEvent.click(screen.getByRole('button', { name: 'Ver árbol' }))
     const e1 = screen.getByRole('button', { name: /^E1 · Ronda/u })
     expect(e1).toHaveTextContent('Equipos definidos; consulta el estado de la justa')
+    await userEvent.click(screen.getByRole('button', { name: 'Llave de perdedores' }))
     expect(screen.getByRole('button', { name: /^E13 · Ronda/u })).toHaveTextContent(
       'Esperando resultados previos',
     )
-    await userEvent.click(e1)
+    await userEvent.click(screen.getByRole('button', { name: 'Llave de ganadores' }))
+    await userEvent.click(screen.getByRole('button', { name: /^E1 · Ronda/u }))
     await userEvent.click(screen.getByRole('link', { name: 'Ver registro de E1' }))
     expect(choose).toHaveBeenCalledWith(snapshot.matches[0]!.encounterId)
     expect(choose).not.toHaveBeenCalledWith('E1')
@@ -71,15 +73,19 @@ describe('HU-80: avance en las llaves existentes, con respuestas de prueba', () 
         ],
       },
     }))
-    expect(screen.getByRole('button', { name: /^E1 · Ronda/u })).toHaveTextContent(
-      'Finalizó sin ganador; avance detenido',
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^E1 · Ronda/u })).toHaveTextContent(
+        'Finalizó sin ganador; avance detenido',
+      ),
     )
     expect(
       screen.queryByRole('button', { name: /^(Elegir|Confirmar) ganador|^Desempatar|^Avanzar/iu }),
     ).not.toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Final · 1' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ver final' }))
     expect(
-      within(screen.getByRole('region', { name: 'Final' })).queryByText(/Campeón confirmado/u),
+      within(screen.getByRole('region', { name: 'Final del torneo' })).queryByText(
+        /Campeón confirmado/u,
+      ),
     ).not.toBeInTheDocument()
   })
   it('un servicio no disponible no sustituye la consulta por resultados de ejemplo', async () => {
