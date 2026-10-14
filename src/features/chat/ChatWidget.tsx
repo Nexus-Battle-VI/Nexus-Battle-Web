@@ -128,8 +128,7 @@ export const ChatWidget = (): React.JSX.Element => {
           return
         }
         const answer = typeof reply.answer === 'string' ? reply.answer : null
-        const rateId =
-          reply.answered && typeof reply.turnId === 'string' ? reply.turnId : null
+        const rateId = reply.answered && typeof reply.turnId === 'string' ? reply.turnId : null
         setSessionId(reply.sessionId)
         setTicketId(reply.ticketId ?? null)
         setBubbles((current) => [
