@@ -10,7 +10,7 @@ Refs Nexus-Battle-VI/Nexus-Battle-Management#35
 
 `/ecommerce` monta CommercePage dentro del guard de sesión. `/orders` redirige mediante React Router, sin recargar ni perder el token en memoria.
 
-La vitrina consume `GET /api/v1/catalog/products` con `query,type,minPrice,maxPrice,currency,page`. La respuesta es `{items,page,pageSize:16,total}`. Catalog ejecuta búsqueda, filtros AND y paginación: Web no vuelve a filtrar los resultados. El detalle consume `GET /api/v1/catalog/products/:reference`.
+La vitrina consume `GET /api/v1/catalog/products` con `query,type,types,premium,minPrice,maxPrice,currency,page`. Sin un tipo individual, Web envía `types=HEROE,ARMA,ARMADURA`; Catalog filtra ese conjunto antes de calcular `total` y paginar. La respuesta es `{items,page,pageSize:16,total}` y Web la redistribuye en páginas visuales de 12 sin huecos ni duplicados. El detalle consume `GET /api/v1/catalog/products/:reference`.
 
 Los tipos canónicos son HEROE, HABILIDAD, ARMA, ARMADURA, ITEM y EPICA. Se muestran descripción, atributos, imagen, créditos enteros y, cuando existe, dinero real. Los filtros de precio están expresados en unidades menores y requieren COP, USD o EUR. El selector es una selección explícita de moneda, no geolocalización ni conversión.
 

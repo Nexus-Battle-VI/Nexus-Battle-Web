@@ -19,19 +19,20 @@ const renderBar = (): ReturnType<typeof renderWithProviders> =>
  */
 describe('El filtro de tipo solo ofrece lo que la vitrina puede vender', () => {
   /**
-   * ITEM y EPICA existen en Catalog pero nunca son candidatos de compra en
-   * E-commerce (ver ecommerce-integration-v1.md): no deben aparecer como
-   * opcion seleccionable, ni siquiera para filtrar por ellos.
+   * ITEM, EPICA y HABILIDAD existen en Catalog pero nunca son candidatos de
+   * compra en E-commerce (ver ecommerce-integration-v1.md): no deben aparecer
+   * como opcion seleccionable, ni siquiera para filtrar por ellos.
    */
-  it('no ofrece Item ni Epica como opciones', () => {
+  it('no ofrece Item, Epica ni Habilidad como opciones', () => {
     renderBar()
 
     const group = within(screen.getByRole('group', { name: 'Tipo de producto' }))
     expect(group.queryByRole('button', { name: 'Ítem' })).not.toBeInTheDocument()
     expect(group.queryByRole('button', { name: 'Épica' })).not.toBeInTheDocument()
+    expect(group.queryByRole('button', { name: 'Habilidad' })).not.toBeInTheDocument()
   })
 
-  it('ofrece exactamente Todos, Héroe, Habilidad, Arma y Armadura, en ese orden', () => {
+  it('ofrece exactamente Todos, Héroe, Arma y Armadura, en ese orden', () => {
     renderBar()
 
     const options = within(screen.getByRole('group', { name: 'Tipo de producto' })).getAllByRole(
@@ -40,7 +41,6 @@ describe('El filtro de tipo solo ofrece lo que la vitrina puede vender', () => {
     expect(options.map((option) => option.textContent)).toEqual([
       'Todos',
       'Héroe',
-      'Habilidad',
       'Arma',
       'Armadura',
     ])

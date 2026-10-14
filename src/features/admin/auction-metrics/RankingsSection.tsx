@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { Package, Trophy } from '@/components/ui/icons'
 
-import { formatCount, initialOf } from './metricsFormat'
+import { formatCount } from './metricsFormat'
 import { RankBadge, SectionHeading, TableWrap, Td, Th, Tr } from './parts'
 import type { ProductRankings, RankedProductInfo } from './types'
 
@@ -11,9 +11,10 @@ const shortId = (productId: string): string =>
   productId.length > 24 ? `${productId.slice(0, 24)}…` : productId
 
 /**
- * Celda de producto. El NOMBRE es enriquecimiento de Catalog: si falta (`product: null`),
- * se muestra el identificador en su lugar -el conteo sigue siendo correcto- y no se
- * inventa un nombre.
+ * Celda de producto. El NOMBRE y el `imageUrl` son enriquecimiento de Catalog
+ * (contrato §4.2, `RankedProductInfo`): si el producto falta (`product: null`)
+ * o no trae imagen, se usa el mismo fallback `Package` que el resto de Auction
+ * -nunca una inicial sola- y el identificador en su lugar del nombre.
  */
 const ProductCell = ({
   productId,
@@ -28,9 +29,13 @@ const ProductCell = ({
     <div className="flex min-w-0 items-center gap-2.5">
       <span
         aria-hidden="true"
-        className="grid h-9 w-9 flex-none place-items-center am-thumb rounded-md text-[0.8125rem] font-semibold"
+        className="grid h-9 w-9 flex-none place-items-center overflow-hidden am-thumb rounded-md"
       >
-        {product === null ? '?' : initialOf(product.name)}
+        {product !== null && product.imageUrl !== '' ? (
+          <img src={product.imageUrl} alt="" className="h-full w-full object-contain" />
+        ) : (
+          <Package aria-hidden="true" className="size-4 text-muted" />
+        )}
       </span>
       <div className="min-w-0">
         <p className="truncate font-medium text-ink">

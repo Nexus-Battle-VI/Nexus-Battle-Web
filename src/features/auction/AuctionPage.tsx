@@ -1,6 +1,8 @@
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Breadcrumb } from '@/components/ui/Breadcrumb'
+import { AuctionStatusBadge } from './AuctionStatusBadge'
+import { NavPixelIcon } from '@/components/shell/NavPixelIcon'
 import { formatDateTime } from '@/lib/format'
 import { countLabel } from '@/shared/i18n/format'
 import { AuctionProductSummary } from './AuctionProductSummary'
@@ -21,13 +23,11 @@ export const AuctionPage = (): React.JSX.Element => {
           { label: t('auction:crumbs.watchlist') },
         ]}
       />
-      <header className="auction-hero">
+      <header className="auction-hero auction-hero--centered">
         <div>
-          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
           <h1 className="auction-title font-semibold text-ink">{t('auction:watchlist.title')}</h1>
-          <p className="mt-1 text-sm text-muted">{t('auction:watchlist.subtitle')}</p>
         </div>
-        <Link to="/auction" className="auction-link auction-button-tertiary">
+        <Link to="/auction" className="auction-link auction-button-secondary">
           {t('auction:watchlist.viewActive')}
         </Link>
       </header>
@@ -56,17 +56,13 @@ export const AuctionPage = (): React.JSX.Element => {
                 <div className="min-w-0">
                   <AuctionProductSummary productId={auction.productId} />
                 </div>
-                <span
-                  className="auction-state-badge rounded-full bg-success/15 px-2 py-1 text-xs font-medium text-success"
-                  data-tone="success"
-                >
-                  {auction.status}
-                </span>
+                <AuctionStatusBadge status={auction.status} />
               </div>
               <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-muted">{t('auction:watchlist.minimumBid')}</dt>
-                  <dd className="font-medium text-ink">
+                  <dd className="flex items-center gap-1 font-medium text-ink">
+                    <NavPixelIcon icon="gem" size="sm" className="auction-icon" />
                     {countLabel(t, 'common:count.credits', auction.minimumBidCredits)}
                   </dd>
                 </div>

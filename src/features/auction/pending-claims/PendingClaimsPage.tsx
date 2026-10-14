@@ -23,6 +23,7 @@ import { currentLanguage } from '@/shared/i18n/language'
 import { describeFailure } from '@/shared/i18n/errors'
 import { countLabel } from '@/shared/i18n/format'
 import { localizedMessages } from '@/shared/i18n/messages'
+import { auctionRemasterAssets } from '../auctionRemasterAssets'
 import '../auction-remaster.css'
 
 const AUCTION_PATH = '/auction'
@@ -174,12 +175,20 @@ export const PendingClaimsPage = (): React.JSX.Element => {
         ]}
       />
 
-      <div className="auction-hero">
+      <div className="auction-hero auction-hero--centered">
         <div>
-          <p className="auction-kicker">{t('auction:crumbs.auction')}</p>
           <h1 className="auction-title">{t('auction:claims.title')}</h1>
-          <p className="mt-1 text-sm text-muted">{t('auction:claims.intro')}</p>
         </div>
+      </div>
+
+      <div className="auction-claims-callout flex items-start gap-3 rounded-lg border border-border bg-surface-raised p-4">
+        <img
+          aria-hidden="true"
+          alt=""
+          src={auctionRemasterAssets.shared.icons.timer}
+          className="auction-icon mt-0.5 shrink-0"
+        />
+        <p className="text-sm text-ink">{t('auction:claims.intro')}</p>
       </div>
 
       {claimMutation.isError && (

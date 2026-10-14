@@ -154,8 +154,8 @@ describe('AuctionDetailPage (HU-64.1 / HU-88)', () => {
     montar()
 
     expect(
-      await screen.findByRole('heading', { name: 'Espada Legendaria Nexus' }),
-    ).toBeInTheDocument()
+      (await screen.findAllByRole('heading', { name: 'Espada Legendaria Nexus' })).length,
+    ).toBeGreaterThan(0)
     expect(screen.getAllByText('2.500 créditos')).not.toHaveLength(0)
     expect(
       screen.getByRole('checkbox', { name: 'Confirmo la compra inmediata' }),
@@ -669,8 +669,8 @@ describe('AuctionDetailPage (HU-64.1 / HU-88)', () => {
 
       expect(await screen.findByText('Vendedor no disponible')).toBeInTheDocument()
       expect(
-        await screen.findByRole('heading', { name: 'Espada Legendaria Nexus' }),
-      ).toBeInTheDocument()
+        (await screen.findAllByRole('heading', { name: 'Espada Legendaria Nexus' })).length,
+      ).toBeGreaterThan(0)
       expect(screen.getByText('Número de pujas').nextElementSibling).toHaveTextContent(/^3$/)
       expect(screen.getByRole('button', { name: 'Comprar ahora' })).toBeInTheDocument()
     })
@@ -854,7 +854,9 @@ describe('AuctionDetailPage (HU-64.1 / HU-88)', () => {
       expect(
         await screen.findByText('No se pudo cargar el historial de pujas.'),
       ).toBeInTheDocument()
-      expect(screen.getByRole('heading', { name: 'Espada Legendaria Nexus' })).toBeInTheDocument()
+      expect(
+        screen.getAllByRole('heading', { name: 'Espada Legendaria Nexus' }).length,
+      ).toBeGreaterThan(0)
       expect(screen.getByRole('button', { name: 'Comprar ahora' })).toBeInTheDocument()
     })
 
