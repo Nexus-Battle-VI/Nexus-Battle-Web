@@ -139,6 +139,7 @@ describe('ChatWidget', () => {
     await user.type(screen.getByLabelText('Escribe tu pregunta'), 'no se')
     await user.click(screen.getByRole('button', { name: 'Enviar' }))
     expect(await screen.findByText('Consulta registrada: ticket-1')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Útil' })).not.toBeInTheDocument()
   })
 
   it('califica la respuesta de esta sesión', async () => {
