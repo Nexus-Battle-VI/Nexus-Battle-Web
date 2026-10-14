@@ -197,7 +197,13 @@ export const TournamentBracketPanel = ({
                   </>
                 )}
                 <p>
-                  {sourceLabel(selected.sources[0])} vs. {sourceLabel(selected.sources[1])}
+                  {selected.sources
+                    .map(
+                      (source, side) =>
+                        bracket.seeds.find((seed) => seed.teamId === selected.teamIds[side])
+                          ?.name ?? sourceLabel(source),
+                    )
+                    .join(' vs. ')}
                 </p>
                 <p>
                   {selected.destinations.winner

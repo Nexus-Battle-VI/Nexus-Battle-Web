@@ -46,7 +46,7 @@ const setup = async (transform: (view: ProgressView) => ProgressView = (view) =>
   return { snapshot, view, progress, choose, queryClient: rendered.queryClient }
 }
 it('Ver final muestra y enfoca el detalle cuando se conocen los finalistas', async () => {
-  await setup((view) => ({
+  const { snapshot } = await setup((view) => ({
     ...view,
     bracket: {
       ...view.bracket!,
@@ -65,6 +65,9 @@ it('Ver final muestra y enfoca el detalle cuando se conocen los finalistas', asy
   await waitFor(() => expect(button).toBeEnabled())
   await userEvent.click(button)
   expect(await screen.findByRole('region', { name: 'Detalle de Final' })).toHaveFocus()
+  expect(screen.getByRole('region', { name: 'Detalle de Final' })).toHaveTextContent(
+    `${snapshot.seeds[0]!.name} vs. ${snapshot.seeds[1]!.name}`,
+  )
 })
 describe('HU-80: avance en las llaves existentes, con respuestas de prueba', () => {
   it('distingue espera y equipos resueltos de preparación real y enlaza por encounterId', async () => {
