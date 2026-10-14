@@ -56,7 +56,7 @@ const turnsToBubbles = (turns: readonly ChatTurn[], empty: string): readonly Bub
       text: turn.answer ?? empty,
       at: '',
       path: safePath(turn.assistedAction?.path),
-      rateId: turn.id,
+      rateId: turn.answer === null ? null : turn.id,
       useful: turn.useful,
     },
   ])
@@ -123,6 +123,12 @@ export const ChatWidget = (): React.JSX.Element => {
     ])
     void askChat(text, viewFromPath(pathname), sessionId)
       .then((reply) => {
+        if (typeof reply.answered !== 'boolean') {
+          setFailed(true)
+          return
+        }
+        const answer = typeof reply.answer === 'string' ? reply.answer : null
+        const rateId = reply.answered && typeof reply.turnId === 'string' ? reply.turnId : null
         setSessionId(reply.sessionId)
         setTicketId(reply.ticketId ?? null)
         setBubbles((current) => [
@@ -130,10 +136,10 @@ export const ChatWidget = (): React.JSX.Element => {
           {
             id: reply.turnId ?? crypto.randomUUID(),
             role: 'assistant',
-            text: reply.answer ?? t('chat:empty'),
+            text: answer ?? t('chat:empty'),
             at: stamp(),
             path: safePath(reply.assistedAction?.path),
-            rateId: reply.turnId ?? null,
+            rateId,
             useful: null,
           },
         ])
@@ -250,9 +256,7 @@ export const ChatWidget = (): React.JSX.Element => {
                             ),
                           )
                         })
-                        .catch(() => {
-                          setFailed(true)
-                        })
+                        .catch(() => undefined)
                     }}
                   >
                     {t('chat:useful')}
@@ -270,9 +274,7 @@ export const ChatWidget = (): React.JSX.Element => {
                             ),
                           )
                         })
-                        .catch(() => {
-                          setFailed(true)
-                        })
+                        .catch(() => undefined)
                     }}
                   >
                     {t('chat:notUseful')}
