@@ -1,5 +1,7 @@
 import { TournamentHeading } from '../TournamentVisuals'
 import { useState } from 'react'
+import { Link } from 'react-router'
+import { isBattleView } from '@/features/battle-rooms/battle/types'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { TournamentButton as Button } from '../TournamentVisuals'
 import { TournamentCard as Card } from '../TournamentVisuals'
@@ -19,12 +21,14 @@ const eventLabel: Record<string, string> = {
 export const TournamentEncountersPanel = ({
   id,
   subject,
+  isTest = false,
   api = encounterApi,
   selectedMatchId,
   onChooseMatch,
 }: {
   readonly id: string
   readonly subject: string
+  readonly isTest?: boolean
   readonly api?: EncounterApi
   readonly selectedMatchId?: string
   readonly onChooseMatch?: (matchId: string) => void
@@ -64,6 +68,25 @@ export const TournamentEncountersPanel = ({
     seen.add(event.seq)
     return true
   })
+  const participantNames = new Map<string, string>()
+  for (const event of uniqueEvents) {
+    const payload = event.payload
+    if (
+      typeof payload === 'object' &&
+      payload !== null &&
+      'battle' in payload &&
+      isBattleView(payload.battle)
+    )
+      for (const entry of payload.battle.turnOrder)
+        if (entry.playerId !== null && entry.displayName !== null)
+          participantNames.set(entry.playerId, entry.displayName)
+  }
+  const ownBattle =
+    view?.registeredTeams?.some((team) => team?.memberIds.includes(subject)) === true ||
+    view?.teams.some((team) => team.participants.some((p) => p.playerId === subject)) === true
+  const roomId =
+    view?.combatRoomId ??
+    (view?.resolution?.resultType === 'PLAYED' ? view.resolution.combatRoomId : null)
   const refresh = (): void => {
     void list.refetch()
     if (matchId !== '') void detail.refetch()
@@ -75,9 +98,9 @@ export const TournamentEncountersPanel = ({
         aria-label="Registro de justas"
         className="grid min-w-0 gap-4"
       >
-        <TournamentHeading icon="encounters">Justas y registro de combates</TournamentHeading>
+        <TournamentHeading icon="encounters">Historial de batallas</TournamentHeading>
         <p className="text-sm text-muted">
-          Cada justa conserva su propio registro, aunque no se haya transmitido.
+          Elige una batalla para consultar su resultado y sus acciones.
         </p>
         {list.isPending && <p role="status">Consultando justas…</p>}
         {list.isError && <p role="alert">No se pudo consultar el registro de justas.</p>}
@@ -124,13 +147,16 @@ export const TournamentEncountersPanel = ({
             <h3 className="font-semibold">
               {view.bracketLabel} · {matchStatus(view)}
             </h3>
-            <MatchSchedule match={view} />
+            <details className="tournament-battle-details">
+              <summary>Horario de la batalla</summary>
+              <MatchSchedule match={view} />
+            </details>
             <AbsenceResolution match={view} />
             <p>
               {view.bracketTrack === 'MAIN'
-                ? 'Árbol de ganadores'
+                ? 'Llave de ganadores'
                 : view.bracketTrack === 'SECONDARY'
-                  ? 'Árbol de secundarios'
+                  ? 'Llave de perdedores'
                   : view.bracketTrack === 'FINAL'
                     ? 'Final'
                     : view.bracketLabel}{' '}
@@ -156,6 +182,11 @@ export const TournamentEncountersPanel = ({
                     Jugador: {member}
                   </p>
                 ))}
+              {view.syncedAt && (
+                <p className="text-sm text-muted">
+                  Última sincronización del archivo: {dateLabel(view.syncedAt)}.
+                </p>
+              )}
             </details>
             {view.registeredTeams?.map((team, index) =>
               team === null ? (
@@ -169,9 +200,11 @@ export const TournamentEncountersPanel = ({
                   >
                     {team.memberIds.map((member, memberIndex) => (
                       <li key={member} className="break-all">
-                        {member === subject
-                          ? 'Tu cuenta'
-                          : `Nombre del jugador ${String(memberIndex + 1)} pendiente`}
+                        {participantNames.has(member)
+                          ? `${participantNames.get(member) ?? ''}${member === subject ? ' (tú)' : ''}`
+                          : member === subject
+                            ? 'Tu cuenta'
+                            : `Nombre del jugador ${String(memberIndex + 1)} pendiente`}
                       </li>
                     ))}
                   </ul>
@@ -179,24 +212,32 @@ export const TournamentEncountersPanel = ({
               ),
             )}
             {view.resolution?.resultType !== 'ABSENCE' &&
-              view.teams.map((team) => (
-                <div key={team.teamId}>
-                  <p className="font-semibold">Equipo {team.teamLabel}</p>
-                  <ul
-                    className="grid gap-1 text-sm"
-                    aria-label={`Participantes de Combat del lado ${team.teamLabel}`}
-                  >
-                    {team.participants.map((participant, participantIndex) => (
-                      <li key={participant.playerId} className="break-all">
-                        {participant.playerId === subject
-                          ? 'Tu héroe'
-                          : `Héroe del jugador ${String(participantIndex + 1)}`}{' '}
-                        · Metadatos pendientes
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              view.teams.some((team) => team.participants.length > 0) && (
+                <details className="tournament-battle-details">
+                  <summary>Héroes de la batalla</summary>
+                  {view.teams.map((team) => (
+                    <div key={team.teamId}>
+                      <p className="font-semibold">
+                        {view.registeredTeams?.find((t) => t?.teamId === team.teamId)?.name ??
+                          'Equipo'}
+                      </p>
+                      <ul
+                        className="grid gap-1 text-sm"
+                        aria-label={`Participantes de Combat del lado ${team.teamLabel}`}
+                      >
+                        {team.participants.map((participant, participantIndex) => (
+                          <li key={participant.playerId} className="break-all">
+                            {participant.playerId === subject
+                              ? 'Tu héroe'
+                              : `Héroe del jugador ${String(participantIndex + 1)}`}{' '}
+                            · Héroe de la batalla
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </details>
+              )}
             {view.resolution?.resultType !== 'ABSENCE' && view.startedAt && (
               <p>Inicio: {dateLabel(view.startedAt)}</p>
             )}
@@ -206,20 +247,39 @@ export const TournamentEncountersPanel = ({
                   <p>Cierre: {dateLabel(view.closedAt ?? result.finishedAt)}</p>
                   <p>
                     {result.outcome === 'WIN' && result.winnerTeamLabel !== null
-                      ? `Ganador informado por Combat: ${result.winnerTeamLabel}`
+                      ? `Ganador: ${view.registeredTeams?.find((t) => t?.teamId === (view.resolution?.resultType === 'PLAYED' ? view.resolution.winnerTeamId : (view.teams.find((t) => t.teamLabel === result.winnerTeamLabel)?.teamId ?? result.winnerTeamLabel)))?.name ?? 'Resultado por confirmar'}`
                       : result.outcome === 'NO_WINNER'
                         ? 'Combat finalizó sin ganador.'
                         : `Resultado informado por Combat: ${result.outcome}`}
                   </p>
-                  <p className="text-sm">Motivo: {result.reason}</p>
+                  <p className="text-sm">
+                    {result.reason === 'DISCONNECTION'
+                      ? 'La batalla terminó por desconexión.'
+                      : result.reason === 'ELIMINATION'
+                        ? 'Todos los héroes rivales fueron derrotados.'
+                        : result.reason === 'TIME_LIMIT'
+                          ? 'Se agotó el tiempo de batalla.'
+                          : 'Batalla terminada.'}
+                  </p>
                 </>
               ) : (
                 <p>Sin resultado final confirmado.</p>
               ))}
-            {view.syncedAt && (
-              <p className="text-sm text-muted">
-                Última sincronización del archivo: {dateLabel(view.syncedAt)}.
-              </p>
+            {ownBattle && roomId && view.resolution?.resultType !== 'ABSENCE' && (
+              <Link
+                className="tournament-battle-cta"
+                to={`/play/rooms/${encodeURIComponent(roomId)}/battle`}
+                state={{
+                  tournament: {
+                    ...(isTest ? { isTest: true } : {}),
+                    tournamentId: id,
+                    matchId: view.matchId,
+                    bracketLabel: view.bracketLabel,
+                  },
+                }}
+              >
+                {view.status === 'FINISHED' ? 'Ver resultado' : 'Ir a batalla'}
+              </Link>
             )}
             {!view.logComplete &&
               view.combatRoomId &&

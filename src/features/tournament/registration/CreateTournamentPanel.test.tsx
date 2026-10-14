@@ -29,6 +29,31 @@ const fillSchedule = async (user: ReturnType<typeof userEvent.setup>) => {
     await user.type(screen.getByLabelText(new RegExp(name!)), value!)
 }
 describe('configuración administrativa sin tarifas inventadas', () => {
+  it('el piloto fuerza inscripción gratuita y conserva el modo al recuperar una respuesta perdida', async () => {
+    const test = setup()
+    test.create.mockRejectedValueOnce(new Error('Respuesta perdida'))
+    const first = test.render()
+    const user = userEvent.setup()
+    await user.click(screen.getByText('Crear torneo · administración'))
+    await fillSchedule(user)
+    await user.click(screen.getByRole('checkbox', { name: /Torneo de prueba/u }))
+    expect(screen.getByLabelText(/Política de inscripción/u)).toHaveValue('FREE')
+    expect(screen.getByLabelText(/Política de inscripción/u)).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Crear torneo de prueba' }))
+    expect(await screen.findByText('Respuesta perdida')).toBeInTheDocument()
+    const input = test.create.mock.calls[0]![0]
+    expect(input).toMatchObject({
+      isTest: true,
+      entryPolicy: { version: 1, free: true, methods: [] },
+    })
+    first.unmount()
+    test.render()
+    await user.click(screen.getByText('Crear torneo · administración'))
+    expect(screen.getByRole('checkbox', { name: /Torneo de prueba/u })).toBeChecked()
+    await user.click(screen.getByRole('button', { name: 'Comprobar creación' }))
+    expect(test.create.mock.calls[1]![0]).toEqual(input)
+  })
+
   it('envía política explícita e importes independientes con precisión exacta', async () => {
     const test = setup()
     test.render()

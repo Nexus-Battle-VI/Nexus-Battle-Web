@@ -13,11 +13,10 @@ import { useBracketWidth } from './useBracketWidth'
 import './bracket-tree.css'
 
 const tracks = [
-  { key: 'MAIN', title: 'Árbol de ganadores', label: 'Ganadores' },
-  { key: 'SECONDARY', title: 'Árbol de perdedores', label: 'Perdedores' },
-  { key: 'FINAL', title: 'Final', label: 'Final' },
+  { key: 'MAIN', title: 'Llave de ganadores', label: 'Llave de ganadores' },
+  { key: 'SECONDARY', title: 'Llave de perdedores', label: 'Llave de perdedores' },
 ] as const
-type Track = GraphMatch['track'] | 'ALL'
+type Track = 'MAIN' | 'SECONDARY'
 
 export const BracketTree = ({
   bracket,
@@ -42,12 +41,14 @@ export const BracketTree = ({
   const { container, width } = useBracketWidth()
   const marker = useId()
   const selected = bracket.matches.find((m) => m.id === selection)
-  const activeTrack = track === 'ALL' ? track : (selected?.track ?? track)
-  const layout = layoutBracket(bracket.matches, activeTrack === 'ALL' ? undefined : activeTrack)
+  const activeTrack = selected ? (selected.track === 'SECONDARY' ? 'SECONDARY' : 'MAIN') : track
+  const layout = layoutBracket(bracket.matches, activeTrack)
   const validation = layoutBracket(bracket.matches)
-  const matches = bracket.matches.filter((m) => activeTrack === 'ALL' || m.track === activeTrack)
+  const matches = bracket.matches.filter((m) => m.track === activeTrack)
+  const final = bracket.matches.find((m) => m.track === 'FINAL')
   const currentRound =
-    selected?.round ?? (layout.rounds.includes(round) ? round : (layout.rounds[0] ?? 1))
+    (selected?.track === activeTrack ? selected.round : undefined) ??
+    (layout.rounds.includes(round) ? round : (layout.rounds[0] ?? 1))
   const roundIndex = layout.rounds.indexOf(currentRound)
   const byRounds = view === 'rounds' || (view === 'auto' && width < layout.width * 0.9)
   const scale = view === 'auto' ? Math.min(1, width / layout.width) : zoom
@@ -155,85 +156,75 @@ export const BracketTree = ({
                 chooseTrack(key)
               }}
             >
-              {label}{' '}
-              <span className="bracket-track-count">
-                · {bracket.matches.filter((m) => m.track === key).length}
-              </span>
+              {label}
             </Button>
           ))}
-          <Button
-            variant="secondary"
-            aria-pressed={activeTrack === 'ALL'}
-            onClick={() => {
-              chooseTrack('ALL')
-            }}
-          >
-            Todas <span className="bracket-track-count">· {bracket.matches.length}</span>
-          </Button>
         </div>
-        <div className="bracket-view-controls" role="group" aria-label="Presentación de las llaves">
-          <Button
-            variant="secondary"
-            aria-pressed={!byRounds}
-            onClick={() => {
-              setView('tree')
-            }}
-          >
-            Ver árbol
-          </Button>
-          <Button
-            variant="secondary"
-            aria-pressed={byRounds}
-            onClick={() => {
-              setView('rounds')
-            }}
-          >
-            Ver por rondas
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setView('auto')
-              setZoom(1)
-            }}
-          >
-            Ajustar
-          </Button>
-        </div>
-        {!byRounds && (
-          <div className="bracket-zoom-controls">
-            <Button
-              variant="secondary"
-              aria-label="Reducir árbol"
-              disabled={scale <= 0.75}
-              onClick={() => {
-                setZoom(Math.max(0.75, scale - 0.15))
-                setView('tree')
-              }}
-            >
-              −
-            </Button>
-            <span>{Math.round(scale * 100)} %</span>
-            <Button
-              variant="secondary"
-              aria-label="Ampliar árbol"
-              disabled={scale >= 1.5}
-              onClick={() => {
-                setZoom(Math.min(1.5, scale + 0.15))
-                setView('tree')
-              }}
-            >
-              +
-            </Button>
-          </div>
-        )}
       </div>
       <details className="bracket-guide">
-        <summary>Cómo leer las llaves y localizar un equipo</summary>
-        <p className="text-sm text-muted">
-          Selecciona una justa para ver sus equipos completos, su origen y su siguiente encuentro.
-          En pantallas estrechas se muestra una ronda a la vez.
-        </p>
+        <summary>Opciones de vista</summary>
+        <div className="bracket-controls">
+          <div
+            className="bracket-view-controls"
+            role="group"
+            aria-label="Presentación de las llaves"
+          >
+            <Button
+              variant="secondary"
+              aria-pressed={!byRounds}
+              onClick={() => {
+                setView('tree')
+              }}
+            >
+              Ver árbol
+            </Button>
+            <Button
+              variant="secondary"
+              aria-pressed={byRounds}
+              onClick={() => {
+                setView('rounds')
+              }}
+            >
+              Ver por rondas
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setView('auto')
+                setZoom(1)
+              }}
+            >
+              Ajustar
+            </Button>
+          </div>
+          {!byRounds && (
+            <div className="bracket-zoom-controls">
+              <Button
+                variant="secondary"
+                aria-label="Reducir árbol"
+                disabled={scale <= 0.75}
+                onClick={() => {
+                  setZoom(Math.max(0.75, scale - 0.15))
+                  setView('tree')
+                }}
+              >
+                −
+              </Button>
+              <span>{Math.round(scale * 100)} %</span>
+              <Button
+                variant="secondary"
+                aria-label="Ampliar árbol"
+                disabled={scale >= 1.5}
+                onClick={() => {
+                  setZoom(Math.min(1.5, scale + 0.15))
+                  setView('tree')
+                }}
+              >
+                +
+              </Button>
+            </div>
+          )}
+        </div>
         <p className="bracket-legend">
           <span>━ G · Ganador</span>
           <span>┄ P · Perdedor</span>
@@ -250,12 +241,13 @@ export const BracketTree = ({
                   onSelect('')
                 }}
               >
-                Cupo {seed.position} · {seed.name}
+                {seed.name}
               </button>
             </li>
           ))}
         </ol>
       </details>
+      <p className="text-sm text-muted">Selecciona una batalla para ver el detalle.</p>
       {team !== '' && (
         <p role="status">
           Conexiones de {bracket.seeds.find((seed) => seed.teamId === team)?.name} en las justas
@@ -268,6 +260,22 @@ export const BracketTree = ({
           Las fuentes y destinos recibidos no coinciden. Actualiza las llaves; el recorrido requiere
           revisión del servidor.
         </p>
+      )}
+      {activeTrack === 'MAIN' && final && (
+        <section className="tournament-final-card" aria-label="Final del torneo">
+          <h3>🏆 Final</h3>
+          <p>
+            {teamLabel(final, 0)} <span className="text-muted">vs.</span> {teamLabel(final, 1)}
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              onSelect(final.id)
+            }}
+          >
+            Ver final
+          </Button>
+        </section>
       )}
       {byRounds ? (
         <div className="bracket-round-list">
@@ -317,9 +325,10 @@ export const BracketTree = ({
         </div>
       ) : (
         <>
-          <p id={marker + '-hint'} className="text-xs text-muted">
+          <p id={marker + '-hint'} className="sr-only">
             Enfoca el árbol y usa las flechas para desplazarte; Tab y Enter permiten elegir una
-            justa. Puedes consultar las otras ramas con Ganadores, Perdedores, Final o Todas.
+            batalla. Cambia entre la llave de ganadores y la de perdedores con los botones
+            superiores.
           </p>
           <div
             className="bracket-viewport"
@@ -390,31 +399,16 @@ export const BracketTree = ({
                     style={{ left: 16 + column * COLUMN_STEP, width: NODE_WIDTH }}
                   >
                     Ronda {value}
-                    {activeTrack !== 'ALL' && <span>{roundTime(value)}</span>}
+                    <span>{roundTime(value)}</span>
                   </div>
                 ))}
                 {tracks
-                  .filter(({ key }) => activeTrack === 'ALL' || activeTrack === key)
+                  .filter(({ key }) => activeTrack === key)
                   .map(({ key, title }) => {
                     const entries = matches.filter((m) => m.track === key)
-                    const firstPosition = entries[0]
-                      ? layout.positions.get(entries[0].id)
-                      : undefined
                     return (
                       <section key={key} aria-label={title}>
-                        <h3
-                          className={activeTrack === 'ALL' ? 'bracket-track-heading' : 'sr-only'}
-                          style={
-                            activeTrack === 'ALL'
-                              ? {
-                                  left: key === 'FINAL' ? firstPosition?.x : 16,
-                                  top: (firstPosition?.y ?? 52) - 20,
-                                }
-                              : undefined
-                          }
-                        >
-                          {title}
-                        </h3>
+                        <h3 className="sr-only">{title}</h3>
                         {entries.map((m) => card(m, true))}
                       </section>
                     )
