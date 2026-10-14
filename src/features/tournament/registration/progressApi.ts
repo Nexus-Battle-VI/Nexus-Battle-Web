@@ -1,5 +1,6 @@
 import { httpClient } from '@/lib/http'
 import type { PublishedBracket } from './bracketApi'
+import type { TournamentClosure } from './api'
 
 export interface Champion {
   readonly teamId: string
@@ -18,6 +19,7 @@ export interface ProgressBracket extends Omit<PublishedBracket, 'matches'> {
   })[]
 }
 export interface ProgressView {
+  readonly closure?: TournamentClosure | null
   readonly bracket: ProgressBracket | null
   readonly champion: Champion | null
   readonly eliminatedTeamIds: readonly string[]

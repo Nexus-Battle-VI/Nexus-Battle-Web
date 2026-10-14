@@ -1,5 +1,5 @@
 import { TournamentHeading } from '../TournamentVisuals'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { TournamentButton as Button } from '../TournamentVisuals'
 import { TournamentCard as Card } from '../TournamentVisuals'
@@ -35,13 +35,20 @@ export const TournamentBracketPanel = ({
 }): React.JSX.Element => {
   const client = useQueryClient()
   const [selection, setSelection] = useState('')
+  const detailRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (selection === '') return
+    if (typeof detailRef.current?.scrollIntoView === 'function')
+      detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    detailRef.current?.focus({ preventScroll: true })
+  }, [selection])
   const key = ['tournament-bracket', subject, id]
   const view = useQuery({ queryKey: key, queryFn: () => api.view(id), refetchInterval: 5000 })
   const progression = useQuery({
     queryKey: ['tournament-progress', subject, id],
     queryFn: ({ signal }) => progress.view(id, signal),
     enabled: view.data != null,
-    refetchInterval: (q) => (q.state.data?.champion ? false : 5000),
+    refetchInterval: (q) => (q.state.data?.champion || q.state.data?.closure ? false : 5000),
     retry: false,
   })
   const bracket = progression.data?.bracket ?? view.data
@@ -54,6 +61,8 @@ export const TournamentBracketPanel = ({
   const summaryFor = (match: GraphMatch) =>
     encountersView.data?.find((m) => m.tournamentId === id && m.matchId === match.encounterId)
   const statusLabel = (match: GraphMatch): string => {
+    if (progression.data?.closure && match.status !== 'FINISHED')
+      return 'Batalla no disputada · torneo cerrado'
     const summary = summaryFor(match)
     if (summary) return matchStatus(summary)
     if (match.status === 'FINISHED') return 'Resultado confirmado'
@@ -147,6 +156,11 @@ export const TournamentBracketPanel = ({
                 Campeón confirmado · {progression.data.champion.teamName}
               </p>
             ) : null}
+            {progression.data?.closure && (
+              <p role="status">
+                Torneo cerrado sin campeón. Las batallas jugadas conservan sus resultados.
+              </p>
+            )}
             <BracketTree
               bracket={bracket}
               selection={selection}
@@ -169,6 +183,8 @@ export const TournamentBracketPanel = ({
             />
             {selected && (
               <section
+                ref={detailRef}
+                tabIndex={-1}
                 aria-label={`Detalle de ${selected.id}`}
                 className="grid gap-2 rounded-lg border border-border p-4"
               >
@@ -196,17 +212,22 @@ export const TournamentBracketPanel = ({
                 <p className="text-sm text-muted">
                   Los estados y resultados vigentes se consultan en el registro de justas.
                 </p>
-                {onChooseMatch && (
-                  <a
-                    href="#tournament-record"
-                    className="text-brand underline"
-                    onClick={() => {
-                      onChooseMatch(selected.encounterId)
-                    }}
-                  >
-                    Ver registro de {selected.id}
-                  </a>
-                )}
+                {onChooseMatch &&
+                  selected.teamIds.some((teamId) =>
+                    bracket.seeds
+                      .find((seed) => seed.teamId === teamId)
+                      ?.memberIds.includes(subject),
+                  ) && (
+                    <a
+                      href="#tournament-record"
+                      className="text-brand underline"
+                      onClick={() => {
+                        onChooseMatch(selected.encounterId)
+                      }}
+                    >
+                      Ver registro de {selected.id}
+                    </a>
+                  )}
               </section>
             )}
             {progression.data && progression.data.eliminatedTeamIds.length > 0 && (

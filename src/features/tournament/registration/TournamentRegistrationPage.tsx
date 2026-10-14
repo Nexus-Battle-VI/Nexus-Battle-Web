@@ -291,7 +291,7 @@ const TournamentContent = ({
       subject={subject}
       roles={roles}
       confirmed={snapshot.capacity.confirmed}
-      canMutate={!view.isError}
+      canMutate={!view.isError && snapshot.tournament.closure == null}
       {...(brackets ? { api: brackets } : {})}
       {...(progress ? { progress } : {})}
       onChooseMatch={openMatch}
@@ -328,11 +328,42 @@ const TournamentContent = ({
               )}
               <p className="text-sm text-muted">
                 {String(snapshot.capacity.confirmed)} de 8 {format.slots} confirmados ·{' '}
-                {snapshot.tournament.open ? 'Inscripciones abiertas' : 'Inscripciones cerradas'}
+                {snapshot.tournament.closure
+                  ? 'Torneo cerrado'
+                  : snapshot.tournament.open
+                    ? 'Inscripciones abiertas'
+                    : 'Inscripciones cerradas'}
               </p>
             </div>
             <Trophy size={32} aria-hidden="true" />
           </header>
+          {snapshot.tournament.closure && (
+            <Card>
+              <h3 className="font-game-display text-xl">Torneo cerrado sin campeón</h3>
+              <p>
+                Se conservan los resultados de las batallas jugadas. Puedes crear o unirte a otro
+                torneo.
+              </p>
+              <p className="text-sm text-muted">
+                {snapshot.tournament.closure.reason === 'INACTIVITY'
+                  ? 'Cerrado tras 30 minutos sin actividad.'
+                  : 'Cerrado por el administrador.'}
+              </p>
+              {snapshot.refunds
+                ?.filter((refund) => refund.payerId === subject)
+                .map((refund) => (
+                  <p key={refund.teamId} role="status">
+                    {refund.method === 'SIMULATED_MONEY'
+                      ? refund.status === 'REFUNDED'
+                        ? 'Inscripción simulada anulada; no hubo movimiento de dinero.'
+                        : 'Anulación del pago simulado pendiente.'
+                      : refund.status === 'REFUNDED'
+                        ? `Inscripción devuelta: ${String(refund.amount)} créditos.`
+                        : `Devolución pendiente: ${String(refund.amount)} créditos. Se reintentará automáticamente.`}
+                  </p>
+                ))}
+            </Card>
+          )}
           <nav aria-label="Secciones del torneo" className="tournament-tabs">
             {(
               [
@@ -358,110 +389,115 @@ const TournamentContent = ({
               </button>
             ))}
           </nav>
-          {tab === 'arena' && !snapshot.tournament.bracketPublished && (
-            <div className="tournament-overview">
-              <Card>
-                <h3 className="font-game-display text-xl">Tu siguiente paso</h3>
-                <p className="mt-2 font-semibold">
-                  {active?.status === 'AWAITING_CONSENT'
-                    ? membersOf(active).find((member) => member.subject === subject)?.consentAt ===
-                      null
-                      ? 'Acepta participar con tu equipo para continuar.'
-                      : 'Cada compañero pendiente debe aceptar antes de confirmar el cupo.'
-                    : active?.status === 'PENDING_PAYMENT'
-                      ? active.ownerId === subject
-                        ? 'Revisa el precio y confirma el cupo de tu equipo.'
-                        : 'El creador del equipo debe confirmar el cupo.'
-                      : active?.status === 'PAYMENT_PENDING' || active?.status === 'COMPENSATING'
-                        ? 'La operación está en comprobación. Consulta su estado antes de continuar.'
-                        : active?.status === 'CONFIRMED'
-                          ? 'Tu equipo está inscrito. Consulta las llaves cuando se publiquen.'
-                          : snapshot.tournament.open && roles.includes('PLAYER')
-                            ? `Registra tu participación ${format.label} para continuar.`
-                            : 'Consulta las justas y los accesos a la transmisión.'}
-                </p>
-                {snapshot.tournament.entryPolicy.free ? (
-                  <p className="mt-2">Inscripción gratuita · sin cobro</p>
-                ) : (
-                  <ul className="mt-2 grid gap-1" aria-label="Importes configurados">
-                    {snapshot.tournament.entryPolicy.methods.map((m) => (
-                      <li key={m.method}>{priceLabel(m)}</li>
-                    ))}
-                  </ul>
-                )}
-                <p className="mt-3 font-semibold">
-                  {String(snapshot.capacity.confirmed)} de 8 {format.slots} confirmados.
-                </p>
-                <p className="font-semibold">
-                  {snapshot.capacity.confirmedPeople === undefined
-                    ? snapshot.tournament.contractVersion === undefined ||
-                      snapshot.tournament.contractVersion === 'torneos-hu77-84-78-hu83-v2.0.0'
-                      ? `${String(snapshot.capacity.confirmed * 2)} de 16 personas confirmadas.`
-                      : 'Personas confirmadas: pendiente de consultar al servidor.'
-                    : `${String(snapshot.capacity.confirmedPeople)} de ${String(snapshot.capacity.totalPeople ?? format.size * 8)} personas confirmadas.`}
-                </p>
-                <p className="text-sm text-muted">
-                  {String(snapshot.capacity.reserved)} cupos en comprobación ·{' '}
-                  {String(snapshot.capacity.available)} disponibles según el servidor.
-                </p>
-                <p className="mt-2">
-                  {snapshot.tournament.open ? 'Inscripciones abiertas.' : 'Inscripciones cerradas.'}
-                </p>
-                <p className="text-sm text-muted">
-                  Cierre de inscripción: {dateLabel(snapshot.tournament.closesAt)} ·{' '}
-                  {snapshot.tournament.acceptancePolicy === 'ROUND_ACCEPTANCE_V1'
-                    ? 'Primera aceptación'
-                    : 'Inicio programado'}
-                  : {dateLabel(snapshot.tournament.startsAt)}
-                </p>
-                <Button className="mt-3" variant="secondary" onClick={() => void view.refetch()}>
-                  Actualizar inscripción
-                </Button>
-                <Button
-                  className="mt-3 ml-2"
-                  onClick={() => {
-                    setTab('equipo')
-                  }}
-                >
-                  Ir a mi equipo
-                </Button>
-              </Card>
-              {snapshot.tournament.roundSchedule &&
-                snapshot.tournament.roundSchedule.length > 0 && (
-                  <Card>
-                    <div
-                      className="tournament-calendar-scroll"
-                      tabIndex={0}
-                      aria-label="Calendario confirmado del servidor"
-                    >
-                      <table className="tournament-calendar">
-                        <caption>Calendario confirmado · horarios fijos del servidor</caption>
-                        <thead>
-                          <tr>
-                            <th>Ronda</th>
-                            <th>Aceptación personal</th>
-                            <th>Inicio previsto</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {snapshot.tournament.roundSchedule.map((round) => (
-                            <tr key={round.round}>
-                              <th>{round.round}</th>
-                              <td>
-                                {dateLabel(round.acceptanceOpensAt)} –{' '}
-                                {dateLabel(round.acceptanceClosesAt)}
-                              </td>
-                              <td>{dateLabel(round.scheduledStartAt)}</td>
+          {tab === 'arena' &&
+            !snapshot.tournament.bracketPublished &&
+            !snapshot.tournament.closure && (
+              <div className="tournament-overview">
+                <Card>
+                  <h3 className="font-game-display text-xl">Tu siguiente paso</h3>
+                  <p className="mt-2 font-semibold">
+                    {active?.status === 'AWAITING_CONSENT'
+                      ? membersOf(active).find((member) => member.subject === subject)
+                          ?.consentAt === null
+                        ? 'Acepta participar con tu equipo para continuar.'
+                        : 'Cada compañero pendiente debe aceptar antes de confirmar el cupo.'
+                      : active?.status === 'PENDING_PAYMENT'
+                        ? active.ownerId === subject
+                          ? 'Revisa el precio y confirma el cupo de tu equipo.'
+                          : 'El creador del equipo debe confirmar el cupo.'
+                        : active?.status === 'PAYMENT_PENDING' || active?.status === 'COMPENSATING'
+                          ? 'La operación está en comprobación. Consulta su estado antes de continuar.'
+                          : active?.status === 'CONFIRMED'
+                            ? 'Tu equipo está inscrito. Consulta las llaves cuando se publiquen.'
+                            : snapshot.tournament.open && roles.includes('PLAYER')
+                              ? `Registra tu participación ${format.label} para continuar.`
+                              : 'Consulta las justas y los accesos a la transmisión.'}
+                  </p>
+                  {snapshot.tournament.entryPolicy.free ? (
+                    <p className="mt-2">Inscripción gratuita · sin cobro</p>
+                  ) : (
+                    <ul className="mt-2 grid gap-1" aria-label="Importes configurados">
+                      {snapshot.tournament.entryPolicy.methods.map((m) => (
+                        <li key={m.method}>{priceLabel(m)}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="mt-3 font-semibold">
+                    {String(snapshot.capacity.confirmed)} de 8 {format.slots} confirmados.
+                  </p>
+                  <p className="font-semibold">
+                    {snapshot.capacity.confirmedPeople === undefined
+                      ? snapshot.tournament.contractVersion === undefined ||
+                        snapshot.tournament.contractVersion === 'torneos-hu77-84-78-hu83-v2.0.0'
+                        ? `${String(snapshot.capacity.confirmed * 2)} de 16 personas confirmadas.`
+                        : 'Personas confirmadas: pendiente de consultar al servidor.'
+                      : `${String(snapshot.capacity.confirmedPeople)} de ${String(snapshot.capacity.totalPeople ?? format.size * 8)} personas confirmadas.`}
+                  </p>
+                  <p className="text-sm text-muted">
+                    {String(snapshot.capacity.reserved)} cupos en comprobación ·{' '}
+                    {String(snapshot.capacity.available)} disponibles según el servidor.
+                  </p>
+                  <p className="mt-2">
+                    {snapshot.tournament.open
+                      ? 'Inscripciones abiertas.'
+                      : 'Inscripciones cerradas.'}
+                  </p>
+                  <p className="text-sm text-muted">
+                    Cierre de inscripción: {dateLabel(snapshot.tournament.closesAt)} ·{' '}
+                    {snapshot.tournament.acceptancePolicy === 'ROUND_ACCEPTANCE_V1'
+                      ? 'Primera aceptación'
+                      : 'Inicio programado'}
+                    : {dateLabel(snapshot.tournament.startsAt)}
+                  </p>
+                  <Button className="mt-3" variant="secondary" onClick={() => void view.refetch()}>
+                    Actualizar inscripción
+                  </Button>
+                  <Button
+                    className="mt-3 ml-2"
+                    onClick={() => {
+                      setTab('equipo')
+                    }}
+                  >
+                    Ir a mi equipo
+                  </Button>
+                </Card>
+                {snapshot.tournament.roundSchedule &&
+                  snapshot.tournament.roundSchedule.length > 0 && (
+                    <Card>
+                      <div
+                        className="tournament-calendar-scroll"
+                        tabIndex={0}
+                        aria-label="Calendario confirmado del servidor"
+                      >
+                        <table className="tournament-calendar">
+                          <caption>Calendario confirmado · horarios fijos del servidor</caption>
+                          <thead>
+                            <tr>
+                              <th>Ronda</th>
+                              <th>Aceptación personal</th>
+                              <th>Inicio previsto</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Card>
-                )}
-            </div>
-          )}
+                          </thead>
+                          <tbody>
+                            {snapshot.tournament.roundSchedule.map((round) => (
+                              <tr key={round.round}>
+                                <th>{round.round}</th>
+                                <td>
+                                  {dateLabel(round.acceptanceOpensAt)} –{' '}
+                                  {dateLabel(round.acceptanceClosesAt)}
+                                </td>
+                                <td>{dateLabel(round.scheduledStartAt)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
+                  )}
+              </div>
+            )}
           {roles.includes('PLAYER') &&
+            !snapshot.tournament.closure &&
             snapshot.tournament.acceptancePolicy === 'ROUND_ACCEPTANCE_V1' &&
             snapshot.tournament.bracketPublished && (
               <div hidden={tab !== 'arena' && tab !== 'encuentros'}>
@@ -497,7 +533,7 @@ const TournamentContent = ({
                     subject={subject}
                     api={api}
                     onResult={result}
-                    canMutate={!view.isError}
+                    canMutate={!view.isError && !snapshot.tournament.closure}
                     generation={snapshot.teams
                       .filter((t) => t.status === 'CANCELLED')
                       .map((t) => t.id)
@@ -524,7 +560,7 @@ const TournamentContent = ({
                     available={snapshot.capacity.available}
                     api={api}
                     onResult={result}
-                    canMutate={!view.isError}
+                    canMutate={!view.isError && !snapshot.tournament.closure}
                     avatarDownload={avatarDownload}
                   />
                 )}
@@ -556,6 +592,7 @@ const TournamentContent = ({
         />
       )}
       {tab === 'encuentros' &&
+        !snapshot?.tournament.closure &&
         roles.some((r) => r === 'ADMINISTRATOR' || r === 'SUPER_ADMINISTRATOR') && (
           <TournamentEncounterAdminPanel
             id={id}
@@ -579,14 +616,21 @@ const TournamentContent = ({
           <p>Este torneo es de prueba: no entrega créditos, experiencia, premios ni objetos.</p>
         </Card>
       )}
-      {tab === 'premio' && snapshot?.tournament.isTest !== true && (
-        <TournamentPrizePanel
-          id={id}
-          identity={{ subject, roles }}
-          canConfigure={snapshot?.tournament.bracketPublished === true && !view.isError}
-          {...(prizes ? { api: prizes } : {})}
-        />
+      {tab === 'premio' && snapshot?.tournament.closure && (
+        <Card>
+          <p>Este torneo cerró sin campeón y no entrega premios.</p>
+        </Card>
       )}
+      {tab === 'premio' &&
+        !snapshot?.tournament.closure &&
+        snapshot?.tournament.isTest !== true && (
+          <TournamentPrizePanel
+            id={id}
+            identity={{ subject, roles }}
+            canConfigure={snapshot?.tournament.bracketPublished === true && !view.isError}
+            {...(prizes ? { api: prizes } : {})}
+          />
+        )}
       {tab === 'directo' && (
         <TournamentBroadcastPanel
           key={JSON.stringify([id, subject])}

@@ -118,7 +118,9 @@ describe('HU-85.3 administración de justas simultáneas', () => {
     renderWithProviders(
       <TournamentEncountersPanel id={ID} subject="dev-admin" api={fixture.encounters} />,
     )
-    expect(await screen.findByRole('option', { name: /^E1 · Ronda 1/u })).toBeInTheDocument()
+    expect(
+      await screen.findByText('Todavía no tienes batallas en este torneo.'),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^(Preparar|Iniciar)/u })).not.toBeInTheDocument()
   })
 

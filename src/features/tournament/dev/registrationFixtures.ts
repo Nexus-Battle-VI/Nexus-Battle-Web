@@ -228,6 +228,9 @@ export const createRegistrationPreviewApis = () => {
           status: 'WAITING_PARTICIPANTS',
           preparationStatus: m.status === 'TEAMS_RESOLVED' ? 'TEAMS_RESOLVED' : 'WAITING_TEAMS',
           bracketTrack: m.track,
+          registeredTeams: m.teamIds.map(
+            (teamId) => published?.seeds.find((seed) => seed.teamId === teamId) ?? null,
+          ),
           startedAt: null,
           closedAt: null,
         })) ?? []

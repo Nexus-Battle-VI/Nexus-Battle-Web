@@ -20,6 +20,10 @@ export const priceLabel = (method: PaidMethod | EntryPayment): string => {
   return `${whole}${fraction} ${method.currency} · pago simulado`
 }
 export const matchStatus = (match: MatchSummary): string => {
+  if (match.operationalStatus === 'TOURNAMENT_CLOSED')
+    return match.status === 'FINISHED'
+      ? 'Batalla finalizada · torneo cerrado'
+      : 'Batalla no disputada · torneo cerrado'
   if (match.resolution?.resultType === 'ABSENCE') return 'Victoria por ausencia'
   if (match.resolution?.resultType === 'PLAYED' && match.resolution.winnerTeamId === null)
     return 'Finalizó sin ganador; avance detenido'

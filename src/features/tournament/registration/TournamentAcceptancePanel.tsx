@@ -177,7 +177,7 @@ const PersonalAcceptance = ({
       <AbsenceResolution match={match} />
       {selfIsMember && !finished && (
         <p className="text-sm text-muted">
-          Debes llegar a la arena y mantenerte conectado. Si no conectas durante 30 segundos al
+          Debes llegar a la arena y mantenerte conectado. Si no conectas durante 2 minutos al
           iniciar, el servidor resuelve la batalla por desconexión.
         </p>
       )}

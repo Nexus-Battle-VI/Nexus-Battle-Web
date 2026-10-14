@@ -168,7 +168,7 @@ export const CreateTournamentPanel = ({
           {isTest && (
             <p role="status" className="text-sm text-muted">
               Peleas con cuentas reales. Sin créditos, experiencia, premios ni transferencia de
-              objetos. Puedes programarlo hoy; no ocupa el calendario oficial.
+              objetos. Puedes crear varios torneos y elegir sus horarios.
             </p>
           )}
           <TextField

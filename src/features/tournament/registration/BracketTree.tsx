@@ -267,8 +267,14 @@ export const BracketTree = ({
           <p>
             {teamLabel(final, 0)} <span className="text-muted">vs.</span> {teamLabel(final, 1)}
           </p>
+          {final.teamIds.some((teamId) => teamId === null) && (
+            <p className="text-sm text-muted">
+              La final estará disponible cuando se definan ambos finalistas.
+            </p>
+          )}
           <Button
             variant="secondary"
+            disabled={final.teamIds.some((teamId) => teamId === null)}
             onClick={() => {
               onSelect(final.id)
             }}
