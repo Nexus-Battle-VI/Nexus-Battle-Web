@@ -33,6 +33,7 @@ export type EntryPolicy =
   | { readonly version: 1; readonly free: true; readonly methods: readonly [] }
   | { readonly version: 1; readonly free: false; readonly methods: readonly PaidMethod[] }
 export interface EntryTournament {
+  readonly closure?: TournamentClosure | null
   readonly isTest?: boolean
   readonly contractVersion?: string
   readonly tournamentMode?: TournamentMode
@@ -107,6 +108,14 @@ export interface EntryTeam {
   readonly failure: { readonly code: string; readonly message: string } | null
 }
 export interface EntryView {
+  readonly refunds?: readonly {
+    readonly teamId: string
+    readonly payerId: string
+    readonly method: 'CREDITS' | 'SIMULATED_MONEY'
+    readonly amount: number
+    readonly status: 'PENDING' | 'REFUNDED'
+    readonly refundedAt: string | null
+  }[]
   readonly tournament: EntryTournament
   readonly capacity: {
     readonly confirmed: number
@@ -117,6 +126,13 @@ export interface EntryView {
     readonly totalPeople?: number
   }
   readonly teams: readonly EntryTeam[]
+}
+export interface TournamentClosure {
+  readonly reason: 'INACTIVITY' | 'ADMINISTRATIVE'
+  readonly closedAt: string
+  readonly refundStatus: 'PENDING' | 'COMPLETE'
+  readonly refundedCount: number
+  readonly pendingCount: number
 }
 export interface SimulatedCard {
   readonly holder: string

@@ -30,7 +30,7 @@ const setup = async (transform: (view: ProgressView) => ProgressView = (view) =>
   const rendered = renderWithProviders(
     <TournamentBracketPanel
       id={snapshot.tournamentId}
-      subject="qa-player"
+      subject={snapshot.seeds[0]!.memberIds[0]!}
       roles={['PLAYER']}
       confirmed={8}
       api={{ view: vi.fn().mockResolvedValue(snapshot), publish: vi.fn() }}
@@ -45,6 +45,30 @@ const setup = async (transform: (view: ProgressView) => ProgressView = (view) =>
   )
   return { snapshot, view, progress, choose, queryClient: rendered.queryClient }
 }
+it('Ver final muestra y enfoca el detalle cuando se conocen los finalistas', async () => {
+  const { snapshot } = await setup((view) => ({
+    ...view,
+    bracket: {
+      ...view.bracket!,
+      matches: view.bracket!.matches.map((m) =>
+        m.id === 'Final'
+          ? {
+              ...m,
+              teamIds: [view.bracket!.seeds[0]!.teamId, view.bracket!.seeds[1]!.teamId],
+              status: 'READY',
+            }
+          : m,
+      ),
+    },
+  }))
+  const button = screen.getByRole('button', { name: 'Ver final' })
+  await waitFor(() => expect(button).toBeEnabled())
+  await userEvent.click(button)
+  expect(await screen.findByRole('region', { name: 'Detalle de Final' })).toHaveFocus()
+  expect(screen.getByRole('region', { name: 'Detalle de Final' })).toHaveTextContent(
+    `${snapshot.seeds[0]!.name} vs. ${snapshot.seeds[1]!.name}`,
+  )
+})
 describe('HU-80: avance en las llaves existentes, con respuestas de prueba', () => {
   it('distingue espera y equipos resueltos de preparación real y enlaza por encounterId', async () => {
     const { snapshot, choose } = await setup()
@@ -93,7 +117,7 @@ describe('HU-80: avance en las llaves existentes, con respuestas de prueba', () 
     progress.view.mockRejectedValue(new Error('No disponible'))
     await act(async () => {
       await queryClient.invalidateQueries({
-        queryKey: ['tournament-progress', 'qa-player', snapshot.tournamentId],
+        queryKey: ['tournament-progress', snapshot.seeds[0]!.memberIds[0]!, snapshot.tournamentId],
       })
     })
     expect(

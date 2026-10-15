@@ -1,6 +1,7 @@
 import { act, fireEvent, renderHook, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { onlineManager } from '@tanstack/react-query'
+import { useLocation } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import { HttpError } from '@/lib/http'
@@ -51,6 +52,122 @@ const setup = (
   return { list, accept }
 }
 describe('aceptación personal · contrato v3 y reloj del servidor', () => {
+  it('la entrada automática espera cinco segundos y navega solo a la sala de la aceptación personal', async () => {
+    const timer = vi.spyOn(window, 'setTimeout')
+    const LocationProbe = () => {
+      const location = useLocation()
+      return <output aria-label="Destino personal">{location.pathname}</output>
+    }
+    const match = calendarMatchFixture({
+      combatRoomId: 'own-personal-room',
+      myAcceptance: acceptanceReceiptFixture(),
+      acceptanceStatus: 'CLOSED',
+      operationalStatus: 'IN_BATTLE',
+    })
+    renderWithProviders(
+      <>
+        <TournamentAcceptancePanel
+          id={CALENDAR_ID}
+          subject={CALENDAR_SUBJECT}
+          encounters={{ list: () => Promise.resolve([match]), detail: vi.fn() }}
+        />
+        <LocationProbe />
+      </>,
+    )
+    expect(await screen.findByRole('link', { name: 'Ir a batalla' })).toHaveAttribute(
+      'href',
+      '/play/rooms/own-personal-room/battle',
+    )
+    expect(screen.getByLabelText('Destino personal')).toHaveTextContent(/^\/$/u)
+    const callback = timer.mock.calls.find(([, delay]) => delay === 5000)?.[0]
+    expect(typeof callback).toBe('function')
+    act(() => {
+      ;(callback as () => void)()
+    })
+    expect(screen.getByLabelText('Destino personal')).toHaveTextContent(
+      '/play/rooms/own-personal-room/battle',
+    )
+  })
+  it('espera al rival real de la otra llave sin prometer una hora ni permitir aceptar por anticipado', async () => {
+    const own = calendarMatchFixture().registeredTeams![0]!
+    const pending = calendarMatchFixture({
+      matchId: 'E5',
+      bracketLabel: 'E5',
+      round: 2,
+      acceptanceStatus: 'SCHEDULED',
+      registeredTeams: [null, own],
+      sources: [
+        { kind: 'WINNER', matchId: 'E2' },
+        { kind: 'WINNER', matchId: 'E1' },
+      ],
+    })
+    const dependency = calendarMatchFixture({
+      matchId: 'E2',
+      bracketLabel: 'E2',
+      registeredTeams: [
+        { ...own, teamId: 'other-A', name: 'Dabji', memberIds: ['Dabji'] },
+        { ...own, teamId: 'other-B', name: 'jose_mora0905', memberIds: ['jose_mora0905'] },
+      ],
+    })
+    renderWithProviders(
+      <TournamentAcceptancePanel
+        id={CALENDAR_ID}
+        subject={CALENDAR_SUBJECT}
+        encounters={{ list: () => Promise.resolve([dependency, pending]), detail: vi.fn() }}
+      />,
+    )
+    expect(await screen.findByRole('heading', { name: 'Esperando rival' })).toBeVisible()
+    expect(screen.getByText('Tu rival será el ganador de Dabji vs. jose_mora0905.')).toBeVisible()
+    expect(screen.getByText('Definiendo rival').closest('li')).toHaveAttribute(
+      'aria-current',
+      'step',
+    )
+    expect(screen.queryByText('Acepta antes de')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aceptar batalla' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Ir a batalla' })).not.toBeInTheDocument()
+  })
+  it('una sala conocida y un recibo de otra persona no habilitan la entrada a batalla', async () => {
+    setup(
+      calendarMatchFixture({
+        combatRoomId: 'another-room',
+        myAcceptance: { ...acceptanceReceiptFixture(), subject: 'another-player' },
+      }),
+    )
+    expect(await screen.findByRole('button', { name: 'Aceptar batalla' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Ir a batalla' })).not.toBeInTheDocument()
+  })
+  it('un combate finalizado sin ganador confirmado sigue esperando la comprobación del servidor', async () => {
+    setup(
+      calendarMatchFixture({
+        status: 'FINISHED',
+        acceptanceStatus: 'CLOSED',
+        operationalStatus: 'RESOLUTION_PENDING',
+      }),
+    )
+    expect(await screen.findByRole('heading', { name: 'Confirmando resultado' })).toBeVisible()
+    expect(screen.queryByText('¡Victoria!')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aceptar batalla' })).not.toBeInTheDocument()
+  })
+  it('un resultado confirmado muestra la victoria personal sin proclamar un campeón del torneo', async () => {
+    setup(
+      calendarMatchFixture({
+        status: 'FINISHED',
+        acceptanceStatus: 'RESOLVED',
+        winnerTeamId: 'qa-team-0',
+        combatRoomId: 'own-finished-room',
+        myAcceptance: acceptanceReceiptFixture(),
+      }),
+    )
+    expect(await screen.findByRole('heading', { name: '¡Victoria!' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Ver resultado' })).toHaveAttribute(
+      'href',
+      '/play/rooms/own-finished-room/battle',
+    )
+    expect(
+      screen.getByText('Ganaste esta batalla. Consulta tu siguiente paso en las llaves.'),
+    ).toBeVisible()
+    expect(screen.queryByText(/Campeón confirmado/u)).not.toBeInTheDocument()
+  })
   it('solo envía el intento de la persona; un doble click no duplica la solicitud ni incrementa conteos', async () => {
     let complete: ((receipt: ReturnType<typeof acceptanceReceiptFixture>) => void) | undefined
     const accept = vi.fn<MatchAcceptanceApi['accept']>().mockImplementation(
@@ -248,7 +365,7 @@ describe('resoluciones y administración · datos del servidor', () => {
         }}
       />,
     )
-    await userEvent.click(await screen.findByRole('button', { name: 'Mi batalla' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Centro del torneo' }))
     const table = screen.getByRole('table', { name: /Calendario confirmado/u })
     expect(table).toHaveTextContent(dateLabel(window.acceptanceOpensAt))
     expect(table).toHaveTextContent(dateLabel(window.scheduledStartAt))

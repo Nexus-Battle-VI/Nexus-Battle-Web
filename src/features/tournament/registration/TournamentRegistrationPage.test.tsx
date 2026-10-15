@@ -189,6 +189,7 @@ describe('recorrido de Torneo v2: pruebas de componentes con dobles, sin Cognito
   it('desde las llaves publicadas abre el historial de la justa por su ID recibido', async () => {
     const fixture = createRegistrationPreviewApis()
     const snapshot = await fixture.brackets.publish(T, 'qa-publish')
+    useSession.setState({ subject: snapshot.seeds[0]!.memberIds[0]! })
     const test = setup()
     test.setView({
       ...test.view(),

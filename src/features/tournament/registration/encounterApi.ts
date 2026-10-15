@@ -37,6 +37,7 @@ export interface PlayedResolution {
 }
 
 export interface MatchSummary {
+  readonly myBattle?: boolean
   readonly tournamentId: string
   readonly matchId: string
   readonly round: number
@@ -57,6 +58,7 @@ export interface MatchSummary {
     | 'START_PENDING'
     | 'IN_BATTLE'
     | 'FINISHED'
+    | 'TOURNAMENT_CLOSED'
     | 'DEPENDENCY_ERROR'
   readonly acceptedCounts?: readonly [number, number]
   readonly myAcceptance?: MatchAcceptanceReceipt | null
@@ -112,12 +114,17 @@ export interface MatchDetail extends MatchSummary {
   readonly logComplete: boolean
 }
 export interface EncounterApi {
+  listOwn?: (id: string) => Promise<readonly MatchSummary[]>
+  detailOwn?: (id: string, matchId: string, afterSeq: number) => Promise<MatchDetail>
   list: (id: string) => Promise<readonly MatchSummary[]>
   detail: (id: string, matchId: string, afterSeq: number) => Promise<MatchDetail>
 }
 const path = (id: string, matchId?: string) =>
   `/v1/tournaments/${encodeURIComponent(id)}/matches${matchId === undefined ? '' : `/${encodeURIComponent(matchId)}`}`
 export const encounterApi: EncounterApi = {
+  listOwn: (id) => httpClient.get(`${path(id)}/mine`),
+  detailOwn: (id, matchId, afterSeq) =>
+    httpClient.get(`${path(id)}/mine/${encodeURIComponent(matchId)}?afterSeq=${String(afterSeq)}`),
   list: (id) => httpClient.get(path(id)),
   detail: (id, matchId, afterSeq) =>
     httpClient.get(`${path(id, matchId)}?afterSeq=${String(afterSeq)}`),
