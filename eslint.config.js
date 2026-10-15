@@ -15,7 +15,14 @@ import prettier from 'eslint-config-prettier'
  * TypeScript 7 mediante el alias `typescript7`. Vease ADR-003.
  */
 export default defineConfig([
-  globalIgnores(['dist/**', 'coverage/**', 'node_modules/**', '.tmp/**']),
+  // scripts/realtime-live/: verificacion manual contra un Auction real (EN-034.5); fuera del proyecto TS y del CI.
+  globalIgnores([
+    'dist/**',
+    'coverage/**',
+    'node_modules/**',
+    '.tmp/**',
+    'scripts/realtime-live/**',
+  ]),
 
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,

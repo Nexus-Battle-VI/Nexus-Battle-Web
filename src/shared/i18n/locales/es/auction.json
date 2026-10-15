@@ -61,7 +61,12 @@
       "empty": "Todavía no has participado en subastas.",
       "pagination": "Paginación de mis pujas",
       "mine": "Mi última puja",
-      "status": { "LEADING": "Liderando", "OUTBID": "Superada", "WON": "Ganada", "LOST": "Perdida" }
+      "status": {
+        "LEADING": "Liderando",
+        "OUTBID": "Superada",
+        "WON": "Ganada",
+        "LOST": "Perdida"
+      }
     },
     "transactions": {
       "title": "Historial",
@@ -447,5 +452,10 @@
     "claim": "Reclamar",
     "added": "Añadido a tu inventario.",
     "lost": "El plazo de reclamo venció. El producto se perdió: no se revierte la compra ni se reembolsan los créditos."
+  },
+  "realtime": {
+    "live": "En vivo",
+    "reconnecting": "Reconectando… lo que ves puede estar desactualizado",
+    "failed": "Sin actualización en vivo: la pantalla se refresca cada 30 s"
   }
 }
