@@ -99,8 +99,8 @@ describe('llaves del servidor, permisos y ocho humanos', () => {
       within(screen.getByRole('region', { name: 'Llave de perdedores' })).getAllByRole('button'),
     ).toHaveLength(6)
     await userEvent.click(screen.getByRole('button', { name: /E9 · Ronda/u }))
-    await userEvent.click(screen.getByRole('link', { name: 'Ver registro de E9' }))
-    expect(choose).toHaveBeenCalledWith('dev-tournament-v2:E9')
+    expect(screen.queryByRole('link', { name: 'Ver registro de E9' })).not.toBeInTheDocument()
+    expect(choose).not.toHaveBeenCalled()
     expect(
       screen.queryByText('Identidad del encuentro: dev-tournament-v2:E9'),
     ).not.toBeInTheDocument()
@@ -139,6 +139,14 @@ const summary = (label: string, status: MatchSummary['status'] = 'IN_PROGRESS'):
   bracketLabel: label,
   round: 1,
   status,
+  registeredTeams: [
+    {
+      teamId: 'registered-team',
+      name: 'Equipo propio',
+      avatar: { kind: 'ACCOUNT_AVATAR', subject: 'player' },
+      memberIds: ['player'],
+    },
+  ],
   startedAt: status === 'WAITING_PARTICIPANTS' ? null : '2026-10-05T15:00:00Z',
   closedAt: null,
 })
@@ -157,6 +165,33 @@ const detail = (label = 'E2'): MatchDetail => ({
   nextSeq: 0,
   hasMore: false,
   logComplete: false,
+})
+it('filtra batallas ajenas y no consulta un detalle seleccionado desde fuera', async () => {
+  const own = summary('E1')
+  const foreign = {
+    ...summary('E2'),
+    registeredTeams: [
+      {
+        teamId: 'foreign',
+        name: 'Ajeno',
+        avatar: { kind: 'ACCOUNT_AVATAR' as const, subject: 'other' },
+        memberIds: ['other'],
+      },
+    ],
+  }
+  const api = { list: vi.fn().mockResolvedValue([own, foreign]), detail: vi.fn() }
+  renderWithProviders(
+    <TournamentEncountersPanel
+      id="T1"
+      subject="player"
+      api={api}
+      selectedMatchId={foreign.matchId}
+    />,
+  )
+  expect(await screen.findByText(/Esta batalla no pertenece a tu historial/u)).toBeInTheDocument()
+  expect(screen.getAllByRole('option')).toHaveLength(2)
+  expect(screen.queryByRole('option', { name: /^E2/u })).not.toBeInTheDocument()
+  expect(api.detail).not.toHaveBeenCalled()
 })
 describe('consulta HU83 publicada y metadatos aditivos', () => {
   it('recibe array y usa matchId completo; no confunde encuentros simultáneos', async () => {
@@ -193,7 +228,7 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
           teamId: 'team-registered',
           name: 'Equipo registrado',
           avatar: { kind: 'ACCOUNT_AVATAR', subject: 'A' },
-          memberIds: ['A', 'B'],
+          memberIds: ['A', 'player'],
         },
       ],
     }
@@ -329,7 +364,7 @@ describe('consulta HU83 publicada y metadatos aditivos', () => {
     expect(
       within(screen.getByRole('list', { name: 'Eventos del combate' })).getAllByRole('listitem'),
     ).toHaveLength(101)
-    expect(screen.getByText('Ganador: Resultado por confirmar')).toBeInTheDocument()
+    expect(screen.getByText('Ganador: Equipo propio')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Ver siguientes eventos' })).not.toBeInTheDocument()
   })
   it('finalizada NO_WINNER no inventa campeón', async () => {

@@ -20,15 +20,42 @@ const setup = () => {
   return { create, onCreated, render }
 }
 const fillSchedule = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getByRole('radio', { name: /Competitivo/u }))
+  await user.click(screen.getByText('Personalizar horarios y ver rondas'))
   await user.type(screen.getByRole('textbox', { name: 'Nombre del torneo' }), 'Torneo de prueba')
   for (const [name, value] of [
     ['Apertura de inscripción', '2026-10-05T10:00'],
     ['Cierre de inscripción', '2026-10-07T10:00'],
-    ['Apertura de la primera aceptación', '2026-10-08T10:00'],
-  ])
+    ['Inicio del torneo', '2026-10-08T10:00'],
+  ]) {
+    await user.clear(screen.getByLabelText(new RegExp(name!)))
     await user.type(screen.getByLabelText(new RegExp(name!)), value!)
+  }
 }
 describe('configuración administrativa sin tarifas inventadas', () => {
+  it('crea una prueba 1v1 con nombre y hora sin abrir configuración avanzada', async () => {
+    const test = setup()
+    test.render()
+    const user = userEvent.setup()
+    await user.click(screen.getByText('Crear torneo · administración'))
+    expect(screen.getByRole('radio', { name: /1v1/u })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Prueba gratuita/u })).toBeChecked()
+    expect(screen.getByLabelText(/Apertura de inscripción/u)).not.toBeVisible()
+    await user.type(screen.getByRole('textbox', { name: 'Nombre del torneo' }), 'Compañeros')
+    const start = '2026-10-20T18:00'
+    await user.clear(screen.getByLabelText(/Inicio del torneo/u))
+    await user.type(screen.getByLabelText(/Inicio del torneo/u), start)
+    await user.click(screen.getByRole('button', { name: 'Crear torneo de prueba' }))
+    expect(test.create.mock.calls[0]?.[0]).toMatchObject({
+      name: 'Compañeros',
+      tournamentMode: 'SOLO',
+      isTest: true,
+      entryPolicy: { version: 1, free: true, methods: [] },
+      startsAt: new Date(start).toISOString(),
+      closesAt: new Date(start).toISOString(),
+    })
+    expect(Date.parse(test.create.mock.calls[0]![0].opensAt)).toBeLessThanOrEqual(Date.now())
+  })
   it('el piloto fuerza inscripción gratuita y conserva el modo al recuperar una respuesta perdida', async () => {
     const test = setup()
     test.create.mockRejectedValueOnce(new Error('Respuesta perdida'))
@@ -36,9 +63,8 @@ describe('configuración administrativa sin tarifas inventadas', () => {
     const user = userEvent.setup()
     await user.click(screen.getByText('Crear torneo · administración'))
     await fillSchedule(user)
-    await user.click(screen.getByRole('checkbox', { name: /Torneo de prueba/u }))
-    expect(screen.getByLabelText(/Política de inscripción/u)).toHaveValue('FREE')
-    expect(screen.getByLabelText(/Política de inscripción/u)).toBeDisabled()
+    await user.click(screen.getByRole('radio', { name: /Prueba gratuita/u }))
+    expect(screen.queryByLabelText(/Política de inscripción/u)).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Crear torneo de prueba' }))
     expect(await screen.findByText('Respuesta perdida')).toBeInTheDocument()
     const input = test.create.mock.calls[0]![0]
@@ -49,7 +75,7 @@ describe('configuración administrativa sin tarifas inventadas', () => {
     first.unmount()
     test.render()
     await user.click(screen.getByText('Crear torneo · administración'))
-    expect(screen.getByRole('checkbox', { name: /Torneo de prueba/u })).toBeChecked()
+    expect(screen.getByRole('radio', { name: /Prueba gratuita/u })).toBeChecked()
     await user.click(screen.getByRole('button', { name: 'Comprobar creación' }))
     expect(test.create.mock.calls[1]![0]).toEqual(input)
   })
@@ -90,8 +116,8 @@ describe('configuración administrativa sin tarifas inventadas', () => {
     await user.click(screen.getByText('Crear torneo · administración'))
     await fillSchedule(user)
     await user.selectOptions(screen.getByLabelText(/Política de inscripción/u), 'FREE')
-    await user.clear(screen.getByLabelText(/Apertura de la primera aceptación/u))
-    await user.type(screen.getByLabelText(/Apertura de la primera aceptación/u), '2026-10-06T10:00')
+    await user.clear(screen.getByLabelText(/Inicio del torneo/u))
+    await user.type(screen.getByLabelText(/Inicio del torneo/u), '2026-10-06T10:00')
     await user.click(screen.getByRole('button', { name: 'Crear torneo' }))
     expect(
       await screen.findByText(
