@@ -7,17 +7,15 @@ import { queryKeys } from '@/shared/query-keys'
 
 afterEach(() => vi.restoreAllMocks())
 it('actualizar la selección de Inventory refresca el héroe del torneo sin mezclar cuentas', async () => {
-  const get = vi
-    .spyOn(httpClient, 'get')
-    .mockResolvedValue([
-      {
-        heroId: 'old',
-        subtype: 'GUERRERO_ARMAS',
-        name: 'Guerrero de Armas',
-        selected: true,
-        abilities: [],
-      },
-    ])
+  const get = vi.spyOn(httpClient, 'get').mockResolvedValue([
+    {
+      heroId: 'old',
+      subtype: 'GUERRERO_ARMAS',
+      name: 'Guerrero de Armas',
+      selected: true,
+      abilities: [],
+    },
+  ])
   const { queryClient } = renderWithProviders(<TournamentSelectedHero subject="Carlos" />)
   expect(await screen.findByText('Guerrero de Armas')).toBeVisible()
   get.mockResolvedValue([
