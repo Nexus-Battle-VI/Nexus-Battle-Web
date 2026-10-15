@@ -116,6 +116,21 @@ const RegistrationContent = ({
     >
       <header className="tournament-page-heading">
         <h1 className="font-game-display text-3xl text-ink">Torneo</h1>
+        {!creating && list.data !== undefined && list.data.length > 0 && (
+          <div className="tournament-hub-selector">
+            <SelectField
+              label="Torneo"
+              value={selected}
+              options={list.data.map((t) => ({
+                value: t.id,
+                label: t.isTest ? 'Prueba · ' + t.name : t.name,
+              }))}
+              onChange={(event) => {
+                setChosenId(event.target.value)
+              }}
+            />
+          </div>
+        )}
         {roles.some((r) => r === 'ADMINISTRATOR' || r === 'SUPER_ADMINISTRATOR') && !creating && (
           <Button
             variant="secondary"
@@ -162,19 +177,6 @@ const RegistrationContent = ({
           )}
           {list.data?.length === 0 && (
             <TournamentEmptyState>No hay torneos disponibles todavía.</TournamentEmptyState>
-          )}
-          {list.data !== undefined && list.data.length > 0 && (
-            <SelectField
-              label="Torneo"
-              value={selected}
-              options={list.data.map((t) => ({
-                value: t.id,
-                label: t.isTest ? 'Prueba · ' + t.name : t.name,
-              }))}
-              onChange={(event) => {
-                setChosenId(event.target.value)
-              }}
-            />
           )}
           {selected !== '' && (
             <TournamentContent
@@ -311,32 +313,47 @@ const TournamentContent = ({
       )}
       {snapshot !== undefined && (
         <>
-          <header className="tournament-hero">
-            <div>
-              <p className="tournament-eyebrow">
-                ARENA · {format.label} · {format.summary}
-              </p>
-              {snapshot.capacity.confirmedPeople !== undefined && (
+          <div className="tournament-hub-toolbar">
+            <header className="tournament-hub-summary">
+              <div>
+                <h2 className="font-game-display text-xl">{snapshot.tournament.name}</h2>
                 <p className="text-sm text-muted">
-                  {snapshot.capacity.confirmedPeople} de{' '}
-                  {snapshot.capacity.totalPeople ?? format.size * 8} personas confirmadas
+                  Arena {format.label} · {snapshot.capacity.confirmed} / 8 {format.slots}{' '}
+                  confirmados
                 </p>
-              )}
-              <h2 className="font-game-display text-xl">{snapshot.tournament.name}</h2>
-              {snapshot.tournament.isTest && (
-                <p className="tournament-eyebrow">Torneo de prueba · gratuito · sin recompensas</p>
-              )}
-              <p className="text-sm text-muted">
-                {String(snapshot.capacity.confirmed)} de 8 {format.slots} confirmados ·{' '}
-                {snapshot.tournament.closure
-                  ? 'Torneo cerrado'
-                  : snapshot.tournament.open
-                    ? 'Inscripciones abiertas'
-                    : 'Inscripciones cerradas'}
-              </p>
-            </div>
-            <Trophy size={32} aria-hidden="true" />
-          </header>
+                {snapshot.tournament.isTest && (
+                  <p className="tournament-hub-test-badge">Prueba gratuita · Sin recompensas</p>
+                )}
+              </div>
+            </header>
+            <nav aria-label="Secciones del torneo" className="tournament-tabs tournament-hub-tabs">
+              {(
+                [
+                  ['arena', 'Centro del torneo', Crown],
+                  ['llaves', 'Llaves', Swords],
+                  ['encuentros', 'Historial', Ticket],
+                ] as const
+              ).map(([value, label, Icon]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-current={
+                    tab === value ||
+                    (value === 'arena' && ['equipo', 'premio', 'directo'].includes(tab))
+                      ? 'page'
+                      : undefined
+                  }
+                  onClick={() => {
+                    setTab(value)
+                    chosenTab.current = true
+                  }}
+                >
+                  <Icon size={22} aria-hidden="true" />
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
           {snapshot.tournament.closure && (
             <Card>
               <h3 className="font-game-display text-xl">Torneo cerrado sin campeón</h3>
@@ -364,31 +381,6 @@ const TournamentContent = ({
                 ))}
             </Card>
           )}
-          <nav aria-label="Secciones del torneo" className="tournament-tabs">
-            {(
-              [
-                ['arena', 'Mi batalla', Crown],
-                ['equipo', 'Mi equipo', Users],
-                ['llaves', 'Llaves', Swords],
-                ['encuentros', 'Justas e historial', Ticket],
-                ['premio', 'Premio', Trophy],
-                ['directo', 'Transmisión', Radio],
-              ] as const
-            ).map(([value, label, Icon]) => (
-              <button
-                key={value}
-                type="button"
-                aria-current={tab === value ? 'page' : undefined}
-                onClick={() => {
-                  setTab(value)
-                  chosenTab.current = true
-                }}
-              >
-                <Icon size={18} aria-hidden="true" />
-                {label}
-              </button>
-            ))}
-          </nav>
           {tab === 'arena' &&
             !snapshot.tournament.bracketPublished &&
             !snapshot.tournament.closure && (
@@ -582,6 +574,38 @@ const TournamentContent = ({
             </>
           )}
           {tab === 'llaves' && bracketPanel}
+          <nav className="tournament-hub-extras" aria-label="Más opciones del torneo">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setTab('equipo')
+                chosenTab.current = true
+              }}
+            >
+              <Users size={20} aria-hidden="true" />
+              Mi equipo
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setTab('premio')
+                chosenTab.current = true
+              }}
+            >
+              <Trophy size={20} aria-hidden="true" />
+              Premio
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setTab('directo')
+                chosenTab.current = true
+              }}
+            >
+              <Radio size={20} aria-hidden="true" />
+              Transmisión
+            </Button>
+          </nav>
         </>
       )}
       {tab === 'directo' && (
