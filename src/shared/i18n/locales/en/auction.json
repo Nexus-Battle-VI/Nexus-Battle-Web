@@ -60,7 +60,12 @@
       "empty": "You have not participated in any auctions yet.",
       "pagination": "My bids pagination",
       "mine": "My latest bid",
-      "status": { "LEADING": "Leading", "OUTBID": "Outbid", "WON": "Won", "LOST": "Lost" }
+      "status": {
+        "LEADING": "Leading",
+        "OUTBID": "Outbid",
+        "WON": "Won",
+        "LOST": "Lost"
+      }
     },
     "transactions": {
       "title": "History",
@@ -441,5 +446,10 @@
     "claim": "Claim",
     "added": "Added to your inventory.",
     "lost": "The claim deadline has passed. The product was lost: the purchase is not reversed and credits are not refunded."
+  },
+  "realtime": {
+    "live": "Live",
+    "reconnecting": "Reconnecting… what you see may be out of date",
+    "failed": "No live updates: the screen refreshes every 30 s"
   }
 }

@@ -61,7 +61,12 @@
       "empty": "Vous n'avez pas encore participé à une enchère.",
       "pagination": "Pagination de mes offres",
       "mine": "Ma dernière offre",
-      "status": { "LEADING": "En tête", "OUTBID": "Dépassée", "WON": "Gagnée", "LOST": "Perdue" }
+      "status": {
+        "LEADING": "En tête",
+        "OUTBID": "Dépassée",
+        "WON": "Gagnée",
+        "LOST": "Perdue"
+      }
     },
     "transactions": {
       "title": "Historique",
@@ -447,5 +452,10 @@
     "claim": "Réclamer",
     "added": "Ajouté à votre inventaire.",
     "lost": "Le délai de réclamation est expiré. Le produit est perdu : l'achat n'est pas annulé et les crédits ne sont pas remboursés."
+  },
+  "realtime": {
+    "live": "En direct",
+    "reconnecting": "Reconnexion… ce que vous voyez peut être périmé",
+    "failed": "Pas de mise à jour en direct : l’écran s’actualise toutes les 30 s"
   }
 }

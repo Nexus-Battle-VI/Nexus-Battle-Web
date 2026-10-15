@@ -61,7 +61,12 @@
       "empty": "Você ainda não participou de leilões.",
       "pagination": "Paginação dos meus lances",
       "mine": "Meu último lance",
-      "status": { "LEADING": "Liderando", "OUTBID": "Superado", "WON": "Ganho", "LOST": "Perdido" }
+      "status": {
+        "LEADING": "Liderando",
+        "OUTBID": "Superado",
+        "WON": "Ganho",
+        "LOST": "Perdido"
+      }
     },
     "transactions": {
       "title": "Histórico",
@@ -447,5 +452,10 @@
     "claim": "Resgatar",
     "added": "Adicionado ao seu inventário.",
     "lost": "O prazo de resgate venceu. O produto foi perdido: a compra não é revertida nem os créditos reembolsados."
+  },
+  "realtime": {
+    "live": "Ao vivo",
+    "reconnecting": "Reconectando… o que você vê pode estar desatualizado",
+    "failed": "Sem atualização ao vivo: a tela é atualizada a cada 30 s"
   }
 }
