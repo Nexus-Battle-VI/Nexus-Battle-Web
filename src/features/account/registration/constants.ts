@@ -39,15 +39,18 @@ export interface LegalDocument {
 /**
  * Documentos legales enlazados desde la aceptacion.
  *
- * `terms` sigue en `null` a proposito: en este repositorio no hay ningun
- * documento de Terminos y Condiciones. Redactar aqui un texto legal inventado
- * seria peor que no tenerlo, porque pareceria vinculante.
+ * Ambos documentos se sirven como asset estatico del build de Web, igual
+ * criterio: el archivo viaja con el propio despliegue, nunca una URL externa
+ * ni un enlace a GitHub.
  *
- * `privacy` SI tiene destino (EN-011, CA-01): abre el PDF real de la
- * Política, servido como asset estatico del build
- * (`public/assets/privacy-policy-v0.3.pdf`, generado desde el documento
- * fuente de Nexus-Battle-Infrastructure). No es una URL externa ni un enlace
- * a GitHub: el archivo viaja con el propio despliegue de Web.
+ * `terms` (EN-011): Terminos y Condiciones v1.0, redactados con la misma
+ * estructura y tono que la Politica de Privacidad (`public/assets/terms-and-conditions-v1.0.html`),
+ * marcados explicitamente como vigentes para el entorno de demostracion
+ * academica del producto -- ver la nota de alcance al inicio del documento.
+ *
+ * `privacy` abre el PDF real de la Política, servido como asset estatico del
+ * build (`public/assets/privacy-policy-v0.3.pdf`, generado desde el
+ * documento fuente de Nexus-Battle-Infrastructure).
  */
 const legalDocument = (id: string, href: string | null): LegalDocument => ({
   id,
@@ -58,6 +61,6 @@ const legalDocument = (id: string, href: string | null): LegalDocument => ({
 })
 
 export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
-  legalDocument('terms', null),
+  legalDocument('terms', '/assets/terms-and-conditions-v1.0.html'),
   legalDocument('privacy', '/assets/privacy-policy-v0.3.pdf'),
 ]

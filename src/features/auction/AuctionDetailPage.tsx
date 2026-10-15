@@ -16,6 +16,8 @@ import { HttpError } from '@/lib/http'
 import { countLabel, formatInteger } from '@/shared/i18n/format'
 import { i18n } from '@/shared/i18n/i18n'
 import { queryKeys } from '@/shared/query-keys'
+import { AuctionLiveIndicator } from './realtime/AuctionLiveIndicator'
+import { useAuctionRealtime } from './realtime/useAuctionRealtime'
 import { useSession } from '@/shared/session'
 import { describeFollowError } from './api'
 import { AuctionBidHistory } from './AuctionBidHistory'
@@ -103,6 +105,8 @@ export const AuctionDetailPage = (): React.JSX.Element => {
   const { t } = useTranslation()
   const subject = useSession((state) => state.subject)
   const queryClient = useQueryClient()
+  // EN-034: senales en vivo de ESTA subasta. Solo invalidan cache; el estado lo sigue dando el backend.
+  const realtime = useAuctionRealtime({ auctionId: auctionId === '' ? null : auctionId })
   const [confirmed, setConfirmed] = useState(false)
   const [transaction, setTransaction] = useState<BuyNowConfirmation | null>(null)
   const [cancellation, setCancellation] = useState<AuctionCancellationConfirmation | null>(null)
@@ -158,6 +162,8 @@ export const AuctionDetailPage = (): React.JSX.Element => {
     queryKey: queryKeys.auction.detail(auctionId),
     queryFn: ({ signal }) => fetchAuctionDetail(auctionId, signal),
     enabled: auctionId !== '',
+    // Red de seguridad sin conexion en vivo: sondeo largo (ADR-024). `false` con realtime o apagado.
+    refetchInterval: realtime.fallbackRefetchMs,
   })
 
   const auction = auctionQuery.data
@@ -248,6 +254,8 @@ export const AuctionDetailPage = (): React.JSX.Element => {
           { label: product?.name ?? t('auction:crumbs.detail') },
         ]}
       />
+
+      <AuctionLiveIndicator status={realtime} />
 
       <div className="auction-detail-stack mt-4">
         {notFound ? (

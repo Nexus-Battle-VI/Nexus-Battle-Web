@@ -10,10 +10,16 @@ import { currentAccessToken } from '@/shared/session'
  * — mismo prefijo `API_BASE_URL` que usa `httpClient` para HTTP, solo que
  * aqui el esquema es `ws`/`wss` en vez de `http`/`https`.
  */
-export const buildRealtimeUrl = (origin: string = globalThis.location.origin): string => {
+/** Ruta del WebSocket de Combat (ADR-020). Es el valor por defecto de la conexion compartida. */
+export const COMBAT_REALTIME_PATH = '/v1/combat/realtime'
+
+export const buildRealtimeUrl = (
+  origin: string = globalThis.location.origin,
+  path: string = COMBAT_REALTIME_PATH,
+): string => {
   const url = new URL(origin)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-  url.pathname = `${API_BASE_URL}/v1/combat/realtime`
+  url.pathname = `${API_BASE_URL}${path}`
   url.search = ''
   url.hash = ''
   return url.toString()
@@ -36,6 +42,10 @@ export interface RealtimeServerMessage {
   readonly version?: number
   readonly seq?: number
   readonly code?: string
+  /** EN-034 (Subasta): canal al que pertenece una senal. */
+  readonly channel?: string
+  /** EN-034 (Subasta): cuerpo de la senal; lo valida su consumidor, no esta conexion. */
+  readonly signal?: unknown
 }
 
 export const parseRealtimeMessage = (raw: unknown): RealtimeServerMessage | null => {
@@ -84,6 +94,19 @@ export interface RealtimeConnectionOptions {
    * entre llamadas.
    */
   readonly hasSession?: () => boolean
+  /**
+   * Ruta del WebSocket bajo `API_BASE_URL`. Por defecto la de Combat (ADR-020); Subasta
+   * (EN-034, ADR-024) reutiliza esta misma conexion con su propia ruta.
+   */
+  readonly path?: string
+  /** Tipo del mensaje con el que el servidor confirma el ticket. Por defecto `auth.ok` (Combat). */
+  readonly authenticatedMessageType?: string
+  /**
+   * `true` si el fallo al pedir el ticket significa que la funcion NO existe en el servidor (p. ej.
+   * un `404` con el interruptor apagado). La conexion pasa a `disabled` en lugar de reintentar
+   * sin fin contra una ruta que no existe. Por defecto ningun fallo lo es.
+   */
+  readonly isTicketUnavailable?: (error: unknown) => boolean
 }
 
 export interface RealtimeConnection {
@@ -154,7 +177,10 @@ export const openRealtimeConnection = (options: RealtimeConnectionOptions): Real
     try {
       ticket = await options.ticketProvider()
     } catch (error: unknown) {
-      if (error instanceof HttpError && error.isUnauthorized) {
+      if (
+        (error instanceof HttpError && error.isUnauthorized) ||
+        options.isTicketUnavailable?.(error) === true
+      ) {
         options.onStateChange('disabled')
         return
       }
@@ -170,7 +196,7 @@ export const openRealtimeConnection = (options: RealtimeConnectionOptions): Real
       return
     }
 
-    const ws = options.socketFactory(buildRealtimeUrl())
+    const ws = options.socketFactory(buildRealtimeUrl(undefined, options.path))
     let authenticated = false
 
     socket = ws
@@ -192,7 +218,7 @@ export const openRealtimeConnection = (options: RealtimeConnectionOptions): Real
         return
       }
 
-      if (message.type === 'auth.ok') {
+      if (message.type === (options.authenticatedMessageType ?? 'auth.ok')) {
         authenticated = true
         authFailures = 0
         attempt = 0

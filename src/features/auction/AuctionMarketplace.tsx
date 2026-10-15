@@ -13,6 +13,8 @@ import { TextField } from '@/components/ui/form/TextField'
 import { formatMoney } from '@/lib/format'
 import { canPublishOfficialAuctions } from '@/shared/rbac'
 import { queryKeys } from '@/shared/query-keys'
+import { AuctionLiveIndicator } from './realtime/AuctionLiveIndicator'
+import { useAuctionRealtime } from './realtime/useAuctionRealtime'
 import { useSession } from '@/shared/session'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import {
@@ -244,6 +246,8 @@ export const AuctionMarketplace = (): React.JSX.Element => {
   const roles = useSession((state) => state.roles)
   const { t } = useTranslation()
   const request = toActiveAuctionQuery(page, pageSize, filters)
+  // EN-034: canal agregado. Cada senal INVALIDA las listas (todas las paginas y filtros); no las parchea.
+  const realtime = useAuctionRealtime({ marketplace: true })
   // La clave sale de la misma consulta que se envia: no pueden divergir.
   const query = useQuery({
     queryKey: queryKeys.auctions.activePage({
@@ -256,6 +260,8 @@ export const AuctionMarketplace = (): React.JSX.Element => {
       sort: request.sort ?? null,
     }),
     queryFn: ({ signal }) => listActiveAuctions(request, signal),
+    // Red de seguridad sin conexion en vivo: sondeo largo (ADR-024). `false` con realtime o apagado.
+    refetchInterval: realtime.fallbackRefetchMs,
   })
   const hasActiveFilters = Object.values(filters).some((value) => value !== '')
 
@@ -348,6 +354,7 @@ export const AuctionMarketplace = (): React.JSX.Element => {
           <h1 id="active-auctions-title" className="auction-title font-semibold text-ink">
             {t('auction:market.title')}
           </h1>
+          <AuctionLiveIndicator status={realtime} />
         </div>
         {/*
          * Enlaces contextuales, no un acceso nuevo en NAVIGATION (HU-02 fija

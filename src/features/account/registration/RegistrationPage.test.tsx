@@ -481,14 +481,23 @@ describe('RegistrationPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('declara que faltan los Terminos y Condiciones, que todavia no existen', async () => {
+  it('enlaza los Terminos y Condiciones al documento real, en pestana nueva, no como marcador de posicion (EN-011)', async () => {
     const user = setup()
-
     renderPage(vi.fn())
     await toTermsStep(user)
-    await user.click(screen.getByRole('button', { name: 'Términos y Condiciones' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/todavía no está publicado/u)
+    const link = screen.getByRole('link', { name: 'Términos y Condiciones' })
+    expect(link).toHaveAttribute('href', '/assets/terms-and-conditions-v1.0.html')
+    // Pestana nueva: quien todavia esta llenando el formulario no pierde su
+    // progreso al consultar el documento.
+    expect(link).toHaveAttribute('target', '_blank')
+    // `rel="noreferrer"` evita reverse tabnabbing: sin el, la pestana nueva
+    // podria manipular `window.opener` de esta pantalla de registro.
+    expect(link.getAttribute('rel')).toContain('noreferrer')
+    // El checkbox de aceptacion sigue siendo el unico control de consentimiento:
+    // el enlace no es un segundo control ni forma parte de la etiqueta que
+    // marca/desmarca el checkbox.
+    expect(screen.queryByRole('button', { name: 'Términos y Condiciones' })).not.toBeInTheDocument()
   })
 
   it('enlaza la Politica de Privacidad al PDF real, en pestana nueva, no como marcador de posicion (EN-011)', async () => {
