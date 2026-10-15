@@ -142,7 +142,13 @@ describe('modalidades y consentimiento individual · adaptadores de prueba', () 
           initiallyOpen
         />,
       )
-      await userEvent.selectOptions(screen.getByLabelText('Modalidad del torneo'), mode)
+      await userEvent.click(
+        screen.getByRole('radio', {
+          name: mode === 'SOLO' ? /1v1/u : mode === 'DUO' ? /2v2/u : /3v3/u,
+        }),
+      )
+      await userEvent.click(screen.getByRole('radio', { name: /Competitivo/u }))
+      await userEvent.click(screen.getByText('Personalizar horarios y ver rondas'))
       await userEvent.type(
         screen.getByRole('textbox', { name: 'Nombre del torneo' }),
         'Torneo real',
@@ -151,7 +157,7 @@ describe('modalidades y consentimiento individual · adaptadores de prueba', () 
       for (const [label, value] of [
         ['Apertura de inscripción', '2026-10-07T18:00'],
         ['Cierre de inscripción', '2026-10-07T18:59'],
-        ['Apertura de la primera aceptación', '2026-10-07T19:00'],
+        ['Inicio del torneo', '2026-10-07T19:00'],
       ])
         fireEvent.change(screen.getByLabelText(new RegExp(label!)), { target: { value } })
       expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(7)

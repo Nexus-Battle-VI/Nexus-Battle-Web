@@ -29,6 +29,7 @@ import { CreateTournamentPanel } from './CreateTournamentPanel'
 import { TournamentBracketPanel } from './TournamentBracketPanel'
 import { TournamentEncountersPanel } from './TournamentEncountersPanel'
 import { RegisterTeamForm } from './RegisterTeamForm'
+import { QuickSoloEntry } from './QuickSoloEntry'
 import { TeamRegistrationCard } from './TeamRegistrationCard'
 import { TournamentExternalLinksPanel } from '@/features/tournament/links/TournamentExternalLinksPanel'
 import type { TournamentLinksApi } from '@/features/tournament/links/api'
@@ -116,6 +117,16 @@ const RegistrationContent = ({
     >
       <header className="tournament-page-heading">
         <h1 className="font-game-display text-3xl text-ink">Torneo</h1>
+        {creating && (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setCreating(false)
+            }}
+          >
+            Volver al torneo
+          </Button>
+        )}
         {!creating && list.data !== undefined && list.data.length > 0 && (
           <div className="tournament-hub-selector">
             <SelectField
@@ -144,14 +155,6 @@ const RegistrationContent = ({
       </header>
       {creating ? (
         <div className="tournament-create grid gap-4">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setCreating(false)
-            }}
-          >
-            Volver al torneo
-          </Button>
           <CreateTournamentPanel
             key={subject}
             subject={subject}
@@ -270,6 +273,8 @@ const TournamentContent = ({
   )
   const mode = snapshot ? modeOf(snapshot.tournament) : 'DUO'
   const format = modalities[mode]
+  const quickSolo =
+    mode === 'SOLO' && snapshot?.tournament.entryPolicy.free === true && roles.includes('PLAYER')
   useRefreshWalletOn(
     active?.ownerId === subject
       ? JSON.stringify([id, active.status, active.entryReceipt?.payment.chargeId, active.failure])
@@ -509,7 +514,7 @@ const TournamentContent = ({
                 aria-label="Inscripción del equipo"
                 className="grid gap-4"
               >
-                {roles.includes('PLAYER') && (
+                {roles.includes('PLAYER') && mode !== 'SOLO' && (
                   <details className="tournament-technical">
                     <summary>Compartir mi código de jugador</summary>
                     <TextField label="Tu código de jugador" value={subject} readOnly />
@@ -518,29 +523,61 @@ const TournamentContent = ({
                     </p>
                   </details>
                 )}
-                {active === undefined && snapshot.tournament.open && roles.includes('PLAYER') && (
-                  <RegisterTeamForm
-                    key={JSON.stringify([id, mode, snapshot.tournament.contractVersion])}
+                {quickSolo && (
+                  <QuickSoloEntry
+                    key={snapshot.teams
+                      .filter((t) => t.status === 'CANCELLED')
+                      .map((t) => t.id)
+                      .join(':')}
                     id={id}
                     subject={subject}
+                    displayName={displayName}
+                    team={active}
                     api={api}
                     onResult={result}
+                    open={snapshot.tournament.open}
+                    available={snapshot.capacity.available}
+                    bracketPublished={snapshot.tournament.bracketPublished}
                     canMutate={!view.isError && !snapshot.tournament.closure}
                     generation={snapshot.teams
                       .filter((t) => t.status === 'CANCELLED')
                       .map((t) => t.id)
                       .join(':')}
-                    avatarDownload={avatarDownload}
-                    mode={mode}
-                    {...(snapshot.tournament.contractVersion
-                      ? { contractVersion: snapshot.tournament.contractVersion }
-                      : {})}
+                    contractVersion={
+                      snapshot.tournament.contractVersion ?? 'torneos-hu77-84-78-hu83-v2.0.0'
+                    }
+                    onBracket={() => {
+                      setTab('llaves')
+                      chosenTab.current = true
+                    }}
                   />
                 )}
-                {active === undefined && !snapshot.tournament.open && (
+                {!quickSolo &&
+                  active === undefined &&
+                  snapshot.tournament.open &&
+                  roles.includes('PLAYER') && (
+                    <RegisterTeamForm
+                      key={JSON.stringify([id, mode, snapshot.tournament.contractVersion])}
+                      id={id}
+                      subject={subject}
+                      api={api}
+                      onResult={result}
+                      canMutate={!view.isError && !snapshot.tournament.closure}
+                      generation={snapshot.teams
+                        .filter((t) => t.status === 'CANCELLED')
+                        .map((t) => t.id)
+                        .join(':')}
+                      avatarDownload={avatarDownload}
+                      mode={mode}
+                      {...(snapshot.tournament.contractVersion
+                        ? { contractVersion: snapshot.tournament.contractVersion }
+                        : {})}
+                    />
+                  )}
+                {!quickSolo && active === undefined && !snapshot.tournament.open && (
                   <p>La inscripción de este torneo está cerrada.</p>
                 )}
-                {active !== undefined && (
+                {!quickSolo && active !== undefined && (
                   <TeamRegistrationCard
                     key={active.id}
                     id={id}

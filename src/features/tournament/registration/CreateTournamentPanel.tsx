@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CalendarClock, Swords, Trophy, FlaskConical } from 'lucide-react'
 import { TournamentButton as Button } from '../TournamentVisuals'
 import { TournamentCard as Card } from '../TournamentVisuals'
 import { SelectField } from '@/components/ui/form/SelectField'
@@ -15,6 +16,9 @@ import { calendarPreview } from './calendar'
 import { dateLabel } from './presentation'
 import { amountInMinorUnits } from './money'
 import { useOperation } from './useOperation'
+
+const localDate = (date: Date): string =>
+  new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 
 export const CreateTournamentPanel = ({
   subject,
@@ -43,17 +47,20 @@ export const CreateTournamentPanel = ({
     }
   })()
   const [name, setName] = useState(draft[0] ?? '')
-  const [isTest, setIsTest] = useState(draft[10] === 'TEST')
-  const [policyKind, setPolicyKind] = useState(draft[1] ?? '')
+  const [isTest, setIsTest] = useState(draft.length === 0 || draft[10] === 'TEST')
+  const [policyKind, setPolicyKind] = useState(draft[1] ?? 'FREE')
   const [credits, setCredits] = useState(draft[2] ?? '')
   const [money, setMoney] = useState(draft[3] ?? '')
   const [currency, setCurrency] = useState(draft[4] ?? '')
   const [precision, setPrecision] = useState(draft[5] ?? '')
-  const [opensAt, setOpensAt] = useState(draft[6] ?? '')
-  const [closesAt, setClosesAt] = useState(draft[7] ?? '')
-  const [startsAt, setStartsAt] = useState(draft[8] ?? '')
+  const [opensAt, setOpensAt] = useState(() => draft[6] ?? localDate(new Date()))
+  const [startsAt, setStartsAt] = useState(
+    () => draft[8] ?? localDate(new Date(Math.ceil((Date.now() + 30 * 60000) / 60000) * 60000)),
+  )
+  const [closesAt, setClosesAt] = useState(draft[7] ?? startsAt)
+  const [customClosing, setCustomClosing] = useState(draft.length > 0)
   const [mode, setMode] = useState<TournamentMode>(
-    draft[9] === 'SOLO' || draft[9] === 'TRIO' ? draft[9] : 'DUO',
+    draft[9] === 'DUO' || draft[9] === 'TRIO' ? draft[9] : 'SOLO',
   )
   const [validation, setValidation] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
@@ -129,73 +136,125 @@ export const CreateTournamentPanel = ({
     }
   }
   return (
-    <Card>
+    <Card className="tournament-simple-create">
       <details open={initiallyOpen}>
-        <summary className="cursor-pointer font-semibold">Crear torneo · administración</summary>
+        <summary hidden={initiallyOpen} className="cursor-pointer font-semibold">
+          Crear torneo · administración
+        </summary>
         <form
-          className="mt-4 grid gap-4"
+          className="tournament-simple-form"
           aria-label="Creación de torneo"
           onSubmit={(event) => {
             event.preventDefault()
             void submit()
           }}
         >
-          <SelectField
-            label="Modalidad del torneo"
-            value={mode}
-            disabled={locked}
-            options={Object.entries(modalities).map(([value, details]) => ({
-              value,
-              label: `${details.label} · ${details.summary}`,
-            }))}
-            onChange={(event) => {
-              setMode(event.target.value as TournamentMode)
-            }}
-          />
-          <p>{modalities[mode].summary}. La modalidad queda fija al crear.</p>
-          <label className="flex items-center gap-3 text-ink">
-            <input
-              type="checkbox"
-              checked={isTest}
+          <header className="tournament-simple-heading">
+            <span className="tournament-simple-emblem">
+              <Trophy size={28} aria-hidden="true" />
+            </span>
+            <div>
+              <h2>Prepara el torneo</h2>
+              <p>Ponle nombre. Elige formato y hora. Listo.</p>
+            </div>
+          </header>
+          <div className="tournament-simple-basics">
+            <TextField
+              label="Nombre del torneo"
+              value={name}
+              required
+              placeholder="Ej. Torneo de los viernes"
               disabled={locked}
               onChange={(event) => {
-                setIsTest(event.target.checked)
-                if (event.target.checked) setPolicyKind('FREE')
+                setName(event.target.value)
               }}
             />
-            Torneo de prueba · gratuito y sin recompensas
-          </label>
-          {isTest && (
-            <p role="status" className="text-sm text-muted">
-              Peleas con cuentas reales. Sin créditos, experiencia, premios ni transferencia de
-              objetos. Puedes crear varios torneos y elegir sus horarios.
-            </p>
+            <TextField
+              label="Inicio del torneo"
+              type="datetime-local"
+              required
+              disabled={locked}
+              value={startsAt}
+              onChange={(event) => {
+                setStartsAt(event.target.value)
+                if (!customClosing) setClosesAt(event.target.value)
+              }}
+            />
+          </div>
+          <fieldset className="tournament-format-picker" disabled={locked}>
+            <legend>Modalidad del torneo</legend>
+            <div>
+              {(['SOLO', 'DUO', 'TRIO'] as const).map((value) => (
+                <label key={value}>
+                  <input
+                    type="radio"
+                    name="tournament-mode"
+                    checked={mode === value}
+                    onChange={() => {
+                      setMode(value)
+                    }}
+                  />
+                  <Swords size={20} aria-hidden="true" />
+                  <strong>{modalities[value].label}</strong>
+                  <span>
+                    {value === 'SOLO' ? 'Individual' : value === 'DUO' ? 'Parejas' : 'Tríos'}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className="tournament-kind-picker" disabled={locked}>
+            <legend className="sr-only">Tipo de torneo</legend>
+            <label>
+              <input
+                type="radio"
+                name="tournament-kind"
+                checked={isTest}
+                onChange={() => {
+                  setIsTest(true)
+                  setPolicyKind('FREE')
+                }}
+              />
+              <FlaskConical size={20} aria-hidden="true" />
+              <span>
+                <strong>Prueba gratuita</strong>
+                <small>Sin recompensas</small>
+              </span>
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="tournament-kind"
+                checked={!isTest}
+                onChange={() => {
+                  setIsTest(false)
+                }}
+              />
+              <Trophy size={20} aria-hidden="true" />
+              <span>
+                <strong>Competitivo</strong>
+                <small>Premios configurables</small>
+              </span>
+            </label>
+          </fieldset>
+          {!isTest && (
+            <SelectField
+              label="Política de inscripción"
+              value={policyKind}
+              required
+              disabled={locked || isTest}
+              placeholder="Elige la política"
+              options={[
+                { value: 'FREE', label: 'Gratuita' },
+                { value: 'CREDITS', label: 'Créditos' },
+                { value: 'SIMULATED_MONEY', label: 'Dinero simulado' },
+                { value: 'BOTH', label: 'Créditos o dinero simulado' },
+              ]}
+              onChange={(event) => {
+                setPolicyKind(event.target.value)
+              }}
+            />
           )}
-          <TextField
-            label="Nombre del torneo"
-            value={name}
-            required
-            disabled={locked}
-            onChange={(event) => {
-              setName(event.target.value)
-            }}
-          />
-          <SelectField
-            label="Política de inscripción"
-            value={policyKind}
-            required
-            disabled={locked || isTest}
-            placeholder="Elige la política"
-            options={[
-              { value: 'FREE', label: 'Gratuita' },
-              { value: 'CREDITS', label: 'Créditos' },
-              { value: 'SIMULATED_MONEY', label: 'Dinero simulado' },
-              { value: 'BOTH', label: 'Créditos o dinero simulado' },
-            ]}
-            onChange={(event) => {
-              setPolicyKind(event.target.value)
-            }}
-          />
           {hasCredits && (
             <TextField
               label="Importe en créditos"
@@ -250,61 +309,74 @@ export const CreateTournamentPanel = ({
               />
             </div>
           )}
-          <div className="grid gap-3 sm:grid-cols-3">
-            {(
-              [
-                ['Apertura de inscripción', opensAt, setOpensAt],
-                ['Cierre de inscripción', closesAt, setClosesAt],
-                ['Apertura de la primera aceptación', startsAt, setStartsAt],
-              ] as const
-            ).map(([label, value, set]) => (
-              <TextField
-                key={label}
-                label={label}
-                type="datetime-local"
-                required
-                disabled={locked}
-                value={value}
-                onChange={(event) => {
-                  set(event.target.value)
-                }}
-              />
-            ))}
-          </div>
-          {calendarPreview(startsAt).length > 0 && (
-            <div
-              className="tournament-calendar-scroll"
-              tabIndex={0}
-              aria-label="Vista previa del calendario"
-            >
-              <table className="tournament-calendar">
-                <caption>Vista previa de seis rondas · el servidor guarda el calendario</caption>
-                <thead>
-                  <tr>
-                    <th>Ronda</th>
-                    <th>Aceptación personal</th>
-                    <th>Inicio previsto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {calendarPreview(startsAt).map((round) => (
-                    <tr key={round.round}>
-                      <th>{round.round}</th>
-                      <td>
-                        {dateLabel(round.opensAt)} – {dateLabel(round.closesAt)}
-                      </td>
-                      <td>{dateLabel(round.plannedStartAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <p className="text-sm text-muted">
-            Fechas en tu hora local. Los precios se configuran por separado y no se convierten entre
-            créditos y moneda. Cada justa tiene dos minutos de aceptación y comienza al cierre de su
-            ventana. Las rondas están separadas por diez minutos; los horarios quedan fijos.
+          <p className="tournament-simple-summary">
+            <CalendarClock size={17} aria-hidden="true" />
+            {modalities[mode].summary}.{' '}
+            {closesAt ? `Inscripción hasta ${dateLabel(closesAt)}.` : 'Elige cuándo empieza.'}
           </p>
+          <details className="tournament-simple-options">
+            <summary>Personalizar horarios y ver rondas</summary>
+            <div className="grid gap-3 sm:grid-cols-2 mt-3">
+              {(
+                [
+                  ['Apertura de inscripción', opensAt, setOpensAt],
+                  [
+                    'Cierre de inscripción',
+                    closesAt,
+                    (value: string) => {
+                      setCustomClosing(true)
+                      setClosesAt(value)
+                    },
+                  ],
+                ] as const
+              ).map(([label, value, set]) => (
+                <TextField
+                  key={label}
+                  label={label}
+                  type="datetime-local"
+                  required
+                  disabled={locked}
+                  value={value}
+                  onChange={(event) => {
+                    set(event.target.value)
+                  }}
+                />
+              ))}
+            </div>
+            {calendarPreview(startsAt).length > 0 && (
+              <div
+                className="tournament-calendar-scroll"
+                tabIndex={0}
+                aria-label="Vista previa del calendario"
+              >
+                <table className="tournament-calendar">
+                  <caption>Vista previa de seis rondas · el servidor guarda el calendario</caption>
+                  <thead>
+                    <tr>
+                      <th>Ronda</th>
+                      <th>Aceptación personal</th>
+                      <th>Inicio previsto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calendarPreview(startsAt).map((round) => (
+                      <tr key={round.round}>
+                        <th>{round.round}</th>
+                        <td>
+                          {dateLabel(round.opensAt)} – {dateLabel(round.closesAt)}
+                        </td>
+                        <td>{dateLabel(round.plannedStartAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-sm text-muted">
+              Horas locales. Aceptación de dos minutos; rondas cada diez minutos. El inicio elegido
+              abre la primera aceptación.
+            </p>
+          </details>
           {operation.intent?.phase === 'UNCERTAIN' && (
             <p role="status">Creación pendiente de comprobar. Se conserva el mismo intento.</p>
           )}
@@ -317,6 +389,7 @@ export const CreateTournamentPanel = ({
           )}
           {created === null ? (
             <Button
+              className="tournament-simple-primary"
               type="submit"
               loading={operation.busy}
               disabled={operation.intent?.phase === 'REJECTED'}
