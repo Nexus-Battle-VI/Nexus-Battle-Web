@@ -1,6 +1,6 @@
-import { act, screen, waitFor } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import { useLocation } from 'react-router'
-import { afterEach, describe, it, expect, vi } from 'vitest'
+import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest'
 import { renderWithProviders } from '@/test/render'
 import { TournamentAcceptancePanel } from '@/features/tournament/registration/TournamentAcceptancePanel'
 import {
@@ -23,7 +23,11 @@ const Location = () => {
     </>
   )
 }
-afterEach(() => vi.restoreAllMocks())
+beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }))
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+})
 describe('Entrada a la arena y regreso al torneo', () => {
   const players = [
     'Carlos',
@@ -92,13 +96,12 @@ describe('Entrada a la arena y regreso al torneo', () => {
         'href',
         `/play/rooms/arena-${String(index)}/battle`,
       )
-      expect(screen.getByText(/Te llevaremos a tu batalla en 2 segundos/u)).toBeVisible()
-      await waitFor(
-        () =>
-          expect(screen.getByLabelText('Ruta')).toHaveTextContent(
-            `/play/rooms/arena-${String(index)}/battle`,
-          ),
-        { timeout: 5000 },
+      expect(screen.getByText(/Te llevaremos a tu batalla en 5 segundos/u)).toBeVisible()
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5000)
+      })
+      expect(screen.getByLabelText('Ruta')).toHaveTextContent(
+        `/play/rooms/arena-${String(index)}/battle`,
       )
       expect(JSON.parse(screen.getByLabelText('Contexto del torneo').textContent)).toEqual({
         tournament: {
@@ -129,9 +132,10 @@ describe('Entrada a la arena y regreso al torneo', () => {
           <Location />
         </>,
       )
-      await screen.findByRole('link', { name: 'Ir a batalla' })
+      await screen.findByRole('heading', { name: 'Tu próxima batalla' })
+      expect(screen.queryByRole('link', { name: 'Ir a batalla' })).not.toBeInTheDocument()
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 2200))
+        await vi.advanceTimersByTimeAsync(5000)
       })
       expect(screen.getByLabelText('Ruta')).toHaveTextContent('/')
       expect(screen.queryByText(/Te llevaremos a tu batalla/u)).not.toBeInTheDocument()
@@ -169,11 +173,10 @@ describe('Entrada a la arena y regreso al torneo', () => {
     act(() => {
       void queryClient.invalidateQueries({ queryKey: ['tournament-acceptance'] })
     })
-    await waitFor(
-      () =>
-        expect(screen.getByLabelText('Ruta')).toHaveTextContent('/play/rooms/sala-local/battle'),
-      { timeout: 5000 },
-    )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+    })
+    expect(screen.getByLabelText('Ruta')).toHaveTextContent('/play/rooms/sala-local/battle')
     expect(list).toHaveBeenCalledTimes(2)
     await act(() => {
       complete?.([match])
@@ -207,13 +210,10 @@ describe('Entrada a la arena y regreso al torneo', () => {
       void queryClient.invalidateQueries({ queryKey: ['tournament-acceptance'] })
     })
     await screen.findByRole('alert')
-    await waitFor(
-      () =>
-        expect(screen.getByLabelText('Ruta')).toHaveTextContent(
-          '/play/rooms/sala-confirmada/battle',
-        ),
-      { timeout: 5000 },
-    )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+    })
+    expect(screen.getByLabelText('Ruta')).toHaveTextContent('/play/rooms/sala-confirmada/battle')
   })
   it('consultar una batalla terminada no entra automáticamente de nuevo a la arena', async () => {
     const match = calendarMatchFixture({
@@ -284,9 +284,9 @@ describe('Entrada a la arena y regreso al torneo', () => {
       'href',
       '/play/rooms/sala-con-resultado/battle',
     )
-    expect(screen.getByText('Confirmando resultado')).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Confirmando resultado' })).toBeVisible()
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 2200))
+      await vi.advanceTimersByTimeAsync(5000)
     })
     expect(screen.getByLabelText('Ruta')).toHaveTextContent('/')
   })

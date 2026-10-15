@@ -36,25 +36,35 @@ export const TournamentEncountersPanel = ({
   const [localMatchId, setMatchId] = useState('')
   const matchId = selectedMatchId ?? localMatchId
   const list = useQuery({
-    queryKey: ['tournament-encounters', subject, id],
-    queryFn: () => api.list(id),
+    queryKey: ['tournament-encounters', 'own', subject, id],
+    queryFn: () => (api.listOwn ?? api.list)(id),
     refetchInterval: 5000,
   })
+  const ownMatches =
+    list.data?.filter(
+      (match) =>
+        match.tournamentId === id &&
+        (match.myBattle === true ||
+          match.registeredTeams?.some((team) => team?.memberIds.includes(subject))),
+    ) ?? []
+  const ownSelection = ownMatches.some((match) => match.matchId === matchId)
   const detail = useInfiniteQuery({
-    queryKey: ['tournament-encounter', subject, id, matchId],
+    queryKey: ['tournament-encounter', 'own', subject, id, matchId],
     initialPageParam: 0,
-    queryFn: ({ pageParam }) => api.detail(id, matchId, pageParam),
+    queryFn: ({ pageParam }) => (api.detailOwn ?? api.detail)(id, matchId, pageParam),
     getNextPageParam: (page) =>
       page.hasMore && page.nextSeq > page.afterSeq ? page.nextSeq : undefined,
-    enabled: matchId !== '',
+    enabled: matchId !== '' && ownSelection,
     refetchInterval: (query) =>
       query.state.data?.pages[0]?.resolution?.resultType === 'ABSENCE' ||
+      query.state.data?.pages[0]?.operationalStatus === 'TOURNAMENT_CLOSED' ||
       (query.state.data?.pages[0]?.status === 'FINISHED' && query.state.data.pages[0].logComplete)
         ? false
         : 5000,
   })
   const first = detail.data?.pages[0]
-  const view = first?.tournamentId === id && first.matchId === matchId ? first : undefined
+  const view =
+    ownSelection && first?.tournamentId === id && first.matchId === matchId ? first : undefined
   const result =
     view?.resolution?.resultType === 'PLAYED' ? view.resolution.combatResult : view?.result
   const events =
@@ -89,7 +99,7 @@ export const TournamentEncountersPanel = ({
     (view?.resolution?.resultType === 'PLAYED' ? view.resolution.combatRoomId : null)
   const refresh = (): void => {
     void list.refetch()
-    if (matchId !== '') void detail.refetch()
+    if (matchId !== '' && ownSelection) void detail.refetch()
   }
   return (
     <Card>
@@ -100,7 +110,7 @@ export const TournamentEncountersPanel = ({
       >
         <TournamentHeading icon="encounters">Historial de batallas</TournamentHeading>
         <p className="text-sm text-muted">
-          Elige una batalla para consultar su resultado y sus acciones.
+          Aquí aparecen tus batallas. Elige una para consultar el resultado y tus acciones.
         </p>
         {list.isPending && <p role="status">Consultando justas…</p>}
         {list.isError && <p role="alert">No se pudo consultar el registro de justas.</p>}
@@ -109,26 +119,31 @@ export const TournamentEncountersPanel = ({
             Actualizar registro
           </Button>
         </div>
-        {list.data?.length === 0 && <p>Todavía no hay justas registradas en este torneo.</p>}
-        {list.data !== undefined && list.data.length > 0 && (
+        {list.data !== undefined && ownMatches.length === 0 && (
+          <p>Todavía no tienes batallas en este torneo.</p>
+        )}
+        {matchId !== '' && list.isSuccess && !ownSelection && (
+          <p>
+            Esta batalla no pertenece a tu historial. Puedes consultar sus equipos en las llaves.
+          </p>
+        )}
+        {ownMatches.length > 0 && (
           <SelectField
             label="Elegir justa"
             value={matchId}
             placeholder="Elige el encuentro"
-            options={list.data
-              .filter((match) => match.tournamentId === id)
-              .map((match) => ({
-                value: match.matchId,
-                label: `${match.bracketLabel} · Ronda ${String(match.round)} · ${matchStatus(match)}`,
-              }))}
+            options={ownMatches.map((match) => ({
+              value: match.matchId,
+              label: `${match.bracketLabel} · Ronda ${String(match.round)} · ${matchStatus(match)}`,
+            }))}
             onChange={(event) => {
               setMatchId(event.target.value)
               onChooseMatch?.(event.target.value)
             }}
           />
         )}
-        {matchId !== '' && detail.isPending && <p role="status">Consultando el combate…</p>}
-        {matchId !== '' && detail.isError && (
+        {ownSelection && detail.isPending && <p role="status">Consultando el combate…</p>}
+        {ownSelection && detail.isError && (
           <div role="alert">
             <p>
               No se pudo actualizar este combate. Su referencia puede no existir o no pertenecer al

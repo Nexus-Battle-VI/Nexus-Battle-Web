@@ -118,7 +118,9 @@ describe('HU-85.3 administración de justas simultáneas', () => {
     renderWithProviders(
       <TournamentEncountersPanel id={ID} subject="dev-admin" api={fixture.encounters} />,
     )
-    expect(await screen.findByRole('option', { name: /^E1 · Ronda 1/u })).toBeInTheDocument()
+    expect(
+      await screen.findByText('Todavía no tienes batallas en este torneo.'),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^(Preparar|Iniciar)/u })).not.toBeInTheDocument()
   })
 
@@ -135,14 +137,14 @@ describe('HU-85.3 administración de justas simultáneas', () => {
       />
     )
     const first = renderWithProviders(page(['PLAYER']))
-    await userEvent.click(await screen.findByRole('button', { name: 'Justas e historial' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Historial' }))
     expect(await screen.findByRole('region', { name: 'Registro de justas' })).toBeVisible()
     expect(
       screen.queryByRole('region', { name: 'Administración de justas' }),
     ).not.toBeInTheDocument()
     first.unmount()
     renderWithProviders(page(['ADMINISTRATOR']))
-    await userEvent.click(await screen.findByRole('button', { name: 'Justas e historial' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Historial' }))
     expect(await screen.findByRole('region', { name: 'Administración de justas' })).toBeVisible()
   })
 })
