@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { Shield, Sparkles } from 'lucide-react'
 import { httpClient } from '@/lib/http'
+import { queryKeys } from '@/shared/query-keys'
 import { HeroSprite } from '@/shared/visual-library/heroes'
 import { tournamentHeroIdentity } from '../tournamentHeroIdentity'
 
@@ -16,7 +17,7 @@ interface OwnedHero {
 /** Inventory owns selection; no hero or readiness is inferred from a tournament slot. */
 export const TournamentSelectedHero = ({ subject }: { readonly subject: string }) => {
   const view = useQuery({
-    queryKey: ['tournament-selected-hero', subject],
+    queryKey: [...queryKeys.inventory.availableHeroes, subject],
     queryFn: ({ signal }) => httpClient.get<readonly OwnedHero[]>('/inventories/me/heroes', signal),
     staleTime: 15000,
     retry: false,
